@@ -19,10 +19,18 @@ class UniversalSyncClient {
     this.storageKey = `stagetimer_live_state_${this.cleanRoom}`;
     this.mqttTopicState = `stagetimer_live/${this.cleanRoom}/state`;
     this.mqttTopicPresence = `stagetimer_live/${this.cleanRoom}/presence`;
-    this.mqttTopicRegistry = 'stagetimer_live/_events_list';
+    this.mqttTopicRegistry = 'stagetimer_live/_events_list_v6';
+    this.legacyMqttTopicRegistry = 'stagetimer_live/_events_list';
     this.mqttTopicGlobalPresence = 'stagetimer_live/_global_presence';
-    this.registryStorageKey = 'stagetimer_events_registry_v4';
+    this.mqttTopicCommands = 'stagetimer_live/_commands';
+    this.mqttTopicAllCmd = 'stagetimer_live/_cmd_all';
+    this.registryStorageKey = 'stagetimer_events_registry_v6';
     this.deletedStorageKey = 'stagetimer_deleted_events_v2';
+
+    // Prune obsolete registry versions to eliminate ghost events
+    ['stagetimer_events_registry_v1', 'stagetimer_events_registry_v2', 'stagetimer_events_registry_v3', 'stagetimer_events_registry_v4', 'stagetimer_events_registry_v5'].forEach(k => {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
 
     this.firstSeen = Date.now();
 
@@ -204,8 +212,10 @@ class UniversalSyncClient {
   }
 
   _handleRemoteCommand(msg) {
-    if (!msg) return;
-    const isTarget = !msg.targetUuid || msg.targetUuid === 'ALL' || msg.targetUuid === this.deviceUuid;
+    if (!msg || typeof msg !== 'object') return;
+    const target = String(msg.targetUuid || 'ALL').trim().toLowerCase();
+    const myUuid = String(this.deviceUuid || '').trim().toLowerCase();
+    const isTarget = target === 'all' || target === myUuid;
     if (!isTarget) return;
 
     if (msg.action === 'reload') {
@@ -220,19 +230,72 @@ class UniversalSyncClient {
     }
 
     if (msg.action === 'navigate' && msg.url) {
-      let targetUrl = msg.url;
-      if (!targetUrl.includes('room=')) {
-        const sep = targetUrl.includes('?') ? '&' : '?';
-        targetUrl = `${targetUrl}${sep}room=${encodeURIComponent(this.cleanRoom)}`;
+      try {
+        let targetUrl = msg.url;
+        if (!targetUrl.includes('room=')) {
+          const sep = targetUrl.includes('?') ? '&' : '?';
+          targetUrl = `${targetUrl}${sep}room=${encodeURIComponent(this.cleanRoom)}`;
+        }
+        const sepTs = targetUrl.includes('?') ? '&' : '?';
+        targetUrl = `${targetUrl}${sepTs}_ts=${Date.now()}`;
+        window.location.replace(targetUrl);
+      } catch (e) {
+        window.location.href = msg.url;
       }
-      window.location.href = targetUrl;
       return;
     }
 
     if (msg.action === 'switch_room' && msg.room) {
-      const u = new URL(location.href);
-      u.searchParams.set('room', msg.room);
-      window.location.replace(u.toString());
+      try {
+        const cleanTargetRoom = String(msg.room).toUpperCase().replace(/[^A-Z0-9_-]/g, '') || 'PALCO1';
+        const u = new URL(location.href);
+        u.searchParams.set('room', cleanTargetRoom);
+        u.searchParams.set('_ts', Date.now());
+        window.location.replace(u.toString());
+      } catch (e) {
+        window.location.reload();
+      }
+      return;
+    }
+
+    if (msg.action === 'purge_event' && msg.code) {
+      const purgeCode = String(msg.code).toUpperCase().trim();
+      this._recordDeletedEvent(purgeCode);
+      try { localStorage.removeItem(`stagetimer_live_state_${purgeCode}`); } catch (e) {}
+      const updatedList = this.getEventsList().filter(e => e.code !== purgeCode);
+      this._saveEventsList(updatedList, false);
+      if (this.cleanRoom === purgeCode) {
+        const u = new URL(location.href);
+        u.searchParams.set('room', 'PALCO1');
+        window.location.replace(u.toString());
+        return;
+      }
+      this._emit('events-list-update', updatedList);
+      return;
+    }
+
+    if (msg.action === 'purge_all_ghosts' && Array.isArray(msg.activeCodes)) {
+      const activeSet = new Set(msg.activeCodes.map(c => String(c).toUpperCase()));
+      try {
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('stagetimer_live_state_')) {
+            const c = key.replace('stagetimer_live_state_', '').toUpperCase();
+            if (c && !activeSet.has(c) && c !== 'PALCO1') {
+              localStorage.removeItem(key);
+              this._recordDeletedEvent(c);
+            }
+          }
+        });
+      } catch (e) {}
+      if (!activeSet.has(this.cleanRoom)) {
+        const u = new URL(location.href);
+        u.searchParams.set('room', 'PALCO1');
+        window.location.replace(u.toString());
+        return;
+      }
+      const filtered = this.getEventsList().filter(e => activeSet.has(e.code));
+      this._saveEventsList(filtered, false);
+      this._emit('events-list-update', filtered);
       return;
     }
   }
@@ -267,10 +330,14 @@ class UniversalSyncClient {
         this.mqttTopicState,
         this.mqttTopicPresence,
         this.mqttTopicRegistry,
+        this.legacyMqttTopicRegistry,
         this.mqttTopicGlobalPresence,
+        this.mqttTopicCommands,
+        this.mqttTopicAllCmd,
         this.mqttTopicDeviceCmd,
         this.mqttTopicRoomCmd,
-        this.mqttTopicAllCmd
+        'stagetimer_live/_cmd/+',
+        'stagetimer_live/_cmd_room/+'
       ];
 
       // If in Master mode, also subscribe to all room state broadcasts
@@ -290,8 +357,13 @@ class UniversalSyncClient {
       try {
         const msg = JSON.parse(payload.toString());
 
-        // Remote device commands (switch view, change room, reload)
-        if (topic === this.mqttTopicDeviceCmd || topic === this.mqttTopicRoomCmd || topic === this.mqttTopicAllCmd) {
+        // Remote device commands (switch view, change room, reload, purge)
+        if (topic === this.mqttTopicCommands ||
+            topic === this.mqttTopicAllCmd ||
+            topic === this.mqttTopicDeviceCmd ||
+            topic === this.mqttTopicRoomCmd ||
+            topic.startsWith('stagetimer_live/_cmd/') ||
+            topic.startsWith('stagetimer_live/_cmd_room/')) {
           if (msg.sender === this.clientId) return;
           this._handleRemoteCommand(msg);
           return;
@@ -319,7 +391,7 @@ class UniversalSyncClient {
               this._emit('multi-room-state', { room: roomCode, data: msg.data });
             }
           }
-        } else if (topic === this.mqttTopicRegistry) {
+        } else if (topic === this.mqttTopicRegistry || topic === this.legacyMqttTopicRegistry) {
           if (msg && Array.isArray(msg.events)) {
             this._mergeIncomingRegistry(msg.events, Boolean(msg.forceReplace));
           }
@@ -376,10 +448,11 @@ class UniversalSyncClient {
   }
 
   sendDeviceCommand(targetDeviceUuid, command) {
+    const target = String(targetDeviceUuid || 'ALL').trim();
     const payload = {
       sender: this.clientId,
       sentAt: Date.now(),
-      targetUuid: targetDeviceUuid,
+      targetUuid: target,
       ...command
     };
 
@@ -393,10 +466,15 @@ class UniversalSyncClient {
     // 2. Cloud MQTT (cross-device over network)
     if (this.mqttClient && this.mqttClient.connected) {
       try {
-        const topic = targetDeviceUuid === 'ALL'
-          ? this.mqttTopicAllCmd
-          : `stagetimer_live/_cmd/${targetDeviceUuid}`;
-        this.mqttClient.publish(topic, JSON.stringify(payload), { qos: 0, retain: false });
+        const json = JSON.stringify(payload);
+        // Universal command channel so every device receives the command without topic loss
+        this.mqttClient.publish(this.mqttTopicCommands, json, { qos: 0, retain: false });
+
+        if (target === 'ALL') {
+          this.mqttClient.publish(this.mqttTopicAllCmd, json, { qos: 0, retain: false });
+        } else {
+          this.mqttClient.publish(`stagetimer_live/_cmd/${target}`, json, { qos: 0, retain: false });
+        }
       } catch (e) {}
     }
   }
@@ -602,11 +680,9 @@ class UniversalSyncClient {
     } catch (e) {}
     if (publish && this.mqttClient && this.mqttClient.connected) {
       try {
-        this.mqttClient.publish(
-          this.mqttTopicRegistry,
-          JSON.stringify({ sender: this.clientId, forceReplace, events: normalized }),
-          { qos: 0, retain: true }
-        );
+        const payload = JSON.stringify({ sender: this.clientId, forceReplace, events: normalized });
+        this.mqttClient.publish(this.mqttTopicRegistry, payload, { qos: 0, retain: true });
+        this.mqttClient.publish(this.legacyMqttTopicRegistry, payload, { qos: 0, retain: true });
       } catch (e) {}
     }
     this._emit('events-list-update', normalized);
@@ -616,31 +692,43 @@ class UniversalSyncClient {
     if (!Array.isArray(incomingList)) return;
     const deletedSet = this._getDeletedEvents();
 
-    if (forceReplace) {
-      const replaced = incomingList
-        .filter(item => item && !deletedSet.has((item.code || item.id || '').toUpperCase()))
-        .map(rawItem => this._normalizeRegistryItem(rawItem));
-      this._saveEventsList(replaced, false);
+    const validIncoming = incomingList
+      .filter(item => item && !deletedSet.has((item.code || item.id || '').toUpperCase()))
+      .map(rawItem => this._normalizeRegistryItem(rawItem));
+
+    // Cloud registry is authoritative: do NOT resurrect obsolete local events
+    if (validIncoming.length > 0) {
+      const incomingCodes = new Set(validIncoming.map(e => e.code));
+
+      try {
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('stagetimer_live_state_')) {
+            const roomCode = key.replace('stagetimer_live_state_', '').toUpperCase();
+            if (roomCode && !incomingCodes.has(roomCode) && roomCode !== 'PALCO1') {
+              localStorage.removeItem(key);
+              this._recordDeletedEvent(roomCode);
+            }
+          }
+        });
+      } catch (e) {}
+
+      this._saveEventsList(validIncoming, false);
       return;
     }
 
-    const localList = this.getEventsList();
-    const map = new Map();
-    localList.forEach(item => {
-      if (!deletedSet.has(item.code)) map.set(item.code, item);
-    });
-
-    incomingList.forEach(rawItem => {
-      if (!rawItem) return;
-      const item = this._normalizeRegistryItem(rawItem);
-      if (deletedSet.has(item.code)) return;
-      const existing = map.get(item.code);
-      if (!existing || (item.updatedAt || 0) >= (existing.updatedAt || 0)) {
-        map.set(item.code, item);
-      }
-    });
-    const merged = Array.from(map.values());
-    this._saveEventsList(merged, false);
+    if (forceReplace && validIncoming.length === 0) {
+      const freshCode = 'PALCO1';
+      this._unmarkDeletedEvent(freshCode);
+      const defaultList = [this._normalizeRegistryItem({
+        id: freshCode,
+        code: freshCode,
+        title: 'Palco Principal',
+        timersCount: 0,
+        currentDay: 1,
+        updatedAt: Date.now()
+      })];
+      this._saveEventsList(defaultList, false);
+    }
   }
 
   _syncEventInRegistry() {
@@ -757,6 +845,9 @@ class UniversalSyncClient {
       localStorage.removeItem(`stagetimer_live_state_${cleanCode}`);
     } catch (e) {}
 
+    // Broadcast purge command so every connected screen purges this event immediately
+    this.sendDeviceCommand('ALL', { action: 'purge_event', code: cleanCode });
+
     // Clear retained state on MQTT for that deleted room
     if (this.mqttClient && this.mqttClient.connected) {
       try {
@@ -782,6 +873,14 @@ class UniversalSyncClient {
       })];
     }
 
+    this._saveEventsList(list, true, true);
+    return list;
+  }
+
+  forceCloudRegistrySync() {
+    const list = this.getEventsList();
+    const activeCodes = list.map(e => e.code);
+    this.sendDeviceCommand('ALL', { action: 'purge_all_ghosts', activeCodes });
     this._saveEventsList(list, true, true);
     return list;
   }
@@ -819,6 +918,8 @@ class UniversalSyncClient {
       currentDay: 1,
       updatedAt: Date.now()
     })];
+
+    this.sendDeviceCommand('ALL', { action: 'purge_all_ghosts', activeCodes: [freshCode] });
 
     this._saveEventsList(defaultList, true, true);
     this._state = this._createDefaultRoom(freshCode);

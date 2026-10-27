@@ -54,7 +54,7 @@ client.on('events-list-update', () => {
 
 // Update navigation links with current room
 const q = `?room=${encodeURIComponent(roomId)}`;
-['hub', 'controller', 'operator', 'viewer', 'lineup', 'master'].forEach(key => {
+['hub', 'viewer', 'lineup'].forEach(key => {
   const el = document.getElementById(`ln-nav-${key}`);
   if (el) {
     el.href = `${key === 'hub' ? 'index' : key}.html${q}`;

@@ -160,19 +160,19 @@
               <span>Mudar Modo do Ecrã Remoto:</span>
             </div>
             <div class="device-btn-group">
-              <button type="button" class="device-btn" data-cmd="viewer" title="Mudar este ecrã para Telão de Palco">
+              <button type="button" class="device-btn" data-cmd="viewer" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Telão de Palco">
                 📺 Palco
               </button>
-              <button type="button" class="device-btn" data-cmd="lineup" title="Mudar este ecrã para Modo Lista Backstage">
+              <button type="button" class="device-btn" data-cmd="lineup" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Lista Backstage">
                 📋 Lista
               </button>
-              <button type="button" class="device-btn" data-cmd="operator" title="Mudar este ecrã para Modo Operador Mobile">
+              <button type="button" class="device-btn" data-cmd="operator" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Operador Mobile">
                 📱 Operador
               </button>
-              <button type="button" class="device-btn" data-cmd="controller" title="Mudar este ecrã para Controlador Régie">
+              <button type="button" class="device-btn" data-cmd="controller" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Controlador Régie">
                 🎛️ Régie
               </button>
-              <button type="button" class="device-btn btn-warning-action" data-cmd="reload" title="Recarregar página no dispositivo">
+              <button type="button" class="device-btn btn-warning-action" data-cmd="reload" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Recarregar página no dispositivo">
                 🔄 Recarregar
               </button>
             </div>
@@ -190,6 +190,12 @@
       } else {
         // In-place update of dynamic values only
         card.dataset.deviceRoom = dev.room || 'PALCO1';
+
+        // Update button targets
+        card.querySelectorAll('[data-cmd]').forEach(b => {
+          b.dataset.targetUuid = dev.deviceUuid;
+          b.dataset.targetRoom = dev.room || 'PALCO1';
+        });
 
         const seenEl = card.querySelector('.device-seen-text');
         if (seenEl && seenEl.textContent.trim() !== seenLabel) seenEl.textContent = seenLabel;
@@ -220,11 +226,22 @@
       const btn = e.target.closest('[data-cmd]');
       if (!btn) return;
       const card = btn.closest('[data-device-uuid]');
-      if (!card) return;
-
-      const uuid = card.dataset.deviceUuid;
-      const room = card.dataset.deviceRoom || 'PALCO1';
+      const uuid = btn.dataset.targetUuid || card?.dataset.deviceUuid;
+      const room = btn.dataset.targetRoom || card?.dataset.deviceRoom || 'PALCO1';
       const cmd = btn.dataset.cmd;
+
+      if (!uuid) return;
+
+      // Instant visual click feedback
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '⚡ Enviado!';
+      btn.style.filter = 'brightness(1.5)';
+      btn.style.borderColor = '#55efc4';
+      setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        btn.style.filter = '';
+        btn.style.borderColor = '';
+      }, 1000);
 
       if (cmd === 'reload') {
         masterClient.sendDeviceCommand(uuid, { action: 'reload' });
@@ -246,6 +263,8 @@
       const targetRoom = select.value;
       if (uuid && targetRoom) {
         masterClient.sendDeviceCommand(uuid, { action: 'switch_room', room: targetRoom });
+        select.style.borderColor = '#55efc4';
+        setTimeout(() => { select.style.borderColor = ''; }, 1000);
       }
     });
   }
@@ -255,6 +274,8 @@
     $cmdAllViewer.addEventListener('click', () => {
       if (confirm('Mudar TODOS os dispositivos online para o Modo Palco (Telão)?')) {
         masterClient.sendDeviceCommand('ALL', { action: 'navigate', url: 'viewer.html' });
+        $cmdAllViewer.textContent = '⚡ Enviado a Todos!';
+        setTimeout(() => { $cmdAllViewer.textContent = '📺 Mudar TODOS para Palco'; }, 1500);
       }
     });
   }
@@ -263,6 +284,8 @@
     $cmdAllLineup.addEventListener('click', () => {
       if (confirm('Mudar TODOS os dispositivos online para o Modo Lista?')) {
         masterClient.sendDeviceCommand('ALL', { action: 'navigate', url: 'lineup.html' });
+        $cmdAllLineup.textContent = '⚡ Enviado a Todos!';
+        setTimeout(() => { $cmdAllLineup.textContent = '📋 Mudar TODOS para Lista'; }, 1500);
       }
     });
   }
@@ -271,6 +294,8 @@
     $cmdAllReload.addEventListener('click', () => {
       if (confirm('Recarregar TODOS os ecrãs e dispositivos remotos agora?')) {
         masterClient.sendDeviceCommand('ALL', { action: 'reload' });
+        $cmdAllReload.textContent = '⚡ Recarregar Enviado!';
+        setTimeout(() => { $cmdAllReload.textContent = '🔄 Recarregar TODOS os Ecrãs'; }, 1500);
       }
     });
   }
@@ -388,6 +413,19 @@
           renderMultiview();
           alert('Todos os palcos foram apagados. O sistema está agora 100% limpo com um Palco Principal vazio.');
         }
+      }
+    });
+  }
+
+  const $cleanGhostsBtn = document.getElementById('master-clean-ghosts-btn');
+  if ($cleanGhostsBtn) {
+    $cleanGhostsBtn.addEventListener('click', () => {
+      if (confirm('Purgar todos os palcos fantasmas e forçar sincronização limpa com a nuvem?')) {
+        masterClient.forceCloudRegistrySync();
+        renderEventsManager();
+        renderMultiview();
+        $cleanGhostsBtn.textContent = '✅ Nuvem Limpa!';
+        setTimeout(() => { $cleanGhostsBtn.textContent = '👻 Purgar Fantasmas da Nuvem'; }, 2000);
       }
     });
   }
