@@ -18,18 +18,20 @@ html, body {
   user-select: none;
 }
 
-/* ─── Timer Name ────────────────────────────────────────────────── */
+/* ─── Timer Name (Artist on Stage) ──────────────────────────────── */
 
 .viewer-timer-name {
-  font-size: clamp(1rem, 3vw, 2.5rem);
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-size: clamp(1.8rem, 4.8vw, 4.2rem);
+  font-weight: 700;
+  color: #ffffff;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
-  margin-bottom: 1vh;
+  letter-spacing: 0.14em;
+  margin-top: -6vh;
+  margin-bottom: 3.5vh;
   text-align: center;
   padding: 0 5vw;
-  opacity: 0.8;
+  opacity: 0.95;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
 }
 
 /* ─── Timer Display ─────────────────────────────────────────────── */
@@ -266,12 +268,12 @@ html, body {
   line-height: 1.1;
 }
 
-/* ─── Bottom Right Next Artist ──────────────────────────────────── */
+/* ─── Top Right Next Artist ─────────────────────────────────────── */
 
 .viewer-next {
   position: absolute;
-  bottom: 24px;
-  right: 28px;
+  top: 24px;
+  right: 36px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
