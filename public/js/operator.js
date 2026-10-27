@@ -58,6 +58,8 @@ updateNavLinks();
 
 function updateNavLinks() {
   const code = encodeURIComponent(roomId);
+  const $navHub = document.getElementById('nav-hub');
+  if ($navHub) $navHub.href = `index.html?room=${code}`;
   $navController.href = `controller.html?room=${code}`;
   $navOperator.href = `operator.html?room=${code}`;
   $navViewer.href = `viewer.html?room=${code}`;

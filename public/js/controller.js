@@ -295,10 +295,12 @@ function updateRoomInfo() {
   $controllerLink.href = operatorUrl;
   $controllerLink.textContent = `operator.html?room=${code}`;
 
+  const topHub = document.getElementById('top-nav-hub');
   const topController = document.getElementById('top-nav-controller');
   const topOperator = document.getElementById('top-nav-operator');
   const topViewer = document.getElementById('top-nav-viewer');
   const topLineup = document.getElementById('top-nav-lineup');
+  if (topHub) topHub.href = `${basePath}/index.html?room=${encodeURIComponent(code)}`;
   if (topController) topController.href = controllerUrl;
   if (topOperator) topOperator.href = operatorUrl;
   if (topViewer) topViewer.href = viewerUrl;
