@@ -248,11 +248,13 @@ function render() {
     $nowNotes.style.display = 'none';
   } else {
     const color = getTimerColor(activeTimer);
+    const displayVal = getTimerDisplayValue(activeTimer);
+    const isLong = displayVal.length > 5;
     $nowBadge.textContent = activeTimer.state === 'running' ? '● EM PALCO AGORA' : '● PREPARADO EM PALCO';
     $nowName.textContent = activeTimer.name;
     $nowSlot.textContent = activeTimer.startTime ? `Horário: ${activeTimer.startTime}` : `Duração: ${formatTime(activeTimer.duration)}`;
-    $nowTimer.textContent = getTimerDisplayValue(activeTimer);
-    $nowTimer.className = `lineup-now-timer ${color}`;
+    $nowTimer.textContent = displayVal;
+    $nowTimer.className = `lineup-now-timer ${color}${isLong ? ' is-long' : ''}`;
 
     if (activeTimer.notes && activeTimer.notes.trim()) {
       $nowNotes.textContent = activeTimer.notes.trim();
