@@ -301,7 +301,7 @@ function render() {
       const isAct = t.id === state.activeTimerId;
       const endTimeStr = getEstimatedEndTime(t);
       return `
-        <div class="op-queue-item ${isAct ? 'active' : ''}" data-id="${t.id}" draggable="true">
+        <div class="op-queue-item ${isAct ? 'active' : ''}" data-id="${t.id}">
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
             <span class="op-queue-name" style="flex: 1; min-width: 0; overflow-wrap: break-word;"><span style="color:var(--text-muted); margin-right:6px;">⠿</span>${escapeHtml(t.name)}</span>
             <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">

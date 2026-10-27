@@ -381,7 +381,7 @@ function renderTimers() {
     ].filter(Boolean).join(' ');
 
     return `
-      <div class="${cardClasses}" data-timer-id="${timer.id}" draggable="true">
+      <div class="${cardClasses}" data-timer-id="${timer.id}">
         <div class="timer-card-top">
           <span class="drag-handle" title="Arraste para reorganizar a ordem">⠿</span>
           <input
@@ -733,7 +733,7 @@ $timerList.addEventListener('mousedown', (e) => {
 
 $timerList.addEventListener('mouseup', (e) => {
   const card = e.target.closest('.timer-card');
-  if (card) card.setAttribute('draggable', 'true');
+  if (card) card.removeAttribute('draggable');
 });
 
 $timerList.addEventListener('dragstart', (e) => {
@@ -750,6 +750,7 @@ $timerList.addEventListener('dragstart', (e) => {
 $timerList.addEventListener('dragend', () => {
   $timerList.querySelectorAll('.timer-card').forEach(c => {
     c.classList.remove('dragging', 'drag-over');
+    c.removeAttribute('draggable');
   });
   draggedId = null;
 });
