@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>StageTimer — Modo Operador (Mobile)</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/operator.css">
+</head>
+<body>
+  <div class="op-app">
+    <!-- Header -->
+    <header class="op-header">
+      <div class="op-room-box">
+        <span style="font-size: 1.2rem;">📱</span>
+        <input id="op-room-input" class="input input-mono op-room-input" value="PALCO1" aria-label="Room Code">
+        <button id="op-join-btn" class="btn btn-primary op-join-btn">Sala</button>
+      </div>
+
+      <div id="op-conn-badge" class="connection-badge connected">
+        <span class="connection-dot"></span> Online
+      </div>
+    </header>
+
+    <!-- Mode Switcher Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 16px 0;">
+      <div class="mode-nav">
+        <a id="nav-controller" href="controller.html" class="mode-pill">🎛️ Controlador</a>
+        <a id="nav-operator" href="operator.html" class="mode-pill active">📱 Operador</a>
+        <a id="nav-viewer" href="viewer.html" class="mode-pill" target="_blank">📺 Palco</a>
+      </div>
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <span style="font-size: 0.7rem; color: var(--text-secondary);">Fundo:</span>
+        <input type="color" id="op-bg-color" value="#000000" style="width: 26px; height: 26px; border: 1px solid var(--border); border-radius: 6px; background: transparent; padding: 0;">
+      </div>
+    </div>
+
+    <!-- Live Stage Hero Display -->
+    <section id="op-hero" class="op-hero">
+      <div id="op-hero-badge" class="op-hero-badge">PARADO</div>
+      <div id="op-hero-name" class="op-hero-name">Main Keynote</div>
+      <div id="op-hero-time" class="op-hero-time">05:00</div>
+      <div class="op-hero-progress">
+        <div id="op-hero-bar" class="op-hero-progress-bar" style="width: 0%"></div>
+      </div>
+    </section>
+
+    <!-- Giant Touch Controls -->
+    <section class="op-controls">
+      <div class="op-primary-controls">
+        <button id="op-btn-toggle" class="btn op-btn-giant op-btn-play">
+          ▶ INICIAR
+        </button>
+        <button id="op-btn-reset" class="btn op-btn-giant op-btn-reset">
+          ⏹ RESET
+        </button>
+      </div>
+
+      <div class="op-adjust-controls">
+        <button id="op-btn-minus1m" class="btn op-btn-nudge">-1 Min</button>
+        <button id="op-btn-plus1m" class="btn op-btn-nudge">+1 Min</button>
+        <button id="op-btn-plus5m" class="btn op-btn-nudge">+5 Min</button>
+      </div>
+    </section>
+
+    <!-- Quick Stage Prompter Message -->
+    <section class="op-section">
+      <div class="op-section-title">
+        <span>💬 Mensagem de Palco</span>
+        <span id="op-msg-status" style="color: var(--accent); font-size: 0.7rem;"></span>
+      </div>
+      <div class="op-msg-row">
+        <input id="op-msg-input" class="input op-msg-input" placeholder="Ex: Terminar em 2 min...">
+        <button id="op-msg-send" class="btn btn-primary" style="padding: 0 16px;">Enviar</button>
+        <button id="op-msg-clear" class="btn btn-danger" style="padding: 0 12px;">✕</button>
+      </div>
+      <div class="op-presets">
+        <button class="op-preset-chip" data-msg="Por favor, conclua!">⏳ Concluir!</button>
+        <button class="op-preset-chip" data-msg="Últimos 2 minutos">⚠️ 2 Minutos</button>
+        <button class="op-preset-chip" data-msg="Tempo Esgotado!">🛑 Tempo Esgotado</button>
+        <button class="op-preset-chip" data-msg="Fale mais perto do microfone">🎤 Microfone</button>
+      </div>
+    </section>
+
+    <!-- Create New Artist / Act -->
+    <section class="op-section">
+      <div class="op-section-title">
+        <span>🎤 Adicionar Novo Artista / Ato</span>
+      </div>
+      <div class="op-msg-row">
+        <input id="op-artist-name" class="input op-msg-input" placeholder="Nome do Artista / Banda...">
+        <input id="op-artist-duration" class="input input-mono" style="width: 85px; font-size: 16px !important; text-align: center; border-radius: 10px;" value="30:00" placeholder="MM:SS">
+      </div>
+      <div class="op-presets" style="margin-bottom: 10px;">
+        <button type="button" class="op-dur-chip" data-min="5">5m</button>
+        <button type="button" class="op-dur-chip" data-min="15">15m</button>
+        <button type="button" class="op-dur-chip" data-min="30">30m</button>
+        <button type="button" class="op-dur-chip" data-min="45">45m</button>
+        <button type="button" class="op-dur-chip" data-min="60">60m</button>
+        <button type="button" class="op-dur-chip" data-min="90">1h30</button>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <button id="op-add-artist-btn" class="btn btn-primary" style="padding: 12px; font-weight: 600; border-radius: 10px;">+ Adicionar à Fila</button>
+        <button id="op-live-artist-btn" class="btn btn-success" style="padding: 12px; font-weight: 600; border-radius: 10px;">🔴 Criar e Pôr no Ar</button>
+      </div>
+    </section>
+
+    <!-- Timer Queue List -->
+    <section class="op-section" style="margin-bottom: 24px;">
+      <div class="op-section-title">
+        <span>📋 Lineup / Fila de Artistas (Toque para pôr no ar)</span>
+      </div>
+      <div id="op-queue-list" class="op-queue-list">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+  </div>
+
+  <!-- Cloud MQTT over WSS for reliable multi-network sync -->
+  <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
+  <script src="js/local-sync.js"></script>
+  <script src="js/operator.js"></script>
+</body>
+</html>
