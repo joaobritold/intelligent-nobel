@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StageTimer — Stage Screen</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/viewer.css">
+</head>
+<body>
+  <div class="viewer">
+    <!-- Connection Status Indicator -->
+    <div id="viewer-connection" class="viewer-connection disconnected" title="Connection status"></div>
+
+    <!-- Room Code Bar (hover top to change room) -->
+    <div id="viewer-room-bar" style="position: absolute; top: 12px; left: 16px; display: flex; align-items: center; gap: 6px; background: rgba(22, 33, 62, 0.85); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); opacity: 0.15; transition: opacity 0.25s; z-index: 20;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.15'">
+      <span style="font-size: 0.7rem; color: var(--text-secondary);">Room:</span>
+      <input id="viewer-room-input" class="input input-mono" style="width: 90px; padding: 2px 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;" value="DEFAULT">
+      <button id="viewer-room-btn" class="btn btn-primary btn-sm" style="padding: 2px 8px; font-size: 0.7rem;">Join</button>
+    </div>
+
+    <!-- Screen hint for operator/fullscreen -->
+    <div class="viewer-hint">Double-click or press 'F' for Fullscreen</div>
+
+    <!-- Active Timer Name -->
+    <div id="viewer-timer-name" class="viewer-timer-name"></div>
+
+    <!-- Big Digital Timer Display -->
+    <div id="viewer-timer" class="viewer-timer">--:--</div>
+
+    <!-- Empty state when no timer is active -->
+    <div id="viewer-empty" class="viewer-empty" style="display: none;">
+      <div class="viewer-empty-icon">⏳</div>
+      <div class="viewer-empty-text">Standby — Waiting for Timer</div>
+    </div>
+
+    <!-- Bottom Progress Bar -->
+    <div class="viewer-progress">
+      <div id="viewer-progress-bar" class="viewer-progress-bar"></div>
+    </div>
+
+    <!-- Prompter Message Overlay -->
+    <div id="viewer-message" class="viewer-message"></div>
+
+    <!-- Overtime / Finish Flash effect -->
+    <div id="flash-overlay" class="viewer-flash-overlay"></div>
+  </div>
+
+  <!-- Cloud MQTT over WSS for reliable multi-network sync -->
+  <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
+  <!-- Local browser sync + Cloud -->
+  <script src="js/local-sync.js"></script>
+  <script src="js/viewer.js"></script>
+</body>
+</html>
