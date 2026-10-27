@@ -372,8 +372,8 @@
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=9"></script>
-  <script src="js/local-sync.js?v=9"></script>
+  <script src="js/pwa.js?v=10"></script>
+  <script src="js/local-sync.js?v=10"></script>
   <script>
     const $toggleQr = document.getElementById('toggle-qr-btn');
     const $qrContainer = document.getElementById('qr-container');
@@ -425,8 +425,30 @@
 
     function renderEventsList() {
       if (!$eventsList) return;
-      const currentCode = ($room.value.trim() || 'PALCO1').toUpperCase();
       const list = hubClient.getEventsList();
+
+      if (list.length === 0) {
+        $eventsList.innerHTML = `
+          <div style="padding: 16px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px dashed var(--border); text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+            📭 Nenhum evento criado neste momento.<br>
+            Clique em <strong>🎛️ Controlador</strong> abaixo (com uma das 2 passes mestras) para criar um evento novo!
+          </div>
+        `;
+        if ($unlockBadge) {
+          $unlockBadge.style.color = '#fdcb6e';
+          $unlockBadge.textContent = '🔒 Crie primeiro um evento no Controlador';
+        }
+        [$operator, $viewer, $lineup].forEach(card => {
+          if (card) card.style.opacity = '0.5';
+        });
+        return;
+      }
+
+      let currentCode = ($room.value.trim() || '').toUpperCase();
+      if (!list.some(e => e.code === currentCode)) {
+        currentCode = list[0].code;
+        $room.value = currentCode;
+      }
 
       $eventsList.innerHTML = list.map((ev) => {
         const isSelected = ev.code === currentCode;

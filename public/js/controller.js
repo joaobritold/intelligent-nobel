@@ -48,19 +48,26 @@ const $newEventPassInput = document.getElementById('new-event-pass-input');
 const $newEventConfirm = document.getElementById('new-event-confirm');
 const $newEventCancel = document.getElementById('new-event-cancel');
 const $ctrlEventsManageList = document.getElementById('ctrl-events-manage-list');
+const $ctrlDeleteAllEventsBtn = document.getElementById('ctrl-delete-all-events-btn');
+let hasAutoPromptedEmptyEvents = false;
 
 function renderEventSelector() {
   if (!$ctrlEventSelect || typeof client.getEventsList !== 'function') return;
-  const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
+  const currentCode = (state?.id || roomId || 'NOVO').toUpperCase();
   const list = client.getEventsList();
-  if (!list.some(e => e.code === currentCode)) {
-    list.unshift({
-      code: currentCode,
-      title: state?.name || currentCode,
-      pass: state?.eventPass || 'palco 1',
-      timersCount: state?.timers?.length || 0
-    });
+
+  if (list.length === 0) {
+    $ctrlEventSelect.innerHTML = `<option value="">(Sem eventos — Crie um novo)</option><option value="__NEW_CLEAN__">✨ + Criar Novo Evento...</option>`;
+    if ($ctrlEventsManageList) {
+      $ctrlEventsManageList.innerHTML = `<div style="padding: 10px; text-align: center; color: var(--text-secondary); font-size: 0.78rem;">Nenhum evento criado. Preencha acima o Nome e a Pass para criar do zero!</div>`;
+    }
+    if (!hasAutoPromptedEmptyEvents) {
+      hasAutoPromptedEmptyEvents = true;
+      setTimeout(() => openNewEventModal(), 120);
+    }
+    return;
   }
+
   $ctrlEventSelect.innerHTML = list.map(ev => {
     const passLabel = ev.pass ? ` [Pass: ${ev.pass}]` : '';
     return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>${ev.title || ev.code}${passLabel}</option>`;
@@ -73,11 +80,11 @@ function renderEventSelector() {
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid ${isAct ? '#00b894' : 'var(--border)'}; font-size: 0.8rem;">
           <div>
             <strong>${ev.title || ev.code}</strong>
-            <span style="color: #55efc4; font-family: var(--font-mono); margin-left: 6px;">Pass: ${ev.pass || 'palco 1'}</span>
+            <span style="color: #55efc4; font-family: var(--font-mono); margin-left: 6px;">Pass: ${ev.pass || ''}</span>
           </div>
           <div style="display: flex; gap: 6px;">
             <button type="button" class="btn btn-sm ${isAct ? 'btn-primary' : ''}" data-open-ev="${ev.code}" style="padding: 3px 8px; font-size: 0.72rem;">${isAct ? 'Ativo' : 'Abrir'}</button>
-            ${list.length > 1 && ev.code !== 'PALCO1' ? `<button type="button" class="btn btn-sm btn-danger" data-del-ev="${ev.code}" style="padding: 3px 8px; font-size: 0.72rem;">🗑️</button>` : ''}
+            <button type="button" class="btn btn-sm btn-danger" data-del-ev="${ev.code}" style="padding: 3px 8px; font-size: 0.72rem;" title="Apagar este evento">🗑️</button>
           </div>
         </div>
       `;
@@ -161,10 +168,27 @@ if ($ctrlEventsManageList) {
         const remaining = client.deleteEventFromRegistry(codeToDel);
         if ((state?.id || roomId) === codeToDel && remaining.length > 0) {
           location.search = `?room=${encodeURIComponent(remaining[0].code)}`;
+        } else if (remaining.length === 0) {
+          client.clearAllEvents();
+          renderEventSelector();
+          renderTimers();
+          renderPreview();
         } else {
           renderEventSelector();
         }
       }
+    }
+  });
+}
+
+if ($ctrlDeleteAllEventsBtn) {
+  $ctrlDeleteAllEventsBtn.addEventListener('click', () => {
+    if (confirm('Tem a certeza que pretende apagar TODOS os eventos criados e começar tudo do zero?')) {
+      client.clearAllEvents();
+      renderEventSelector();
+      renderTimers();
+      renderPreview();
+      showToast('✓ Todos os eventos foram apagados!');
     }
   });
 }

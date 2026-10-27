@@ -16,14 +16,14 @@
 
   function getEventInfo(roomCode) {
     try {
-      const raw = localStorage.getItem('stagetimer_events_registry');
+      const raw = localStorage.getItem('stagetimer_v3_events_registry');
       const list = raw ? JSON.parse(raw) : [];
       if (Array.isArray(list)) {
         const found = list.find(e => (e.code || e.id || '').toUpperCase() === roomCode);
         if (found) return found;
       }
     } catch (e) {}
-    return { code: 'PALCO1', title: 'RC26', pass: 'palco 1' };
+    return { code: roomCode, title: roomCode, pass: '' };
   }
 
   // Check if already unlocked for this role
