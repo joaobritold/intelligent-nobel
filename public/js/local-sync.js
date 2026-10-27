@@ -223,6 +223,7 @@ class UniversalSyncClient {
     });
 
     this._state = incoming;
+    this._enforceInactiveReset();
     this._saveLocal();
 
     if (fromCloud && this.channel) {
@@ -234,7 +235,20 @@ class UniversalSyncClient {
     this._emit('room-state', this._state);
   }
 
+  _enforceInactiveReset() {
+    if (!this._state || !Array.isArray(this._state.timers)) return;
+    for (const t of this._state.timers) {
+      if (t.id !== this._state.activeTimerId) {
+        t.state = 'stopped';
+        t.elapsed = 0;
+        t.liveElapsed = 0;
+        t.startedAt = null;
+      }
+    }
+  }
+
   _commitStateChange(retain = true) {
+    this._enforceInactiveReset();
     const now = Date.now();
     this._state.updatedAt = now;
 
@@ -359,6 +373,9 @@ class UniversalSyncClient {
 
     switch (action) {
       case 'start':
+        // Starting any timer automatically makes it the active ON AIR timer
+        // and resets all other timers
+        this._state.activeTimerId = timer.id;
         if (timer.state !== 'running') {
           if (timer.state === 'finished') timer.elapsed = 0;
           timer.state = 'running';
