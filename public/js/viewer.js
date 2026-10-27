@@ -72,16 +72,18 @@ client.connect();
 // ─── Helpers ───────────────────────────────────────────────────────
 
 function formatTime(ms) {
-  if (ms < 0) ms = 0;
-  const totalSeconds = Math.floor(ms / 1000);
+  const isNegative = ms < 0;
+  const absMs = Math.abs(ms);
+  const totalSeconds = Math.floor(absMs / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
+  const prefix = isNegative ? '-' : '';
   if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return `${prefix}${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  return `${prefix}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 function getTimerElapsed(timer) {
@@ -97,6 +99,7 @@ function getTimerColor(timer) {
   if (timer.state === 'finished') return 'finished';
   if (timer.mode === 'countdown') {
     const remaining = timer.duration - getTimerElapsed(timer);
+    if (remaining <= 0) return 'finished';
     if (remaining <= timer.dangerAt) return 'danger';
     if (remaining <= timer.warnAt) return 'warn';
     return 'safe';
@@ -109,12 +112,9 @@ function getTimerDisplayValue(timer) {
     const now = new Date();
     return now.toLocaleTimeString('en-US', { hour12: false });
   }
-  let elapsed = timer.elapsed;
-  if (timer.state === 'running' && timer.startedAt) {
-    elapsed += Date.now() - timer.startedAt;
-  }
+  const elapsed = getTimerElapsed(timer);
   if (timer.mode === 'countdown') {
-    const remaining = Math.max(0, timer.duration - elapsed);
+    const remaining = timer.duration - elapsed;
     return formatTime(remaining);
   }
   // countup
@@ -208,8 +208,9 @@ function render() {
     $progress.style.width = '0%';
   }
 
-  // Flash overlay for finished
-  if (activeTimer.state === 'finished') {
+  // Flash overlay for overtime / finished
+  const isOvertime = activeTimer.mode === 'countdown' && getTimerElapsed(activeTimer) >= activeTimer.duration;
+  if (activeTimer.state === 'finished' || isOvertime) {
     $flashOverlay.classList.add('active');
   } else {
     $flashOverlay.classList.remove('active');

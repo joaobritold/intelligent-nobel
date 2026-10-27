@@ -112,16 +112,18 @@ client.connect();
 // ─── Helpers ───────────────────────────────────────────────────────
 
 function formatTime(ms) {
-  if (ms < 0) ms = 0;
-  const totalSeconds = Math.floor(ms / 1000);
+  const isNegative = ms < 0;
+  const absMs = Math.abs(ms);
+  const totalSeconds = Math.floor(absMs / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
+  const prefix = isNegative ? '-' : '';
   if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return `${prefix}${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  return `${prefix}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 function parseTimeInput(str) {
@@ -164,6 +166,7 @@ function getTimerColor(timer) {
   }
   if (timer.mode === 'countdown') {
     const remaining = timer.duration - elapsed;
+    if (remaining <= 0) return 'finished';
     if (remaining <= timer.dangerAt) return 'danger';
     if (remaining <= timer.warnAt) return 'warn';
     return 'safe';
@@ -181,7 +184,7 @@ function getTimerDisplayValue(timer) {
     elapsed += Date.now() - timer.startedAt;
   }
   if (timer.mode === 'countdown') {
-    const remaining = Math.max(0, timer.duration - elapsed);
+    const remaining = timer.duration - elapsed;
     return formatTime(remaining);
   }
   // countup

@@ -294,26 +294,15 @@ class UniversalSyncClient {
     if (this.tickInterval) clearInterval(this.tickInterval);
     this.tickInterval = setInterval(() => {
       if (!this._state) return;
-      const now = Date.now();
       let anyRunning = false;
-      let anyFinishedJustNow = false;
 
       for (const timer of this._state.timers) {
         if (timer.state === 'running' && timer.startedAt) {
           anyRunning = true;
-          const totalElapsed = timer.elapsed + (now - timer.startedAt);
-          if (timer.mode === 'countdown' && totalElapsed >= timer.duration) {
-            timer.elapsed = timer.duration;
-            timer.state = 'finished';
-            timer.startedAt = null;
-            anyFinishedJustNow = true;
-          }
         }
       }
 
-      if (anyFinishedJustNow && this.role === 'controller') {
-        this._commitStateChange();
-      } else if (anyRunning || anyFinishedJustNow) {
+      if (anyRunning) {
         this._emit('room-state', this._state);
       }
     }, 100);
