@@ -125,52 +125,7 @@ function computeScheduleSlots(timers, activeIdx) {
 }
 
 function getEventEndTime(st) {
-  if (!st || !Array.isArray(st.timers) || st.timers.length === 0) return '--:--';
-  const lastTimer = [...st.timers].reverse().find(t => t.mode !== 'clock') || st.timers[st.timers.length - 1];
-  const activeTimer = st.timers.find(t => t.id === st.activeTimerId);
-
-  // Check if active timer is in negative overtime
-  let overtimeMins = 0;
-  if (activeTimer && activeTimer.mode === 'countdown') {
-    let el = activeTimer.elapsed || 0;
-    if (activeTimer.state === 'running' && activeTimer.startedAt) el += Date.now() - activeTimer.startedAt;
-    if (el > activeTimer.duration) {
-      overtimeMins = Math.floor((el - activeTimer.duration) / 60000);
-    }
-  }
-
-  if (lastTimer && lastTimer.startTime) {
-    const rangeMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
-    if (rangeMatch) {
-      const endMins = parseInt(rangeMatch[3], 10) * 60 + parseInt(rangeMatch[4], 10) + overtimeMins;
-      const norm = ((endMins % 1440) + 1440) % 1440;
-      return `${String(Math.floor(norm / 60)).padStart(2, '0')}:${String(norm % 60).padStart(2, '0')}`;
-    }
-    const singleMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
-    if (singleMatch) {
-      const startMins = parseInt(singleMatch[1], 10) * 60 + parseInt(singleMatch[2], 10);
-      const endMins = startMins + Math.round((lastTimer.duration || 0) / 60000) + overtimeMins;
-      const norm = ((endMins % 1440) + 1440) % 1440;
-      return `${String(Math.floor(norm / 60)).padStart(2, '0')}:${String(norm % 60).padStart(2, '0')}`;
-    }
-  }
-
-  // Fallback: cumulative remaining duration from active timer
-  const activeIdx = Math.max(0, st.timers.findIndex(t => t.id === st.activeTimerId));
-  let totalRemainingMs = 0;
-  for (let i = activeIdx; i < st.timers.length; i++) {
-    const t = st.timers[i];
-    if (t.mode === 'clock') continue;
-    if (i === activeIdx) {
-      let el = t.elapsed || 0;
-      if (t.state === 'running' && t.startedAt) el += Date.now() - t.startedAt;
-      totalRemainingMs += Math.max(0, (t.duration || 0) - el);
-    } else {
-      totalRemainingMs += (t.duration || 0);
-    }
-  }
-  const end = new Date(Date.now() + totalRemainingMs);
-  return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return StageTimerClient.computeEventEndTime(st);
 }
 
 function escapeHtml(str) {

@@ -340,6 +340,16 @@
         </div>
         <span class="mode-badge">Backstage / Camarim</span>
       </a>
+
+      <!-- Modo Master / Super Régie -->
+      <a id="card-master" href="master.html" class="mode-card" style="border: 1px solid rgba(253, 203, 110, 0.45); background: linear-gradient(135deg, rgba(253, 203, 110, 0.08) 0%, rgba(108, 92, 231, 0.12) 100%);">
+        <div class="mode-icon">👑</div>
+        <div class="mode-info">
+          <div class="mode-name" style="color: #fdcb6e;">Painel Master (Super Régie)</div>
+          <div class="mode-desc">Exclusivo: ver dispositivos online, mudar ecrãs remotamente, apagar palcos e multiview.</div>
+        </div>
+        <span class="mode-badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border-color: #fdcb6e;">Super Admin</span>
+      </a>
     </div>
     <!-- Share / QR Code + Install App Box -->
     <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 4px;">
@@ -358,8 +368,8 @@
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=11"></script>
-  <script src="js/local-sync.js?v=11"></script>
+  <script src="js/pwa.js?v=12"></script>
+  <script src="js/local-sync.js?v=12"></script>
   <script>
     const $toggleQr = document.getElementById('toggle-qr-btn');
     const $qrContainer = document.getElementById('qr-container');
@@ -426,7 +436,7 @@
               <span class="btn btn-sm ${isSelected ? 'btn-primary' : ''}" style="pointer-events: none; font-size: 0.75rem; padding: 4px 10px;">
                 ${isSelected ? '✓ Ativo' : 'Escolher'}
               </span>
-              ${list.length > 1 ? `<button type="button" class="btn btn-sm btn-danger" data-delete-code="${escapeHtml(ev.code)}" title="Apagar este palco da lista" style="padding: 4px 8px; font-size: 0.75rem;">🗑️</button>` : ''}
+              <button type="button" class="btn btn-sm btn-danger" data-delete-code="${escapeHtml(ev.code)}" title="Apagar este palco da lista" style="padding: 4px 8px; font-size: 0.75rem;">🗑️</button>
             </div>
           </div>
         `;
@@ -456,8 +466,8 @@
           const codeToDel = delBtn.dataset.deleteCode;
           if (confirm(`Tem a certeza que pretende apagar o palco "${codeToDel}"?`)) {
             const remaining = hubClient.deleteEventFromRegistry(codeToDel);
-            if (($room.value.trim() || '').toUpperCase() === codeToDel && remaining.length > 0) {
-              $room.value = remaining[0].code;
+            if (($room.value.trim() || '').toUpperCase() === codeToDel) {
+              $room.value = (remaining && remaining.length > 0) ? remaining[0].code : 'PALCO1';
             }
             updateLinks();
           }
@@ -500,7 +510,6 @@
     });
 
     updateLinks();
-  </script>
   </script>
 </body>
 </html>

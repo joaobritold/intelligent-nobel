@@ -211,66 +211,12 @@ function getTimerDisplayValue(timer) {
 }
 
 function getEstimatedEndTime(timer) {
-  if (!timer || timer.mode === 'clock') return '';
-  let elapsed = timer.elapsed || 0;
-  if (timer.state === 'running' && timer.startedAt) {
-    elapsed += Date.now() - timer.startedAt;
-  }
-  const remaining = Math.max(0, (timer.duration || 0) - elapsed);
-
-  if (timer.state === 'running' || (timer.id === state?.activeTimerId && elapsed > 0)) {
-    const end = new Date(Date.now() + remaining);
-    return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
-  }
-
-  if (timer.startTime) {
-    const m = String(timer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
-    if (m) {
-      const startMins = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-      const endMins = (startMins + Math.round(remaining / 60000)) % 1440;
-      const hh = String(Math.floor(endMins / 60)).padStart(2, '0');
-      const mm = String(endMins % 60).padStart(2, '0');
-      return `${hh}:${mm}`;
-    }
-  }
-
-  const end = new Date(Date.now() + remaining);
-  return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
+  if (!timer || !state) return '';
+  return StageTimerClient.computeTimerEndTime(state, timer.id);
 }
 
 function getEventEndTime() {
-  if (!state || !Array.isArray(state.timers) || state.timers.length === 0) return '--:--';
-  const lastTimer = [...state.timers].reverse().find(t => t.mode !== 'clock') || state.timers[state.timers.length - 1];
-  const activeTimer = state.timers.find(t => t.id === state.activeTimerId);
-
-  let overtimeMins = 0;
-  if (activeTimer && activeTimer.mode === 'countdown') {
-    let el = activeTimer.elapsed || 0;
-    if (activeTimer.state === 'running' && activeTimer.startedAt) el += Date.now() - activeTimer.startedAt;
-    if (el > activeTimer.duration) {
-      overtimeMins = Math.floor((el - activeTimer.duration) / 60000);
-    }
-  }
-
-  if (lastTimer && lastTimer.startTime) {
-    const rangeMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
-    if (rangeMatch) {
-      const endMins = parseInt(rangeMatch[3], 10) * 60 + parseInt(rangeMatch[4], 10) + overtimeMins;
-      const norm = ((endMins % 1440) + 1440) % 1440;
-      const str = `${String(Math.floor(norm / 60)).padStart(2, '0')}:${String(norm % 60).padStart(2, '0')}`;
-      return overtimeMins > 0 ? `${str} (+${overtimeMins}m)` : str;
-    }
-    const singleMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
-    if (singleMatch) {
-      const startMins = parseInt(singleMatch[1], 10) * 60 + parseInt(singleMatch[2], 10);
-      const endMins = startMins + Math.round((lastTimer.duration || 0) / 60000) + overtimeMins;
-      const norm = ((endMins % 1440) + 1440) % 1440;
-      const str = `${String(Math.floor(norm / 60)).padStart(2, '0')}:${String(norm % 60).padStart(2, '0')}`;
-      return overtimeMins > 0 ? `${str} (+${overtimeMins}m)` : str;
-    }
-  }
-
-  return getEstimatedEndTime(lastTimer) || '--:--';
+  return StageTimerClient.computeEventEndTime(state);
 }
 
 // ─── Render ────────────────────────────────────────────────────────

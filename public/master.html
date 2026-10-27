@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>StageTimer — Painel Master (Super Régie)</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f0f1a">
+  <link rel="stylesheet" href="css/master.css">
+  <script src="js/auth.js"></script>
+</head>
+<body>
+  <div class="master-container">
+
+    <!-- Header -->
+    <header class="master-header">
+      <div class="master-header-left">
+        <div class="master-crown">👑</div>
+        <div>
+          <h1 class="master-header-title">
+            Painel Master
+            <span class="badge">Super Régie</span>
+          </h1>
+          <div class="master-header-sub">
+            Gestão Central de Ecrãs, Palcos em Paralelo e Controlo Remoto
+          </div>
+        </div>
+      </div>
+
+      <div class="master-header-right">
+        <div id="master-live-clock" class="master-clock-box">--:--:--</div>
+        <nav class="master-nav-links">
+          <a href="index.html" class="master-nav-btn">🏠 Menu</a>
+          <a href="controller.html" class="master-nav-btn">🎛️ Controlador</a>
+          <a href="operator.html" class="master-nav-btn">📱 Operador</a>
+          <a href="viewer.html" class="master-nav-btn">📺 Telão Palco</a>
+          <a href="lineup.html" class="master-nav-btn">📋 Modo Lista</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Top KPI Metrics -->
+    <div class="master-kpi-grid">
+      <div class="master-kpi-card">
+        <div class="master-kpi-icon">📱</div>
+        <div>
+          <div id="kpi-devices-count" class="master-kpi-value">0</div>
+          <div class="master-kpi-label">Dispositivos Online</div>
+        </div>
+      </div>
+
+      <div class="master-kpi-card">
+        <div class="master-kpi-icon">🎪</div>
+        <div>
+          <div id="kpi-events-count" class="master-kpi-value">0</div>
+          <div class="master-kpi-label">Palcos / Sessões</div>
+        </div>
+      </div>
+
+      <div class="master-kpi-card">
+        <div class="master-kpi-icon">⏱️</div>
+        <div>
+          <div id="kpi-running-count" class="master-kpi-value">0</div>
+          <div class="master-kpi-label">Palcos em Execução</div>
+        </div>
+      </div>
+
+      <div class="master-kpi-card">
+        <div class="master-kpi-icon">☁️</div>
+        <div>
+          <div id="kpi-cloud-status" class="master-kpi-value" style="font-size: 1.1rem; color: #55efc4;">Conectando...</div>
+          <div class="master-kpi-label">Sincronização Cloud</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 1: Dispositivos Online & Controlo Remoto de Ecrãs -->
+    <section class="master-section">
+      <div class="master-section-header">
+        <div>
+          <h2 class="master-section-title">
+            <span>📱 Dispositivos Online & Controlo Remoto de Ecrãs</span>
+          </h2>
+          <div class="master-section-sub">
+            Todos os telemóveis, computadores e telões conectados em tempo real. Mude a vista ou o palco de qualquer ecrã com 1 clique.
+          </div>
+        </div>
+
+        <!-- Global Broadcast Actions -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button id="cmd-all-viewer" type="button" class="btn btn-sm" style="background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4;">
+            📺 Mudar TODOS para Palco
+          </button>
+          <button id="cmd-all-lineup" type="button" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe;">
+            📋 Mudar TODOS para Lista
+          </button>
+          <button id="cmd-all-reload" type="button" class="btn btn-sm btn-danger">
+            🔄 Recarregar TODOS os Ecrãs
+          </button>
+        </div>
+      </div>
+
+      <div id="master-devices-list" class="master-devices-grid">
+        <div class="empty-state-box">
+          A procurar dispositivos conectados na rede...
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Gestão Central de Palcos & Eventos -->
+    <section class="master-section">
+      <div class="master-section-header">
+        <div>
+          <h2 class="master-section-title">
+            <span>🎪 Gestão Central de Palcos & Eventos</span>
+          </h2>
+          <div class="master-section-sub">
+            Crie novos palcos 100% independentes ou elimine palcos antigos sem erros.
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button id="master-wipe-all-btn" type="button" class="btn btn-sm btn-danger" style="font-weight: 700;">
+            🧹 Reset Geral (Limpar Tudo)
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Add Stage Bar -->
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; background: #0b1322; padding: 14px; border-radius: 10px; border: 1px solid var(--border);">
+        <input id="master-new-stage-input" class="input" style="flex: 1; min-width: 220px;" placeholder="Nome do novo palco (ex: Palco Sunset, Tenda VIP, Palco 2)..." autocomplete="off">
+        <button id="master-create-stage-btn" type="button" class="btn btn-primary" style="font-weight: 700;">
+          ✨ + Criar Novo Palco do Zero
+        </button>
+      </div>
+
+      <div id="master-events-list" class="master-events-grid">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- Section 3: Multiview Simultâneo dos Palcos -->
+    <section class="master-section">
+      <div class="master-section-header">
+        <div>
+          <h2 class="master-section-title">
+            <span>⏱️ Multiview dos Palcos em Tempo Real</span>
+          </h2>
+          <div class="master-section-sub">
+            Visão simultânea de todos os palcos a decorrer, artista em palco e hora exata de fim.
+          </div>
+        </div>
+      </div>
+
+      <div id="master-multiview-grid" class="master-multiview-grid">
+        <div class="empty-state-box">
+          A sincronizar status de todos os palcos...
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
+  <script src="js/pwa.js?v=12"></script>
+  <script src="js/local-sync.js?v=12"></script>
+  <script src="js/master.js?v=12"></script>
+</body>
+</html>

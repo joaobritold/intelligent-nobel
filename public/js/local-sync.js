@@ -4,6 +4,8 @@
  * - Multi-Day lineups per stage (Dia 1, Dia 2, + Dia)
  * - Cloud MQTT over WSS + Local BroadcastChannel
  * - Zero hardcoded demo bands: new events start 100% clean (0 artists)
+ * - Real-time device presence & remote screen control
+ * - Reliable event deletion & unified cumulative end time calculation
  */
 
 class UniversalSyncClient {
@@ -17,7 +19,20 @@ class UniversalSyncClient {
     this.mqttTopicState = `stagetimer_live/${this.cleanRoom}/state`;
     this.mqttTopicPresence = `stagetimer_live/${this.cleanRoom}/presence`;
     this.mqttTopicRegistry = 'stagetimer_live/_events_list';
+    this.mqttTopicGlobalPresence = 'stagetimer_live/_global_presence';
     this.registryStorageKey = 'stagetimer_events_registry_v4';
+    this.deletedStorageKey = 'stagetimer_deleted_events_v2';
+
+    try {
+      this.deviceUuid = localStorage.getItem('stagetimer_device_uuid') || ('dev_' + Math.random().toString(36).substring(2, 9));
+      localStorage.setItem('stagetimer_device_uuid', this.deviceUuid);
+    } catch (e) {
+      this.deviceUuid = 'dev_' + Math.random().toString(36).substring(2, 9);
+    }
+
+    this.mqttTopicDeviceCmd = `stagetimer_live/_cmd/${this.deviceUuid}`;
+    this.mqttTopicRoomCmd = `stagetimer_live/_cmd_room/${this.cleanRoom}`;
+    this.mqttTopicAllCmd = 'stagetimer_live/_cmd_all';
 
     this.clientId = 'st_' + Math.random().toString(36).substring(2, 10);
     this.listeners = new Map();
@@ -26,8 +41,62 @@ class UniversalSyncClient {
     this.tickInterval = null;
     this.mqttClient = null;
     this.peersMap = new Map();
+    this.globalDevicesMap = new Map();
     this.connectedPeersCount = 1;
     this._needsInitialPublish = false;
+  }
+
+  // ─── Deleted Events Tombstones ──────────────────────────────────────
+
+  _getDeletedEvents() {
+    try {
+      const raw = localStorage.getItem(this.deletedStorageKey);
+      const arr = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(arr) ? arr.map(c => String(c).toUpperCase()) : []);
+    } catch (e) {
+      return new Set();
+    }
+  }
+
+  _recordDeletedEvent(code) {
+    if (!code) return;
+    const set = this._getDeletedEvents();
+    set.add(code.toUpperCase());
+    try {
+      localStorage.setItem(this.deletedStorageKey, JSON.stringify(Array.from(set)));
+    } catch (e) {}
+  }
+
+  _unmarkDeletedEvent(code) {
+    if (!code) return;
+    const set = this._getDeletedEvents();
+    set.delete(code.toUpperCase());
+    try {
+      localStorage.setItem(this.deletedStorageKey, JSON.stringify(Array.from(set)));
+    } catch (e) {}
+  }
+
+  // ─── Device Info & Remote Control ───────────────────────────────────
+
+  _getDeviceLabel() {
+    const ua = (typeof navigator !== 'undefined' ? navigator.userAgent : '') || '';
+    let os = 'Dispositivo';
+    if (/iPhone/i.test(ua)) os = 'iPhone';
+    else if (/iPad/i.test(ua)) os = 'iPad';
+    else if (/Android/i.test(ua)) os = 'Android';
+    else if (/Mac/i.test(ua)) os = 'Mac';
+    else if (/Windows/i.test(ua)) os = 'PC Windows';
+    else if (/Linux/i.test(ua)) os = 'Linux';
+
+    let roleLabel = 'Ecrã';
+    const path = typeof location !== 'undefined' ? location.pathname.toLowerCase() : '';
+    if (path.includes('master')) roleLabel = '👑 Painel Master';
+    else if (this.role === 'controller' || path.includes('controller')) roleLabel = '🎛️ PC Régie (Controlador)';
+    else if (this.role === 'operator' || path.includes('operator')) roleLabel = '📱 Telemóvel Operador';
+    else if (path.includes('lineup')) roleLabel = '📋 Ecrã Lista / Backstage';
+    else if (this.role === 'viewer' || path.includes('viewer')) roleLabel = '📺 Telão de Palco';
+
+    return `${roleLabel} (${os})`;
   }
 
   get state() {
@@ -134,7 +203,6 @@ class UniversalSyncClient {
     });
 
     this.mqttClient.on('connect', () => {
-      console.log(`☁️ Connected to Cloud Room [${this.cleanRoom}]`);
       this._emit('connected');
 
       if (this._needsInitialPublish && this._state) {
@@ -142,7 +210,22 @@ class UniversalSyncClient {
         this._commitStateChange(true);
       }
 
-      this.mqttClient.subscribe([this.mqttTopicState, this.mqttTopicPresence, this.mqttTopicRegistry], { qos: 0 }, (err) => {
+      const topicsToSubscribe = [
+        this.mqttTopicState,
+        this.mqttTopicPresence,
+        this.mqttTopicRegistry,
+        this.mqttTopicGlobalPresence,
+        this.mqttTopicDeviceCmd,
+        this.mqttTopicRoomCmd,
+        this.mqttTopicAllCmd
+      ];
+
+      // If in Master mode, also subscribe to all room state broadcasts
+      if (this.role === 'master') {
+        topicsToSubscribe.push('stagetimer_live/+/state');
+      }
+
+      this.mqttClient.subscribe(topicsToSubscribe, { qos: 0 }, (err) => {
         if (!err) {
           this._emit('p2p-ready', { id: this.cleanRoom, count: this.connectedPeersCount });
           this._announcePresence();
@@ -153,10 +236,46 @@ class UniversalSyncClient {
     this.mqttClient.on('message', (topic, payload) => {
       try {
         const msg = JSON.parse(payload.toString());
+
+        // Remote device commands (switch view, change room, reload)
+        if (topic === this.mqttTopicDeviceCmd || topic === this.mqttTopicRoomCmd || topic === this.mqttTopicAllCmd) {
+          if (msg.sender === this.clientId) return;
+          if (msg.action === 'navigate' && msg.url) {
+            location.href = msg.url;
+            return;
+          }
+          if (msg.action === 'reload') {
+            location.reload();
+            return;
+          }
+          if (msg.action === 'switch_room' && msg.room) {
+            const currentBase = location.pathname;
+            location.href = `${currentBase}?room=${encodeURIComponent(msg.room)}`;
+            return;
+          }
+        }
+
+        // Room state update
         if (topic === this.mqttTopicState) {
           if (msg.sender === this.clientId) return;
+          if (msg.deleted) {
+            this._recordDeletedEvent(this.cleanRoom);
+            return;
+          }
           if (msg.data) {
             this._applyIncomingState(msg.data, true);
+          }
+        } else if (topic.startsWith('stagetimer_live/') && topic.endsWith('/state')) {
+          // Multi-room state for Master Régie
+          const parts = topic.split('/');
+          const roomCode = parts[1];
+          if (roomCode && roomCode !== '_events_list') {
+            if (msg.deleted) {
+              this._recordDeletedEvent(roomCode);
+              this._emit('multi-room-deleted', { room: roomCode });
+            } else if (msg.data) {
+              this._emit('multi-room-state', { room: roomCode, data: msg.data });
+            }
           }
         } else if (topic === this.mqttTopicRegistry) {
           if (msg && Array.isArray(msg.events)) {
@@ -167,6 +286,15 @@ class UniversalSyncClient {
             this.peersMap.set(msg.clientId, Date.now());
             this._cleanupPeers();
           }
+        } else if (topic === this.mqttTopicGlobalPresence) {
+          if (msg.deviceUuid && msg.ts) {
+            this.globalDevicesMap.set(msg.deviceUuid, {
+              ...msg,
+              lastSeen: Date.now()
+            });
+            this._cleanupGlobalDevices();
+            this._emit('devices-update', this.getOnlineDevices());
+          }
         }
       } catch (e) {}
     });
@@ -175,7 +303,8 @@ class UniversalSyncClient {
       this._emit('disconnected');
     });
 
-    setInterval(() => this._announcePresence(), 10000);
+    setInterval(() => this._announcePresence(), 5000);
+    setInterval(() => this._cleanupGlobalDevices(), 4000);
     setInterval(() => {
       if (this.role === 'controller' && this._state?.timers?.some(t => t.state === 'running')) {
         this._commitStateChange(true);
@@ -183,14 +312,67 @@ class UniversalSyncClient {
     }, 3000);
   }
 
+  _cleanupGlobalDevices() {
+    const now = Date.now();
+    for (const [uuid, dev] of this.globalDevicesMap.entries()) {
+      if (now - (dev.lastSeen || 0) > 18000) {
+        this.globalDevicesMap.delete(uuid);
+      }
+    }
+  }
+
+  getOnlineDevices() {
+    this._cleanupGlobalDevices();
+    return Array.from(this.globalDevicesMap.values()).sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
+  }
+
+  sendDeviceCommand(targetDeviceUuid, command) {
+    if (!this.mqttClient || !this.mqttClient.connected) return;
+    try {
+      const topic = targetDeviceUuid === 'ALL'
+        ? this.mqttTopicAllCmd
+        : `stagetimer_live/_cmd/${targetDeviceUuid}`;
+      this.mqttClient.publish(
+        topic,
+        JSON.stringify({ sender: this.clientId, sentAt: Date.now(), ...command }),
+        { qos: 0, retain: false }
+      );
+    } catch (e) {}
+  }
+
+  sendRoomCommand(roomCode, command) {
+    if (!this.mqttClient || !this.mqttClient.connected) return;
+    try {
+      const clean = (roomCode || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+      const topic = `stagetimer_live/_cmd_room/${clean}`;
+      this.mqttClient.publish(
+        topic,
+        JSON.stringify({ sender: this.clientId, sentAt: Date.now(), ...command }),
+        { qos: 0, retain: false }
+      );
+    } catch (e) {}
+  }
+
   _announcePresence() {
     if (this.mqttClient && this.mqttClient.connected) {
       this.peersMap.set(this.clientId, Date.now());
-      this.mqttClient.publish(
-        this.mqttTopicPresence,
-        JSON.stringify({ clientId: this.clientId, role: this.role, ts: Date.now() }),
-        { qos: 0, retain: false }
-      );
+      const pathFile = typeof location !== 'undefined' ? (location.pathname.split('/').pop() || 'index.html') : 'index.html';
+      const devPayload = {
+        clientId: this.clientId,
+        deviceUuid: this.deviceUuid,
+        label: this._getDeviceLabel(),
+        role: this.role,
+        room: this.cleanRoom,
+        roomTitle: this._state?.name || this.cleanRoom,
+        path: pathFile,
+        ts: Date.now()
+      };
+      const jsonStr = JSON.stringify(devPayload);
+      this.mqttClient.publish(this.mqttTopicPresence, jsonStr, { qos: 0, retain: false });
+      this.mqttClient.publish(this.mqttTopicGlobalPresence, jsonStr, { qos: 0, retain: false });
+
+      // Record self in global devices
+      this.globalDevicesMap.set(this.deviceUuid, { ...devPayload, lastSeen: Date.now() });
       this._cleanupPeers();
     }
   }
@@ -198,7 +380,7 @@ class UniversalSyncClient {
   _cleanupPeers() {
     const now = Date.now();
     for (const [id, lastSeen] of this.peersMap.entries()) {
-      if (now - lastSeen > 28000) {
+      if (now - lastSeen > 24000) {
         this.peersMap.delete(id);
       }
     }
@@ -318,12 +500,16 @@ class UniversalSyncClient {
 
   getEventsList() {
     try {
+      const deletedSet = this._getDeletedEvents();
       const raw = localStorage.getItem(this.registryStorageKey);
       let list = raw ? JSON.parse(raw) : [];
       if (!Array.isArray(list)) list = [];
-      list = list.map(e => this._normalizeRegistryItem(e));
-      if (!list.some(e => e.code === 'PALCO1')) {
-        list.unshift(this._normalizeRegistryItem({
+      list = list
+        .map(e => this._normalizeRegistryItem(e))
+        .filter(e => !deletedSet.has(e.code));
+
+      if (list.length === 0 && !deletedSet.has('PALCO1')) {
+        list.push(this._normalizeRegistryItem({
           id: 'PALCO1',
           code: 'PALCO1',
           title: 'Palco Principal',
@@ -339,7 +525,11 @@ class UniversalSyncClient {
   }
 
   _saveEventsList(list, publish = true, forceReplace = false) {
-    const normalized = (list || []).map(e => this._normalizeRegistryItem(e));
+    const deletedSet = this._getDeletedEvents();
+    const normalized = (list || [])
+      .map(e => this._normalizeRegistryItem(e))
+      .filter(e => !deletedSet.has(e.code));
+
     try {
       localStorage.setItem(this.registryStorageKey, JSON.stringify(normalized));
     } catch (e) {}
@@ -357,17 +547,26 @@ class UniversalSyncClient {
 
   _mergeIncomingRegistry(incomingList, forceReplace = false) {
     if (!Array.isArray(incomingList)) return;
+    const deletedSet = this._getDeletedEvents();
+
     if (forceReplace) {
-      const replaced = incomingList.map(rawItem => this._normalizeRegistryItem(rawItem));
+      const replaced = incomingList
+        .filter(item => item && !deletedSet.has((item.code || item.id || '').toUpperCase()))
+        .map(rawItem => this._normalizeRegistryItem(rawItem));
       this._saveEventsList(replaced, false);
       return;
     }
+
     const localList = this.getEventsList();
     const map = new Map();
-    localList.forEach(item => map.set(item.code, item));
+    localList.forEach(item => {
+      if (!deletedSet.has(item.code)) map.set(item.code, item);
+    });
+
     incomingList.forEach(rawItem => {
       if (!rawItem) return;
       const item = this._normalizeRegistryItem(rawItem);
+      if (deletedSet.has(item.code)) return;
       const existing = map.get(item.code);
       if (!existing || (item.updatedAt || 0) >= (existing.updatedAt || 0)) {
         map.set(item.code, item);
@@ -379,9 +578,17 @@ class UniversalSyncClient {
 
   _syncEventInRegistry() {
     if (!this._state) return;
+    const deletedSet = this._getDeletedEvents();
+    if (deletedSet.has(this.cleanRoom)) return;
+
     const list = this.getEventsList();
     const idx = list.findIndex(e => e.code === this.cleanRoom);
-    const existing = idx >= 0 ? list[idx] : null;
+    if (idx < 0) {
+      // NEVER resurrect deleted events!
+      return;
+    }
+
+    const existing = list[idx];
     const count = Array.isArray(this._state.timers) ? this._state.timers.length : 0;
     const entry = this._normalizeRegistryItem({
       id: this.cleanRoom,
@@ -392,11 +599,7 @@ class UniversalSyncClient {
       currentDay: this._state.currentDay || 1,
       updatedAt: Date.now()
     });
-    if (idx >= 0) {
-      list[idx] = entry;
-    } else {
-      list.push(entry);
-    }
+    list[idx] = entry;
     this._saveEventsList(list, true);
   }
 
@@ -409,6 +612,9 @@ class UniversalSyncClient {
       .replace(/^-+|-+$/g, '')
       .substring(0, 14);
     if (!code) code = 'PALCO-' + Math.floor(100 + Math.random() * 900);
+
+    // Unmark as deleted if re-used
+    this._unmarkDeletedEvent(code);
 
     const newRoomState = {
       id: code,
@@ -457,27 +663,98 @@ class UniversalSyncClient {
     return code;
   }
 
+  renameEvent(code, newTitle) {
+    if (!code || !newTitle) return;
+    const cleanTitle = newTitle.trim();
+    const cleanCode = code.toUpperCase().trim();
+    const list = this.getEventsList();
+    const item = list.find(e => e.code === cleanCode);
+    if (item) {
+      item.title = cleanTitle;
+      item.updatedAt = Date.now();
+      this._saveEventsList(list, true, true);
+      if (this.cleanRoom === cleanCode && this._state) {
+        this._state.name = cleanTitle;
+        this._commitStateChange(true);
+      }
+    }
+  }
+
   deleteEventFromRegistry(codeToDelete) {
-    if (!codeToDelete || codeToDelete === 'PALCO1') return this.getEventsList();
-    const list = this.getEventsList().filter(e => e.code !== codeToDelete);
+    if (!codeToDelete) return this.getEventsList();
+    const cleanCode = codeToDelete.toUpperCase().trim();
+    this._recordDeletedEvent(cleanCode);
+
+    let list = this.getEventsList().filter(e => e.code !== cleanCode);
     try {
-      localStorage.removeItem(`stagetimer_live_state_${codeToDelete}`);
+      localStorage.removeItem(`stagetimer_live_state_${cleanCode}`);
     } catch (e) {}
+
+    // Clear retained state on MQTT for that deleted room
+    if (this.mqttClient && this.mqttClient.connected) {
+      try {
+        this.mqttClient.publish(
+          `stagetimer_live/${cleanCode}/state`,
+          JSON.stringify({ deleted: true, sender: this.clientId, sentAt: Date.now(), data: null }),
+          { qos: 0, retain: true }
+        );
+      } catch (e) {}
+    }
+
+    // If list is completely empty, provide a clean default room
+    if (list.length === 0) {
+      const freshCode = 'PALCO1';
+      this._unmarkDeletedEvent(freshCode);
+      list = [this._normalizeRegistryItem({
+        id: freshCode,
+        code: freshCode,
+        title: 'Palco Principal',
+        timersCount: 0,
+        currentDay: 1,
+        updatedAt: Date.now()
+      })];
+    }
+
     this._saveEventsList(list, true, true);
     return list;
   }
 
   clearAllEvents() {
-    const defaultList = [this._normalizeRegistryItem({ id: 'PALCO1', code: 'PALCO1', title: 'Palco Principal', timersCount: 0, currentDay: 1 })];
+    const list = this.getEventsList();
+    list.forEach(e => {
+      this._recordDeletedEvent(e.code);
+      if (this.mqttClient && this.mqttClient.connected) {
+        try {
+          this.mqttClient.publish(
+            `stagetimer_live/${e.code}/state`,
+            JSON.stringify({ deleted: true, sender: this.clientId, sentAt: Date.now(), data: null }),
+            { qos: 0, retain: true }
+          );
+        } catch (err) {}
+      }
+    });
+
     try {
       Object.keys(localStorage).forEach((k) => {
-        if (k.startsWith('stagetimer_live_') && k !== 'stagetimer_auth_unlocked') {
+        if (k.startsWith('stagetimer_live_') && k !== 'stagetimer_auth_unlocked' && k !== 'stagetimer_device_uuid') {
           localStorage.removeItem(k);
         }
       });
     } catch (e) {}
+
+    const freshCode = 'PALCO1';
+    this._unmarkDeletedEvent(freshCode);
+    const defaultList = [this._normalizeRegistryItem({
+      id: freshCode,
+      code: freshCode,
+      title: 'Palco Principal',
+      timersCount: 0,
+      currentDay: 1,
+      updatedAt: Date.now()
+    })];
+
     this._saveEventsList(defaultList, true, true);
-    this._state = this._createDefaultRoom('PALCO1');
+    this._state = this._createDefaultRoom(freshCode);
     this._saveLocal();
     this._commitStateChange(true);
     return defaultList;
@@ -620,7 +897,7 @@ class UniversalSyncClient {
     }, 100);
   }
 
-  // ─── Actions (Work from both Controller & Mobile Operator) ──────────
+  // ─── Actions (Work from Controller, Operator & Master) ─────────────
 
   createTimer(data = {}) {
     if (!this._state.theme) {
@@ -869,6 +1146,119 @@ class UniversalSyncClient {
       this._state.message = { text: '', visible: false, level: 'info' };
       this._commitStateChange(true);
     }
+  }
+
+  // ─── Mathematical Timing Helpers (Unified Across All Modes) ─────────
+
+  static computeTimerEndTime(state, timerId) {
+    if (!state || !Array.isArray(state.timers) || state.timers.length === 0) return '';
+    const targetTimer = state.timers.find(t => t.id === timerId);
+    if (!targetTimer || targetTimer.mode === 'clock') return '';
+
+    const activeIdx = state.timers.findIndex(t => t.id === state.activeTimerId);
+    const targetIdx = state.timers.findIndex(t => t.id === timerId);
+    const activeTimer = activeIdx >= 0 ? state.timers[activeIdx] : null;
+
+    let activeElapsed = activeTimer?.elapsed || 0;
+    if (activeTimer?.state === 'running' && activeTimer?.startedAt) {
+      activeElapsed += Date.now() - activeTimer.startedAt;
+    }
+
+    const activeRemaining = activeTimer ? Math.max(0, (activeTimer.duration || 0) - activeElapsed) : 0;
+    const activeOvertimeMins = activeTimer && activeElapsed > (activeTimer.duration || 0)
+      ? Math.floor((activeElapsed - activeTimer.duration) / 60000)
+      : 0;
+
+    // Scheduled slot range (e.g., "21:00 - 22:30")
+    if (targetTimer.startTime) {
+      const rangeMatch = String(targetTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
+      if (rangeMatch) {
+        const endMins = parseInt(rangeMatch[3], 10) * 60 + parseInt(rangeMatch[4], 10) + activeOvertimeMins;
+        const norm = ((endMins % 1440) + 1440) % 1440;
+        const hh = String(Math.floor(norm / 60)).padStart(2, '0');
+        const mm = String(norm % 60).padStart(2, '0');
+        return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
+      }
+    }
+
+    // Active timer finishing time
+    if (targetIdx === activeIdx) {
+      const end = new Date(Date.now() + activeRemaining);
+      return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    // Future timer: activeRemaining + durations of all intermediate artists
+    if (targetIdx > activeIdx) {
+      let accumMs = (activeIdx >= 0) ? activeRemaining : 0;
+      const startFrom = (activeIdx >= 0) ? activeIdx + 1 : 0;
+      for (let i = startFrom; i <= targetIdx; i++) {
+        const t = state.timers[i];
+        if (t && t.mode !== 'clock') {
+          accumMs += (t.duration || 0);
+        }
+      }
+      const end = new Date(Date.now() + accumMs);
+      return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    return '--:--';
+  }
+
+  static computeEventEndTime(state) {
+    if (!state || !Array.isArray(state.timers) || state.timers.length === 0) return '--:--';
+    const countdownTimers = state.timers.filter(t => t.mode !== 'clock');
+    if (countdownTimers.length === 0) return '--:--';
+
+    const activeIdx = state.timers.findIndex(t => t.id === state.activeTimerId);
+    const activeTimer = activeIdx >= 0 ? state.timers[activeIdx] : null;
+
+    let activeElapsed = activeTimer?.elapsed || 0;
+    if (activeTimer?.state === 'running' && activeTimer?.startedAt) {
+      activeElapsed += Date.now() - activeTimer.startedAt;
+    }
+
+    const activeRemaining = activeTimer ? Math.max(0, (activeTimer.duration || 0) - activeElapsed) : 0;
+    const activeOvertimeMs = activeTimer && activeElapsed > (activeTimer.duration || 0)
+      ? activeElapsed - activeTimer.duration
+      : 0;
+    const activeOvertimeMins = Math.floor(activeOvertimeMs / 60000);
+
+    // If last timer has an explicit scheduled exit time
+    const lastTimer = [...countdownTimers].reverse()[0];
+    if (lastTimer && lastTimer.startTime) {
+      const rangeMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
+      if (rangeMatch) {
+        const schedEndMins = parseInt(rangeMatch[3], 10) * 60 + parseInt(rangeMatch[4], 10) + activeOvertimeMins;
+        const norm = ((schedEndMins % 1440) + 1440) % 1440;
+        const hh = String(Math.floor(norm / 60)).padStart(2, '0');
+        const mm = String(norm % 60).padStart(2, '0');
+        return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
+      }
+      const singleMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+      if (singleMatch) {
+        const startMins = parseInt(singleMatch[1], 10) * 60 + parseInt(singleMatch[2], 10);
+        const endMins = startMins + Math.round((lastTimer.duration || 0) / 60000) + activeOvertimeMins;
+        const norm = ((endMins % 1440) + 1440) % 1440;
+        const hh = String(Math.floor(norm / 60)).padStart(2, '0');
+        const mm = String(norm % 60).padStart(2, '0');
+        return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
+      }
+    }
+
+    // Sequential cumulative calculation: active remaining + all subsequent timers
+    let totalRemainingMs = (activeIdx >= 0) ? activeRemaining : 0;
+    const startFrom = (activeIdx >= 0) ? activeIdx + 1 : 0;
+    for (let i = startFrom; i < state.timers.length; i++) {
+      const t = state.timers[i];
+      if (t && t.mode !== 'clock') {
+        totalRemainingMs += (t.duration || 0);
+      }
+    }
+
+    const endDate = new Date(Date.now() + totalRemainingMs);
+    const hh = String(endDate.getHours()).padStart(2, '0');
+    const mm = String(endDate.getMinutes()).padStart(2, '0');
+    return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
   }
 
   // ─── Event System ───────────────────────────────────────────────────
