@@ -360,6 +360,15 @@ function handleCreateArtist(goLive = false) {
 if ($addArtistBtn) {
   $addArtistBtn.addEventListener('click', () => handleCreateArtist(false));
 }
+
+const $opLoadDia1 = document.getElementById('op-load-dia1');
+if ($opLoadDia1) {
+  $opLoadDia1.addEventListener('click', () => {
+    if (confirm('Carregar alinhamento da Receção ao Caloiro 2026 (Dia 1)?')) {
+      client.loadPresetDia1();
+    }
+  });
+}
 if ($liveArtistBtn) {
   $liveArtistBtn.addEventListener('click', () => handleCreateArtist(true));
 }

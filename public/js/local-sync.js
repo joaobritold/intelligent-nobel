@@ -61,7 +61,14 @@ class UniversalSyncClient {
     const saved = localStorage.getItem(this.storageKey);
     if (saved) {
       try {
-        this._state = JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Auto-upgrade old single "Main Keynote" default to Receção ao Caloiro Dia 1
+        if (parsed && parsed.timers?.length === 1 && parsed.timers[0].name === 'Main Keynote') {
+          this._state = this._createDefaultRoom(this.cleanRoom);
+          this._saveLocal();
+        } else {
+          this._state = parsed;
+        }
       } catch (e) {}
     }
 
@@ -167,33 +174,85 @@ class UniversalSyncClient {
     this._emit('p2p-peers-update', { count: this.connectedPeersCount });
   }
 
+  _getDia1Lineup() {
+    return [
+      {
+        id: 'rc_d1_1',
+        name: 'Dj Residente',
+        startTime: '23:00 – 00:15',
+        notes: 'On Stage: 23h00 – 00h15',
+        mode: 'countdown',
+        duration: 75 * 60000, // 1h15m
+        elapsed: 0,
+        state: 'stopped',
+        warnAt: 600000,       // 10m
+        dangerAt: 120000,     // 2m
+        startedAt: null
+      },
+      {
+        id: 'rc_d1_2',
+        name: 'Tunas',
+        startTime: '23:30 – 01:30',
+        notes: 'On Stage: 23h30 – 01h30 • Curfew: 02h00',
+        mode: 'countdown',
+        duration: 120 * 60000, // 2h00m
+        elapsed: 0,
+        state: 'stopped',
+        warnAt: 600000,
+        dangerAt: 120000,
+        startedAt: null
+      },
+      {
+        id: 'rc_d1_3',
+        name: 'Minhotos Marotos',
+        startTime: '01:45 – 03:15',
+        notes: 'Changeover: 01h30-01h45 • Soundcheck: 18h00-19h30 • Curfew: 04h30',
+        mode: 'countdown',
+        duration: 90 * 60000, // 1h30m
+        elapsed: 0,
+        state: 'stopped',
+        warnAt: 600000,
+        dangerAt: 120000,
+        startedAt: null
+      },
+      {
+        id: 'rc_d1_4',
+        name: 'Dj Beça',
+        startTime: '03:30 – 05:00',
+        notes: 'On Stage: 03h30 – 05h00 • Curfew: 05h00',
+        mode: 'countdown',
+        duration: 90 * 60000, // 1h30m
+        elapsed: 0,
+        state: 'stopped',
+        warnAt: 600000,
+        dangerAt: 120000,
+        startedAt: null
+      }
+    ];
+  }
+
   _createDefaultRoom(id) {
-    const timerId = 't_default_1';
+    const timers = this._getDia1Lineup();
     return {
       id: id,
-      name: 'Stage Timer',
+      name: 'Receção ao Caloiro 2026 - Dia 1',
       updatedAt: 0,
-      activeTimerId: timerId,
-      message: { text: '', visible: false },
+      activeTimerId: timers[0].id,
+      message: { text: '', visible: false, level: 'info' },
       theme: {
         viewerBg: '#000000',
         controllerBg: '#0f0f1a'
       },
-      timers: [
-        {
-          id: timerId,
-          name: 'Main Keynote',
-          notes: '',
-          mode: 'countdown',
-          duration: 300000, // 5 min
-          elapsed: 0,
-          state: 'stopped',
-          warnAt: 60000,
-          dangerAt: 15000,
-          startedAt: null
-        }
-      ]
+      timers
     };
+  }
+
+  loadPresetDia1() {
+    const timers = this._getDia1Lineup();
+    this._state.name = 'Receção ao Caloiro 2026 - Dia 1';
+    this._state.timers = timers;
+    this._state.activeTimerId = timers[0].id;
+    this._commitStateChange(true);
   }
 
   _saveLocal() {

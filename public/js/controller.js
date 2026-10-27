@@ -526,6 +526,15 @@ $addTimerBtn.addEventListener('click', () => {
   });
 });
 
+const $loadDia1Btn = document.getElementById('load-dia1-btn');
+if ($loadDia1Btn) {
+  $loadDia1Btn.addEventListener('click', () => {
+    if (confirm('Carregar alinhamento completo da Receção ao Caloiro 2026 (Dia 1)?')) {
+      client.loadPresetDia1();
+    }
+  });
+}
+
 // Global controls
 $globalStart.addEventListener('click', () => client.globalAction('start'));
 $globalPause.addEventListener('click', () => client.globalAction('pause'));
