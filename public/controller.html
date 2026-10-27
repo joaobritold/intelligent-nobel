@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>StageTimer — Controlador</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/controller.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">
+          <span class="logo-icon">⏱️</span>
+          <span>StageTimer</span>
+        </div>
+        <div class="room-info">
+          <span>Room:</span>
+          <span id="room-id" class="room-id" title="Click to copy room ID">------</span>
+        </div>
+        <!-- 3 Modes Navigation -->
+        <div style="display: flex; gap: 6px; margin-left: 8px;">
+          <a id="top-nav-controller" href="controller.html" class="btn btn-primary btn-sm" style="text-decoration: none;">🎛️ Controlador</a>
+          <a id="top-nav-operator" href="operator.html" class="btn btn-sm" style="text-decoration: none;">📱 Modo Operador (Mobile)</a>
+          <a id="top-nav-viewer" href="viewer.html" target="_blank" class="btn btn-sm" style="text-decoration: none;">📺 Modo Palco ↗</a>
+        </div>
+      </div>
+      <div class="header-right">
+        <!-- Theme Background Selector -->
+        <div class="theme-selector" title="Stage Background Color">
+          <label for="viewer-bg-color" style="font-size: 0.75rem; color: var(--text-secondary); margin-right: 4px;">Stage Bg:</label>
+          <input type="color" id="viewer-bg-color" value="#000000" style="cursor: pointer; width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 4px; background: transparent; padding: 0;">
+        </div>
+        <div id="connection-badge" class="connection-badge disconnected">
+          <span class="connection-dot"></span> Connecting...
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <div class="main">
+      <!-- Left Panel: Timers -->
+      <section class="timer-panel">
+        <div class="panel-header">
+          <div class="panel-title">Timers Rundown</div>
+          <button id="add-timer-btn" class="btn btn-primary btn-sm">+ Add Timer</button>
+        </div>
+
+        <div id="timer-list" class="timer-list">
+          <!-- Timers injected by JS -->
+        </div>
+
+        <div class="global-controls">
+          <span class="global-controls-label">All Timers:</span>
+          <button id="global-start" class="btn btn-sm">▶ Start All</button>
+          <button id="global-pause" class="btn btn-sm">⏸ Pause All</button>
+          <button id="global-reset" class="btn btn-sm">⏹ Reset All</button>
+        </div>
+      </section>
+
+      <!-- Right Sidebar: Live Preview & Broadcast Message -->
+      <aside class="sidebar">
+        <!-- Live Preview -->
+        <div class="preview-section">
+          <div class="preview-title">
+            <span>Stage Preview</span>
+            <a id="viewer-link-btn" class="preview-link" href="#" target="_blank" rel="noopener">Open Screen ↗</a>
+          </div>
+          <div class="preview-frame">
+            <div id="preview-name" class="preview-timer-name"></div>
+            <div id="preview-display" class="preview-timer-display">--:--</div>
+            <div id="preview-message" class="preview-message"></div>
+          </div>
+        </div>
+
+        <!-- Stage Message -->
+        <div class="message-section">
+          <div class="message-title">Stage Message (Prompter)</div>
+          <div class="message-input-wrapper">
+            <textarea
+              id="message-input"
+              class="input message-textarea"
+              placeholder="Type a quick message for the stage (e.g. 'Wrap up!', '2 mins left')..."
+            ></textarea>
+            <div class="message-actions">
+              <button id="send-msg-btn" class="btn btn-primary">📤 Send</button>
+              <button id="clear-msg-btn" class="btn">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Online Room / Multi-Device Sync -->
+        <div class="links-section">
+          <div class="links-title">🌐 Multi-Device & Online Sync</div>
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 4px;">Room Code (Use same code on any device/network):</label>
+            <div style="display: flex; gap: 6px;">
+              <input id="room-code-input" class="input input-mono" style="flex: 1; padding: 6px 10px; font-weight: 700; text-transform: uppercase;" placeholder="PALCO1">
+              <button id="join-room-btn" class="btn btn-primary btn-sm">Connect Room</button>
+            </div>
+          </div>
+
+          <div id="p2p-status-box" style="background: rgba(0, 184, 148, 0.1); border: 1px solid rgba(0, 184, 148, 0.3); border-radius: 6px; padding: 8px 10px; font-size: 0.75rem; margin-bottom: 12px; color: var(--text-primary);">
+            <div><strong>Cloud Status:</strong> <span id="p2p-status-text">Connecting to WebRTC...</span></div>
+            <div style="margin-top: 2px; color: var(--text-secondary); font-size: 0.7rem;">Connected Remote Screens: <strong id="p2p-peer-count" style="color: var(--green);">0</strong></div>
+          </div>
+
+          <div class="links-title" style="margin-top: 8px;">Quick Open</div>
+          <div class="link-row">
+            <span class="link-label">Stage:</span>
+            <a id="viewer-link" href="#" target="_blank" rel="noopener">Open Stage Viewer ↗</a>
+          </div>
+          <div class="link-row">
+            <span class="link-label">Operator:</span>
+            <a id="controller-link" href="#" target="_blank" rel="noopener">Open Operator ↗</a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Edit Timer Modal -->
+  <div id="edit-modal" class="modal-overlay">
+    <div class="modal">
+      <h3 class="modal-title">Timer Alerts Configuration</h3>
+      <input type="hidden" id="modal-timer-id">
+      
+      <div class="modal-row">
+        <div class="modal-field">
+          <label class="modal-label" for="modal-warn-at">Warning (Yellow) At</label>
+          <input id="modal-warn-at" class="input input-mono" placeholder="1:00">
+        </div>
+        <div class="modal-field">
+          <label class="modal-label" for="modal-danger-at">Danger (Red) At</label>
+          <input id="modal-danger-at" class="input input-mono" placeholder="0:10">
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn">Cancel</button>
+        <button id="modal-save" class="btn btn-primary">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Cloud MQTT over WSS for reliable multi-network sync -->
+  <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
+  <!-- Local browser sync + Cloud -->
+  <script src="js/local-sync.js"></script>
+  <script src="js/controller.js"></script>
+</body>
+</html>
