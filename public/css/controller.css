@@ -1,10 +1,7 @@
 /* ─── Controller Layout ─────────────────────────────────────────── */
 
-html, body {
-  height: auto;
-  min-height: 100vh;
-  overflow-x: hidden;
-  overflow-y: auto;
+body {
+  overflow-x: clip;
 }
 
 .app {

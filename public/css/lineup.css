@@ -1,10 +1,10 @@
 /* ─── Lineup / Schedule Presentation Mode (Desktop & Safari iOS) ─── */
 
-html, body {
+body {
   min-height: 100dvh;
   background: #080811;
   color: var(--text-primary);
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-tap-highlight-color: transparent;
 }
 

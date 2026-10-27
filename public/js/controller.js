@@ -327,16 +327,14 @@ function renderTimers() {
     return;
   }
 
-  // Structural signature includes order of IDs, active timer, state, and mode
-  const structureSig = state.timers.map(t => `${t.id}:${t.id === state.activeTimerId}:${t.state}:${t.mode}:${t.startTime || ''}:${t.duration}`).join('|');
+  // Structural signature includes order of IDs, active timer, state, mode, and fields
+  const structureSig = state.timers.map(t => `${t.id}:${t.name}:${t.notes || ''}:${t.id === state.activeTimerId}:${t.state}:${t.mode}:${t.startTime || ''}:${t.duration}`).join('|');
 
-  // Prevent full DOM rebuild on 100ms ticks while user is editing/hovering/dragging,
-  // UNLESS the order or structure of timers changed!
+  // Never rebuild innerHTML on 100ms ticks if structure hasn't changed, or while editing/dragging
   const isEditing = document.activeElement && document.activeElement.matches('input, select, textarea');
-  const isHovering = $timerList.matches(':hover');
 
-  if (structureSig === lastRenderedStructureSig && (isEditing || isHovering || draggedId)) {
-    // Only update live display values instead of blowing away innerHTML
+  if (structureSig === lastRenderedStructureSig || isEditing || draggedId) {
+    // Only update live display values in-place instead of blowing away innerHTML
     state.timers.forEach(timer => {
       const card = $timerList.querySelector(`[data-timer-id="${timer.id}"]`);
       if (card) {
