@@ -84,11 +84,19 @@ function formatTime(ms) {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
+function getTimerElapsed(timer) {
+  let elapsed = timer.elapsed || 0;
+  if (timer.state === 'running' && timer.startedAt) {
+    elapsed += Date.now() - timer.startedAt;
+  }
+  return elapsed;
+}
+
 function getTimerColor(timer) {
   if (timer.mode === 'clock') return 'clock';
   if (timer.state === 'finished') return 'finished';
   if (timer.mode === 'countdown') {
-    const remaining = timer.duration - timer.elapsed;
+    const remaining = timer.duration - getTimerElapsed(timer);
     if (remaining <= timer.dangerAt) return 'danger';
     if (remaining <= timer.warnAt) return 'warn';
     return 'safe';
@@ -189,11 +197,12 @@ function render() {
   $timer.textContent = display;
   $timer.className = `viewer-timer ${color}`;
 
-  // Progress bar (countdown only)
+  // Progress bar (countdown only - smooth linear animation)
   if (activeTimer.mode === 'countdown' && activeTimer.duration > 0) {
-    const progress = Math.min(1, activeTimer.elapsed / activeTimer.duration);
+    const elapsed = getTimerElapsed(activeTimer);
+    const progress = Math.min(1, Math.max(0, elapsed / activeTimer.duration));
     const remaining = 1 - progress;
-    $progress.style.width = `${remaining * 100}%`;
+    $progress.style.width = `${(remaining * 100).toFixed(2)}%`;
     $progress.className = `viewer-progress-bar ${color === 'finished' ? 'danger' : color}`;
   } else {
     $progress.style.width = '0%';

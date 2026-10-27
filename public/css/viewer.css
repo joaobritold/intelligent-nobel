@@ -86,13 +86,13 @@ html, body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.05);
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .viewer-progress-bar {
   height: 100%;
-  transition: width 0.15s linear, background 0.5s ease;
+  transition: width 100ms linear, background-color 0.4s ease;
 }
 
 .viewer-progress-bar.safe { background: var(--green); }

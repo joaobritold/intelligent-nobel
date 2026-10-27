@@ -158,8 +158,12 @@ function parseTimeInput(str) {
 function getTimerColor(timer) {
   if (timer.mode === 'clock') return 'safe';
   if (timer.state === 'finished') return 'finished';
+  let elapsed = timer.elapsed || 0;
+  if (timer.state === 'running' && timer.startedAt) {
+    elapsed += Date.now() - timer.startedAt;
+  }
   if (timer.mode === 'countdown') {
-    const remaining = timer.duration - timer.elapsed;
+    const remaining = timer.duration - elapsed;
     if (remaining <= timer.dangerAt) return 'danger';
     if (remaining <= timer.warnAt) return 'warn';
     return 'safe';
