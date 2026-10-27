@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>StageTimer — Modo Lista (Lineup & Horários)</title>
   <link rel="stylesheet" href="css/common.css">
   <link rel="stylesheet" href="css/lineup.css">
@@ -12,10 +14,10 @@
     <!-- Top Header -->
     <header class="lineup-header">
       <div class="lineup-title-box">
-        <span style="font-size: 2rem;">📋</span>
+        <span style="font-size: 1.7rem;">📋</span>
         <div>
           <div class="lineup-title">Lineup & Horários</div>
-          <div style="font-size: 0.75rem; color: var(--text-secondary);">Duplo clique ou tecla 'F' para Ecrã Inteiro</div>
+          <div class="lineup-sub">Duplo clique ou tecla 'F' para Ecrã Inteiro</div>
         </div>
         <span id="lineup-room-badge" class="lineup-room-badge">PALCO1</span>
       </div>
@@ -26,9 +28,18 @@
       </div>
     </header>
 
+    <!-- Navigation Switcher -->
+    <nav class="lineup-nav">
+      <a id="ln-nav-hub" href="index.html" class="lineup-nav-pill">🏠 Menu</a>
+      <a id="ln-nav-controller" href="controller.html" class="lineup-nav-pill">🎛️ Controlador</a>
+      <a id="ln-nav-operator" href="operator.html" class="lineup-nav-pill">📱 Operador</a>
+      <a id="ln-nav-viewer" href="viewer.html" class="lineup-nav-pill">📺 Palco</a>
+      <a id="ln-nav-lineup" href="lineup.html" class="lineup-nav-pill active">📋 Lista</a>
+    </nav>
+
     <!-- Main Content: Active Stage + Full Artist List -->
     <div class="lineup-body">
-      <!-- Left: Currently on Stage -->
+      <!-- Left / Top: Currently on Stage -->
       <aside id="lineup-now-card" class="lineup-now-card">
         <div id="lineup-now-badge" class="lineup-now-badge">● EM PALCO AGORA</div>
         <div id="lineup-now-name" class="lineup-now-name">--</div>
@@ -37,7 +48,7 @@
         <div id="lineup-now-notes" class="lineup-now-notes" style="display: none;"></div>
       </aside>
 
-      <!-- Right: Full Schedule List -->
+      <!-- Right / Bottom: Full Schedule List -->
       <main>
         <div id="lineup-list" class="lineup-list-container">
           <!-- Injected by JS -->

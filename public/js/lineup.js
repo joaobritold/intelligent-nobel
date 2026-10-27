@@ -27,6 +27,15 @@ const $list = document.getElementById('lineup-list');
 
 if ($roomBadge) $roomBadge.textContent = roomId;
 
+// Update navigation links with current room
+const q = `?room=${encodeURIComponent(roomId)}`;
+['hub', 'controller', 'operator', 'viewer', 'lineup'].forEach(key => {
+  const el = document.getElementById(`ln-nav-${key}`);
+  if (el) {
+    el.href = `${key === 'hub' ? 'index' : key}.html${q}`;
+  }
+});
+
 function updateClock() {
   if ($localClock) {
     $localClock.textContent = new Date().toLocaleTimeString('pt-PT', { hour12: false });
@@ -187,15 +196,17 @@ function render() {
 
     return `
       <div class="${rowClass}">
-        <div class="lineup-col-time">🕒 ${escapeHtml(timeDisplay)}</div>
+        <div class="lineup-row-top-mobile">
+          <div class="lineup-col-time">🕒 ${escapeHtml(timeDisplay)}</div>
+          <div class="lineup-col-status">
+            <span class="lineup-status-pill ${statusClass}">${statusText}</span>
+          </div>
+        </div>
         <div class="lineup-col-artist">
           <span class="lineup-artist-name">${escapeHtml(t.name)}</span>
           ${t.notes ? `<span class="lineup-artist-notes">📝 ${escapeHtml(t.notes)}</span>` : ''}
         </div>
-        <div class="lineup-col-duration">⏱ ${formatTime(t.duration)}</div>
-        <div class="lineup-col-status">
-          <span class="lineup-status-pill ${statusClass}">${statusText}</span>
-        </div>
+        <div class="lineup-col-duration">Duração: ⏱ ${formatTime(t.duration)}</div>
       </div>
     `;
   }).join('');
