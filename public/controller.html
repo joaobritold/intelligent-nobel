@@ -10,8 +10,8 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <title>StageTimer — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=6">
-  <link rel="stylesheet" href="css/controller.css?v=6">
+  <link rel="stylesheet" href="css/common.css?v=8">
+  <link rel="stylesheet" href="css/controller.css?v=8">
 </head>
 <body>
   <div class="app">
@@ -22,9 +22,11 @@
           <span class="logo-icon">⏱️</span>
           <span>StageTimer</span>
         </div>
-        <div class="room-info">
-          <span>Room:</span>
-          <span id="room-id" class="room-id" title="Click to copy room ID">------</span>
+        <div class="room-info" style="display: flex; align-items: center; gap: 6px;">
+          <span>🎪 Evento:</span>
+          <select id="ctrl-event-select" class="input" style="padding: 4px 10px; font-size: 0.82rem; font-weight: 700; min-width: 155px; height: 30px; cursor: pointer;" title="Mudar entre eventos em simultâneo"></select>
+          <button id="ctrl-new-clean-event-btn" type="button" class="btn btn-sm" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(0, 184, 148, 0.18); border-color: rgba(0, 184, 148, 0.5); color: #55efc4;" title="Criar um novo evento limpo separado">+ Novo</button>
+          <span id="room-id" class="room-id" title="Código desta sessão (clique para copiar)" style="display: none;">------</span>
         </div>
         <!-- Modes Navigation -->
         <div style="display: flex; gap: 6px; margin-left: 8px; flex-wrap: wrap;">
@@ -210,15 +212,15 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=6"></script>
+  <script src="js/schedule-importer.js?v=8"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=6"></script>
+  <script src="js/auth.js?v=8"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=6"></script>
-  <script src="js/local-sync.js?v=6"></script>
-  <script src="js/controller.js?v=6"></script>
+  <script src="js/pwa.js?v=8"></script>
+  <script src="js/local-sync.js?v=8"></script>
+  <script src="js/controller.js?v=8"></script>
 </body>
 </html>

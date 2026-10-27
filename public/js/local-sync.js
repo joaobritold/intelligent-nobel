@@ -18,6 +18,8 @@ class UniversalSyncClient {
     this.storageKey = `stagetimer_state_${this.cleanRoom}`;
     this.mqttTopicState = `stagetimer_v2/${this.cleanRoom}/state`;
     this.mqttTopicPresence = `stagetimer_v2/${this.cleanRoom}/presence`;
+    this.mqttTopicRegistry = 'stagetimer_v2/_global_events_registry/list';
+    this.registryStorageKey = 'stagetimer_events_registry';
 
     this.clientId = 'st_' + Math.random().toString(36).substring(2, 10);
     this.listeners = new Map();
@@ -66,6 +68,7 @@ class UniversalSyncClient {
         if (parsed && parsed.timers?.length === 1 && parsed.timers[0].name === 'Main Keynote') {
           this._state = this._createDefaultRoom(this.cleanRoom);
           this._saveLocal();
+    this._syncEventInRegistry();
         } else {
           this._state = parsed;
         }
@@ -73,9 +76,13 @@ class UniversalSyncClient {
     }
 
     if (!this._state) {
-      this._state = this._createDefaultRoom(this.cleanRoom);
+      const urlParams = new URLSearchParams(location.search);
+      const isClean = urlParams.get('clean') === '1';
+      this._state = this._createDefaultRoom(this.cleanRoom, isClean);
       this._saveLocal();
+    this._syncEventInRegistry();
     }
+    this._syncEventInRegistry();
 
     // 4. Local High-FPS UI Render Loop (computes countdown smoothly from timestamps)
     this._startRenderLoop();
@@ -111,12 +118,11 @@ class UniversalSyncClient {
       console.log(`☁️ Connected to Cloud Room [${this.cleanRoom}]`);
       this._emit('connected');
 
-      // Subscribe to room state (retained message arrives immediately!)
-      this.mqttClient.subscribe([this.mqttTopicState, this.mqttTopicPresence], { qos: 0 }, (err) => {
+      // Subscribe to room state & global events registry (retained messages arrive immediately!)
+      this.mqttClient.subscribe([this.mqttTopicState, this.mqttTopicPresence, this.mqttTopicRegistry], { qos: 0 }, (err) => {
         if (!err) {
           this._emit('p2p-ready', { id: this.cleanRoom, count: this.connectedPeersCount });
           this._announcePresence();
-          // If we already have a newer state or no retained state exists yet, controllers can seed
         }
       });
     });
@@ -128,6 +134,10 @@ class UniversalSyncClient {
           if (msg.sender === this.clientId) return;
           if (msg.data) {
             this._applyIncomingState(msg.data, true);
+          }
+        } else if (topic === this.mqttTopicRegistry) {
+          if (msg && Array.isArray(msg.events)) {
+            this._mergeIncomingRegistry(msg.events);
           }
         } else if (topic === this.mqttTopicPresence) {
           if (msg.clientId) {
@@ -238,11 +248,25 @@ class UniversalSyncClient {
     }
   }
 
-  _createDefaultRoom(id) {
+  _createDefaultRoom(id, forceClean = false) {
+    if (forceClean) {
+      return {
+        id: id,
+        name: id,
+        updatedAt: Date.now(),
+        activeTimerId: null,
+        message: { text: '', visible: false, level: 'info' },
+        theme: {
+          viewerBg: '#000000',
+          controllerBg: '#0f0f1a'
+        },
+        timers: []
+      };
+    }
     const timers = this._getDiaLineup(1);
     return {
       id: id,
-      name: 'Receção ao Caloiro 2026 - Dia 1',
+      name: id === 'PALCO1' ? 'Receção ao Caloiro 2026 - Dia 1' : id,
       updatedAt: 0,
       activeTimerId: timers[0].id,
       message: { text: '', visible: false, level: 'info' },
@@ -252,6 +276,137 @@ class UniversalSyncClient {
       },
       timers
     };
+  }
+
+  // ─── Multi-Event / Session Registry ───────────────────────────────
+
+  getEventsList() {
+    try {
+      const raw = localStorage.getItem(this.registryStorageKey);
+      let list = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(list)) list = [];
+      if (!list.some(e => e.id === 'PALCO1')) {
+        list.unshift({
+          id: 'PALCO1',
+          title: 'Palco Principal (PALCO1)',
+          artistCount: 6,
+          updatedAt: Date.now()
+        });
+      }
+      return list;
+    } catch (e) {
+      return [{ id: 'PALCO1', title: 'Palco Principal (PALCO1)', artistCount: 6, updatedAt: Date.now() }];
+    }
+  }
+
+  _saveEventsList(list, publish = true) {
+    try {
+      localStorage.setItem(this.registryStorageKey, JSON.stringify(list));
+    } catch (e) {}
+    if (publish && this.mqttClient && this.mqttClient.connected) {
+      try {
+        this.mqttClient.publish(
+          this.mqttTopicRegistry,
+          JSON.stringify({ sender: this.clientId, events: list }),
+          { qos: 0, retain: true }
+        );
+      } catch (e) {}
+    }
+    this._emit('events-list-update', list);
+  }
+
+  _mergeIncomingRegistry(incomingList) {
+    if (!Array.isArray(incomingList)) return;
+    const localList = this.getEventsList();
+    const map = new Map();
+    localList.forEach(item => map.set(item.id, item));
+    incomingList.forEach(item => {
+      if (!item || !item.id) return;
+      const existing = map.get(item.id);
+      if (!existing || (item.updatedAt || 0) >= (existing.updatedAt || 0)) {
+        map.set(item.id, item);
+      }
+    });
+    const merged = Array.from(map.values());
+    this._saveEventsList(merged, false);
+  }
+
+  _syncEventInRegistry() {
+    if (!this._state) return;
+    const list = this.getEventsList();
+    const idx = list.findIndex(e => e.id === this.cleanRoom);
+    const entry = {
+      id: this.cleanRoom,
+      title: this._state.name && this._state.name !== this.cleanRoom
+        ? `${this._state.name}`
+        : `Evento ${this.cleanRoom}`,
+      artistCount: Array.isArray(this._state.timers) ? this._state.timers.length : 0,
+      updatedAt: Date.now()
+    };
+    if (idx >= 0) {
+      list[idx] = entry;
+    } else {
+      list.push(entry);
+    }
+    this._saveEventsList(list, true);
+  }
+
+  createNewCleanEvent(titleInput) {
+    const cleanTitle = (titleInput || '').trim() || `Evento ${this.getEventsList().length + 1}`;
+    // Generate clean code from title (e.g. "Palco 2" -> "PALCO2")
+    let code = cleanTitle
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .substring(0, 16);
+    if (!code) code = 'EVENTO-' + Math.floor(100 + Math.random() * 900);
+
+    const newRoomState = {
+      id: code,
+      name: cleanTitle,
+      updatedAt: Date.now(),
+      activeTimerId: null,
+      message: { text: '', visible: false, level: 'info' },
+      theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
+      timers: []
+    };
+
+    try {
+      localStorage.setItem(`stagetimer_state_${code}`, JSON.stringify(newRoomState));
+      localStorage.setItem('stagetimer_last_room', code);
+    } catch (e) {}
+
+    // Publish empty state to that room's MQTT topic too
+    if (this.mqttClient && this.mqttClient.connected) {
+      try {
+        this.mqttClient.publish(
+          `stagetimer_v2/${code}/state`,
+          JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: newRoomState }),
+          { qos: 0, retain: true }
+        );
+      } catch (e) {}
+    }
+
+    const list = this.getEventsList();
+    const existingIdx = list.findIndex(e => e.id === code);
+    const entry = { id: code, title: cleanTitle, artistCount: 0, updatedAt: Date.now() };
+    if (existingIdx >= 0) {
+      list[existingIdx] = entry;
+    } else {
+      list.push(entry);
+    }
+    this._saveEventsList(list, true);
+    return code;
+  }
+
+  deleteEventFromRegistry(codeToDelete) {
+    if (!codeToDelete || codeToDelete === 'PALCO1') return;
+    const list = this.getEventsList().filter(e => e.id !== codeToDelete);
+    try {
+      localStorage.removeItem(`stagetimer_state_${codeToDelete}`);
+    } catch (e) {}
+    this._saveEventsList(list, true);
   }
 
   loadPresetDay(day = 1) {
@@ -312,6 +467,7 @@ class UniversalSyncClient {
     this._state = incoming;
     this._enforceInactiveReset();
     this._saveLocal();
+    this._syncEventInRegistry();
 
     if (fromCloud && this.channel) {
       try {
@@ -349,6 +505,7 @@ class UniversalSyncClient {
     });
 
     this._saveLocal();
+    this._syncEventInRegistry();
 
     // 1. Broadcast to local tabs
     if (this.channel) {

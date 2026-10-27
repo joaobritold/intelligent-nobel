@@ -10,17 +10,19 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <title>StageTimer — Modo Operador (Mobile)</title>
-  <link rel="stylesheet" href="css/common.css?v=6">
-  <link rel="stylesheet" href="css/operator.css?v=6">
+  <link rel="stylesheet" href="css/common.css?v=8">
+  <link rel="stylesheet" href="css/operator.css?v=8">
 </head>
 <body>
   <div class="op-app">
     <!-- Header -->
     <header class="op-header">
-      <div class="op-room-box">
-        <span style="font-size: 1.1rem;">📱</span>
-        <input id="op-room-input" class="input input-mono op-room-input" value="PALCO1" aria-label="Room Code">
-        <button id="op-join-btn" class="btn btn-primary op-join-btn">Sala</button>
+      <div class="op-room-box" style="flex: 1; min-width: 0; gap: 5px;">
+        <span style="font-size: 1rem;">🎪</span>
+        <select id="op-event-select" class="input" style="padding: 5px 8px; font-size: 0.8rem; font-weight: 700; min-width: 115px; max-width: 185px; height: 32px; border-radius: 8px;" title="Escolher Evento / Sessão"></select>
+        <button id="op-new-event-btn" type="button" class="btn btn-sm" style="padding: 5px 8px; font-size: 0.72rem; background: rgba(0, 184, 148, 0.2); border-color: rgba(0, 184, 148, 0.5); color: #55efc4; white-space: nowrap;" title="Criar novo evento limpo">+ Novo</button>
+        <input id="op-room-input" class="input input-mono op-room-input" value="PALCO1" aria-label="Room Code" style="display: none;">
+        <button id="op-join-btn" class="btn btn-primary op-join-btn" style="display: none;">Sala</button>
       </div>
 
       <div style="display: flex; align-items: center; gap: 6px;">
@@ -159,14 +161,14 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=6"></script>
+  <script src="js/schedule-importer.js?v=8"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=6"></script>
+  <script src="js/auth.js?v=8"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=6"></script>
-  <script src="js/local-sync.js?v=6"></script>
-  <script src="js/operator.js?v=6"></script>
+  <script src="js/pwa.js?v=8"></script>
+  <script src="js/local-sync.js?v=8"></script>
+  <script src="js/operator.js?v=8"></script>
 </body>
 </html>

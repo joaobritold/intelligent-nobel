@@ -40,6 +40,57 @@ const $joinRoomBtn = document.getElementById('join-room-btn');
 const $p2pStatusText = document.getElementById('p2p-status-text');
 const $p2pPeerCount = document.getElementById('p2p-peer-count');
 const $viewerLinkBtn = document.getElementById('viewer-link-btn');
+const $ctrlEventSelect = document.getElementById('ctrl-event-select');
+const $ctrlNewCleanEventBtn = document.getElementById('ctrl-new-clean-event-btn');
+
+function renderEventSelector() {
+  if (!$ctrlEventSelect || typeof client.getEventsList !== 'function') return;
+  const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
+  const list = client.getEventsList();
+  if (!list.some(e => e.code === currentCode)) {
+    list.unshift({ code: currentCode, title: state?.name || currentCode, timersCount: state?.timers?.length || 0 });
+  }
+  $ctrlEventSelect.innerHTML = list.map(ev => {
+    const label = ev.title && ev.title.toUpperCase() !== ev.code
+      ? `${ev.title} (${ev.code})`
+      : ev.code;
+    return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>${label}</option>`;
+  }).join('') + `<option value="__NEW_CLEAN__">✨ + Criar Novo Evento Limpo...</option>`;
+}
+
+function promptCreateNewCleanEvent() {
+  const name = prompt('Nome do novo evento limpo (ex: Palco 2, Evento B, Auditório):', '');
+  if (name === null) {
+    renderEventSelector();
+    return;
+  }
+  const cleanTitle = name.trim() || `Evento ${(client.getEventsList().length || 1) + 1}`;
+  const newCode = client.createNewCleanEvent(cleanTitle);
+  location.search = `?room=${encodeURIComponent(newCode)}&clean=1`;
+}
+
+if ($ctrlEventSelect) {
+  $ctrlEventSelect.addEventListener('change', () => {
+    const val = $ctrlEventSelect.value;
+    if (val === '__NEW_CLEAN__') {
+      promptCreateNewCleanEvent();
+      return;
+    }
+    if (val && val !== (state?.id || roomId)) {
+      location.search = `?room=${encodeURIComponent(val)}`;
+    }
+  });
+}
+
+if ($ctrlNewCleanEventBtn) {
+  $ctrlNewCleanEventBtn.addEventListener('click', () => {
+    promptCreateNewCleanEvent();
+  });
+}
+
+client.on('events-list-update', () => {
+  renderEventSelector();
+});
 
 if ($roomCodeInput) {
   $roomCodeInput.value = (roomId || 'PALCO1').toUpperCase();
@@ -305,6 +356,7 @@ function updateRoomInfo() {
   if (topOperator) topOperator.href = operatorUrl;
   if (topViewer) topViewer.href = viewerUrl;
   if (topLineup) topLineup.href = `${basePath}/lineup.html?room=${encodeURIComponent(code)}`;
+  renderEventSelector();
 }
 
 // ─── Render Timers ─────────────────────────────────────────────────

@@ -61,33 +61,124 @@
       padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 14px;
       box-shadow: var(--shadow-lg);
     }
 
     .room-label {
-      font-size: 0.8rem;
-      font-weight: 600;
+      font-size: 0.85rem;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .events-list-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 240px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .event-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .event-row:hover {
+      border-color: var(--accent);
+      background: rgba(108, 92, 231, 0.08);
+    }
+
+    .event-row.active {
+      border-color: #00b894;
+      background: rgba(0, 184, 148, 0.14);
+      box-shadow: 0 0 0 1px rgba(0, 184, 148, 0.3);
+    }
+
+    .event-row-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .event-row-title {
+      font-weight: 700;
+      font-size: 0.98rem;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .event-row-meta {
+      font-size: 0.75rem;
       color: var(--text-secondary);
-      text-align: center;
+      font-family: var(--font-mono);
+    }
+
+    .event-code-pill {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(108, 92, 231, 0.25);
+      color: #c4b5fd;
+      border: 1px solid rgba(108, 92, 231, 0.4);
+    }
+
+    .event-row.active .event-code-pill {
+      background: rgba(0, 184, 148, 0.25);
+      color: #55efc4;
+      border-color: rgba(0, 184, 148, 0.5);
+    }
+
+    .new-event-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
     }
 
     .room-input-row {
       display: flex;
+      align-items: center;
       justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .room-input {
       width: 100%;
-      max-width: 280px;
+      max-width: 220px;
       text-align: center;
-      font-size: 1.4rem !important;
+      font-size: 1.15rem !important;
       font-weight: 700;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      padding: 12px 16px;
+      padding: 8px 12px;
       border: 2px solid var(--accent);
       border-radius: var(--radius);
       background: var(--bg-input);
@@ -186,13 +277,32 @@
       <p class="hub-sub">Sincronização em Tempo Real para Eventos & Palcos</p>
     </div>
 
-    <!-- Room Code Box -->
+    <!-- Event List & Session Manager Box -->
     <div class="room-card">
-      <label class="room-label" for="hub-room">Código da Sala (Room Code)</label>
-      <div class="room-input-row">
-        <input id="hub-room" class="input-mono room-input" value="PALCO1" spellcheck="false" autocomplete="off">
+      <div class="room-label">
+        <span>🎪 Lista de Eventos / Sessões</span>
+        <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; text-transform: none;">Selecione um evento ou crie um novo limpo</span>
       </div>
-      <div class="room-hint">Use o mesmo código em todos os dispositivos (PC, iPhone, iPad, Telão)</div>
+
+      <!-- List of active/saved events -->
+      <div id="hub-events-list" class="events-list-box"></div>
+
+      <!-- Create New Clean Event Row -->
+      <div class="new-event-bar">
+        <input id="hub-new-event-name" class="input" style="flex: 1; min-width: 180px; font-size: 0.9rem;" placeholder="Nome do novo evento (ex: Palco 2, Auditório...)" autocomplete="off">
+        <button id="hub-create-clean-btn" type="button" class="btn btn-primary" style="font-weight: 700; white-space: nowrap;">
+          ✨ + Criar Novo Evento Limpo
+        </button>
+      </div>
+
+      <!-- Direct Room Code Box -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
+        <label for="hub-room" style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;">Código da Sessão Selecionada:</label>
+        <div class="room-input-row">
+          <input id="hub-room" class="input-mono room-input" value="PALCO1" spellcheck="false" autocomplete="off" title="Código da Sala/Evento">
+        </div>
+      </div>
+      <div class="room-hint">Cada evento na lista é 100% independente — pode correr 2 ou mais eventos ao mesmo tempo sem interferência.</div>
     </div>
 
     <!-- 3 Mode Cards -->
@@ -253,7 +363,9 @@
     </div>
   </div>
 
-  <script src="js/pwa.js?v=6"></script>
+  <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
+  <script src="js/pwa.js?v=8"></script>
+  <script src="js/local-sync.js?v=8"></script>
   <script>
     const $toggleQr = document.getElementById('toggle-qr-btn');
     const $qrContainer = document.getElementById('qr-container');
@@ -269,12 +381,57 @@
     const $operator = document.getElementById('card-operator');
     const $viewer = document.getElementById('card-viewer');
     const $lineup = document.getElementById('card-lineup');
+    const $eventsList = document.getElementById('hub-events-list');
+    const $newEventName = document.getElementById('hub-new-event-name');
+    const $createCleanBtn = document.getElementById('hub-create-clean-btn');
 
     const params = new URLSearchParams(location.search);
     if (params.get('room')) {
       $room.value = params.get('room').toUpperCase();
     } else if (localStorage.getItem('stagetimer_last_room')) {
       $room.value = localStorage.getItem('stagetimer_last_room').toUpperCase();
+    }
+
+    const hubClient = new StageTimerClient({
+      role: 'viewer',
+      room: ($room.value.trim() || 'PALCO1').toUpperCase(),
+    });
+    hubClient.connect();
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, (m) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+    }
+
+    function renderEventsList() {
+      if (!$eventsList) return;
+      const currentCode = ($room.value.trim() || 'PALCO1').toUpperCase();
+      const list = hubClient.getEventsList();
+
+      $eventsList.innerHTML = list.map((ev) => {
+        const isSelected = ev.code === currentCode;
+        const countLabel = typeof ev.timersCount === 'number'
+          ? `${ev.timersCount} artista(s)`
+          : 'Sessão ativa';
+        return `
+          <div class="event-row ${isSelected ? 'active' : ''}" data-select-code="${escapeHtml(ev.code)}">
+            <div class="event-row-left">
+              <div class="event-row-title">
+                <span>${isSelected ? '🟢' : '⚪'} ${escapeHtml(ev.title || ev.code)}</span>
+                <span class="event-code-pill">${escapeHtml(ev.code)}</span>
+              </div>
+              <div class="event-row-meta">${countLabel} ${isSelected ? '• SELECIONADO AGORA' : '• Clique para chamar este evento'}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="btn btn-sm ${isSelected ? 'btn-primary' : ''}" style="pointer-events: none; font-size: 0.75rem; padding: 4px 10px;">
+                ${isSelected ? '✓ Ativo' : 'Chamar'}
+              </span>
+              ${list.length > 1 ? `<button type="button" class="btn btn-sm btn-danger" data-delete-code="${escapeHtml(ev.code)}" title="Apagar este evento da lista" style="padding: 4px 8px; font-size: 0.75rem;">🗑️</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     function updateLinks() {
@@ -289,7 +446,59 @@
         const fullUrl = `${location.origin}/?room=${encodeURIComponent(code)}`;
         $qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(fullUrl)}`;
       }
+      renderEventsList();
     }
+
+    if ($eventsList) {
+      $eventsList.addEventListener('click', (e) => {
+        const delBtn = e.target.closest('[data-delete-code]');
+        if (delBtn) {
+          e.stopPropagation();
+          const codeToDel = delBtn.dataset.deleteCode;
+          if (confirm(`Apagar o evento "${codeToDel}" da lista de eventos?`)) {
+            const remaining = hubClient.deleteEventFromRegistry(codeToDel);
+            if (($room.value.trim() || '').toUpperCase() === codeToDel && remaining.length > 0) {
+              $room.value = remaining[0].code;
+            }
+            updateLinks();
+          }
+          return;
+        }
+        const row = e.target.closest('[data-select-code]');
+        if (row) {
+          $room.value = row.dataset.selectCode;
+          updateLinks();
+        }
+      });
+    }
+
+    if ($createCleanBtn) {
+      $createCleanBtn.addEventListener('click', () => {
+        let name = $newEventName ? $newEventName.value.trim() : '';
+        if (!name) {
+          const prompted = prompt('Qual o nome do novo evento? (ex: Palco 2, Evento Corporativo, Tenda Eletrónica)', '');
+          if (prompted === null) return;
+          name = prompted.trim() || `Evento ${hubClient.getEventsList().length + 1}`;
+        }
+        const newCode = hubClient.createNewCleanEvent(name);
+        if ($newEventName) $newEventName.value = '';
+        $room.value = newCode;
+        updateLinks();
+      });
+    }
+
+    if ($newEventName) {
+      $newEventName.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && $createCleanBtn) {
+          e.preventDefault();
+          $createCleanBtn.click();
+        }
+      });
+    }
+
+    hubClient.on('events-list-update', () => {
+      renderEventsList();
+    });
 
     $room.addEventListener('input', updateLinks);
     updateLinks();

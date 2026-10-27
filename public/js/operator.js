@@ -18,6 +18,57 @@ const $roomInput = document.getElementById('op-room-input');
 const $joinBtn = document.getElementById('op-join-btn');
 const $connBadge = document.getElementById('op-conn-badge');
 const $bgColor = document.getElementById('op-bg-color');
+const $opEventSelect = document.getElementById('op-event-select');
+const $opNewEventBtn = document.getElementById('op-new-event-btn');
+
+function renderOpEventSelector() {
+  if (!$opEventSelect || typeof client.getEventsList !== 'function') return;
+  const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
+  const list = client.getEventsList();
+  if (!list.some(e => e.code === currentCode)) {
+    list.unshift({ code: currentCode, title: state?.name || currentCode, timersCount: state?.timers?.length || 0 });
+  }
+  $opEventSelect.innerHTML = list.map(ev => {
+    const label = ev.title && ev.title.toUpperCase() !== ev.code
+      ? `${ev.title} (${ev.code})`
+      : ev.code;
+    return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>${label}</option>`;
+  }).join('') + `<option value="__NEW_CLEAN__">✨ + Criar Novo Evento Limpo...</option>`;
+}
+
+function promptOpCreateNewCleanEvent() {
+  const name = prompt('Nome do novo evento limpo (ex: Palco 2, Evento B, Tenda):', '');
+  if (name === null) {
+    renderOpEventSelector();
+    return;
+  }
+  const cleanTitle = name.trim() || `Evento ${(client.getEventsList().length || 1) + 1}`;
+  const newCode = client.createNewCleanEvent(cleanTitle);
+  location.search = `?room=${encodeURIComponent(newCode)}&clean=1`;
+}
+
+if ($opEventSelect) {
+  $opEventSelect.addEventListener('change', () => {
+    const val = $opEventSelect.value;
+    if (val === '__NEW_CLEAN__') {
+      promptOpCreateNewCleanEvent();
+      return;
+    }
+    if (val && val !== (state?.id || roomId)) {
+      location.search = `?room=${encodeURIComponent(val)}`;
+    }
+  });
+}
+
+if ($opNewEventBtn) {
+  $opNewEventBtn.addEventListener('click', () => {
+    promptOpCreateNewCleanEvent();
+  });
+}
+
+client.on('events-list-update', () => {
+  renderOpEventSelector();
+});
 
 const $navController = document.getElementById('nav-controller');
 const $navOperator = document.getElementById('nav-operator');
@@ -65,6 +116,7 @@ function updateNavLinks() {
   $navViewer.href = `viewer.html?room=${code}`;
   const $navLineup = document.getElementById('nav-lineup');
   if ($navLineup) $navLineup.href = `lineup.html?room=${code}`;
+  renderOpEventSelector();
 }
 
 $joinBtn.addEventListener('click', () => {
