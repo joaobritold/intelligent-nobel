@@ -48,9 +48,12 @@
       <section class="timer-panel">
         <div class="panel-header">
           <div class="panel-title">Timers Rundown</div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button id="open-import-btn" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff;">📂 Importar Horários (PDF/Excel)</button>
-            <button id="load-dia1-btn" class="btn btn-sm" title="Carregar alinhamento do Dia 1 (Receção ao Caloiro)">📅 Dia 1</button>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button id="open-import-btn" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff;">📂 Importar</button>
+            <button class="btn btn-sm preset-day-btn" data-day="1" title="Receção ao Caloiro - Dia 1">📅 Dia 1</button>
+            <button class="btn btn-sm preset-day-btn" data-day="2" title="Receção ao Caloiro - Dia 2">📅 Dia 2</button>
+            <button class="btn btn-sm preset-day-btn" data-day="3" title="Receção ao Caloiro - Dia 3">📅 Dia 3</button>
+            <button class="btn btn-sm preset-day-btn" data-day="4" title="Receção ao Caloiro - Dia 4">📅 Dia 4</button>
             <button id="add-timer-btn" class="btn btn-primary btn-sm">+ Add Timer</button>
           </div>
         </div>
@@ -78,6 +81,7 @@
           <div class="preview-frame">
             <div id="preview-name" class="preview-timer-name" style="font-size: 0.8rem; font-weight: 700; color: #fff; margin-bottom: 6px;"></div>
             <div id="preview-display" class="preview-timer-display">--:--</div>
+            <div id="preview-endtime" style="font-size: 0.72rem; color: #55efc4; font-family: var(--font-mono); font-weight: 600; margin-top: 2px;"></div>
             <div id="preview-notes" style="font-size: 0.65rem; color: #cbd5e1; margin-top: 2px; text-align: center; padding: 0 8px;"></div>
             <div id="preview-next" style="position: absolute; top: 6px; right: 8px; font-size: 0.55rem; color: #a29bfe; font-weight: 700;"></div>
             <div id="preview-message" class="preview-message"></div>

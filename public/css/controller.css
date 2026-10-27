@@ -140,8 +140,43 @@
 }
 
 .timer-card.dragging {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: grabbing;
+  border-color: var(--accent);
+}
+
+.timer-card.drag-over {
+  border-top: 3px solid var(--accent);
+  box-shadow: 0 -4px 12px rgba(108, 92, 231, 0.35);
+}
+
+.drag-handle {
+  cursor: grab;
+  color: var(--text-muted);
+  font-size: 1.15rem;
+  padding: 2px 6px 2px 0;
+  user-select: none;
+  line-height: 1;
+}
+
+.drag-handle:hover {
+  color: var(--accent);
+}
+
+.timer-end-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(0, 184, 148, 0.14);
+  border: 1px solid rgba(0, 184, 148, 0.35);
+  color: #55efc4;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 600;
+  margin-left: 6px;
+  white-space: nowrap;
 }
 
 .timer-card-top {

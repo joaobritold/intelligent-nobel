@@ -201,6 +201,39 @@ function getTimerProgress(timer) {
   return Math.min(1, elapsed / timer.duration);
 }
 
+function getEstimatedEndTime(timer) {
+  if (!timer || timer.mode === 'clock') return '';
+  let elapsed = timer.elapsed || 0;
+  if (timer.state === 'running' && timer.startedAt) {
+    elapsed += Date.now() - timer.startedAt;
+  }
+  const remaining = Math.max(0, (timer.duration || 0) - elapsed);
+
+  // If currently running (or active & already started), calculate real-time clock finish
+  if (timer.state === 'running' || (timer.id === state?.activeTimerId && elapsed > 0)) {
+    const end = new Date(Date.now() + remaining);
+    return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+
+  // If scheduled startTime exists (e.g. "23:00"), calculate startTime + remaining duration
+  if (timer.startTime) {
+    const m = String(timer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+    if (m) {
+      const startMins = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+      const endMins = (startMins + Math.round(remaining / 60000)) % 1440;
+      const hh = String(Math.floor(endMins / 60)).padStart(2, '0');
+      const mm = String(endMins % 60).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+  }
+
+  // Fallback: if started right now
+  const end = new Date(Date.now() + remaining);
+  return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+let lastRenderedStructureSig = '';
+
 function showToast(message) {
   $toast.textContent = message;
   $toast.classList.add('visible');
@@ -243,6 +276,7 @@ function renderTimers() {
   if (!state) return;
 
   if (state.timers.length === 0) {
+    lastRenderedStructureSig = 'EMPTY';
     $timerList.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">⏱️</div>
@@ -253,11 +287,15 @@ function renderTimers() {
     return;
   }
 
-  // Prevent re-rendering while user is editing or hovering
+  // Structural signature includes order of IDs, active timer, state, and mode
+  const structureSig = state.timers.map(t => `${t.id}:${t.id === state.activeTimerId}:${t.state}:${t.mode}:${t.startTime || ''}:${t.duration}`).join('|');
+
+  // Prevent full DOM rebuild on 100ms ticks while user is editing/hovering/dragging,
+  // UNLESS the order or structure of timers changed!
   const isEditing = document.activeElement && document.activeElement.matches('input, select, textarea');
   const isHovering = $timerList.matches(':hover');
 
-  if (isEditing || isHovering) {
+  if (structureSig === lastRenderedStructureSig && (isEditing || isHovering || draggedId)) {
     // Only update live display values instead of blowing away innerHTML
     state.timers.forEach(timer => {
       const card = $timerList.querySelector(`[data-timer-id="${timer.id}"]`);
@@ -267,6 +305,10 @@ function renderTimers() {
         if (display) {
           display.textContent = getTimerDisplayValue(timer);
           display.className = `timer-display timer-${color}`;
+        }
+        const endBadge = card.querySelector('.timer-end-badge');
+        if (endBadge) {
+          endBadge.textContent = `🏁 Fim previsto: ${getEstimatedEndTime(timer)}`;
         }
         const bar = card.querySelector('.timer-progress-bar');
         if (bar && timer.mode === 'countdown') {
@@ -279,14 +321,17 @@ function renderTimers() {
     return;
   }
 
+  lastRenderedStructureSig = structureSig;
+
   // Build HTML for each timer
-  const html = state.timers.map(timer => {
+  const html = state.timers.map((timer, idx) => {
     const color = getTimerColor(timer);
     const display = getTimerDisplayValue(timer);
     const progress = getTimerProgress(timer);
     const isActive = timer.id === state.activeTimerId;
     const isRunning = timer.state === 'running';
     const isFinished = timer.state === 'finished';
+    const endTimeStr = getEstimatedEndTime(timer);
 
     const cardClasses = [
       'timer-card',
@@ -298,6 +343,7 @@ function renderTimers() {
     return `
       <div class="${cardClasses}" data-timer-id="${timer.id}" draggable="true">
         <div class="timer-card-top">
+          <span class="drag-handle" title="Arraste para reorganizar a ordem">⠿</span>
           <input
             class="timer-name-input"
             value="${escapeHtml(timer.name)}"
@@ -319,13 +365,18 @@ function renderTimers() {
             ${display}
           </div>
           <div class="timer-meta">
-            <select class="input timer-mode-select" data-timer-id="${timer.id}" data-field="mode">
-              <option value="countdown" ${timer.mode === 'countdown' ? 'selected' : ''}>⏬ Countdown</option>
-              <option value="countup" ${timer.mode === 'countup' ? 'selected' : ''}>⏫ Count Up</option>
-              <option value="clock" ${timer.mode === 'clock' ? 'selected' : ''}>🕐 Clock</option>
-            </select>
+            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
+              <select class="input timer-mode-select" data-timer-id="${timer.id}" data-field="mode">
+                <option value="countdown" ${timer.mode === 'countdown' ? 'selected' : ''}>⏬ Countdown</option>
+                <option value="countup" ${timer.mode === 'countup' ? 'selected' : ''}>⏫ Count Up</option>
+                <option value="clock" ${timer.mode === 'clock' ? 'selected' : ''}>🕐 Clock</option>
+              </select>
+              ${timer.mode !== 'clock' ? `
+                <span class="timer-end-badge" title="Hora prevista de término">🏁 Fim previsto: ${endTimeStr}</span>
+              ` : ''}
+            </div>
             ${timer.mode !== 'clock' ? `
-              <div class="timer-duration-row">
+              <div class="timer-duration-row" style="flex-wrap: wrap;">
                 <span>Duration:</span>
                 <input
                   class="input input-mono timer-duration-input"
@@ -369,6 +420,12 @@ function renderTimers() {
             </button>
           </div>
           <div class="timer-settings">
+            <button class="btn btn-icon btn-sm" data-action="move-up" data-timer-id="${timer.id}" title="Mover para cima" ${idx === 0 ? 'disabled style="opacity:0.35"' : ''}>
+              ↑
+            </button>
+            <button class="btn btn-icon btn-sm" data-action="move-down" data-timer-id="${timer.id}" title="Mover para baixo" ${idx === state.timers.length - 1 ? 'disabled style="opacity:0.35"' : ''}>
+              ↓
+            </button>
             <button class="btn btn-icon btn-sm" data-action="edit" data-timer-id="${timer.id}" title="Edit warnings">
               ⚙️
             </button>
@@ -420,6 +477,12 @@ function renderPreview() {
   $previewName.textContent = activeTimer.name;
   $previewDisplay.textContent = display;
   $previewDisplay.className = `preview-timer-display timer-${color}`;
+
+  const $previewEndTime = document.getElementById('preview-endtime');
+  if ($previewEndTime) {
+    const endStr = getEstimatedEndTime(activeTimer);
+    $previewEndTime.textContent = endStr ? `🏁 Término previsto: ${endStr}` : '';
+  }
 
   const $previewNotes = document.getElementById('preview-notes');
   if ($previewNotes) {
@@ -476,6 +539,24 @@ $timerList.addEventListener('click', (e) => {
     case 'edit':
       openEditModal(timerId);
       break;
+    case 'move-up': {
+      const order = state.timers.map(t => t.id);
+      const idx = order.indexOf(timerId);
+      if (idx > 0) {
+        [order[idx - 1], order[idx]] = [order[idx], order[idx - 1]];
+        client.reorderTimers(order);
+      }
+      break;
+    }
+    case 'move-down': {
+      const order = state.timers.map(t => t.id);
+      const idx = order.indexOf(timerId);
+      if (idx >= 0 && idx < order.length - 1) {
+        [order[idx], order[idx + 1]] = [order[idx + 1], order[idx]];
+        client.reorderTimers(order);
+      }
+      break;
+    }
   }
 });
 
@@ -526,14 +607,16 @@ $addTimerBtn.addEventListener('click', () => {
   });
 });
 
-const $loadDia1Btn = document.getElementById('load-dia1-btn');
-if ($loadDia1Btn) {
-  $loadDia1Btn.addEventListener('click', () => {
-    if (confirm('Carregar alinhamento completo da Receção ao Caloiro 2026 (Dia 1)?')) {
-      client.loadPresetDia1();
+// Preset Days (Dia 1, Dia 2, Dia 3, Dia 4)
+document.querySelectorAll('.preset-day-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const day = parseInt(btn.dataset.day, 10) || 1;
+    if (confirm(`Carregar alinhamento da Receção ao Caloiro 2026 — DIA ${day} (com Soundchecks e On Stage)?`)) {
+      client.loadPresetDay(day);
+      showToast(`✓ Dia ${day} carregado com sucesso!`);
     }
   });
-}
+});
 
 // Global controls
 $globalStart.addEventListener('click', () => client.globalAction('start'));
@@ -576,38 +659,74 @@ $roomIdDisplay.addEventListener('click', () => {
 
 // ─── Drag & Drop ───────────────────────────────────────────────────
 
+// Disable card draggable when pressing inside an input/select so user can select text normally
+$timerList.addEventListener('mousedown', (e) => {
+  const card = e.target.closest('.timer-card');
+  if (!card) return;
+  if (e.target.matches('input, select, textarea, button')) {
+    card.setAttribute('draggable', 'false');
+  } else {
+    card.setAttribute('draggable', 'true');
+  }
+});
+
+$timerList.addEventListener('mouseup', (e) => {
+  const card = e.target.closest('.timer-card');
+  if (card) card.setAttribute('draggable', 'true');
+});
+
 $timerList.addEventListener('dragstart', (e) => {
   const card = e.target.closest('.timer-card');
   if (!card) return;
   draggedId = card.dataset.timerId;
   card.classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';
+  try {
+    e.dataTransfer.setData('text/plain', draggedId);
+  } catch (_) {}
 });
 
-$timerList.addEventListener('dragend', (e) => {
-  const card = e.target.closest('.timer-card');
-  if (card) card.classList.remove('dragging');
+$timerList.addEventListener('dragend', () => {
+  $timerList.querySelectorAll('.timer-card').forEach(c => {
+    c.classList.remove('dragging', 'drag-over');
+  });
   draggedId = null;
 });
 
 $timerList.addEventListener('dragover', (e) => {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
+  const target = e.target.closest('.timer-card');
+  $timerList.querySelectorAll('.timer-card').forEach(c => {
+    c.classList.toggle('drag-over', c === target && c.dataset.timerId !== draggedId);
+  });
+});
+
+$timerList.addEventListener('dragleave', (e) => {
+  const target = e.target.closest('.timer-card');
+  if (target && !target.contains(e.relatedTarget)) {
+    target.classList.remove('drag-over');
+  }
 });
 
 $timerList.addEventListener('drop', (e) => {
   e.preventDefault();
+  $timerList.querySelectorAll('.timer-card').forEach(c => c.classList.remove('drag-over', 'dragging'));
   if (!draggedId || !state) return;
 
   const target = e.target.closest('.timer-card');
-  if (!target || target.dataset.timerId === draggedId) return;
+  const currentDraggedId = draggedId;
+  draggedId = null;
+
+  if (!target || target.dataset.timerId === currentDraggedId) return;
 
   const order = state.timers.map(t => t.id);
-  const fromIdx = order.indexOf(draggedId);
+  const fromIdx = order.indexOf(currentDraggedId);
   const toIdx = order.indexOf(target.dataset.timerId);
+  if (fromIdx === -1 || toIdx === -1) return;
 
   order.splice(fromIdx, 1);
-  order.splice(toIdx, 0, draggedId);
+  order.splice(toIdx, 0, currentDraggedId);
 
   client.reorderTimers(order);
 });
@@ -701,6 +820,11 @@ if ($importTextArea) {
 
 if ($importPageSelect) {
   $importPageSelect.addEventListener('change', () => {
+    if ($importPageSelect.value === 'all') {
+      $importTextArea.value = extractedPagesText.join('\n\n');
+      updateImportPreview();
+      return;
+    }
     const idx = parseInt($importPageSelect.value, 10) || 0;
     if (extractedPagesText[idx] !== undefined) {
       $importTextArea.value = extractedPagesText[idx];
@@ -723,7 +847,9 @@ if ($importFileInput) {
 
       if (extractedPagesText.length > 1) {
         $importPageSelector.style.display = 'block';
-        $importPageSelect.innerHTML = extractedPagesText.map((_, i) => `<option value="${i}">Página / Dia ${i + 1}</option>`).join('');
+        $importPageSelect.innerHTML =
+          extractedPagesText.map((_, i) => `<option value="${i}">Página / Dia ${i + 1}</option>`).join('') +
+          `<option value="all">Todos os Dias (${extractedPagesText.length} páginas)</option>`;
       } else {
         $importPageSelector.style.display = 'none';
       }

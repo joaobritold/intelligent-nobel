@@ -301,6 +301,31 @@ html, body {
   background: rgba(108, 92, 231, 0.18);
 }
 
+.op-queue-item.dragging {
+  opacity: 0.45;
+  border-color: var(--accent);
+}
+
+.op-queue-item.drag-over {
+  border-top: 3px solid var(--accent);
+}
+
+.op-move-btn {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  padding: 4px 7px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.op-move-btn:active {
+  background: var(--accent);
+  color: #fff;
+}
+
 .op-queue-info {
   display: flex;
   flex-direction: column;

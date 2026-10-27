@@ -148,9 +148,38 @@ function getTimerDisplayValue(timer) {
   return formatTime(elapsed);
 }
 
+function getEstimatedEndTime(timer) {
+  if (!timer || timer.mode === 'clock') return '';
+  let elapsed = timer.elapsed || 0;
+  if (timer.state === 'running' && timer.startedAt) {
+    elapsed += Date.now() - timer.startedAt;
+  }
+  const remaining = Math.max(0, (timer.duration || 0) - elapsed);
+
+  if (timer.state === 'running' || (timer.id === state?.activeTimerId && elapsed > 0)) {
+    const end = new Date(Date.now() + remaining);
+    return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+
+  if (timer.startTime) {
+    const m = String(timer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+    if (m) {
+      const startMins = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+      const endMins = (startMins + Math.round(remaining / 60000)) % 1440;
+      const hh = String(Math.floor(endMins / 60)).padStart(2, '0');
+      const mm = String(endMins % 60).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+  }
+
+  const end = new Date(Date.now() + remaining);
+  return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
 // ─── Render ────────────────────────────────────────────────────────
 
 let lastQueueSignature = '';
+let opDraggedId = null;
 
 function render() {
   if (!state) return;
@@ -161,12 +190,14 @@ function render() {
   }
 
   const active = state.timers.find(t => t.id === state.activeTimerId);
+  const $heroEndTime = document.getElementById('op-hero-endtime');
 
   if (!active) {
     $heroBadge.textContent = 'SEM TIMER';
     $heroName.textContent = 'Selecione um timer abaixo';
     $heroTime.textContent = '--:--';
     $heroTime.className = 'op-hero-time';
+    if ($heroEndTime) $heroEndTime.textContent = '';
     $heroBar.style.width = '0%';
   } else {
     const isRunning = active.state === 'running';
@@ -178,6 +209,11 @@ function render() {
     $heroName.textContent = active.name;
     $heroTime.textContent = getTimerDisplayValue(active);
     $heroTime.className = `op-hero-time ${color}`;
+
+    if ($heroEndTime) {
+      const endStr = getEstimatedEndTime(active);
+      $heroEndTime.textContent = endStr ? `🏁 Término previsto: ${endStr}` : '';
+    }
 
     if ($heroNotes) {
       $heroNotes.textContent = active.notes ? `📝 ${active.notes}` : '';
@@ -219,27 +255,41 @@ function render() {
 
   // Render queue only when structure changes to keep touch targets stable
   const sig = state.timers.map(t => `${t.id}:${t.name}:${t.startTime || ''}:${t.notes || ''}:${t.duration}:${t.mode}:${t.id === state.activeTimerId}`).join('|');
-  if (sig !== lastQueueSignature) {
+  if (sig !== lastQueueSignature && !opDraggedId) {
     lastQueueSignature = sig;
-    $queueList.innerHTML = state.timers.map(t => {
+    $queueList.innerHTML = state.timers.map((t, idx) => {
       const isAct = t.id === state.activeTimerId;
+      const endTimeStr = getEstimatedEndTime(t);
       return `
-        <div class="op-queue-item ${isAct ? 'active' : ''}" data-id="${t.id}">
+        <div class="op-queue-item ${isAct ? 'active' : ''}" data-id="${t.id}" draggable="true">
           <div class="op-queue-info" style="flex:1; margin-right: 8px;">
-            <span class="op-queue-name">${t.startTime ? `<strong style="color:var(--accent)">[${escapeHtml(t.startTime)}]</strong> ` : ''}${escapeHtml(t.name)}</span>
-            <span class="op-queue-meta">${t.mode.toUpperCase()} • ${formatTime(t.duration)}</span>
+            <span class="op-queue-name"><span style="color:var(--text-muted); margin-right:4px;">⠿</span>${t.startTime ? `<strong style="color:var(--accent)">[${escapeHtml(t.startTime)}]</strong> ` : ''}${escapeHtml(t.name)}</span>
+            <span class="op-queue-meta">${t.mode.toUpperCase()} • ${formatTime(t.duration)} ${endTimeStr ? `<span class="op-end-time" data-end-id="${t.id}" style="color:#55efc4; font-weight:700; margin-left:6px;">🏁 Fim: ${endTimeStr}</span>` : ''}</span>
             <div style="display:flex; gap:6px; margin-top: 6px;" onclick="event.stopPropagation()">
               <input class="input" data-time-id="${t.id}" value="${escapeHtml(t.startTime || '')}" placeholder="🕒 21:00" style="padding: 4px 8px; font-size: 16px !important; width: 85px; text-align:center;">
               <input class="input op-item-notes" data-note-id="${t.id}" value="${escapeHtml(t.notes || '')}" placeholder="📝 Notas deste artista..." style="padding: 4px 8px; font-size: 16px !important; flex: 1;">
             </div>
           </div>
-          <div class="op-queue-actions">
+          <div class="op-queue-actions" style="flex-direction: column; align-items: flex-end; gap: 6px;">
             <span class="op-queue-badge">${isAct ? '● NO AR' : 'ATIVAR'}</span>
-            <button type="button" class="op-queue-del" data-del-id="${t.id}" title="Apagar">🗑️</button>
+            <div style="display: flex; gap: 4px;">
+              <button type="button" class="op-move-btn" data-move-up="${t.id}" title="Subir" ${idx === 0 ? 'disabled style="opacity:0.35"' : ''}>↑</button>
+              <button type="button" class="op-move-btn" data-move-down="${t.id}" title="Descer" ${idx === state.timers.length - 1 ? 'disabled style="opacity:0.35"' : ''}>↓</button>
+              <button type="button" class="op-queue-del" data-del-id="${t.id}" title="Apagar">🗑️</button>
+            </div>
           </div>
         </div>
       `;
     }).join('');
+  } else {
+    // Update live end times in queue
+    state.timers.forEach(t => {
+      const el = $queueList.querySelector(`[data-end-id="${t.id}"]`);
+      if (el) {
+        const endStr = getEstimatedEndTime(t);
+        el.textContent = endStr ? `🏁 Fim: ${endStr}` : '';
+      }
+    });
   }
 }
 
@@ -361,14 +411,14 @@ if ($addArtistBtn) {
   $addArtistBtn.addEventListener('click', () => handleCreateArtist(false));
 }
 
-const $opLoadDia1 = document.getElementById('op-load-dia1');
-if ($opLoadDia1) {
-  $opLoadDia1.addEventListener('click', () => {
-    if (confirm('Carregar alinhamento da Receção ao Caloiro 2026 (Dia 1)?')) {
-      client.loadPresetDia1();
+document.querySelectorAll('.op-preset-day').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const day = parseInt(btn.dataset.day, 10) || 1;
+    if (confirm(`Carregar alinhamento da Receção ao Caloiro 2026 — DIA ${day}?`)) {
+      client.loadPresetDay(day);
     }
   });
-}
+});
 
 const $opImportFile = document.getElementById('op-import-file');
 if ($opImportFile) {
@@ -412,6 +462,30 @@ if ($artistName) {
 }
 
 $queueList.addEventListener('click', (e) => {
+  const upBtn = e.target.closest('[data-move-up]');
+  if (upBtn) {
+    e.stopPropagation();
+    const id = upBtn.dataset.moveUp;
+    const order = state.timers.map(t => t.id);
+    const idx = order.indexOf(id);
+    if (idx > 0) {
+      [order[idx - 1], order[idx]] = [order[idx], order[idx - 1]];
+      client.reorderTimers(order);
+    }
+    return;
+  }
+  const downBtn = e.target.closest('[data-move-down]');
+  if (downBtn) {
+    e.stopPropagation();
+    const id = downBtn.dataset.moveDown;
+    const order = state.timers.map(t => t.id);
+    const idx = order.indexOf(id);
+    if (idx >= 0 && idx < order.length - 1) {
+      [order[idx], order[idx + 1]] = [order[idx + 1], order[idx]];
+      client.reorderTimers(order);
+    }
+    return;
+  }
   const delBtn = e.target.closest('[data-del-id]');
   if (delBtn) {
     e.stopPropagation();
@@ -425,6 +499,46 @@ $queueList.addEventListener('click', (e) => {
   if (item && item.dataset.id) {
     client.setActiveTimer(item.dataset.id);
   }
+});
+
+// Drag & Drop reordering in Operator Queue
+$queueList.addEventListener('dragstart', (e) => {
+  const item = e.target.closest('.op-queue-item');
+  if (!item) return;
+  opDraggedId = item.dataset.id;
+  item.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+});
+
+$queueList.addEventListener('dragend', () => {
+  $queueList.querySelectorAll('.op-queue-item').forEach(el => el.classList.remove('dragging', 'drag-over'));
+  opDraggedId = null;
+});
+
+$queueList.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  const target = e.target.closest('.op-queue-item');
+  $queueList.querySelectorAll('.op-queue-item').forEach(el => {
+    el.classList.toggle('drag-over', el === target && el.dataset.id !== opDraggedId);
+  });
+});
+
+$queueList.addEventListener('drop', (e) => {
+  e.preventDefault();
+  $queueList.querySelectorAll('.op-queue-item').forEach(el => el.classList.remove('dragging', 'drag-over'));
+  if (!opDraggedId || !state) return;
+  const target = e.target.closest('.op-queue-item');
+  const fromId = opDraggedId;
+  opDraggedId = null;
+  if (!target || target.dataset.id === fromId) return;
+
+  const order = state.timers.map(t => t.id);
+  const fromIdx = order.indexOf(fromId);
+  const toIdx = order.indexOf(target.dataset.id);
+  if (fromIdx === -1 || toIdx === -1) return;
+  order.splice(fromIdx, 1);
+  order.splice(toIdx, 0, fromId);
+  client.reorderTimers(order);
 });
 
 $queueList.addEventListener('change', (e) => {

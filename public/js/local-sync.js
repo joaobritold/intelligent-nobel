@@ -174,65 +174,72 @@ class UniversalSyncClient {
     this._emit('p2p-peers-update', { count: this.connectedPeersCount });
   }
 
-  _getDia1Lineup() {
-    return [
-      {
-        id: 'rc_d1_1',
-        name: 'Dj Residente',
-        startTime: '23:00 – 00:15',
-        notes: 'On Stage: 23h00 – 00h15',
-        mode: 'countdown',
-        duration: 75 * 60000, // 1h15m
-        elapsed: 0,
-        state: 'stopped',
-        warnAt: 600000,       // 10m
-        dangerAt: 120000,     // 2m
-        startedAt: null
-      },
-      {
-        id: 'rc_d1_2',
-        name: 'Tunas',
-        startTime: '23:30 – 01:30',
-        notes: 'On Stage: 23h30 – 01h30 • Curfew: 02h00',
-        mode: 'countdown',
-        duration: 120 * 60000, // 2h00m
-        elapsed: 0,
-        state: 'stopped',
-        warnAt: 600000,
-        dangerAt: 120000,
-        startedAt: null
-      },
-      {
-        id: 'rc_d1_3',
-        name: 'Minhotos Marotos',
-        startTime: '01:45 – 03:15',
-        notes: 'Changeover: 01h30-01h45 • Soundcheck: 18h00-19h30 • Curfew: 04h30',
-        mode: 'countdown',
-        duration: 90 * 60000, // 1h30m
-        elapsed: 0,
-        state: 'stopped',
-        warnAt: 600000,
-        dangerAt: 120000,
-        startedAt: null
-      },
-      {
-        id: 'rc_d1_4',
-        name: 'Dj Beça',
-        startTime: '03:30 – 05:00',
-        notes: 'On Stage: 03h30 – 05h00 • Curfew: 05h00',
-        mode: 'countdown',
-        duration: 90 * 60000, // 1h30m
-        elapsed: 0,
-        state: 'stopped',
-        warnAt: 600000,
-        dangerAt: 120000,
-        startedAt: null
-      }
-    ];
+  _makeItem(id, name, startTime, durationMins) {
+    const duration = durationMins * 60000;
+    return {
+      id,
+      name,
+      startTime,
+      notes: '',
+      mode: 'countdown',
+      duration,
+      elapsed: 0,
+      state: 'stopped',
+      warnAt: Math.min(600000, Math.floor(duration * 0.2)),
+      dangerAt: Math.min(120000, Math.floor(duration * 0.05)),
+      startedAt: null
+    };
+  }
+
+  _getDiaLineup(day = 1) {
+    switch (Number(day)) {
+      case 1:
+        return [
+          this._makeItem('rc_d1_sc1', 'Minhotos Marotos (Soundcheck)', '18:00 – 19:30', 90),
+          this._makeItem('rc_d1_1', 'Dj Residente', '23:00 – 00:15', 75),
+          this._makeItem('rc_d1_2', 'Tunas', '23:30 – 01:30', 120),
+          this._makeItem('rc_d1_ch1', 'Minhotos Marotos (Changeover / Line Check)', '01:30 – 01:45', 15),
+          this._makeItem('rc_d1_3', 'Minhotos Marotos', '01:45 – 03:15', 90),
+          this._makeItem('rc_d1_4', 'Dj Beça', '03:30 – 05:00', 90)
+        ];
+      case 2:
+        return [
+          this._makeItem('rc_d2_sc1', 'Tay (Soundcheck)', '17:00 – 18:30', 90),
+          this._makeItem('rc_d2_sc2', 'Batalha de Berço (Soundcheck)', '18:30 – 19:30', 60),
+          this._makeItem('rc_d2_1', 'DJ Residente', '23:00 – 00:00', 60),
+          this._makeItem('rc_d2_2', 'Batalha de Berço', '00:15 – 01:15', 60),
+          this._makeItem('rc_d2_ch1', 'Tay (Changeover / Line Check)', '01:15 – 01:30', 15),
+          this._makeItem('rc_d2_3', 'Tay', '01:30 – 02:30', 60),
+          this._makeItem('rc_d2_4', 'Fábio Vasquez', '02:30 – 03:45', 75),
+          this._makeItem('rc_d2_5', 'Pedro Maia', '03:45 – 05:00', 75)
+        ];
+      case 3:
+        return [
+          this._makeItem('rc_d3_sc1', 'Baile do STE (Soundcheck)', '18:00 – 19:30', 90),
+          this._makeItem('rc_d3_1', 'Dj Residente', '23:00 – 00:30', 90),
+          this._makeItem('rc_d3_2', 'MC Leozin', '00:30 – 01:15', 45),
+          this._makeItem('rc_d3_ch1', 'Baile do STE (Changeover / Line Check)', '01:15 – 01:30', 15),
+          this._makeItem('rc_d3_3', 'Baile do STE', '01:30 – 03:00', 90),
+          this._makeItem('rc_d3_4', 'João Miguens', '03:00 – 04:15', 75),
+          this._makeItem('rc_d3_5', 'Rafman', '04:15 – 05:30', 75)
+        ];
+      case 4:
+        return [
+          this._makeItem('rc_d4_sc1', 'Boy Teddy (Soundcheck)', '18:00 – 19:00', 60),
+          this._makeItem('rc_d4_sc2', 'Quim das Remisturas (Soundcheck)', '19:00 – 19:30', 30),
+          this._makeItem('rc_d4_1', 'Dj Residente', '23:00 – 00:50', 110),
+          this._makeItem('rc_d4_2', 'Dj Kardo', '00:00 – 01:20', 80),
+          this._makeItem('rc_d4_3', 'Boy Teddy', '01:30 – 02:15', 45),
+          this._makeItem('rc_d4_4', 'Quim das Remisturas', '02:30 – 04:00', 90),
+          this._makeItem('rc_d4_5', 'Dj Echosound', '04:00 – 05:30', 90)
+        ];
+      default:
+        return [];
+    }
   }
 
   _createDefaultRoom(id) {
-    const timers = this._getDia1Lineup();
+    const timers = this._getDiaLineup(1);
     return {
       id: id,
       name: 'Receção ao Caloiro 2026 - Dia 1',
@@ -247,12 +254,17 @@ class UniversalSyncClient {
     };
   }
 
-  loadPresetDia1() {
-    const timers = this._getDia1Lineup();
-    this._state.name = 'Receção ao Caloiro 2026 - Dia 1';
+  loadPresetDay(day = 1) {
+    const timers = this._getDiaLineup(day);
+    if (!timers.length) return;
+    this._state.name = `Receção ao Caloiro 2026 - Dia ${day}`;
     this._state.timers = timers;
     this._state.activeTimerId = timers[0].id;
     this._commitStateChange(true);
+  }
+
+  loadPresetDia1() {
+    this.loadPresetDay(1);
   }
 
   replaceAllTimers(timers, roomName = null) {

@@ -43,6 +43,7 @@
       <div id="op-hero-badge" class="op-hero-badge">PARADO</div>
       <div id="op-hero-name" class="op-hero-name">Main Keynote</div>
       <div id="op-hero-time" class="op-hero-time">05:00</div>
+      <div id="op-hero-endtime" style="font-size: 0.82rem; color: #55efc4; font-family: var(--font-mono); font-weight: 700; margin-bottom: 4px;"></div>
       <div id="op-hero-notes" style="font-size: 0.8rem; color: #cbd5e1; text-align: center; margin-bottom: 4px;"></div>
       <div id="op-hero-next" style="font-size: 0.72rem; color: #a29bfe; font-weight: 700; letter-spacing: 0.08em;"></div>
       <div class="op-hero-progress">
@@ -119,12 +120,15 @@
 
     <!-- Timer Queue List -->
     <section class="op-section" style="margin-bottom: 24px;">
-      <div class="op-section-title">
-        <span>📋 Lineup / Fila de Artistas (Toque para pôr no ar)</span>
-        <div style="display: flex; gap: 6px;">
-          <label for="op-import-file" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.7rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff; cursor: pointer;">📂 Importar Ficheiro</label>
+      <div class="op-section-title" style="flex-wrap: wrap; gap: 6px;">
+        <span>📋 Lineup / Fila de Artistas</span>
+        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+          <label for="op-import-file" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.7rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff; cursor: pointer;">📂 Ficheiro</label>
           <input type="file" id="op-import-file" accept=".pdf,.xlsx,.xls,.csv,.txt" style="display: none;">
-          <button id="op-load-dia1" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.7rem;">📅 Dia 1</button>
+          <button class="btn btn-sm op-preset-day" data-day="1" style="padding: 3px 7px; font-size: 0.7rem;">Dia 1</button>
+          <button class="btn btn-sm op-preset-day" data-day="2" style="padding: 3px 7px; font-size: 0.7rem;">Dia 2</button>
+          <button class="btn btn-sm op-preset-day" data-day="3" style="padding: 3px 7px; font-size: 0.7rem;">Dia 3</button>
+          <button class="btn btn-sm op-preset-day" data-day="4" style="padding: 3px 7px; font-size: 0.7rem;">Dia 4</button>
         </div>
       </div>
       <div id="op-queue-list" class="op-queue-list">
