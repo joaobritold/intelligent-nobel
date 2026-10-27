@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StageTimer">
+  <meta name="theme-color" content="#0f0f1a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
   <title>StageTimer — Modo Operador (Mobile)</title>
   <link rel="stylesheet" href="css/common.css?v=6">
   <link rel="stylesheet" href="css/operator.css?v=6">
@@ -19,7 +23,8 @@
         <button id="op-join-btn" class="btn btn-primary op-join-btn">Sala</button>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <button type="button" class="btn btn-sm st-install-app-btn" style="padding: 4px 8px; font-size: 0.72rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff;">📲 App</button>
         <div style="display: flex; align-items: center; gap: 4px;" title="Cor de Fundo">
           <input type="color" id="op-bg-color" value="#000000" style="width: 26px; height: 26px; border: 1px solid var(--border); border-radius: 6px; background: transparent; padding: 0;">
         </div>
@@ -159,6 +164,7 @@
   <script src="js/auth.js?v=6"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
+  <script src="js/pwa.js?v=6"></script>
   <script src="js/local-sync.js?v=6"></script>
   <script src="js/operator.js?v=6"></script>
 </body>

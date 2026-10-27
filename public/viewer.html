@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
   <title>StageTimer — Stage Screen</title>
   <link rel="stylesheet" href="css/common.css">
   <link rel="stylesheet" href="css/viewer.css">
@@ -64,7 +66,8 @@
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/local-sync.js"></script>
-  <script src="js/viewer.js"></script>
+  <script src="js/pwa.js?v=6"></script>
+  <script src="js/local-sync.js?v=6"></script>
+  <script src="js/viewer.js?v=6"></script>
 </body>
 </html>

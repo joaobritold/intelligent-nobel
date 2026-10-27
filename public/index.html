@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StageTimer">
+  <meta name="theme-color" content="#0f0f1a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
   <meta name="description" content="StageTimer PFP - Sistema de timer, relógio de palco, lineup e controlo de eventos em tempo real.">
   <meta name="keywords" content="stagetimer pfp, stage timer pfp, timer palco brito, stagetimer-pfp">
   <meta name="robots" content="index, follow">
@@ -233,18 +237,23 @@
         <span class="mode-badge">Backstage / Camarim</span>
       </a>
     </div>
-    <!-- Share / QR Code Box -->
-    <div style="text-align: center; margin-top: 4px;">
+    <!-- Share / QR Code + Install App Box -->
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 4px;">
+      <button type="button" class="btn btn-primary st-install-app-btn" style="padding: 12px 22px; font-weight: 700; border-radius: 12px; box-shadow: 0 8px 20px rgba(108, 92, 231, 0.35);">
+        📲 Instalar App Leve (Telemóvel / PC)
+      </button>
+
       <button id="toggle-qr-btn" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-secondary);">
         📱 Mostrar QR Code para abrir noutro dispositivo
       </button>
-      <div id="qr-container" style="display: none; margin-top: 12px; padding: 16px; background: #fff; border-radius: 12px; width: fit-content; margin-left: auto; margin-right: auto; text-align: center;">
+      <div id="qr-container" style="display: none; margin-top: 8px; padding: 16px; background: #fff; border-radius: 12px; width: fit-content; margin-left: auto; margin-right: auto; text-align: center;">
         <img id="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://stagetimer-pfp.netlify.app/" alt="QR Code" style="width: 180px; height: 180px; display: block;">
         <div style="color: #111; font-size: 0.75rem; font-weight: 700; margin-top: 6px;">Aponte a câmara do telemóvel</div>
       </div>
     </div>
   </div>
 
+  <script src="js/pwa.js?v=6"></script>
   <script>
     const $toggleQr = document.getElementById('toggle-qr-btn');
     const $qrContainer = document.getElementById('qr-container');
@@ -264,10 +273,13 @@
     const params = new URLSearchParams(location.search);
     if (params.get('room')) {
       $room.value = params.get('room').toUpperCase();
+    } else if (localStorage.getItem('stagetimer_last_room')) {
+      $room.value = localStorage.getItem('stagetimer_last_room').toUpperCase();
     }
 
     function updateLinks() {
       const code = ($room.value.trim() || 'PALCO1').toUpperCase();
+      try { localStorage.setItem('stagetimer_last_room', code); } catch (_) {}
       const q = `?room=${encodeURIComponent(code)}`;
       $controller.href = `controller.html${q}`;
       $operator.href = `operator.html${q}`;

@@ -1,0 +1,51 @@
+{
+  "id": "stagetimer-pfp-app",
+  "name": "StageTimer PFP — Controlo de Palco",
+  "short_name": "StageTimer",
+  "description": "App leve de controlo de tempos de palco, alinhamento de artistas e mensagens em tempo real.",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f0f1a",
+  "theme_color": "#0f0f1a",
+  "categories": ["productivity", "utilities", "music"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "📱 Modo Operador (Controlo Rápido)",
+      "short_name": "Operador",
+      "description": "Abrir controlo rápido para telemóvel",
+      "url": "/operator.html",
+      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "🎛️ Modo Controlador (Régie)",
+      "short_name": "Controlador",
+      "description": "Abrir painel completo de controlo",
+      "url": "/controller.html",
+      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "📺 Modo de Palco",
+      "short_name": "Palco",
+      "description": "Abrir ecrã de palco",
+      "url": "/viewer.html",
+      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "📋 Modo Lista (Lineup)",
+      "short_name": "Lista",
+      "description": "Abrir tabela de horários e alinhamento",
+      "url": "/lineup.html",
+      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+    }
+  ]
+}

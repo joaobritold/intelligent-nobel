@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StageTimer">
+  <meta name="theme-color" content="#0f0f1a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
   <title>StageTimer — Controlador</title>
   <link rel="stylesheet" href="css/common.css?v=6">
   <link rel="stylesheet" href="css/controller.css?v=6">
@@ -31,6 +35,7 @@
         </div>
       </div>
       <div class="header-right">
+        <button type="button" class="btn btn-sm st-install-app-btn" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff;">📲 Instalar App</button>
         <!-- Theme Background Selector -->
         <div class="theme-selector" title="Stage Background Color">
           <label for="viewer-bg-color" style="font-size: 0.75rem; color: var(--text-secondary); margin-right: 4px;">Stage Bg:</label>
@@ -211,6 +216,7 @@
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
+  <script src="js/pwa.js?v=6"></script>
   <script src="js/local-sync.js?v=6"></script>
   <script src="js/controller.js?v=6"></script>
 </body>
