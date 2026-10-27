@@ -42,38 +42,69 @@ const $p2pPeerCount = document.getElementById('p2p-peer-count');
 const $viewerLinkBtn = document.getElementById('viewer-link-btn');
 const $ctrlEventSelect = document.getElementById('ctrl-event-select');
 const $ctrlNewCleanEventBtn = document.getElementById('ctrl-new-clean-event-btn');
+const $newEventModal = document.getElementById('new-event-modal');
+const $newEventTitleInput = document.getElementById('new-event-title-input');
+const $newEventPassInput = document.getElementById('new-event-pass-input');
+const $newEventConfirm = document.getElementById('new-event-confirm');
+const $newEventCancel = document.getElementById('new-event-cancel');
+const $ctrlEventsManageList = document.getElementById('ctrl-events-manage-list');
 
 function renderEventSelector() {
   if (!$ctrlEventSelect || typeof client.getEventsList !== 'function') return;
   const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
   const list = client.getEventsList();
   if (!list.some(e => e.code === currentCode)) {
-    list.unshift({ code: currentCode, title: state?.name || currentCode, timersCount: state?.timers?.length || 0 });
+    list.unshift({
+      code: currentCode,
+      title: state?.name || currentCode,
+      pass: state?.eventPass || 'palco 1',
+      timersCount: state?.timers?.length || 0
+    });
   }
   $ctrlEventSelect.innerHTML = list.map(ev => {
-    const label = ev.title && ev.title.toUpperCase() !== ev.code
-      ? `${ev.title} (${ev.code})`
-      : ev.code;
-    return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>${label}</option>`;
-  }).join('') + `<option value="__NEW_CLEAN__">✨ + Criar Novo Evento Limpo...</option>`;
+    const passLabel = ev.pass ? ` [Pass: ${ev.pass}]` : '';
+    return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>${ev.title || ev.code}${passLabel}</option>`;
+  }).join('') + `<option value="__NEW_CLEAN__">✨ + Criar / Gerir Eventos...</option>`;
+
+  if ($ctrlEventsManageList) {
+    $ctrlEventsManageList.innerHTML = list.map(ev => {
+      const isAct = ev.code === currentCode;
+      return `
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid ${isAct ? '#00b894' : 'var(--border)'}; font-size: 0.8rem;">
+          <div>
+            <strong>${ev.title || ev.code}</strong>
+            <span style="color: #55efc4; font-family: var(--font-mono); margin-left: 6px;">Pass: ${ev.pass || 'palco 1'}</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn btn-sm ${isAct ? 'btn-primary' : ''}" data-open-ev="${ev.code}" style="padding: 3px 8px; font-size: 0.72rem;">${isAct ? 'Ativo' : 'Abrir'}</button>
+            ${list.length > 1 && ev.code !== 'PALCO1' ? `<button type="button" class="btn btn-sm btn-danger" data-del-ev="${ev.code}" style="padding: 3px 8px; font-size: 0.72rem;">🗑️</button>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 }
 
-function promptCreateNewCleanEvent() {
-  const name = prompt('Nome do novo evento limpo (ex: Palco 2, Evento B, Auditório):', '');
-  if (name === null) {
-    renderEventSelector();
-    return;
+function openNewEventModal() {
+  renderEventSelector();
+  if ($newEventModal) {
+    $newEventModal.classList.add('visible');
+    if ($newEventTitleInput) {
+      $newEventTitleInput.value = '';
+      setTimeout(() => $newEventTitleInput.focus(), 50);
+    }
+    if ($newEventPassInput) {
+      $newEventPassInput.value = '';
+    }
   }
-  const cleanTitle = name.trim() || `Evento ${(client.getEventsList().length || 1) + 1}`;
-  const newCode = client.createNewCleanEvent(cleanTitle);
-  location.search = `?room=${encodeURIComponent(newCode)}&clean=1`;
 }
 
 if ($ctrlEventSelect) {
   $ctrlEventSelect.addEventListener('change', () => {
     const val = $ctrlEventSelect.value;
     if (val === '__NEW_CLEAN__') {
-      promptCreateNewCleanEvent();
+      renderEventSelector();
+      openNewEventModal();
       return;
     }
     if (val && val !== (state?.id || roomId)) {
@@ -84,7 +115,57 @@ if ($ctrlEventSelect) {
 
 if ($ctrlNewCleanEventBtn) {
   $ctrlNewCleanEventBtn.addEventListener('click', () => {
-    promptCreateNewCleanEvent();
+    openNewEventModal();
+  });
+}
+
+if ($newEventCancel && $newEventModal) {
+  $newEventCancel.addEventListener('click', () => {
+    $newEventModal.classList.remove('visible');
+  });
+  $newEventModal.addEventListener('click', (e) => {
+    if (e.target === $newEventModal) $newEventModal.classList.remove('visible');
+  });
+}
+
+if ($newEventConfirm) {
+  $newEventConfirm.addEventListener('click', () => {
+    const title = ($newEventTitleInput ? $newEventTitleInput.value : '').trim();
+    const pass = ($newEventPassInput ? $newEventPassInput.value : '').trim();
+    if (!title) {
+      alert('Por favor introduza o Nome do Evento (ex: RC26).');
+      if ($newEventTitleInput) $newEventTitleInput.focus();
+      return;
+    }
+    if (!pass) {
+      alert('Por favor defina a Pass deste Evento / Palco (ex: palco 1).');
+      if ($newEventPassInput) $newEventPassInput.focus();
+      return;
+    }
+    const newCode = client.createNewCleanEvent(title, pass);
+    location.search = `?room=${encodeURIComponent(newCode)}&clean=1`;
+  });
+}
+
+if ($ctrlEventsManageList) {
+  $ctrlEventsManageList.addEventListener('click', (e) => {
+    const openBtn = e.target.closest('[data-open-ev]');
+    if (openBtn) {
+      location.search = `?room=${encodeURIComponent(openBtn.dataset.openEv)}`;
+      return;
+    }
+    const delBtn = e.target.closest('[data-del-ev]');
+    if (delBtn) {
+      const codeToDel = delBtn.dataset.delEv;
+      if (confirm(`Apagar o evento "${codeToDel}"?`)) {
+        const remaining = client.deleteEventFromRegistry(codeToDel);
+        if ((state?.id || roomId) === codeToDel && remaining.length > 0) {
+          location.search = `?room=${encodeURIComponent(remaining[0].code)}`;
+        } else {
+          renderEventSelector();
+        }
+      }
+    }
   });
 }
 

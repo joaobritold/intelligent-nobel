@@ -206,21 +206,51 @@
     </div>
   </div>
 
+  <!-- Create / Manage Events Modal (Controller Only) -->
+  <div id="new-event-modal" class="modal-overlay">
+    <div class="modal" style="max-width: 480px; width: 92vw;">
+      <h3 class="modal-title">🎪 Criar Novo Evento / Sessão</h3>
+      <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 14px;">
+        Defina o <strong>Nome do Evento</strong> e a <strong>Pass de Acesso</strong>. No Menu Inicial, os operadores e ecrãs escolhem o evento e entram com esta pass.
+      </p>
+
+      <div class="modal-field">
+        <label class="modal-label" for="new-event-title-input">Nome do Evento (ex: RC26):</label>
+        <input id="new-event-title-input" class="input" placeholder="Ex: RC26" autocomplete="off">
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-label" for="new-event-pass-input">Pass do Evento / Palco (ex: palco 1):</label>
+        <input id="new-event-pass-input" class="input" placeholder="Ex: palco 1" autocomplete="off">
+      </div>
+
+      <div style="margin-top: 12px; margin-bottom: 12px;">
+        <div class="modal-label" style="margin-bottom: 6px;">Eventos Criados (Controlador):</div>
+        <div id="ctrl-events-manage-list" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="new-event-cancel" type="button" class="btn">Fechar</button>
+        <button id="new-event-confirm" type="button" class="btn btn-primary">✨ Criar Evento Limpo</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="toast"></div>
 
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=8"></script>
+  <script src="js/schedule-importer.js?v=9"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=8"></script>
+  <script src="js/auth.js?v=9"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=8"></script>
-  <script src="js/local-sync.js?v=8"></script>
-  <script src="js/controller.js?v=8"></script>
+  <script src="js/pwa.js?v=9"></script>
+  <script src="js/local-sync.js?v=9"></script>
+  <script src="js/controller.js?v=9"></script>
 </body>
 </html>

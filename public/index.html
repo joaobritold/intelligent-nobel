@@ -277,32 +277,40 @@
       <p class="hub-sub">Sincronização em Tempo Real para Eventos & Palcos</p>
     </div>
 
-    <!-- Event List & Session Manager Box -->
+    <!-- Event Selection + Event Password Box -->
     <div class="room-card">
       <div class="room-label">
-        <span>🎪 Lista de Eventos / Sessões</span>
-        <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; text-transform: none;">Selecione um evento ou crie um novo limpo</span>
+        <span>🎪 1. Escolher Evento</span>
+        <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; text-transform: none;">Criado no Modo Controlador</span>
       </div>
 
       <!-- List of active/saved events -->
       <div id="hub-events-list" class="events-list-box"></div>
 
-      <!-- Create New Clean Event Row -->
-      <div class="new-event-bar">
-        <input id="hub-new-event-name" class="input" style="flex: 1; min-width: 180px; font-size: 0.9rem;" placeholder="Nome do novo evento (ex: Palco 2, Auditório...)" autocomplete="off">
-        <button id="hub-create-clean-btn" type="button" class="btn btn-primary" style="font-weight: 700; white-space: nowrap;">
-          ✨ + Criar Novo Evento Limpo
-        </button>
+      <!-- Event Password Verification Row -->
+      <div class="new-event-bar" style="flex-direction: column; gap: 10px;">
+        <label for="hub-event-pass" class="room-label" style="margin-top: 2px;">
+          <span>🔑 2. Pass do Evento / Palco</span>
+          <span id="hub-unlock-badge" style="font-size: 0.74rem; color: #fdcb6e; font-weight: 700; text-transform: none;">🔒 Introduza a pass do evento</span>
+        </label>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <input
+            id="hub-event-pass"
+            type="password"
+            class="input"
+            style="flex: 1; min-width: 180px; font-size: 16px !important;"
+            placeholder="Ex: palco 1"
+            autocomplete="off"
+          >
+          <button id="hub-unlock-btn" type="button" class="btn btn-primary" style="font-weight: 700; padding: 10px 18px; white-space: nowrap;">
+            🔓 Entrar no Evento
+          </button>
+        </div>
+        <div id="hub-pass-feedback" style="font-size: 0.8rem; min-height: 1.2em; color: var(--text-secondary);"></div>
       </div>
 
-      <!-- Direct Room Code Box -->
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
-        <label for="hub-room" style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;">Código da Sessão Selecionada:</label>
-        <div class="room-input-row">
-          <input id="hub-room" class="input-mono room-input" value="PALCO1" spellcheck="false" autocomplete="off" title="Código da Sala/Evento">
-        </div>
-      </div>
-      <div class="room-hint">Cada evento na lista é 100% independente — pode correr 2 ou mais eventos ao mesmo tempo sem interferência.</div>
+      <input id="hub-room" type="hidden" value="PALCO1">
+      <div class="room-hint">Para criar um novo evento (ex: Evento <strong>RC26</strong> + Pass <strong>palco 1</strong>), aceda ao <strong>Modo Controlador</strong> com uma das 2 passes mestras.</div>
     </div>
 
     <!-- 3 Mode Cards -->
@@ -364,8 +372,8 @@
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=8"></script>
-  <script src="js/local-sync.js?v=8"></script>
+  <script src="js/pwa.js?v=9"></script>
+  <script src="js/local-sync.js?v=9"></script>
   <script>
     const $toggleQr = document.getElementById('toggle-qr-btn');
     const $qrContainer = document.getElementById('qr-container');
@@ -382,8 +390,10 @@
     const $viewer = document.getElementById('card-viewer');
     const $lineup = document.getElementById('card-lineup');
     const $eventsList = document.getElementById('hub-events-list');
-    const $newEventName = document.getElementById('hub-new-event-name');
-    const $createCleanBtn = document.getElementById('hub-create-clean-btn');
+    const $eventPass = document.getElementById('hub-event-pass');
+    const $unlockBtn = document.getElementById('hub-unlock-btn');
+    const $unlockBadge = document.getElementById('hub-unlock-badge');
+    const $passFeedback = document.getElementById('hub-pass-feedback');
 
     const params = new URLSearchParams(location.search);
     if (params.get('room')) {
@@ -404,6 +414,15 @@
       }[m]));
     }
 
+    function isEventUnlocked(code) {
+      const clean = (code || 'PALCO1').toUpperCase();
+      return (
+        sessionStorage.getItem('stagetimer_master_auth_unlocked') === 'true' ||
+        sessionStorage.getItem(`stagetimer_event_unlocked_${clean}`) === 'true' ||
+        localStorage.getItem(`stagetimer_event_unlocked_${clean}`) === 'true'
+      );
+    }
+
     function renderEventsList() {
       if (!$eventsList) return;
       const currentCode = ($room.value.trim() || 'PALCO1').toUpperCase();
@@ -411,27 +430,43 @@
 
       $eventsList.innerHTML = list.map((ev) => {
         const isSelected = ev.code === currentCode;
+        const unlocked = isEventUnlocked(ev.code);
         const countLabel = typeof ev.timersCount === 'number'
           ? `${ev.timersCount} artista(s)`
-          : 'Sessão ativa';
+          : 'Sessão';
         return `
-          <div class="event-row ${isSelected ? 'active' : ''}" data-select-code="${escapeHtml(ev.code)}">
+          <div class="event-row ${isSelected ? 'active' : ''}" data-select-code="${escapeHtml(ev.code)}" data-select-title="${escapeHtml(ev.title || ev.code)}">
             <div class="event-row-left">
               <div class="event-row-title">
                 <span>${isSelected ? '🟢' : '⚪'} ${escapeHtml(ev.title || ev.code)}</span>
-                <span class="event-code-pill">${escapeHtml(ev.code)}</span>
+                <span class="event-code-pill">${unlocked ? '🔓 Desbloqueado' : '🔒 Requer Pass'}</span>
               </div>
-              <div class="event-row-meta">${countLabel} ${isSelected ? '• SELECIONADO AGORA' : '• Clique para chamar este evento'}</div>
+              <div class="event-row-meta">${countLabel} ${isSelected ? '• Evento selecionado' : '• Clique para escolher este evento'}</div>
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
               <span class="btn btn-sm ${isSelected ? 'btn-primary' : ''}" style="pointer-events: none; font-size: 0.75rem; padding: 4px 10px;">
-                ${isSelected ? '✓ Ativo' : 'Chamar'}
+                ${isSelected ? 'Selecionado' : 'Escolher'}
               </span>
-              ${list.length > 1 ? `<button type="button" class="btn btn-sm btn-danger" data-delete-code="${escapeHtml(ev.code)}" title="Apagar este evento da lista" style="padding: 4px 8px; font-size: 0.75rem;">🗑️</button>` : ''}
             </div>
           </div>
         `;
       }).join('');
+
+      const activeEv = list.find(e => e.code === currentCode) || list[0];
+      const unlocked = isEventUnlocked(currentCode);
+      if ($unlockBadge) {
+        if (unlocked) {
+          $unlockBadge.style.color = '#55efc4';
+          $unlockBadge.textContent = `✅ Evento Ativo: ${activeEv ? activeEv.title : currentCode}`;
+        } else {
+          $unlockBadge.style.color = '#fdcb6e';
+          $unlockBadge.textContent = `🔒 Pass necessária para "${activeEv ? activeEv.title : currentCode}"`;
+        }
+      }
+      [$operator, $viewer, $lineup].forEach(card => {
+        if (!card) return;
+        card.style.opacity = unlocked ? '1' : '0.68';
+      });
     }
 
     function updateLinks() {
@@ -449,58 +484,98 @@
       renderEventsList();
     }
 
+    function tryUnlockSelectedEvent() {
+      const currentCode = ($room.value.trim() || 'PALCO1').toUpperCase();
+      const list = hubClient.getEventsList();
+      const selectedEv = list.find(e => e.code === currentCode) || list[0];
+      const passVal = ($eventPass ? $eventPass.value : '').trim();
+
+      if (!passVal) {
+        if ($passFeedback) {
+          $passFeedback.style.color = '#ff7675';
+          $passFeedback.textContent = `⚠️ Introduza a pass do evento "${selectedEv ? selectedEv.title : currentCode}" (ex: palco 1).`;
+        }
+        if ($eventPass) $eventPass.focus();
+        return false;
+      }
+
+      // Match by selected event title or code + pass (supports 2 stages of same event name with different passes!)
+      const matched = hubClient.verifyEventAccess(selectedEv ? selectedEv.title : currentCode, passVal)
+        || hubClient.verifyEventAccess(currentCode, passVal);
+
+      if (matched) {
+        sessionStorage.setItem(`stagetimer_event_unlocked_${matched.code}`, 'true');
+        localStorage.setItem(`stagetimer_event_unlocked_${matched.code}`, 'true');
+        $room.value = matched.code;
+        if ($eventPass) $eventPass.value = '';
+        if ($passFeedback) {
+          $passFeedback.style.color = '#55efc4';
+          $passFeedback.textContent = `✅ Acesso autorizado ao evento "${matched.title}"! Escolha abaixo o modo que pretende abrir.`;
+        }
+        updateLinks();
+        return true;
+      } else {
+        if ($passFeedback) {
+          $passFeedback.style.color = '#ff7675';
+          $passFeedback.textContent = `❌ Pass incorreta para o evento "${selectedEv ? selectedEv.title : currentCode}"!`;
+        }
+        if ($eventPass) {
+          $eventPass.select();
+          $eventPass.focus();
+        }
+        return false;
+      }
+    }
+
     if ($eventsList) {
       $eventsList.addEventListener('click', (e) => {
-        const delBtn = e.target.closest('[data-delete-code]');
-        if (delBtn) {
-          e.stopPropagation();
-          const codeToDel = delBtn.dataset.deleteCode;
-          if (confirm(`Apagar o evento "${codeToDel}" da lista de eventos?`)) {
-            const remaining = hubClient.deleteEventFromRegistry(codeToDel);
-            if (($room.value.trim() || '').toUpperCase() === codeToDel && remaining.length > 0) {
-              $room.value = remaining[0].code;
-            }
-            updateLinks();
-          }
-          return;
-        }
         const row = e.target.closest('[data-select-code]');
         if (row) {
           $room.value = row.dataset.selectCode;
+          if ($passFeedback) $passFeedback.textContent = '';
           updateLinks();
+          if (!isEventUnlocked(row.dataset.selectCode) && $eventPass) {
+            $eventPass.focus();
+          }
         }
       });
     }
 
-    if ($createCleanBtn) {
-      $createCleanBtn.addEventListener('click', () => {
-        let name = $newEventName ? $newEventName.value.trim() : '';
-        if (!name) {
-          const prompted = prompt('Qual o nome do novo evento? (ex: Palco 2, Evento Corporativo, Tenda Eletrónica)', '');
-          if (prompted === null) return;
-          name = prompted.trim() || `Evento ${hubClient.getEventsList().length + 1}`;
-        }
-        const newCode = hubClient.createNewCleanEvent(name);
-        if ($newEventName) $newEventName.value = '';
-        $room.value = newCode;
-        updateLinks();
+    if ($unlockBtn) {
+      $unlockBtn.addEventListener('click', () => {
+        tryUnlockSelectedEvent();
       });
     }
 
-    if ($newEventName) {
-      $newEventName.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && $createCleanBtn) {
+    if ($eventPass) {
+      $eventPass.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
           e.preventDefault();
-          $createCleanBtn.click();
+          tryUnlockSelectedEvent();
         }
       });
     }
+
+    // Protect Operator, Viewer, and Lineup cards until the selected event's pass is unlocked
+    [$operator, $viewer, $lineup].forEach((card) => {
+      if (!card) return;
+      card.addEventListener('click', (e) => {
+        const currentCode = ($room.value.trim() || 'PALCO1').toUpperCase();
+        if (isEventUnlocked(currentCode)) return;
+        // If user typed the pass in the input box and clicked the mode card directly, verify it on the fly!
+        if ($eventPass && $eventPass.value.trim() && tryUnlockSelectedEvent()) {
+          card.href = `${card.id.replace('card-', '')}.html?room=${encodeURIComponent($room.value)}`;
+          return;
+        }
+        e.preventDefault();
+        tryUnlockSelectedEvent();
+      });
+    });
 
     hubClient.on('events-list-update', () => {
       renderEventsList();
     });
 
-    $room.addEventListener('input', updateLinks);
     updateLinks();
   </script>
 </body>

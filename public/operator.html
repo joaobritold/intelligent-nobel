@@ -17,10 +17,9 @@
   <div class="op-app">
     <!-- Header -->
     <header class="op-header">
-      <div class="op-room-box" style="flex: 1; min-width: 0; gap: 5px;">
+      <div class="op-room-box" style="flex: 1; min-width: 0; gap: 6px;">
         <span style="font-size: 1rem;">🎪</span>
-        <select id="op-event-select" class="input" style="padding: 5px 8px; font-size: 0.8rem; font-weight: 700; min-width: 115px; max-width: 185px; height: 32px; border-radius: 8px;" title="Escolher Evento / Sessão"></select>
-        <button id="op-new-event-btn" type="button" class="btn btn-sm" style="padding: 5px 8px; font-size: 0.72rem; background: rgba(0, 184, 148, 0.2); border-color: rgba(0, 184, 148, 0.5); color: #55efc4; white-space: nowrap;" title="Criar novo evento limpo">+ Novo</button>
+        <span id="op-event-badge" style="font-size: 0.85rem; font-weight: 800; color: #fff; background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.45); padding: 4px 10px; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">RC26</span>
         <input id="op-room-input" class="input input-mono op-room-input" value="PALCO1" aria-label="Room Code" style="display: none;">
         <button id="op-join-btn" class="btn btn-primary op-join-btn" style="display: none;">Sala</button>
       </div>
@@ -161,14 +160,14 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=8"></script>
+  <script src="js/schedule-importer.js?v=9"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=8"></script>
+  <script src="js/auth.js?v=9"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=8"></script>
-  <script src="js/local-sync.js?v=8"></script>
-  <script src="js/operator.js?v=8"></script>
+  <script src="js/pwa.js?v=9"></script>
+  <script src="js/local-sync.js?v=9"></script>
+  <script src="js/operator.js?v=9"></script>
 </body>
 </html>

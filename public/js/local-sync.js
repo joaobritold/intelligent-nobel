@@ -253,6 +253,7 @@ class UniversalSyncClient {
       return {
         id: id,
         name: id,
+        eventPass: 'palco 1',
         updatedAt: Date.now(),
         activeTimerId: null,
         message: { text: '', visible: false, level: 'info' },
@@ -266,7 +267,8 @@ class UniversalSyncClient {
     const timers = this._getDiaLineup(1);
     return {
       id: id,
-      name: id === 'PALCO1' ? 'Receção ao Caloiro 2026 - Dia 1' : id,
+      name: id === 'PALCO1' ? 'RC26' : id,
+      eventPass: 'palco 1',
       updatedAt: 0,
       activeTimerId: timers[0].id,
       message: { text: '', visible: false, level: 'info' },
@@ -280,51 +282,78 @@ class UniversalSyncClient {
 
   // ─── Multi-Event / Session Registry ───────────────────────────────
 
+  _normalizeRegistryItem(item) {
+    const code = (item?.code || item?.id || 'PALCO1').toUpperCase();
+    const isDefault = code === 'PALCO1';
+    let title = (item?.title || '').trim();
+    if (!title || title === 'Palco Principal (PALCO1)' || title === 'Receção ao Caloiro 2026 - Dia 1') {
+      title = isDefault ? 'RC26' : code;
+    }
+    const pass = (item?.pass || 'palco 1').trim();
+    const count = typeof item?.timersCount === 'number'
+      ? item.timersCount
+      : (typeof item?.artistCount === 'number' ? item.artistCount : (isDefault ? 6 : 0));
+    return {
+      id: code,
+      code,
+      title,
+      pass,
+      timersCount: count,
+      artistCount: count,
+      updatedAt: item?.updatedAt || Date.now()
+    };
+  }
+
   getEventsList() {
     try {
       const raw = localStorage.getItem(this.registryStorageKey);
       let list = raw ? JSON.parse(raw) : [];
       if (!Array.isArray(list)) list = [];
-      if (!list.some(e => e.id === 'PALCO1')) {
-        list.unshift({
+      list = list.map(e => this._normalizeRegistryItem(e));
+      if (!list.some(e => e.code === 'PALCO1')) {
+        list.unshift(this._normalizeRegistryItem({
           id: 'PALCO1',
-          title: 'Palco Principal (PALCO1)',
-          artistCount: 6,
+          code: 'PALCO1',
+          title: 'RC26',
+          pass: 'palco 1',
+          timersCount: 6,
           updatedAt: Date.now()
-        });
+        }));
       }
       return list;
     } catch (e) {
-      return [{ id: 'PALCO1', title: 'Palco Principal (PALCO1)', artistCount: 6, updatedAt: Date.now() }];
+      return [this._normalizeRegistryItem({ id: 'PALCO1', code: 'PALCO1', title: 'RC26', pass: 'palco 1', timersCount: 6 })];
     }
   }
 
   _saveEventsList(list, publish = true) {
+    const normalized = (list || []).map(e => this._normalizeRegistryItem(e));
     try {
-      localStorage.setItem(this.registryStorageKey, JSON.stringify(list));
+      localStorage.setItem(this.registryStorageKey, JSON.stringify(normalized));
     } catch (e) {}
     if (publish && this.mqttClient && this.mqttClient.connected) {
       try {
         this.mqttClient.publish(
           this.mqttTopicRegistry,
-          JSON.stringify({ sender: this.clientId, events: list }),
+          JSON.stringify({ sender: this.clientId, events: normalized }),
           { qos: 0, retain: true }
         );
       } catch (e) {}
     }
-    this._emit('events-list-update', list);
+    this._emit('events-list-update', normalized);
   }
 
   _mergeIncomingRegistry(incomingList) {
     if (!Array.isArray(incomingList)) return;
     const localList = this.getEventsList();
     const map = new Map();
-    localList.forEach(item => map.set(item.id, item));
-    incomingList.forEach(item => {
-      if (!item || !item.id) return;
-      const existing = map.get(item.id);
+    localList.forEach(item => map.set(item.code, item));
+    incomingList.forEach(rawItem => {
+      if (!rawItem) return;
+      const item = this._normalizeRegistryItem(rawItem);
+      const existing = map.get(item.code);
       if (!existing || (item.updatedAt || 0) >= (existing.updatedAt || 0)) {
-        map.set(item.id, item);
+        map.set(item.code, item);
       }
     });
     const merged = Array.from(map.values());
@@ -334,15 +363,18 @@ class UniversalSyncClient {
   _syncEventInRegistry() {
     if (!this._state) return;
     const list = this.getEventsList();
-    const idx = list.findIndex(e => e.id === this.cleanRoom);
-    const entry = {
+    const idx = list.findIndex(e => e.code === this.cleanRoom);
+    const existing = idx >= 0 ? list[idx] : null;
+    const count = Array.isArray(this._state.timers) ? this._state.timers.length : 0;
+    const entry = this._normalizeRegistryItem({
       id: this.cleanRoom,
-      title: this._state.name && this._state.name !== this.cleanRoom
-        ? `${this._state.name}`
-        : `Evento ${this.cleanRoom}`,
-      artistCount: Array.isArray(this._state.timers) ? this._state.timers.length : 0,
+      code: this.cleanRoom,
+      title: existing?.title || (this._state.name && this._state.name !== this.cleanRoom ? this._state.name : (this.cleanRoom === 'PALCO1' ? 'RC26' : this.cleanRoom)),
+      pass: this._state.eventPass || existing?.pass || 'palco 1',
+      timersCount: count,
+      artistCount: count,
       updatedAt: Date.now()
-    };
+    });
     if (idx >= 0) {
       list[idx] = entry;
     } else {
@@ -351,20 +383,26 @@ class UniversalSyncClient {
     this._saveEventsList(list, true);
   }
 
-  createNewCleanEvent(titleInput) {
+  createNewCleanEvent(titleInput, passInput) {
     const cleanTitle = (titleInput || '').trim() || `Evento ${this.getEventsList().length + 1}`;
-    // Generate clean code from title (e.g. "Palco 2" -> "PALCO2")
-    let code = cleanTitle
+    const cleanPass = (passInput || '').trim() || 'palco 1';
+
+    const slugTitle = cleanTitle
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .toUpperCase()
-      .replace(/[^A-Z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .substring(0, 16);
-    if (!code) code = 'EVENTO-' + Math.floor(100 + Math.random() * 900);
+      .replace(/[^A-Z0-9]+/g, '')
+      .substring(0, 10) || 'EVT';
+    const slugPass = cleanPass
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '')
+      .substring(0, 10) || 'P1';
+    let code = `${slugTitle}_${slugPass}`;
 
     const newRoomState = {
       id: code,
       name: cleanTitle,
+      eventPass: cleanPass,
       updatedAt: Date.now(),
       activeTimerId: null,
       message: { text: '', visible: false, level: 'info' },
@@ -375,6 +413,8 @@ class UniversalSyncClient {
     try {
       localStorage.setItem(`stagetimer_state_${code}`, JSON.stringify(newRoomState));
       localStorage.setItem('stagetimer_last_room', code);
+      sessionStorage.setItem(`stagetimer_event_unlocked_${code}`, 'true');
+      localStorage.setItem(`stagetimer_event_unlocked_${code}`, 'true');
     } catch (e) {}
 
     // Publish empty state to that room's MQTT topic too
@@ -389,8 +429,16 @@ class UniversalSyncClient {
     }
 
     const list = this.getEventsList();
-    const existingIdx = list.findIndex(e => e.id === code);
-    const entry = { id: code, title: cleanTitle, artistCount: 0, updatedAt: Date.now() };
+    const existingIdx = list.findIndex(e => e.code === code);
+    const entry = this._normalizeRegistryItem({
+      id: code,
+      code,
+      title: cleanTitle,
+      pass: cleanPass,
+      timersCount: 0,
+      artistCount: 0,
+      updatedAt: Date.now()
+    });
     if (existingIdx >= 0) {
       list[existingIdx] = entry;
     } else {
@@ -400,13 +448,38 @@ class UniversalSyncClient {
     return code;
   }
 
+  verifyEventAccess(titleOrCode, inputPass) {
+    const cleanInputPass = String(inputPass || '').trim().toLowerCase();
+    if (!cleanInputPass) return null;
+    const isMaster = ['1379', 'brito'].includes(cleanInputPass);
+    const list = this.getEventsList();
+    const target = String(titleOrCode || '').trim().toUpperCase();
+
+    // First look for exact match on event title (or code) + event pass
+    const candidates = list.filter(
+      e => e.code.toUpperCase() === target || e.title.toUpperCase() === target
+    );
+    const pool = candidates.length > 0 ? candidates : list;
+
+    const exactPassMatch = pool.find(
+      e => String(e.pass || '').trim().toLowerCase() === cleanInputPass
+    );
+    if (exactPassMatch) return exactPassMatch;
+
+    if (isMaster && pool.length > 0) {
+      return pool[0];
+    }
+    return null;
+  }
+
   deleteEventFromRegistry(codeToDelete) {
-    if (!codeToDelete || codeToDelete === 'PALCO1') return;
-    const list = this.getEventsList().filter(e => e.id !== codeToDelete);
+    if (!codeToDelete || codeToDelete === 'PALCO1') return this.getEventsList();
+    const list = this.getEventsList().filter(e => e.code !== codeToDelete);
     try {
       localStorage.removeItem(`stagetimer_state_${codeToDelete}`);
     } catch (e) {}
     this._saveEventsList(list, true);
+    return list;
   }
 
   loadPresetDay(day = 1) {
