@@ -199,23 +199,30 @@ class UniversalSyncClient {
   _applyIncomingState(incoming, fromCloud = false) {
     if (!incoming || !Array.isArray(incoming.timers)) return;
 
-    // Accept incoming state if it has a newer timestamp or if our current state is untouched (updatedAt === 0)
-    const currentTs = this._state?.updatedAt || 0;
-    const incomingTs = incoming.updatedAt || 1;
+    // ─── Clock Skew Compensation across devices (PC vs iPhone) ───────
+    const localNow = Date.now();
+    const senderNow = incoming.updatedAt || localNow;
+    const clockOffset = localNow - senderNow; // Difference between local clock and sender clock
 
-    if (incomingTs >= currentTs || currentTs === 0) {
-      this._state = incoming;
-      this._saveLocal();
-
-      // Also relay to local tabs if it came from cloud
-      if (fromCloud && this.channel) {
-        try {
-          this.channel.postMessage({ type: 'room-state', sender: this.clientId, data: this._state });
-        } catch (e) {}
+    // Adjust running timers' startedAt to local device clock reference
+    incoming.timers.forEach(t => {
+      if (t.state === 'running' && t.startedAt) {
+        t.startedAt = t.startedAt + clockOffset;
       }
+    });
 
-      this._emit('room-state', this._state);
+    // Always accept incoming state from active operator/controller action
+    this._state = incoming;
+    this._saveLocal();
+
+    // Also relay to local tabs if it came from cloud
+    if (fromCloud && this.channel) {
+      try {
+        this.channel.postMessage({ type: 'room-state', sender: this.clientId, data: this._state });
+      } catch (e) {}
     }
+
+    this._emit('room-state', this._state);
   }
 
   _commitStateChange() {
