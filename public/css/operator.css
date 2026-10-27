@@ -1,0 +1,358 @@
+/* ─── Operator Mobile Layout (iOS Safari Optimized) ─────────────── */
+
+html, body {
+  height: 100%;
+  min-height: 100dvh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+.op-app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+/* ─── Top Bar ───────────────────────────────────────────────────── */
+
+.op-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+
+.op-room-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.op-room-input {
+  width: 95px;
+  font-size: 16px !important; /* Prevents iOS Safari zoom */
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.op-join-btn {
+  padding: 7px 12px;
+  font-size: 0.8rem;
+}
+
+/* ─── Hero Live Timer ───────────────────────────────────────────── */
+
+.op-hero {
+  margin: 12px 16px;
+  padding: 20px 16px;
+  border-radius: 16px;
+  background: #000;
+  border: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.op-hero-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.op-hero.running .op-hero-badge {
+  background: rgba(0, 184, 148, 0.2);
+  color: var(--green);
+}
+
+.op-hero-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.op-hero-time {
+  font-family: var(--font-mono);
+  font-size: clamp(3.2rem, 15vw, 4.8rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.04em;
+  color: var(--green);
+  margin: 4px 0 10px;
+}
+
+.op-hero-time.warn { color: var(--yellow); }
+.op-hero-time.danger { color: var(--red); }
+.op-hero-time.finished {
+  color: var(--red);
+  animation: op-flash 0.8s ease-in-out infinite;
+}
+
+@keyframes op-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.op-hero-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.op-hero-progress-bar {
+  height: 100%;
+  background: var(--green);
+  transition: width 0.15s linear;
+}
+
+.op-hero-progress-bar.warn { background: var(--yellow); }
+.op-hero-progress-bar.danger { background: var(--red); }
+
+/* ─── Big Touch Controls ────────────────────────────────────────── */
+
+.op-controls {
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.op-primary-controls {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 10px;
+}
+
+.op-btn-giant {
+  min-height: 64px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: var(--shadow);
+  touch-action: manipulation;
+}
+
+.op-btn-play {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.op-btn-play.is-running {
+  background: var(--yellow);
+  border-color: var(--yellow);
+  color: #111;
+}
+
+.op-btn-reset {
+  background: var(--bg-card);
+  border-color: var(--border);
+  font-size: 1.1rem;
+}
+
+.op-adjust-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.op-btn-nudge {
+  min-height: 46px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 10px;
+  touch-action: manipulation;
+}
+
+/* ─── Quick Stage Message ───────────────────────────────────────── */
+
+.op-section {
+  margin: 14px 16px 0;
+  padding: 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.op-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.op-msg-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.op-msg-input {
+  flex: 1;
+  font-size: 16px !important; /* Prevents iOS Safari zoom */
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.op-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.op-preset-chip, .op-dur-chip {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.op-preset-chip:active, .op-dur-chip:active, .op-dur-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.op-queue-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.op-queue-del {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.op-queue-del:active {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+/* ─── Timer Queue (Tap to go Live) ──────────────────────────────── */
+
+.op-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.op-queue-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.op-queue-item.active {
+  border-color: var(--accent);
+  background: rgba(108, 92, 231, 0.18);
+}
+
+.op-queue-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.op-queue-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.op-queue-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.op-queue-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 16px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+.op-queue-item.active .op-queue-badge {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ─── Bottom Mode Switcher ──────────────────────────────────────── */
+
+.mode-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-pill {
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+}
+
+.mode-pill:hover, .mode-pill.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
