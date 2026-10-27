@@ -14,28 +14,27 @@
     <!-- Header -->
     <header class="op-header">
       <div class="op-room-box">
-        <span style="font-size: 1.2rem;">📱</span>
+        <span style="font-size: 1.1rem;">📱</span>
         <input id="op-room-input" class="input input-mono op-room-input" value="PALCO1" aria-label="Room Code">
         <button id="op-join-btn" class="btn btn-primary op-join-btn">Sala</button>
       </div>
 
-      <div id="op-conn-badge" class="connection-badge connected">
-        <span class="connection-dot"></span> Online
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 4px;" title="Cor de Fundo">
+          <input type="color" id="op-bg-color" value="#000000" style="width: 26px; height: 26px; border: 1px solid var(--border); border-radius: 6px; background: transparent; padding: 0;">
+        </div>
+        <div id="op-conn-badge" class="connection-badge connected">
+          <span class="connection-dot"></span> Online
+        </div>
       </div>
     </header>
 
     <!-- Mode Switcher Bar -->
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 16px 0;">
-      <div class="mode-nav">
-        <a id="nav-controller" href="controller.html" class="mode-pill">🎛️ Controlador</a>
-        <a id="nav-operator" href="operator.html" class="mode-pill active">📱 Operador</a>
-        <a id="nav-viewer" href="viewer.html" class="mode-pill" target="_blank">📺 Palco</a>
-        <a id="nav-lineup" href="lineup.html" class="mode-pill" target="_blank">📋 Lista</a>
-      </div>
-      <div style="display: flex; align-items: center; gap: 4px;">
-        <span style="font-size: 0.7rem; color: var(--text-secondary);">Fundo:</span>
-        <input type="color" id="op-bg-color" value="#000000" style="width: 26px; height: 26px; border: 1px solid var(--border); border-radius: 6px; background: transparent; padding: 0;">
-      </div>
+    <div class="op-mode-bar">
+      <a id="nav-controller" href="controller.html" class="mode-pill">🎛️ Controlador</a>
+      <a id="nav-operator" href="operator.html" class="mode-pill active">📱 Operador</a>
+      <a id="nav-viewer" href="viewer.html" class="mode-pill" target="_blank">📺 Palco</a>
+      <a id="nav-lineup" href="lineup.html" class="mode-pill" target="_blank">📋 Lista</a>
     </div>
 
     <!-- Live Stage Hero Display -->
@@ -65,10 +64,18 @@
         </button>
       </div>
 
-      <div class="op-adjust-controls">
-        <button id="op-btn-minus1m" class="btn op-btn-nudge">-1 Min</button>
-        <button id="op-btn-plus1m" class="btn op-btn-nudge">+1 Min</button>
-        <button id="op-btn-plus5m" class="btn op-btn-nudge">+5 Min</button>
+      <div class="op-adjust-grid">
+        <button type="button" class="btn op-btn-nudge op-btn-minus" data-adjust-min="-1">-1m</button>
+        <button type="button" class="btn op-btn-nudge op-btn-minus is-featured" data-adjust-min="-5">-5m</button>
+        <button type="button" class="btn op-btn-nudge op-btn-minus" data-adjust-min="-10">-10m</button>
+        <button type="button" class="btn op-btn-nudge op-btn-minus" data-adjust-min="-20">-20m</button>
+        <button type="button" class="btn op-btn-nudge op-btn-minus" data-adjust-min="-30">-30m</button>
+
+        <button type="button" class="btn op-btn-nudge op-btn-plus" data-adjust-min="1">+1m</button>
+        <button type="button" class="btn op-btn-nudge op-btn-plus is-featured" data-adjust-min="5">+5m</button>
+        <button type="button" class="btn op-btn-nudge op-btn-plus" data-adjust-min="10">+10m</button>
+        <button type="button" class="btn op-btn-nudge op-btn-plus" data-adjust-min="20">+20m</button>
+        <button type="button" class="btn op-btn-nudge op-btn-plus" data-adjust-min="30">+30m</button>
       </div>
     </section>
 
@@ -101,8 +108,10 @@
       </div>
       <div class="op-msg-row">
         <input id="op-artist-name" class="input op-msg-input" placeholder="Nome do Artista / Banda...">
-        <input id="op-artist-starttime" class="input input-mono" style="width: 78px; font-size: 16px !important; text-align: center; border-radius: 10px;" placeholder="21:00" title="Horário de Entrada">
-        <input id="op-artist-duration" class="input input-mono" style="width: 78px; font-size: 16px !important; text-align: center; border-radius: 10px;" value="30:00" placeholder="MM:SS" title="Duração">
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+        <input id="op-artist-starttime" class="input input-mono" style="width: 100%; font-size: 16px !important; text-align: center; border-radius: 10px;" placeholder="🕒 Entrada (23:00)" title="Horário de Entrada">
+        <input id="op-artist-duration" class="input input-mono" style="width: 100%; font-size: 16px !important; text-align: center; border-radius: 10px;" value="30:00" placeholder="⏱ Duração (30:00)" title="Duração">
       </div>
       <div class="op-msg-row">
         <input id="op-artist-notes" class="input op-msg-input" placeholder="📝 Notas para este artista (opcional)...">

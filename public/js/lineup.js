@@ -292,21 +292,36 @@ function render() {
       }
 
       const timeDisplay = slots[idx] || '--:--';
+      let timeIn = timeDisplay;
+      let timeOut = '';
+
+      const rangeMatch = String(timeDisplay).match(/(\d{1,2}\s*[:hH]\s*\d{2})\s*[-–—a]\s*(\d{1,2}\s*[:hH]\s*\d{2})/);
+      if (rangeMatch) {
+        timeIn = rangeMatch[1].replace(/[hH]/, ':').replace(/\s+/g, '');
+        timeOut = rangeMatch[2].replace(/[hH]/, ':').replace(/\s+/g, '');
+      } else {
+        const singleMatch = String(timeDisplay).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+        if (singleMatch) {
+          const sMins = parseInt(singleMatch[1], 10) * 60 + parseInt(singleMatch[2], 10);
+          const eMins = (sMins + Math.round((t.duration || 0) / 60000)) % 1440;
+          timeIn = `${String(Math.floor(sMins / 60)).padStart(2, '0')}:${String(sMins % 60).padStart(2, '0')}`;
+          timeOut = `${String(Math.floor(eMins / 60)).padStart(2, '0')}:${String(eMins % 60).padStart(2, '0')}`;
+        }
+      }
 
       return `
         <div class="${rowClass}" data-timer-id="${t.id}">
-          <div class="lineup-col-left">
-            <div class="lineup-col-time">🕒 ${escapeHtml(timeDisplay)}</div>
-            <div class="lineup-col-artist">
-              <span class="lineup-artist-name">${escapeHtml(t.name)}</span>
-              ${t.notes ? `<span class="lineup-artist-notes">📝 ${escapeHtml(t.notes)}</span>` : ''}
-            </div>
+          <div class="lineup-col-time">
+            <span class="lineup-time-in">${escapeHtml(timeIn)}</span>
+            ${timeOut ? `<span class="lineup-time-out">${escapeHtml(timeOut)}</span>` : ''}
           </div>
-          <div class="lineup-col-right">
-            <div class="lineup-col-duration">⏱ ${formatTime(t.duration)}</div>
-            <div class="lineup-col-status">
-              <span class="lineup-status-pill ${statusClass}">${statusText}</span>
-            </div>
+          <div class="lineup-col-artist">
+            <span class="lineup-artist-name">${escapeHtml(t.name)}</span>
+            ${t.notes ? `<span class="lineup-artist-notes">${escapeHtml(t.notes)}</span>` : ''}
+          </div>
+          <div class="lineup-col-duration">${formatTime(t.duration)}</div>
+          <div class="lineup-col-status">
+            <span class="lineup-status-pill ${statusClass}">${statusText}</span>
           </div>
         </div>
       `;

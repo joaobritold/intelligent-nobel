@@ -302,21 +302,23 @@ function render() {
       const endTimeStr = getEstimatedEndTime(t);
       return `
         <div class="op-queue-item ${isAct ? 'active' : ''}" data-id="${t.id}" draggable="true">
-          <div class="op-queue-info" style="flex:1; margin-right: 8px;">
-            <span class="op-queue-name"><span style="color:var(--text-muted); margin-right:4px;">⠿</span>${t.startTime ? `<strong style="color:var(--accent)">[${escapeHtml(t.startTime)}]</strong> ` : ''}${escapeHtml(t.name)}</span>
-            <span class="op-queue-meta">${t.mode.toUpperCase()} • ${formatTime(t.duration)} ${endTimeStr ? `<span class="op-end-time" data-end-id="${t.id}" style="color:#55efc4; font-weight:700; margin-left:6px;">🏁 Fim: ${endTimeStr}</span>` : ''}</span>
-            <div style="display:flex; gap:6px; margin-top: 6px;" onclick="event.stopPropagation()">
-              <input class="input" data-time-id="${t.id}" value="${escapeHtml(t.startTime || '')}" placeholder="🕒 23:00 – 00:15" style="padding: 4px 8px; font-size: 16px !important; width: 138px; text-align:center;">
-              <input class="input op-item-notes" data-note-id="${t.id}" value="${escapeHtml(t.notes || '')}" placeholder="📝 Notas deste artista..." style="padding: 4px 8px; font-size: 16px !important; flex: 1;">
-            </div>
-          </div>
-          <div class="op-queue-actions" style="flex-direction: column; align-items: flex-end; gap: 6px;">
-            <span class="op-queue-badge">${isAct ? '● NO AR' : 'ATIVAR'}</span>
-            <div style="display: flex; gap: 4px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
+            <span class="op-queue-name" style="flex: 1; min-width: 0; overflow-wrap: break-word;"><span style="color:var(--text-muted); margin-right:6px;">⠿</span>${escapeHtml(t.name)}</span>
+            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+              <span class="op-queue-badge">${isAct ? '● NO AR' : 'ATIVAR'}</span>
               <button type="button" class="op-move-btn" data-move-up="${t.id}" title="Subir" ${idx === 0 ? 'disabled style="opacity:0.35"' : ''}>↑</button>
               <button type="button" class="op-move-btn" data-move-down="${t.id}" title="Descer" ${idx === state.timers.length - 1 ? 'disabled style="opacity:0.35"' : ''}>↓</button>
               <button type="button" class="op-queue-del" data-del-id="${t.id}" title="Apagar">🗑️</button>
             </div>
+          </div>
+          <div class="op-queue-meta" style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+            ${t.startTime ? `<strong style="color:var(--accent)">[${escapeHtml(t.startTime)}]</strong>` : ''}
+            <span>⏱ ${formatTime(t.duration)}</span>
+            ${endTimeStr ? `<span class="op-end-time" data-end-id="${t.id}" style="color:#55efc4; font-weight:700;">🏁 Fim: ${endTimeStr}</span>` : ''}
+          </div>
+          <div style="display: flex; gap: 6px; width: 100%;" onclick="event.stopPropagation()">
+            <input class="input" data-time-id="${t.id}" value="${escapeHtml(t.startTime || '')}" placeholder="23:00 – 00:15" style="padding: 6px 8px; font-size: 16px !important; width: 132px; text-align:center; flex-shrink: 0;">
+            <input class="input op-item-notes" data-note-id="${t.id}" value="${escapeHtml(t.notes || '')}" placeholder="📝 Notas deste artista..." style="padding: 6px 8px; font-size: 16px !important; flex: 1; min-width: 0;">
           </div>
         </div>
       `;
@@ -364,16 +366,13 @@ $btnReset.addEventListener('click', () => {
   }
 });
 
-$btnMinus1m.addEventListener('click', () => {
-  if (state?.activeTimerId) client.adjustTime(state.activeTimerId, -60000);
-});
-
-$btnPlus1m.addEventListener('click', () => {
-  if (state?.activeTimerId) client.adjustTime(state.activeTimerId, 60000);
-});
-
-$btnPlus5m.addEventListener('click', () => {
-  if (state?.activeTimerId) client.adjustTime(state.activeTimerId, 300000);
+document.querySelectorAll('[data-adjust-min]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const mins = parseInt(btn.dataset.adjustMin, 10);
+    if (!isNaN(mins) && state?.activeTimerId) {
+      client.adjustTime(state.activeTimerId, mins * 60000);
+    }
+  });
 });
 
 $bgColor.addEventListener('input', (e) => {

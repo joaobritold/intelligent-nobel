@@ -342,8 +342,8 @@ function renderTimers() {
       if (card) {
         const display = card.querySelector('.timer-display');
         const color = getTimerColor(timer);
-        if (display) {
-          display.textContent = getTimerDisplayValue(timer);
+        if (display && document.activeElement !== display) {
+          display.value = getTimerDisplayValue(timer);
           display.className = `timer-display timer-${color}`;
         }
         const endBadge = card.querySelector('.timer-end-badge');
@@ -401,9 +401,14 @@ function renderTimers() {
         </div>
 
         <div class="timer-card-middle">
-          <div class="timer-display timer-${color}">
-            ${display}
-          </div>
+          <input
+            class="timer-display timer-${color}"
+            value="${display}"
+            data-timer-id="${timer.id}"
+            data-field="duration"
+            title="Clique para editar a duração total"
+            spellcheck="false"
+          />
           <div class="timer-meta">
             <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
               <select class="input timer-mode-select" data-timer-id="${timer.id}" data-field="mode">
@@ -417,15 +422,7 @@ function renderTimers() {
             </div>
             ${timer.mode !== 'clock' ? `
               <div class="timer-duration-row" style="flex-wrap: wrap;">
-                <span>Duration:</span>
-                <input
-                  class="input input-mono timer-duration-input"
-                  value="${formatTime(timer.duration)}"
-                  data-timer-id="${timer.id}"
-                  data-field="duration"
-                  spellcheck="false"
-                />
-                <span style="margin-left: 6px;">Horário:</span>
+                <span>Horário:</span>
                 <input
                   class="input input-mono timer-duration-input"
                   style="width: 138px;"
@@ -645,9 +642,9 @@ $timerList.addEventListener('input', (e) => {
   }
 });
 
-// Prevent Enter from unfocusing name input
+// Prevent Enter from unfocusing name/duration input
 $timerList.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && e.target.matches('.timer-name-input, .timer-duration-input')) {
+  if (e.key === 'Enter' && e.target.matches('.timer-name-input, .timer-duration-input, .timer-display')) {
     e.target.blur();
   }
 });
