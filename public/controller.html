@@ -46,8 +46,14 @@
     <div class="main">
       <!-- Left Panel: Timers -->
       <section class="timer-panel">
-        <div class="panel-header">
-          <div class="panel-title">Timers Rundown</div>
+        <div class="panel-header" style="flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <div class="panel-title">Timers Rundown</div>
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(0, 184, 148, 0.14); border: 1.5px solid rgba(0, 184, 148, 0.5); padding: 5px 14px; border-radius: 10px;">
+              <span style="font-size: 0.75rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.06em;">🏁 Fim do Evento:</span>
+              <strong id="ctrl-event-end" style="font-family: var(--font-mono); font-size: 1.15rem; color: #55efc4;">--:--</strong>
+            </div>
+          </div>
           <div style="display: flex; gap: 6px; flex-wrap: wrap;">
             <button id="open-import-btn" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff;">📂 Importar</button>
             <button class="btn btn-sm preset-day-btn" data-day="1" title="Receção ao Caloiro - Dia 1">📅 Dia 1</button>

@@ -198,47 +198,39 @@ html, body {
 
 /* ─── Right Column: Full Artist Schedule Table ──────────────────── */
 
+.lineup-main-scroll {
+  position: relative;
+  max-height: calc(100dvh - 170px);
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  padding: 18vh 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(108, 92, 231, 0.4) transparent;
+}
+
 .lineup-list-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .lineup-row {
-  display: grid;
-  grid-template-columns: 120px 1fr 130px 125px;
+  display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px 20px;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 22px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
-  transition: all 0.2s ease;
-}
-
-.lineup-row-top-mobile {
-  display: contents;
-}
-
-.lineup-col-artist {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.lineup-col-duration {
-  grid-column: 3;
-  grid-row: 1;
-}
-
-.lineup-col-status {
-  grid-column: 4;
-  grid-row: 1;
+  transition: all 0.25s ease;
 }
 
 .lineup-row.is-active {
-  background: rgba(108, 92, 231, 0.2);
+  background: rgba(108, 92, 231, 0.22);
   border: 2px solid var(--accent);
-  box-shadow: 0 6px 22px rgba(108, 92, 231, 0.25);
+  box-shadow: 0 8px 28px rgba(108, 92, 231, 0.32);
+  transform: scale(1.01);
 }
 
 .lineup-row.is-next {
@@ -250,12 +242,25 @@ html, body {
   opacity: 0.45;
 }
 
+.lineup-col-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
 .lineup-col-time {
   font-family: var(--font-mono);
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: #a29bfe;
+  background: rgba(108, 92, 231, 0.16);
+  border: 1px solid rgba(108, 92, 231, 0.38);
+  padding: 7px 14px;
+  border-radius: 10px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .lineup-col-artist {
@@ -263,25 +268,36 @@ html, body {
   flex-direction: column;
   gap: 3px;
   min-width: 0;
+  flex: 1;
 }
 
 .lineup-artist-name {
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #fff;
-  word-break: break-word;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .lineup-artist-notes {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: #cbd5e1;
+}
+
+.lineup-col-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
 }
 
 .lineup-col-duration {
   font-family: var(--font-mono);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   color: var(--text-secondary);
-  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 5px 10px;
+  border-radius: 8px;
   white-space: nowrap;
 }
 
@@ -363,31 +379,42 @@ html, body {
   }
 
   /* Clean 2-line card layout for each artist on iPhone Safari */
+  .lineup-main-scroll {
+    max-height: none;
+    overflow-y: visible;
+    padding: 0;
+  }
+
   .lineup-row {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
+    gap: 10px;
     padding: 14px;
     border-radius: 12px;
   }
 
-  .lineup-row-top-mobile {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  .lineup-col-left {
+    flex-direction: column;
+    align-items: flex-start;
     gap: 8px;
   }
 
   .lineup-col-time {
-    font-size: 1rem;
-    background: rgba(108, 92, 231, 0.18);
-    padding: 3px 10px;
+    font-size: 0.95rem;
+    padding: 4px 10px;
     border-radius: 8px;
   }
 
   .lineup-artist-name {
     font-size: 1.15rem;
+  }
+
+  .lineup-col-right {
+    justify-content: space-between;
+    width: 100%;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 8px;
   }
 
   .lineup-col-duration {

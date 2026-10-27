@@ -176,6 +176,41 @@ function getEstimatedEndTime(timer) {
   return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
+function getEventEndTime() {
+  if (!state || !Array.isArray(state.timers) || state.timers.length === 0) return '--:--';
+  const lastTimer = [...state.timers].reverse().find(t => t.mode !== 'clock') || state.timers[state.timers.length - 1];
+  const activeTimer = state.timers.find(t => t.id === state.activeTimerId);
+
+  let overtimeMins = 0;
+  if (activeTimer && activeTimer.mode === 'countdown') {
+    let el = activeTimer.elapsed || 0;
+    if (activeTimer.state === 'running' && activeTimer.startedAt) el += Date.now() - activeTimer.startedAt;
+    if (el > activeTimer.duration) {
+      overtimeMins = Math.floor((el - activeTimer.duration) / 60000);
+    }
+  }
+
+  if (lastTimer && lastTimer.startTime) {
+    const rangeMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
+    if (rangeMatch) {
+      const endMins = parseInt(rangeMatch[3], 10) * 60 + parseInt(rangeMatch[4], 10) + overtimeMins;
+      const norm = ((endMins % 1440) + 1440) % 1440;
+      const str = `${String(Math.floor(norm / 60)).padStart(2, '0')}:${String(norm % 60).padStart(2, '0')}`;
+      return overtimeMins > 0 ? `${str} (+${overtimeMins}m)` : str;
+    }
+    const singleMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+    if (singleMatch) {
+      const startMins = parseInt(singleMatch[1], 10) * 60 + parseInt(singleMatch[2], 10);
+      const endMins = startMins + Math.round((lastTimer.duration || 0) / 60000) + overtimeMins;
+      const norm = ((endMins % 1440) + 1440) % 1440;
+      const str = `${String(Math.floor(norm / 60)).padStart(2, '0')}:${String(norm % 60).padStart(2, '0')}`;
+      return overtimeMins > 0 ? `${str} (+${overtimeMins}m)` : str;
+    }
+  }
+
+  return getEstimatedEndTime(lastTimer) || '--:--';
+}
+
 // ─── Render ────────────────────────────────────────────────────────
 
 let lastQueueSignature = '';
@@ -183,6 +218,11 @@ let opDraggedId = null;
 
 function render() {
   if (!state) return;
+
+  const $opEventEnd = document.getElementById('op-event-end');
+  if ($opEventEnd) {
+    $opEventEnd.textContent = getEventEndTime();
+  }
 
   if (state.theme?.viewerBg) {
     $bgColor.value = state.theme.viewerBg;
@@ -266,7 +306,7 @@ function render() {
             <span class="op-queue-name"><span style="color:var(--text-muted); margin-right:4px;">⠿</span>${t.startTime ? `<strong style="color:var(--accent)">[${escapeHtml(t.startTime)}]</strong> ` : ''}${escapeHtml(t.name)}</span>
             <span class="op-queue-meta">${t.mode.toUpperCase()} • ${formatTime(t.duration)} ${endTimeStr ? `<span class="op-end-time" data-end-id="${t.id}" style="color:#55efc4; font-weight:700; margin-left:6px;">🏁 Fim: ${endTimeStr}</span>` : ''}</span>
             <div style="display:flex; gap:6px; margin-top: 6px;" onclick="event.stopPropagation()">
-              <input class="input" data-time-id="${t.id}" value="${escapeHtml(t.startTime || '')}" placeholder="🕒 21:00" style="padding: 4px 8px; font-size: 16px !important; width: 85px; text-align:center;">
+              <input class="input" data-time-id="${t.id}" value="${escapeHtml(t.startTime || '')}" placeholder="🕒 23:00 – 00:15" style="padding: 4px 8px; font-size: 16px !important; width: 138px; text-align:center;">
               <input class="input op-item-notes" data-note-id="${t.id}" value="${escapeHtml(t.notes || '')}" placeholder="📝 Notas deste artista..." style="padding: 4px 8px; font-size: 16px !important; flex: 1;">
             </div>
           </div>

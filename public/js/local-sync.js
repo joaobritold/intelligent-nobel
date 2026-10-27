@@ -414,12 +414,79 @@ class UniversalSyncClient {
     return timer;
   }
 
-  updateTimer(id, updates) {
-    const timer = this._state.timers.find(t => t.id === id);
-    if (timer) {
-      Object.assign(timer, updates);
-      this._commitStateChange();
+  _parseStartMins(str) {
+    if (!str) return null;
+    const m = String(str).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+    if (!m) return null;
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  }
+
+  _formatMins(totalMins) {
+    const norm = ((Math.round(totalMins) % 1440) + 1440) % 1440;
+    const hh = String(Math.floor(norm / 60)).padStart(2, '0');
+    const mm = String(norm % 60).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+
+  _formatSlotRange(startMins, durationMs) {
+    const durMins = Math.round((durationMs || 0) / 60000);
+    return `${this._formatMins(startMins)} – ${this._formatMins(startMins + durMins)}`;
+  }
+
+  _cascadeSubsequentTimers(fromIdx, deltaMins) {
+    if (!deltaMins || !this._state?.timers) return;
+    for (let j = fromIdx + 1; j < this._state.timers.length; j++) {
+      const nextT = this._state.timers[j];
+      const sMins = this._parseStartMins(nextT.startTime);
+      if (sMins !== null) {
+        const newStart = sMins + deltaMins;
+        nextT.startTime = this._formatSlotRange(newStart, nextT.duration);
+      }
     }
+  }
+
+  updateTimer(id, updates) {
+    const idx = this._state.timers.findIndex(t => t.id === id);
+    if (idx < 0) return;
+    const timer = this._state.timers[idx];
+
+    // If duration was edited, update this timer's exit time and shift subsequent timers
+    if (typeof updates.duration === 'number' && updates.duration !== timer.duration) {
+      const deltaMins = Math.round((updates.duration - timer.duration) / 60000);
+      timer.duration = updates.duration;
+      const sMins = this._parseStartMins(timer.startTime);
+      if (sMins !== null) {
+        timer.startTime = this._formatSlotRange(sMins, timer.duration);
+      }
+      this._cascadeSubsequentTimers(idx, deltaMins);
+      delete updates.duration;
+    }
+
+    // If startTime was edited manually, shift subsequent timers by the difference in start time
+    if (typeof updates.startTime === 'string' && updates.startTime !== timer.startTime) {
+      const oldStart = this._parseStartMins(timer.startTime);
+      const newStart = this._parseStartMins(updates.startTime);
+      // Check if user typed a full range "HH:MM - HH:MM" or single time "HH:MM"
+      const rangeMatch = updates.startTime.match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
+      if (rangeMatch && newStart !== null) {
+        const endMins = parseInt(rangeMatch[3], 10) * 60 + parseInt(rangeMatch[4], 10);
+        let durMins = endMins - newStart;
+        if (durMins <= 0) durMins += 1440;
+        timer.duration = durMins * 60000;
+        updates.startTime = this._formatSlotRange(newStart, timer.duration);
+      } else if (newStart !== null) {
+        updates.startTime = this._formatSlotRange(newStart, timer.duration);
+      }
+      if (oldStart !== null && newStart !== null) {
+        let deltaMins = newStart - oldStart;
+        if (deltaMins > 720) deltaMins -= 1440;
+        if (deltaMins < -720) deltaMins += 1440;
+        this._cascadeSubsequentTimers(idx, deltaMins);
+      }
+    }
+
+    Object.assign(timer, updates);
+    this._commitStateChange();
   }
 
   deleteTimer(id) {
@@ -474,12 +541,27 @@ class UniversalSyncClient {
   }
 
   adjustTime(id, deltaMs) {
-    const timer = this._state.timers.find(t => t.id === id);
-    if (!timer) return;
-    timer.duration = Math.max(10000, timer.duration + deltaMs);
+    const idx = this._state.timers.findIndex(t => t.id === id);
+    if (idx < 0) return;
+    const timer = this._state.timers[idx];
+
+    const oldDuration = timer.duration;
+    timer.duration = Math.max(60000, timer.duration + deltaMs);
+    const actualDeltaMins = Math.round((timer.duration - oldDuration) / 60000);
+
     if (timer.state === 'finished' && timer.duration > timer.elapsed) {
       timer.state = 'stopped';
     }
+
+    // Update current artist's exit time & cascade to all subsequent artists
+    if (actualDeltaMins !== 0) {
+      const sMins = this._parseStartMins(timer.startTime);
+      if (sMins !== null) {
+        timer.startTime = this._formatSlotRange(sMins, timer.duration);
+      }
+      this._cascadeSubsequentTimers(idx, actualDeltaMins);
+    }
+
     this._commitStateChange();
   }
 
@@ -507,14 +589,48 @@ class UniversalSyncClient {
 
   reorderTimers(order) {
     if (Array.isArray(order)) {
+      const oldTimers = this._state.timers || [];
+      // Capture original slot starts and inter-slot gaps by position index
+      const posMeta = oldTimers.map((t, i) => {
+        const sMins = this._parseStartMins(t.startTime);
+        const durMins = Math.round((t.duration || 0) / 60000);
+        return { sMins, endMins: sMins !== null ? sMins + durMins : null };
+      });
+      const gaps = posMeta.map((cur, i) => {
+        if (i === 0 || cur.sMins === null || posMeta[i - 1].endMins === null) return null;
+        let diff = cur.sMins - (posMeta[i - 1].endMins % 1440);
+        if (diff < -720) diff += 1440;
+        if (diff > 720) diff -= 1440;
+        // If gap is huge (> 2 hours, e.g. between afternoon soundcheck and 23:00 show), treat as new block anchor
+        if (Math.abs(diff) > 120) return null;
+        return diff;
+      });
+
       const reordered = [];
       for (const id of order) {
-        const t = this._state.timers.find(t => t.id === id);
+        const t = oldTimers.find(item => item.id === id);
         if (t) reordered.push(t);
       }
-      for (const t of this._state.timers) {
+      for (const t of oldTimers) {
         if (!reordered.includes(t)) reordered.push(t);
       }
+
+      // Recalculate sequential slots for the new order
+      let prevEnd = null;
+      reordered.forEach((t, i) => {
+        if (t.mode === 'clock') return;
+        let curStart = null;
+        if (i === 0 || gaps[i] === null || prevEnd === null) {
+          curStart = posMeta[i]?.sMins ?? this._parseStartMins(t.startTime);
+        } else {
+          curStart = prevEnd + gaps[i];
+        }
+        if (curStart !== null) {
+          t.startTime = this._formatSlotRange(curStart, t.duration);
+          prevEnd = curStart + Math.round((t.duration || 0) / 60000);
+        }
+      });
+
       this._state.timers = reordered;
       this._commitStateChange();
     }

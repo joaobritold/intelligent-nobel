@@ -124,11 +124,100 @@ function computeScheduleSlots(timers, activeIdx) {
   });
 }
 
+function getEventEndTime(st) {
+  if (!st || !Array.isArray(st.timers) || st.timers.length === 0) return '--:--';
+  const lastTimer = [...st.timers].reverse().find(t => t.mode !== 'clock') || st.timers[st.timers.length - 1];
+  const activeTimer = st.timers.find(t => t.id === st.activeTimerId);
+
+  // Check if active timer is in negative overtime
+  let overtimeMins = 0;
+  if (activeTimer && activeTimer.mode === 'countdown') {
+    let el = activeTimer.elapsed || 0;
+    if (activeTimer.state === 'running' && activeTimer.startedAt) el += Date.now() - activeTimer.startedAt;
+    if (el > activeTimer.duration) {
+      overtimeMins = Math.floor((el - activeTimer.duration) / 60000);
+    }
+  }
+
+  if (lastTimer && lastTimer.startTime) {
+    const rangeMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
+    if (rangeMatch) {
+      const endMins = parseInt(rangeMatch[3], 10) * 60 + parseInt(rangeMatch[4], 10) + overtimeMins;
+      const norm = ((endMins % 1440) + 1440) % 1440;
+      return `${String(Math.floor(norm / 60)).padStart(2, '0')}:${String(norm % 60).padStart(2, '0')}`;
+    }
+    const singleMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+    if (singleMatch) {
+      const startMins = parseInt(singleMatch[1], 10) * 60 + parseInt(singleMatch[2], 10);
+      const endMins = startMins + Math.round((lastTimer.duration || 0) / 60000) + overtimeMins;
+      const norm = ((endMins % 1440) + 1440) % 1440;
+      return `${String(Math.floor(norm / 60)).padStart(2, '0')}:${String(norm % 60).padStart(2, '0')}`;
+    }
+  }
+
+  // Fallback: cumulative remaining duration from active timer
+  const activeIdx = Math.max(0, st.timers.findIndex(t => t.id === st.activeTimerId));
+  let totalRemainingMs = 0;
+  for (let i = activeIdx; i < st.timers.length; i++) {
+    const t = st.timers[i];
+    if (t.mode === 'clock') continue;
+    if (i === activeIdx) {
+      let el = t.elapsed || 0;
+      if (t.state === 'running' && t.startedAt) el += Date.now() - t.startedAt;
+      totalRemainingMs += Math.max(0, (t.duration || 0) - el);
+    } else {
+      totalRemainingMs += (t.duration || 0);
+    }
+  }
+  const end = new Date(Date.now() + totalRemainingMs);
+  return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
 function escapeHtml(str) {
   const d = document.createElement('div');
   d.textContent = str || '';
   return d.innerHTML;
 }
+
+// ─── Auto-Scroll Centering ─────────────────────────────────────────
+
+let lastLineupSig = '';
+let lastCenteredActiveId = null;
+let lastUserScrollAt = 0;
+
+const $mainScroll = document.querySelector('.lineup-main-scroll');
+if ($mainScroll) {
+  $mainScroll.addEventListener('wheel', () => { lastUserScrollAt = Date.now(); }, { passive: true });
+  $mainScroll.addEventListener('touchmove', () => { lastUserScrollAt = Date.now(); }, { passive: true });
+}
+window.addEventListener('wheel', () => { lastUserScrollAt = Date.now(); }, { passive: true });
+window.addEventListener('touchmove', () => { lastUserScrollAt = Date.now(); }, { passive: true });
+
+function centerActiveArtist(smooth = true) {
+  const activeRow = $list?.querySelector('.lineup-row.is-active');
+  if (!activeRow) return;
+
+  const container = document.querySelector('.lineup-main-scroll');
+  if (container && window.innerWidth > 860 && container.scrollHeight > container.clientHeight) {
+    const targetTop = activeRow.offsetTop - (container.clientHeight / 2) + (activeRow.clientHeight / 2);
+    container.scrollTo({
+      top: Math.max(0, targetTop),
+      behavior: smooth ? 'smooth' : 'auto'
+    });
+  } else {
+    activeRow.scrollIntoView({
+      behavior: smooth ? 'smooth' : 'auto',
+      block: 'center'
+    });
+  }
+}
+
+// Re-center every 7 seconds if idle so stage/backstage screens stay centered
+setInterval(() => {
+  if (Date.now() - lastUserScrollAt > 6000) {
+    centerActiveArtist(true);
+  }
+}, 7000);
 
 // ─── Render ────────────────────────────────────────────────────────
 
@@ -138,6 +227,11 @@ function render() {
   if (state.theme?.viewerBg && state.theme.viewerBg !== '#000000') {
     $screen.style.backgroundColor = state.theme.viewerBg;
     document.body.style.backgroundColor = state.theme.viewerBg;
+  }
+
+  const $eventEnd = document.getElementById('lineup-event-end');
+  if ($eventEnd) {
+    $eventEnd.textContent = getEventEndTime(state);
   }
 
   const activeIdx = state.timers.findIndex(t => t.id === state.activeTimerId);
@@ -168,48 +262,61 @@ function render() {
     }
   }
 
-  // Right table: All Artists
-  $list.innerHTML = state.timers.map((t, idx) => {
-    const isActive = idx === activeIdx;
-    const isNext = activeIdx >= 0 && idx === activeIdx + 1;
-    const isDone = (activeIdx >= 0 && idx < activeIdx) || t.state === 'finished';
+  // Right table: All Artists (only rebuild DOM when lineup/slots/state changes)
+  const sig = state.timers.map((t, idx) => `${t.id}:${t.name}:${slots[idx]}:${t.duration}:${t.notes || ''}:${t.state}:${idx === activeIdx}`).join('|');
+  if (sig !== lastLineupSig) {
+    const isFirstRender = !lastLineupSig;
+    lastLineupSig = sig;
 
-    let rowClass = 'lineup-row';
-    let statusClass = 'status-upcoming';
-    let statusText = 'AGUARDA';
+    $list.innerHTML = state.timers.map((t, idx) => {
+      const isActive = idx === activeIdx;
+      const isNext = activeIdx >= 0 && idx === activeIdx + 1;
+      const isDone = (activeIdx >= 0 && idx < activeIdx) || t.state === 'finished';
 
-    if (isActive) {
-      rowClass += ' is-active';
-      statusClass = 'status-live';
-      statusText = t.state === 'running' ? '● EM PALCO' : '● NO AR';
-    } else if (isNext) {
-      rowClass += ' is-next';
-      statusClass = 'status-next';
-      statusText = '⏭ NEXT';
-    } else if (isDone) {
-      rowClass += ' is-done';
-      statusClass = 'status-done';
-      statusText = '✓ FIM';
-    }
+      let rowClass = 'lineup-row';
+      let statusClass = 'status-upcoming';
+      let statusText = 'AGUARDA';
 
-    const timeDisplay = slots[idx] || '--:--';
+      if (isActive) {
+        rowClass += ' is-active';
+        statusClass = 'status-live';
+        statusText = t.state === 'running' ? '● EM PALCO' : '● NO AR';
+      } else if (isNext) {
+        rowClass += ' is-next';
+        statusClass = 'status-next';
+        statusText = '⏭ NEXT';
+      } else if (isDone) {
+        rowClass += ' is-done';
+        statusClass = 'status-done';
+        statusText = '✓ FIM';
+      }
 
-    return `
-      <div class="${rowClass}">
-        <div class="lineup-row-top-mobile">
-          <div class="lineup-col-time">🕒 ${escapeHtml(timeDisplay)}</div>
-          <div class="lineup-col-status">
-            <span class="lineup-status-pill ${statusClass}">${statusText}</span>
+      const timeDisplay = slots[idx] || '--:--';
+
+      return `
+        <div class="${rowClass}" data-timer-id="${t.id}">
+          <div class="lineup-col-left">
+            <div class="lineup-col-time">🕒 ${escapeHtml(timeDisplay)}</div>
+            <div class="lineup-col-artist">
+              <span class="lineup-artist-name">${escapeHtml(t.name)}</span>
+              ${t.notes ? `<span class="lineup-artist-notes">📝 ${escapeHtml(t.notes)}</span>` : ''}
+            </div>
+          </div>
+          <div class="lineup-col-right">
+            <div class="lineup-col-duration">⏱ ${formatTime(t.duration)}</div>
+            <div class="lineup-col-status">
+              <span class="lineup-status-pill ${statusClass}">${statusText}</span>
+            </div>
           </div>
         </div>
-        <div class="lineup-col-artist">
-          <span class="lineup-artist-name">${escapeHtml(t.name)}</span>
-          ${t.notes ? `<span class="lineup-artist-notes">📝 ${escapeHtml(t.notes)}</span>` : ''}
-        </div>
-        <div class="lineup-col-duration">Duração: ⏱ ${formatTime(t.duration)}</div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+
+    if (state.activeTimerId !== lastCenteredActiveId || isFirstRender) {
+      lastCenteredActiveId = state.activeTimerId;
+      setTimeout(() => centerActiveArtist(!isFirstRender), 60);
+    }
+  }
 }
 
 client.on('room-state', (data) => {

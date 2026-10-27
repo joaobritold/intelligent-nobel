@@ -232,6 +232,41 @@ function getEstimatedEndTime(timer) {
   return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
+function getEventEndTime() {
+  if (!state || !Array.isArray(state.timers) || state.timers.length === 0) return '--:--';
+  const lastTimer = [...state.timers].reverse().find(t => t.mode !== 'clock') || state.timers[state.timers.length - 1];
+  const activeTimer = state.timers.find(t => t.id === state.activeTimerId);
+
+  let overtimeMins = 0;
+  if (activeTimer && activeTimer.mode === 'countdown') {
+    let el = activeTimer.elapsed || 0;
+    if (activeTimer.state === 'running' && activeTimer.startedAt) el += Date.now() - activeTimer.startedAt;
+    if (el > activeTimer.duration) {
+      overtimeMins = Math.floor((el - activeTimer.duration) / 60000);
+    }
+  }
+
+  if (lastTimer && lastTimer.startTime) {
+    const rangeMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
+    if (rangeMatch) {
+      const endMins = parseInt(rangeMatch[3], 10) * 60 + parseInt(rangeMatch[4], 10) + overtimeMins;
+      const norm = ((endMins % 1440) + 1440) % 1440;
+      const str = `${String(Math.floor(norm / 60)).padStart(2, '0')}:${String(norm % 60).padStart(2, '0')}`;
+      return overtimeMins > 0 ? `${str} (+${overtimeMins}m)` : str;
+    }
+    const singleMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+    if (singleMatch) {
+      const startMins = parseInt(singleMatch[1], 10) * 60 + parseInt(singleMatch[2], 10);
+      const endMins = startMins + Math.round((lastTimer.duration || 0) / 60000) + overtimeMins;
+      const norm = ((endMins % 1440) + 1440) % 1440;
+      const str = `${String(Math.floor(norm / 60)).padStart(2, '0')}:${String(norm % 60).padStart(2, '0')}`;
+      return overtimeMins > 0 ? `${str} (+${overtimeMins}m)` : str;
+    }
+  }
+
+  return getEstimatedEndTime(lastTimer) || '--:--';
+}
+
 let lastRenderedStructureSig = '';
 
 function showToast(message) {
@@ -274,6 +309,11 @@ function updateRoomInfo() {
 
 function renderTimers() {
   if (!state) return;
+
+  const $ctrlEventEnd = document.getElementById('ctrl-event-end');
+  if ($ctrlEventEnd) {
+    $ctrlEventEnd.textContent = getEventEndTime();
+  }
 
   if (state.timers.length === 0) {
     lastRenderedStructureSig = 'EMPTY';
@@ -388,7 +428,8 @@ function renderTimers() {
                 <span style="margin-left: 6px;">Horário:</span>
                 <input
                   class="input input-mono timer-duration-input"
-                  placeholder="21:00"
+                  style="width: 138px;"
+                  placeholder="23:00 – 00:15"
                   value="${escapeHtml(timer.startTime || '')}"
                   data-timer-id="${timer.id}"
                   data-field="startTime"
@@ -418,6 +459,9 @@ function renderTimers() {
             <button class="btn btn-icon btn-sm" data-action="reset" data-timer-id="${timer.id}" title="Reset">
               ⏹
             </button>
+            <button class="btn btn-sm" data-action="minus1m" data-timer-id="${timer.id}" title="Retirar 1 minuto (atualiza seguintes)" style="padding: 2px 7px; font-size: 0.72rem;">-1m</button>
+            <button class="btn btn-sm" data-action="plus1m" data-timer-id="${timer.id}" title="Adicionar 1 minuto (atualiza seguintes)" style="padding: 2px 7px; font-size: 0.72rem;">+1m</button>
+            <button class="btn btn-sm" data-action="plus5m" data-timer-id="${timer.id}" title="Adicionar 5 minutos (atualiza seguintes)" style="padding: 2px 7px; font-size: 0.72rem;">+5m</button>
           </div>
           <div class="timer-settings">
             <button class="btn btn-icon btn-sm" data-action="move-up" data-timer-id="${timer.id}" title="Mover para cima" ${idx === 0 ? 'disabled style="opacity:0.35"' : ''}>
@@ -481,7 +525,8 @@ function renderPreview() {
   const $previewEndTime = document.getElementById('preview-endtime');
   if ($previewEndTime) {
     const endStr = getEstimatedEndTime(activeTimer);
-    $previewEndTime.textContent = endStr ? `🏁 Término previsto: ${endStr}` : '';
+    const evEnd = getEventEndTime();
+    $previewEndTime.textContent = endStr ? `🏁 Fim artista: ${endStr}  |  🏁 Fim Evento: ${evEnd}` : '';
   }
 
   const $previewNotes = document.getElementById('preview-notes');
@@ -527,6 +572,15 @@ $timerList.addEventListener('click', (e) => {
       break;
     case 'reset':
       client.timerAction(timerId, 'reset');
+      break;
+    case 'minus1m':
+      client.adjustTime(timerId, -60000);
+      break;
+    case 'plus1m':
+      client.adjustTime(timerId, 60000);
+      break;
+    case 'plus5m':
+      client.adjustTime(timerId, 300000);
       break;
     case 'set-active':
       client.setActiveTimer(timerId);

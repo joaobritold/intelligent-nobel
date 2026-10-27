@@ -22,9 +22,15 @@
         <span id="lineup-room-badge" class="lineup-room-badge">PALCO1</span>
       </div>
 
-      <div class="lineup-clock-box">
-        <div class="lineup-clock-label">HORA LOCAL</div>
-        <div id="lineup-local-clock" class="lineup-clock-time">--:--:--</div>
+      <div style="display: flex; align-items: center; gap: 20px;">
+        <div class="lineup-clock-box" style="background: rgba(0, 184, 148, 0.12); border: 1px solid rgba(0, 184, 148, 0.4); padding: 6px 14px; border-radius: 12px; text-align: center;">
+          <div class="lineup-clock-label" style="color: #55efc4;">🏁 FIM DO EVENTO</div>
+          <div id="lineup-event-end" class="lineup-clock-time" style="color: #55efc4;">--:--</div>
+        </div>
+        <div class="lineup-clock-box">
+          <div class="lineup-clock-label">HORA LOCAL</div>
+          <div id="lineup-local-clock" class="lineup-clock-time">--:--:--</div>
+        </div>
       </div>
     </header>
 
@@ -49,7 +55,7 @@
       </aside>
 
       <!-- Right / Bottom: Full Schedule List -->
-      <main>
+      <main class="lineup-main-scroll">
         <div id="lineup-list" class="lineup-list-container">
           <!-- Injected by JS -->
         </div>
