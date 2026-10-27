@@ -26,6 +26,18 @@ const $flashOverlay = document.getElementById('flash-overlay');
 const $emptyState = document.getElementById('viewer-empty');
 const $viewerRoomInput = document.getElementById('viewer-room-input');
 const $viewerRoomBtn = document.getElementById('viewer-room-btn');
+const $viewerNotes = document.getElementById('viewer-notes');
+const $viewerNext = document.getElementById('viewer-next');
+const $viewerNextName = document.getElementById('viewer-next-name');
+const $viewerClockTime = document.getElementById('viewer-clock-time');
+
+function updateLocalClock() {
+  if ($viewerClockTime) {
+    $viewerClockTime.textContent = new Date().toLocaleTimeString('pt-PT', { hour12: false });
+  }
+}
+updateLocalClock();
+setInterval(updateLocalClock, 1000);
 
 if ($viewerRoomInput) {
   $viewerRoomInput.value = roomId;
@@ -126,6 +138,8 @@ function render() {
   if (!activeTimer) {
     $timer.style.display = 'none';
     $timerName.style.display = 'none';
+    if ($viewerNotes) $viewerNotes.classList.remove('visible');
+    if ($viewerNext) $viewerNext.style.display = 'none';
     $emptyState.style.display = 'flex';
     $progress.style.width = '0%';
     $flashOverlay.classList.remove('active');
@@ -144,6 +158,29 @@ function render() {
 
   // Timer name
   $timerName.textContent = activeTimer.name;
+
+  // Artist Notes (under the clock)
+  if ($viewerNotes) {
+    if (activeTimer.notes && activeTimer.notes.trim()) {
+      $viewerNotes.textContent = activeTimer.notes.trim();
+      $viewerNotes.classList.add('visible');
+    } else {
+      $viewerNotes.textContent = '';
+      $viewerNotes.classList.remove('visible');
+    }
+  }
+
+  // Next Artist Indicator
+  if ($viewerNext && $viewerNextName) {
+    const activeIdx = state.timers.findIndex(t => t.id === state.activeTimerId);
+    const nextTimer = activeIdx >= 0 ? state.timers[activeIdx + 1] : null;
+    if (nextTimer) {
+      $viewerNextName.textContent = nextTimer.name;
+      $viewerNext.style.display = 'flex';
+    } else {
+      $viewerNext.style.display = 'none';
+    }
+  }
 
   // Timer display
   const color = getTimerColor(activeTimer);

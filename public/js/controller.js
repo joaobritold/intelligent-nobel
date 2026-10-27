@@ -329,6 +329,17 @@ function renderTimers() {
           </div>
         </div>
 
+        <div class="timer-card-notes" style="margin-bottom: 10px;">
+          <input
+            class="input timer-notes-input"
+            style="width: 100%; font-size: 0.8rem; padding: 6px 10px;"
+            placeholder="📝 Notas de palco para este artista (aparece debaixo do relógio)..."
+            value="${escapeHtml(timer.notes || '')}"
+            data-timer-id="${timer.id}"
+            data-field="notes"
+          />
+        </div>
+
         <div class="timer-card-bottom">
           <div class="timer-controls">
             <button class="btn btn-icon btn-sm ${isRunning ? 'btn-success' : ''}" data-action="toggle" data-timer-id="${timer.id}" title="${isRunning ? 'Pause' : 'Start'}">
@@ -390,6 +401,18 @@ function renderPreview() {
   $previewName.textContent = activeTimer.name;
   $previewDisplay.textContent = display;
   $previewDisplay.className = `preview-timer-display timer-${color}`;
+
+  const $previewNotes = document.getElementById('preview-notes');
+  if ($previewNotes) {
+    $previewNotes.textContent = activeTimer.notes || '';
+  }
+
+  const $previewNext = document.getElementById('preview-next');
+  if ($previewNext) {
+    const idx = state.timers.findIndex(t => t.id === state.activeTimerId);
+    const nextTimer = idx >= 0 ? state.timers[idx + 1] : null;
+    $previewNext.textContent = nextTimer ? `NEXT: ${nextTimer.name}` : '';
+  }
 }
 
 // ─── Render Message State ──────────────────────────────────────────
@@ -447,6 +470,8 @@ $timerList.addEventListener('change', (e) => {
 
   if (field === 'name') {
     client.updateTimer(timerId, { name: input.value });
+  } else if (field === 'notes') {
+    client.updateTimer(timerId, { notes: input.value });
   } else if (field === 'mode') {
     client.updateTimer(timerId, { mode: input.value });
   } else if (field === 'duration') {
@@ -454,6 +479,14 @@ $timerList.addEventListener('change', (e) => {
     if (ms && ms > 0) {
       client.updateTimer(timerId, { duration: ms });
     }
+  }
+});
+
+// Live update notes while typing
+$timerList.addEventListener('input', (e) => {
+  const input = e.target;
+  if (input.dataset?.field === 'notes' && input.dataset?.timerId) {
+    client.updateTimer(input.dataset.timerId, { notes: input.value });
   }
 });
 

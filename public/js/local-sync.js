@@ -135,8 +135,13 @@ class UniversalSyncClient {
       this._emit('disconnected');
     });
 
-    // Heartbeat presence every 10s
+    // Heartbeat presence every 10s & re-sync running timers every 3s
     setInterval(() => this._announcePresence(), 10000);
+    setInterval(() => {
+      if (this.role === 'controller' && this._state?.timers?.some(t => t.state === 'running')) {
+        this._commitStateChange(true);
+      }
+    }, 3000);
   }
 
   _announcePresence() {
@@ -178,6 +183,7 @@ class UniversalSyncClient {
         {
           id: timerId,
           name: 'Main Keynote',
+          notes: '',
           mode: 'countdown',
           duration: 300000, // 5 min
           elapsed: 0,
@@ -196,26 +202,29 @@ class UniversalSyncClient {
     } catch (e) {}
   }
 
-  _applyIncomingState(incoming, fromCloud = false) {
+  _applyIncomingState(incoming, fromCloud = false, sentAt = null) {
     if (!incoming || !Array.isArray(incoming.timers)) return;
 
-    // ─── Clock Skew Compensation across devices (PC vs iPhone) ───────
     const localNow = Date.now();
-    const senderNow = incoming.updatedAt || localNow;
-    const clockOffset = localNow - senderNow; // Difference between local clock and sender clock
 
-    // Adjust running timers' startedAt to local device clock reference
     incoming.timers.forEach(t => {
-      if (t.state === 'running' && t.startedAt) {
-        t.startedAt = t.startedAt + clockOffset;
+      if (t.state === 'running') {
+        if (typeof t.liveElapsed === 'number') {
+          // Exact relative elapsed at the moment packet was sent (immune to clock differences & retained delay)
+          const transitMs = sentAt ? Math.max(0, Math.min(1500, localNow - sentAt)) : 0;
+          t.elapsed = t.liveElapsed + transitMs;
+          t.startedAt = localNow;
+        } else if (t.startedAt) {
+          const senderNow = incoming.updatedAt || localNow;
+          const clockOffset = localNow - senderNow;
+          t.startedAt = t.startedAt + clockOffset;
+        }
       }
     });
 
-    // Always accept incoming state from active operator/controller action
     this._state = incoming;
     this._saveLocal();
 
-    // Also relay to local tabs if it came from cloud
     if (fromCloud && this.channel) {
       try {
         this.channel.postMessage({ type: 'room-state', sender: this.clientId, data: this._state });
@@ -225,8 +234,19 @@ class UniversalSyncClient {
     this._emit('room-state', this._state);
   }
 
-  _commitStateChange() {
-    this._state.updatedAt = Date.now();
+  _commitStateChange(retain = true) {
+    const now = Date.now();
+    this._state.updatedAt = now;
+
+    // Bake liveElapsed into each running timer so receivers don't depend on wall-clock alignment
+    this._state.timers.forEach(t => {
+      if (t.state === 'running' && t.startedAt) {
+        t.liveElapsed = t.elapsed + (now - t.startedAt);
+      } else {
+        t.liveElapsed = t.elapsed;
+      }
+    });
+
     this._saveLocal();
 
     // 1. Broadcast to local tabs
@@ -235,19 +255,21 @@ class UniversalSyncClient {
         this.channel.postMessage({
           type: 'room-state',
           sender: this.clientId,
+          sentAt: now,
           data: this._state
         });
       } catch (e) {}
     }
 
-    // 2. Publish to Cloud MQTT with retain=true so new devices joining get current state immediately!
+    // 2. Publish to Cloud MQTT
     if (this.mqttClient && this.mqttClient.connected) {
       try {
         const payload = JSON.stringify({
           sender: this.clientId,
+          sentAt: now,
           data: this._state
         });
-        this.mqttClient.publish(this.mqttTopicState, payload, { qos: 0, retain: true });
+        this.mqttClient.publish(this.mqttTopicState, payload, { qos: 0, retain });
       } catch (e) {}
     }
 
@@ -292,6 +314,7 @@ class UniversalSyncClient {
     const timer = {
       id: data.id || ('t_' + Math.random().toString(36).substring(2, 9)),
       name: data.name || 'Novo Artista',
+      notes: data.notes || '',
       mode: data.mode || 'countdown',
       duration: data.duration || 300000,
       elapsed: 0,

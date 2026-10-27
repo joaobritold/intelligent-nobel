@@ -43,8 +43,11 @@ const $queueList = document.getElementById('op-queue-list');
 
 const $artistName = document.getElementById('op-artist-name');
 const $artistDuration = document.getElementById('op-artist-duration');
+const $artistNotes = document.getElementById('op-artist-notes');
 const $addArtistBtn = document.getElementById('op-add-artist-btn');
 const $liveArtistBtn = document.getElementById('op-live-artist-btn');
+const $heroNotes = document.getElementById('op-hero-notes');
+const $heroNext = document.getElementById('op-hero-next');
 
 // ─── Room & Links Setup ────────────────────────────────────────────
 
@@ -169,6 +172,16 @@ function render() {
     $heroTime.textContent = getTimerDisplayValue(active);
     $heroTime.className = `op-hero-time ${color}`;
 
+    if ($heroNotes) {
+      $heroNotes.textContent = active.notes ? `📝 ${active.notes}` : '';
+    }
+
+    if ($heroNext) {
+      const idx = state.timers.findIndex(t => t.id === state.activeTimerId);
+      const nextT = idx >= 0 ? state.timers[idx + 1] : null;
+      $heroNext.textContent = nextT ? `NEXT: ${nextT.name}` : '';
+    }
+
     if (active.mode === 'countdown' && active.duration > 0) {
       let elapsed = active.elapsed;
       if (isRunning && active.startedAt) elapsed += Date.now() - active.startedAt;
@@ -197,16 +210,17 @@ function render() {
   }
 
   // Render queue only when structure changes to keep touch targets stable
-  const sig = state.timers.map(t => `${t.id}:${t.name}:${t.duration}:${t.mode}:${t.id === state.activeTimerId}`).join('|');
+  const sig = state.timers.map(t => `${t.id}:${t.name}:${t.notes || ''}:${t.duration}:${t.mode}:${t.id === state.activeTimerId}`).join('|');
   if (sig !== lastQueueSignature) {
     lastQueueSignature = sig;
     $queueList.innerHTML = state.timers.map(t => {
       const isAct = t.id === state.activeTimerId;
       return `
         <div class="op-queue-item ${isAct ? 'active' : ''}" data-id="${t.id}">
-          <div class="op-queue-info">
+          <div class="op-queue-info" style="flex:1; margin-right: 8px;">
             <span class="op-queue-name">${escapeHtml(t.name)}</span>
             <span class="op-queue-meta">${t.mode.toUpperCase()} • ${formatTime(t.duration)}</span>
+            <input class="input op-item-notes" data-note-id="${t.id}" value="${escapeHtml(t.notes || '')}" placeholder="📝 Notas deste artista..." style="margin-top: 6px; padding: 4px 8px; font-size: 16px !important; width: 100%;" onclick="event.stopPropagation()">
           </div>
           <div class="op-queue-actions">
             <span class="op-queue-badge">${isAct ? '● NO AR' : 'ATIVAR'}</span>
@@ -297,9 +311,11 @@ document.querySelectorAll('.op-dur-chip').forEach(btn => {
 
 function handleCreateArtist(goLive = false) {
   const name = ($artistName.value || '').trim() || `Artista ${(state?.timers?.length || 0) + 1}`;
+  const notes = ($artistNotes?.value || '').trim();
   const duration = parseTimeInput($artistDuration.value);
   const created = client.createTimer({
     name,
+    notes,
     mode: 'countdown',
     duration,
     warnAt: Math.min(300000, Math.floor(duration * 0.2)),
@@ -310,6 +326,7 @@ function handleCreateArtist(goLive = false) {
     client.timerAction(created.id, 'start');
   }
   $artistName.value = '';
+  if ($artistNotes) $artistNotes.value = '';
   $artistName.blur();
 }
 
@@ -338,5 +355,12 @@ $queueList.addEventListener('click', (e) => {
   const item = e.target.closest('.op-queue-item');
   if (item && item.dataset.id) {
     client.setActiveTimer(item.dataset.id);
+  }
+});
+
+$queueList.addEventListener('change', (e) => {
+  const noteInput = e.target.closest('[data-note-id]');
+  if (noteInput) {
+    client.updateTimer(noteInput.dataset.noteId, { notes: noteInput.value });
   }
 });

@@ -212,3 +212,90 @@ html, body {
   0%, 100% { opacity: 0; }
   50% { opacity: 0.05; }
 }
+
+/* ─── Artist Notes (Under the Clock) ────────────────────────────── */
+
+.viewer-notes {
+  margin-top: 2vh;
+  max-width: 82vw;
+  font-size: clamp(1rem, 2.4vw, 2.2rem);
+  font-weight: 500;
+  color: #f1f5f9;
+  text-align: center;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 10px 24px;
+  border-radius: 12px;
+  display: none;
+}
+
+.viewer-notes.visible {
+  display: block;
+}
+
+/* ─── Bottom Left Local Clock ───────────────────────────────────── */
+
+.viewer-local-clock {
+  position: absolute;
+  bottom: 24px;
+  left: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 10px;
+  z-index: 8;
+}
+
+.viewer-clock-label {
+  font-size: clamp(0.6rem, 0.9vw, 0.8rem);
+  color: var(--text-secondary);
+  letter-spacing: 0.15em;
+  font-weight: 600;
+}
+
+#viewer-clock-time {
+  font-family: var(--font-mono);
+  font-size: clamp(1.2rem, 2.5vw, 2.2rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+/* ─── Bottom Right Next Artist ──────────────────────────────────── */
+
+.viewer-next {
+  position: absolute;
+  bottom: 24px;
+  right: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: rgba(108, 92, 231, 0.15);
+  border: 1px solid rgba(108, 92, 231, 0.4);
+  padding: 8px 18px;
+  border-radius: 10px;
+  z-index: 8;
+  max-width: 45vw;
+}
+
+.viewer-next-label {
+  font-size: clamp(0.65rem, 1vw, 0.85rem);
+  color: #a29bfe;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+}
+
+.viewer-next-name {
+  font-size: clamp(1.1rem, 2.3vw, 2rem);
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
