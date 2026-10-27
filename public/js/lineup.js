@@ -16,6 +16,7 @@ let state = null;
 
 const $screen = document.getElementById('lineup-screen');
 const $roomBadge = document.getElementById('lineup-room-badge');
+const $lineupEventSelect = document.getElementById('lineup-event-select');
 const $localClock = document.getElementById('lineup-local-clock');
 
 const $nowBadge = document.getElementById('lineup-now-badge');
@@ -27,9 +28,33 @@ const $list = document.getElementById('lineup-list');
 
 if ($roomBadge) $roomBadge.textContent = roomId;
 
+function renderLineupEventSelector() {
+  if (!$lineupEventSelect) return;
+  const list = client.getEventsList();
+  const currentCode = (state?.id || roomId).toUpperCase();
+  $lineupEventSelect.innerHTML = list.map(ev => `
+    <option value="${escapeHtml(ev.code)}" ${ev.code === currentCode ? 'selected' : ''}>
+      ${escapeHtml(ev.title || ev.code)} (${escapeHtml(ev.code)})
+    </option>
+  `).join('');
+}
+
+if ($lineupEventSelect) {
+  $lineupEventSelect.addEventListener('change', () => {
+    const chosen = $lineupEventSelect.value;
+    if (chosen) {
+      location.search = `?room=${encodeURIComponent(chosen)}`;
+    }
+  });
+}
+
+client.on('events-list-update', () => {
+  renderLineupEventSelector();
+});
+
 // Update navigation links with current room
 const q = `?room=${encodeURIComponent(roomId)}`;
-['hub', 'controller', 'operator', 'viewer', 'lineup'].forEach(key => {
+['hub', 'controller', 'operator', 'viewer', 'lineup', 'master'].forEach(key => {
   const el = document.getElementById(`ln-nav-${key}`);
   if (el) {
     el.href = `${key === 'hub' ? 'index' : key}.html${q}`;
@@ -311,9 +336,15 @@ function render() {
 
 client.on('room-state', (data) => {
   state = data;
+  renderLineupEventSelector();
   render();
 });
 
+client.on('connected', () => {
+  renderLineupEventSelector();
+});
+
+renderLineupEventSelector();
 client.connect();
 
 document.addEventListener('dblclick', () => {

@@ -24,12 +24,60 @@ const $message = document.getElementById('viewer-message');
 const $connection = document.getElementById('viewer-connection');
 const $flashOverlay = document.getElementById('flash-overlay');
 const $emptyState = document.getElementById('viewer-empty');
-const $viewerRoomInput = document.getElementById('viewer-room-input');
-const $viewerRoomBtn = document.getElementById('viewer-room-btn');
+const $viewerTopBar = document.getElementById('viewer-top-bar');
+const $viewerEventSelect = document.getElementById('viewer-event-select');
+const $viewerLineupBtn = document.getElementById('viewer-lineup-btn');
 const $viewerNotes = document.getElementById('viewer-notes');
 const $viewerNext = document.getElementById('viewer-next');
 const $viewerNextName = document.getElementById('viewer-next-name');
 const $viewerClockTime = document.getElementById('viewer-clock-time');
+
+function escapeHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, (m) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[m]));
+}
+
+function renderViewerEventSelector() {
+  if (!$viewerEventSelect) return;
+  const list = client.getEventsList();
+  const currentCode = (state?.id || roomId).toUpperCase();
+  $viewerEventSelect.innerHTML = list.map(ev => `
+    <option value="${escapeHtml(ev.code)}" ${ev.code === currentCode ? 'selected' : ''}>
+      ${escapeHtml(ev.title || ev.code)} (${escapeHtml(ev.code)})
+    </option>
+  `).join('');
+  if ($viewerLineupBtn) {
+    $viewerLineupBtn.href = `lineup.html?room=${encodeURIComponent(currentCode)}`;
+  }
+}
+
+if ($viewerEventSelect) {
+  $viewerEventSelect.addEventListener('change', () => {
+    const chosen = $viewerEventSelect.value;
+    if (chosen) {
+      location.search = `?room=${encodeURIComponent(chosen)}`;
+    }
+  });
+}
+
+client.on('events-list-update', () => {
+  renderViewerEventSelector();
+});
+
+// Auto-dim top bar after 5s of mouse idle when a timer is running
+let mouseIdleTimer = null;
+function showTopBar() {
+  if ($viewerTopBar) $viewerTopBar.style.opacity = '1';
+  clearTimeout(mouseIdleTimer);
+  mouseIdleTimer = setTimeout(() => {
+    if ($viewerTopBar && state?.timers?.some(t => t.state === 'running')) {
+      $viewerTopBar.style.opacity = '0.2';
+    }
+  }, 5000);
+}
+document.addEventListener('mousemove', showTopBar);
+document.addEventListener('touchstart', showTopBar, { passive: true });
 
 function updateLocalClock() {
   if ($viewerClockTime) {
@@ -39,23 +87,11 @@ function updateLocalClock() {
 updateLocalClock();
 setInterval(updateLocalClock, 1000);
 
-if ($viewerRoomInput) {
-  $viewerRoomInput.value = roomId;
-}
-if ($viewerRoomBtn && $viewerRoomInput) {
-  $viewerRoomBtn.addEventListener('click', () => {
-    const code = $viewerRoomInput.value.trim().toUpperCase() || 'PALCO1';
-    location.search = `?room=${encodeURIComponent(code)}`;
-  });
-  $viewerRoomInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') $viewerRoomBtn.click();
-  });
-}
-
 // ─── Connect ───────────────────────────────────────────────────────
 
 client.on('connected', () => {
   $connection.className = 'viewer-connection';
+  renderViewerEventSelector();
 });
 
 client.on('disconnected', () => {
@@ -64,9 +100,11 @@ client.on('disconnected', () => {
 
 client.on('room-state', (data) => {
   state = data;
+  renderViewerEventSelector();
   render();
 });
 
+renderViewerEventSelector();
 client.connect();
 
 // ─── Helpers ───────────────────────────────────────────────────────
