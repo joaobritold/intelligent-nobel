@@ -1,44 +1,13 @@
 /**
- * StageTimer Access Control:
- * - Modo Controlador (controller.html): Requires ONLY the 2 master passwords ('1379' or 'brito').
- *   Only the Controller can create or delete events and define each event's password.
- * - Modo Operador (operator.html): Accepts either the event's password (ex: 'palco 1')
- *   defined when the event was created, OR the 2 master passwords ('1379' or 'brito').
+ * StageTimer Access Control — Protects Controller & Operator modes.
+ * Accepted passwords: '1379' or 'brito' (case-insensitive).
  */
 (function () {
-  const MASTER_AUTH_KEY = 'stagetimer_master_auth_unlocked';
-  const MASTER_PASSWORDS = ['1379', 'brito'];
+  const AUTH_KEY = 'stagetimer_auth_unlocked';
+  const VALID_PASSWORDS = ['1379', 'brito'];
 
-  const isControllerPage = location.pathname.toLowerCase().includes('controller');
-  const params = new URLSearchParams(location.search);
-  const currentRoom = (params.get('room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1').trim().toUpperCase();
-  const EVENT_AUTH_KEY = `stagetimer_event_unlocked_${currentRoom}`;
-
-  function getEventInfo(roomCode) {
-    try {
-      const raw = localStorage.getItem('stagetimer_v3_events_registry');
-      const list = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(list)) {
-        const found = list.find(e => (e.code || e.id || '').toUpperCase() === roomCode);
-        if (found) return found;
-      }
-    } catch (e) {}
-    return { code: roomCode, title: roomCode, pass: '' };
-  }
-
-  // Check if already unlocked for this role
-  if (isControllerPage) {
-    if (sessionStorage.getItem(MASTER_AUTH_KEY) === 'true') {
-      return;
-    }
-  } else {
-    if (
-      sessionStorage.getItem(MASTER_AUTH_KEY) === 'true' ||
-      sessionStorage.getItem(EVENT_AUTH_KEY) === 'true' ||
-      localStorage.getItem(EVENT_AUTH_KEY) === 'true'
-    ) {
-      return;
-    }
+  if (sessionStorage.getItem(AUTH_KEY) === 'true' || localStorage.getItem(AUTH_KEY) === 'true') {
+    return;
   }
 
   // Inject lock screen overlay immediately
@@ -83,7 +52,7 @@
     .st-auth-input {
       width: 100%;
       padding: 12px 14px;
-      font-size: 16px !important; /* Prevents iOS Safari zoom */
+      font-size: 16px !important;
       border-radius: 10px;
       border: 2px solid #2d3748;
       background: #0d1b2a;
@@ -141,18 +110,13 @@
   document.head.appendChild(style);
 
   function mountLockScreen() {
-    const evInfo = getEventInfo(currentRoom);
-    const subtitle = isControllerPage
-      ? 'Modo Controlador — Introduza uma das 2 passes mestras para gerir ou criar eventos'
-      : `Evento: ${evInfo.title || currentRoom} — Introduza a pass deste evento`;
-
     const overlay = document.createElement('div');
     overlay.id = 'st-auth-overlay';
     overlay.innerHTML = `
       <form class="st-auth-card" id="st-auth-form">
         <div class="st-auth-icon">🔒</div>
-        <div class="st-auth-title">${isControllerPage ? 'Acesso Controlador' : 'Acesso ao Evento'}</div>
-        <div class="st-auth-sub">${subtitle}</div>
+        <div class="st-auth-title">Acesso Restrito</div>
+        <div class="st-auth-sub">Introduza a password de Controlo (Controlador / Operador)</div>
         <input
           type="password"
           id="st-auth-pass"
@@ -163,7 +127,7 @@
         />
         <button type="submit" class="st-auth-btn">Entrar</button>
         <div class="st-auth-error" id="st-auth-err"></div>
-        <a href="index.html${location.search}" class="st-auth-back">← Voltar ao Menu Inicial</a>
+        <a href="index.html${location.search}" class="st-auth-back">← Voltar ao Menu</a>
       </form>
     `;
     document.body.appendChild(overlay);
@@ -177,24 +141,14 @@
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const val = (input.value || '').trim().toLowerCase();
-      const latestEvInfo = getEventInfo(currentRoom);
-      const eventPass = String(latestEvInfo.pass || 'palco 1').trim().toLowerCase();
-
-      if (MASTER_PASSWORDS.includes(val)) {
-        sessionStorage.setItem(MASTER_AUTH_KEY, 'true');
-        sessionStorage.setItem(EVENT_AUTH_KEY, 'true');
-        localStorage.setItem(EVENT_AUTH_KEY, 'true');
-        overlay.remove();
-      } else if (!isControllerPage && val && val === eventPass) {
-        sessionStorage.setItem(EVENT_AUTH_KEY, 'true');
-        localStorage.setItem(EVENT_AUTH_KEY, 'true');
+      if (VALID_PASSWORDS.includes(val)) {
+        sessionStorage.setItem(AUTH_KEY, 'true');
+        localStorage.setItem(AUTH_KEY, 'true');
         overlay.remove();
       } else {
-        err.textContent = isControllerPage
-          ? 'Pass mestra incorreta! Apenas as 2 passes do Controlador são aceites.'
-          : 'Pass do evento incorreta!';
+        err.textContent = 'Password incorreta!';
         input.classList.remove('error');
-        void input.offsetWidth; // trigger reflow
+        void input.offsetWidth;
         input.classList.add('error');
         input.value = '';
         input.focus();

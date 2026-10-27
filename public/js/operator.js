@@ -18,18 +18,64 @@ const $roomInput = document.getElementById('op-room-input');
 const $joinBtn = document.getElementById('op-join-btn');
 const $connBadge = document.getElementById('op-conn-badge');
 const $bgColor = document.getElementById('op-bg-color');
-const $opEventBadge = document.getElementById('op-event-badge');
+const $opEventSelect = document.getElementById('op-event-select');
+const $opDayTabs = document.getElementById('op-day-tabs');
 
 function renderOpEventSelector() {
-  if (!$opEventBadge || typeof client.getEventsList !== 'function') return;
+  if (!$opEventSelect || typeof client.getEventsList !== 'function') return;
   const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
   const list = client.getEventsList();
-  const found = list.find(e => e.code === currentCode);
-  $opEventBadge.textContent = found?.title || state?.name || currentCode;
+  $opEventSelect.innerHTML = list.map(ev => {
+    return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>${ev.title || ev.code}</option>`;
+  }).join('');
+}
+
+if ($opEventSelect) {
+  $opEventSelect.addEventListener('change', () => {
+    const val = $opEventSelect.value;
+    if (val && val !== (state?.id || roomId)) {
+      location.search = `?room=${encodeURIComponent(val)}`;
+    }
+  });
+}
+
+function renderOpDayTabs() {
+  if (!$opDayTabs || !state) return;
+  const currentDay = state.currentDay || 1;
+  const daysMap = state.days || { '1': state.timers || [] };
+  const dayKeys = Object.keys(daysMap).map(Number).sort((a, b) => a - b);
+  if (dayKeys.length === 0) dayKeys.push(1);
+
+  $opDayTabs.innerHTML = dayKeys.map(d => {
+    const isAct = d === currentDay;
+    const count = Array.isArray(daysMap[String(d)]) ? daysMap[String(d)].length : (isAct ? state.timers.length : 0);
+    return `
+      <button type="button" class="btn btn-sm ${isAct ? 'btn-primary' : ''}" data-op-day="${d}" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 700;">
+        Dia ${d} (${count})
+      </button>
+    `;
+  }).join('') + `
+    <button id="op-add-day-btn" type="button" class="btn btn-sm" style="padding: 3px 7px; font-size: 0.7rem; background: rgba(0, 184, 148, 0.2); border-color: rgba(0, 184, 148, 0.5); color: #55efc4;">+ Dia</button>
+  `;
+}
+
+if ($opDayTabs) {
+  $opDayTabs.addEventListener('click', (e) => {
+    const dayBtn = e.target.closest('[data-op-day]');
+    if (dayBtn) {
+      client.switchDay(parseInt(dayBtn.dataset.opDay, 10));
+      return;
+    }
+    const addBtn = e.target.closest('#op-add-day-btn');
+    if (addBtn) {
+      client.addDay();
+    }
+  });
 }
 
 client.on('events-list-update', () => {
   renderOpEventSelector();
+  renderOpDayTabs();
 });
 
 const $navController = document.getElementById('nav-controller');
@@ -234,6 +280,8 @@ let opDraggedId = null;
 
 function render() {
   if (!state) return;
+  renderOpEventSelector();
+  renderOpDayTabs();
 
   const $opEventEnd = document.getElementById('op-event-end');
   if ($opEventEnd) {
@@ -466,19 +514,10 @@ if ($addArtistBtn) {
   $addArtistBtn.addEventListener('click', () => handleCreateArtist(false));
 }
 
-document.querySelectorAll('.op-preset-day').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const day = parseInt(btn.dataset.day, 10) || 1;
-    if (confirm(`Carregar alinhamento da Receção ao Caloiro 2026 — DIA ${day}?`)) {
-      client.loadPresetDay(day);
-    }
-  });
-});
-
 const $opClearEvent = document.getElementById('op-clear-event');
 if ($opClearEvent) {
   $opClearEvent.addEventListener('click', () => {
-    if (confirm('🧹 Começar um Novo Evento do zero?\n\nIsto vai apagar todos os artistas atuais para poderes preparar um novo evento.')) {
+    if (confirm('🧹 Limpar todos os artistas do dia atual?')) {
       client.clearAllTimers();
     }
   });

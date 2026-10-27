@@ -1,42 +1,23 @@
 /**
- * StageTimer Universal Cloud + Local Synchronizer
- * Uses:
- * 1. MQTT over WSS (broker.emqx.io / broker.hivemq.com) with Retained State
- *    -> Works across ANY network (4G/5G/Wi-Fi), bypasses NAT/firewalls, supports
- *       multiple Controllers, Operators (Safari iOS), and Viewers simultaneously!
- * 2. BroadcastChannel + LocalStorage
- *    -> Zero-latency instant sync between tabs on the same computer.
+ * StageTimer Universal Cloud + Local Synchronizer (v4)
+ * - Multi-Stage / Multi-Event sessions (isolated rooms)
+ * - Multi-Day lineups per stage (Dia 1, Dia 2, + Dia)
+ * - Cloud MQTT over WSS + Local BroadcastChannel
+ * - Zero hardcoded demo bands: new events start 100% clean (0 artists)
  */
 
 class UniversalSyncClient {
   constructor({ role = 'viewer', room = 'PALCO1' } = {}) {
-    // One-time clean reset of all legacy events & states so we start 100% from zero
-    try {
-      if (localStorage.getItem('stagetimer_clean_reset_v3') !== 'done') {
-        Object.keys(localStorage).forEach((k) => {
-          if (k.startsWith('stagetimer_') && k !== 'stagetimer_master_auth_unlocked') {
-            localStorage.removeItem(k);
-          }
-        });
-        Object.keys(sessionStorage).forEach((k) => {
-          if (k.startsWith('stagetimer_') && k !== 'stagetimer_master_auth_unlocked') {
-            sessionStorage.removeItem(k);
-          }
-        });
-        localStorage.setItem('stagetimer_clean_reset_v3', 'done');
-      }
-    } catch (e) {}
-
     this.role = role;
-    this.room = (room || 'NOVO').trim().toUpperCase();
-    this.cleanRoom = this.room.replace(/[^A-Z0-9_-]/g, '') || 'NOVO';
+    this.room = (room || 'PALCO1').trim().toUpperCase();
+    this.cleanRoom = this.room.replace(/[^A-Z0-9_-]/g, '') || 'PALCO1';
 
-    this.channelName = `stagetimer_v3_room_${this.cleanRoom}`;
-    this.storageKey = `stagetimer_v3_state_${this.cleanRoom}`;
-    this.mqttTopicState = `stagetimer_v3/${this.cleanRoom}/state`;
-    this.mqttTopicPresence = `stagetimer_v3/${this.cleanRoom}/presence`;
-    this.mqttTopicRegistry = 'stagetimer_v3/_global_events_registry/list';
-    this.registryStorageKey = 'stagetimer_v3_events_registry';
+    this.channelName = `stagetimer_live_${this.cleanRoom}`;
+    this.storageKey = `stagetimer_live_state_${this.cleanRoom}`;
+    this.mqttTopicState = `stagetimer_live/${this.cleanRoom}/state`;
+    this.mqttTopicPresence = `stagetimer_live/${this.cleanRoom}/presence`;
+    this.mqttTopicRegistry = 'stagetimer_live/_events_list';
+    this.registryStorageKey = 'stagetimer_events_registry_v4';
 
     this.clientId = 'st_' + Math.random().toString(36).substring(2, 10);
     this.listeners = new Map();
@@ -81,17 +62,15 @@ class UniversalSyncClient {
       }
     });
 
-    // 3. Load Saved State or Create Clean Empty Room (NEVER auto-populate previous event data)
+    // 3. Load Saved State or Create Clean Empty Room
     const urlParams = new URLSearchParams(location.search);
     const isClean = urlParams.get('clean') === '1';
 
     if (isClean) {
-      // Force a brand-new 100% clean state when ?clean=1 is present
       const regItem = this.getEventsList().find(e => e.code === this.cleanRoom);
-      this._state = this._createDefaultRoom(this.cleanRoom, true);
-      if (regItem) {
-        this._state.name = regItem.title || this.cleanRoom;
-        this._state.eventPass = regItem.pass || '';
+      this._state = this._createDefaultRoom(this.cleanRoom);
+      if (regItem && regItem.title) {
+        this._state.name = regItem.title;
       }
       this._saveLocal();
       this._needsInitialPublish = true;
@@ -104,18 +83,27 @@ class UniversalSyncClient {
       const saved = localStorage.getItem(this.storageKey);
       if (saved) {
         try {
-          this._state = JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          if (parsed && Array.isArray(parsed.timers)) {
+            this._state = parsed;
+          }
         } catch (e) {}
       }
       if (!this._state) {
-        this._state = this._createDefaultRoom(this.cleanRoom, true);
+        const regItem = this.getEventsList().find(e => e.code === this.cleanRoom);
+        this._state = this._createDefaultRoom(this.cleanRoom);
+        if (regItem && regItem.title) {
+          this._state.name = regItem.title;
+        }
         this._saveLocal();
       }
     }
 
+    // Ensure days structure is initialized
+    this._ensureDaysStructure();
     this._syncEventInRegistry();
 
-    // 4. Local High-FPS UI Render Loop (computes countdown smoothly from timestamps)
+    // 4. Local High-FPS UI Render Loop
     this._startRenderLoop();
 
     setTimeout(() => {
@@ -154,7 +142,6 @@ class UniversalSyncClient {
         this._commitStateChange(true);
       }
 
-      // Subscribe to room state & global events registry (retained messages arrive immediately!)
       this.mqttClient.subscribe([this.mqttTopicState, this.mqttTopicPresence, this.mqttTopicRegistry], { qos: 0 }, (err) => {
         if (!err) {
           this._emit('p2p-ready', { id: this.cleanRoom, count: this.connectedPeersCount });
@@ -188,7 +175,6 @@ class UniversalSyncClient {
       this._emit('disconnected');
     });
 
-    // Heartbeat presence every 10s & re-sync running timers every 3s
     setInterval(() => this._announcePresence(), 10000);
     setInterval(() => {
       if (this.role === 'controller' && this._state?.timers?.some(t => t.state === 'running')) {
@@ -220,92 +206,102 @@ class UniversalSyncClient {
     this._emit('p2p-peers-update', { count: this.connectedPeersCount });
   }
 
-  _makeItem(id, name, startTime, durationMins) {
-    const duration = durationMins * 60000;
+  _createDefaultRoom(id) {
+    const defaultTitle = id === 'PALCO1' ? 'Palco Principal' : id;
     return {
-      id,
-      name,
-      startTime,
-      notes: '',
-      mode: 'countdown',
-      duration,
-      elapsed: 0,
-      state: 'stopped',
-      warnAt: Math.min(600000, Math.floor(duration * 0.2)),
-      dangerAt: Math.min(120000, Math.floor(duration * 0.05)),
-      startedAt: null
+      id: id,
+      name: defaultTitle,
+      currentDay: 1,
+      days: {
+        '1': []
+      },
+      timers: [],
+      activeTimerId: null,
+      message: { text: '', visible: false, level: 'info' },
+      theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
+      updatedAt: Date.now()
     };
   }
 
-  _getDiaLineup(day = 1) {
-    switch (Number(day)) {
-      case 1:
-        return [
-          this._makeItem('rc_d1_sc1', 'Minhotos Marotos (Soundcheck)', '18:00 – 19:30', 90),
-          this._makeItem('rc_d1_1', 'Dj Residente', '23:00 – 00:15', 75),
-          this._makeItem('rc_d1_2', 'Tunas', '23:30 – 01:30', 120),
-          this._makeItem('rc_d1_ch1', 'Minhotos Marotos (Changeover / Line Check)', '01:30 – 01:45', 15),
-          this._makeItem('rc_d1_3', 'Minhotos Marotos', '01:45 – 03:15', 90),
-          this._makeItem('rc_d1_4', 'Dj Beça', '03:30 – 05:00', 90)
-        ];
-      case 2:
-        return [
-          this._makeItem('rc_d2_sc1', 'Tay (Soundcheck)', '17:00 – 18:30', 90),
-          this._makeItem('rc_d2_sc2', 'Batalha de Berço (Soundcheck)', '18:30 – 19:30', 60),
-          this._makeItem('rc_d2_1', 'DJ Residente', '23:00 – 00:00', 60),
-          this._makeItem('rc_d2_2', 'Batalha de Berço', '00:15 – 01:15', 60),
-          this._makeItem('rc_d2_ch1', 'Tay (Changeover / Line Check)', '01:15 – 01:30', 15),
-          this._makeItem('rc_d2_3', 'Tay', '01:30 – 02:30', 60),
-          this._makeItem('rc_d2_4', 'Fábio Vasquez', '02:30 – 03:45', 75),
-          this._makeItem('rc_d2_5', 'Pedro Maia', '03:45 – 05:00', 75)
-        ];
-      case 3:
-        return [
-          this._makeItem('rc_d3_sc1', 'Baile do STE (Soundcheck)', '18:00 – 19:30', 90),
-          this._makeItem('rc_d3_1', 'Dj Residente', '23:00 – 00:30', 90),
-          this._makeItem('rc_d3_2', 'MC Leozin', '00:30 – 01:15', 45),
-          this._makeItem('rc_d3_ch1', 'Baile do STE (Changeover / Line Check)', '01:15 – 01:30', 15),
-          this._makeItem('rc_d3_3', 'Baile do STE', '01:30 – 03:00', 90),
-          this._makeItem('rc_d3_4', 'João Miguens', '03:00 – 04:15', 75),
-          this._makeItem('rc_d3_5', 'Rafman', '04:15 – 05:30', 75)
-        ];
-      case 4:
-        return [
-          this._makeItem('rc_d4_sc1', 'Boy Teddy (Soundcheck)', '18:00 – 19:00', 60),
-          this._makeItem('rc_d4_sc2', 'Quim das Remisturas (Soundcheck)', '19:00 – 19:30', 30),
-          this._makeItem('rc_d4_1', 'Dj Residente', '23:00 – 00:50', 110),
-          this._makeItem('rc_d4_2', 'Dj Kardo', '00:00 – 01:20', 80),
-          this._makeItem('rc_d4_3', 'Boy Teddy', '01:30 – 02:15', 45),
-          this._makeItem('rc_d4_4', 'Quim das Remisturas', '02:30 – 04:00', 90),
-          this._makeItem('rc_d4_5', 'Dj Echosound', '04:00 – 05:30', 90)
-        ];
-      default:
-        return [];
+  _ensureDaysStructure() {
+    if (!this._state) return;
+    if (!this._state.days || typeof this._state.days !== 'object') {
+      this._state.days = { '1': Array.isArray(this._state.timers) ? [...this._state.timers] : [] };
+    }
+    if (!this._state.currentDay) {
+      this._state.currentDay = 1;
+    }
+    const curDayKey = String(this._state.currentDay);
+    if (!Array.isArray(this._state.days[curDayKey])) {
+      this._state.days[curDayKey] = Array.isArray(this._state.timers) ? [...this._state.timers] : [];
     }
   }
 
-  _createDefaultRoom(id, forceClean = true) {
-    return {
-      id: id,
-      name: id,
-      eventPass: '',
-      updatedAt: Date.now(),
-      activeTimerId: null,
-      message: { text: '', visible: false, level: 'info' },
-      theme: {
-        viewerBg: '#000000',
-        controllerBg: '#0f0f1a'
-      },
-      timers: []
-    };
+  // ─── Multi-Day Management ──────────────────────────────────────────
+
+  switchDay(dayNumber) {
+    if (!this._state) return;
+    this._ensureDaysStructure();
+    const targetDay = Number(dayNumber) || 1;
+    const curDayKey = String(this._state.currentDay || 1);
+    const targetKey = String(targetDay);
+
+    // Save current active day lineup
+    this._state.days[curDayKey] = [...(this._state.timers || [])];
+
+    // Initialize target day if needed
+    if (!Array.isArray(this._state.days[targetKey])) {
+      this._state.days[targetKey] = [];
+    }
+
+    this._state.currentDay = targetDay;
+    this._state.timers = [...this._state.days[targetKey]];
+    this._state.activeTimerId = this._state.timers.length > 0 ? this._state.timers[0].id : null;
+
+    this._commitStateChange(true);
   }
 
-  // ─── Multi-Event / Session Registry ───────────────────────────────
+  addDay() {
+    if (!this._state) return;
+    this._ensureDaysStructure();
+    const existing = Object.keys(this._state.days).map(Number).filter(n => !isNaN(n));
+    const nextDay = (existing.length > 0 ? Math.max(...existing) : 0) + 1;
+    this._state.days[String(nextDay)] = [];
+    this.switchDay(nextDay);
+  }
+
+  removeDay(dayNumber) {
+    if (!this._state) return;
+    this._ensureDaysStructure();
+    const dayKey = String(dayNumber);
+    const keys = Object.keys(this._state.days);
+    if (keys.length <= 1) {
+      // Only 1 day left: clear its timers instead of deleting the day
+      this._state.days[dayKey] = [];
+      this._state.timers = [];
+      this._state.activeTimerId = null;
+      this._commitStateChange(true);
+      return;
+    }
+
+    delete this._state.days[dayKey];
+    if (String(this._state.currentDay) === dayKey) {
+      const remaining = Object.keys(this._state.days).map(Number).sort((a, b) => a - b);
+      this.switchDay(remaining[0] || 1);
+    } else {
+      this._commitStateChange(true);
+    }
+  }
+
+  // ─── Multi-Event / Stage Registry ──────────────────────────────────
 
   _normalizeRegistryItem(item) {
-    const code = (item?.code || item?.id || 'NOVO').toUpperCase();
-    const title = (item?.title || code).trim();
-    const pass = (item?.pass || '').trim();
+    const code = (item?.code || item?.id || 'PALCO1').toUpperCase();
+    const isDefault = code === 'PALCO1';
+    let title = (item?.title || '').trim();
+    if (!title) {
+      title = isDefault ? 'Palco Principal' : code;
+    }
     const count = typeof item?.timersCount === 'number'
       ? item.timersCount
       : (typeof item?.artistCount === 'number' ? item.artistCount : 0);
@@ -313,9 +309,9 @@ class UniversalSyncClient {
       id: code,
       code,
       title,
-      pass,
       timersCount: count,
       artistCount: count,
+      currentDay: item?.currentDay || 1,
       updatedAt: item?.updatedAt || Date.now()
     };
   }
@@ -325,9 +321,20 @@ class UniversalSyncClient {
       const raw = localStorage.getItem(this.registryStorageKey);
       let list = raw ? JSON.parse(raw) : [];
       if (!Array.isArray(list)) list = [];
-      return list.map(e => this._normalizeRegistryItem(e));
+      list = list.map(e => this._normalizeRegistryItem(e));
+      if (!list.some(e => e.code === 'PALCO1')) {
+        list.unshift(this._normalizeRegistryItem({
+          id: 'PALCO1',
+          code: 'PALCO1',
+          title: 'Palco Principal',
+          timersCount: 0,
+          currentDay: 1,
+          updatedAt: Date.now()
+        }));
+      }
+      return list;
     } catch (e) {
-      return [];
+      return [this._normalizeRegistryItem({ id: 'PALCO1', code: 'PALCO1', title: 'Palco Principal', timersCount: 0, currentDay: 1 })];
     }
   }
 
@@ -374,61 +381,56 @@ class UniversalSyncClient {
     if (!this._state) return;
     const list = this.getEventsList();
     const idx = list.findIndex(e => e.code === this.cleanRoom);
-    // Only update events that were explicitly created in the registry
-    if (idx < 0) return;
-    const existing = list[idx];
+    const existing = idx >= 0 ? list[idx] : null;
     const count = Array.isArray(this._state.timers) ? this._state.timers.length : 0;
-    list[idx] = this._normalizeRegistryItem({
+    const entry = this._normalizeRegistryItem({
       id: this.cleanRoom,
       code: this.cleanRoom,
-      title: existing.title || this._state.name || this.cleanRoom,
-      pass: existing.pass || this._state.eventPass || '',
+      title: existing?.title || this._state.name || this.cleanRoom,
       timersCount: count,
       artistCount: count,
+      currentDay: this._state.currentDay || 1,
       updatedAt: Date.now()
     });
+    if (idx >= 0) {
+      list[idx] = entry;
+    } else {
+      list.push(entry);
+    }
     this._saveEventsList(list, true);
   }
 
-  createNewCleanEvent(titleInput, passInput) {
-    const cleanTitle = (titleInput || '').trim() || `Evento ${this.getEventsList().length + 1}`;
-    const cleanPass = (passInput || '').trim() || 'palco 1';
-
-    const slugTitle = cleanTitle
+  createNewCleanEvent(titleInput) {
+    const cleanTitle = (titleInput || '').trim() || `Palco ${this.getEventsList().length + 1}`;
+    let code = cleanTitle
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .toUpperCase()
-      .replace(/[^A-Z0-9]+/g, '')
-      .substring(0, 10) || 'EVT';
-    const slugPass = cleanPass
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .toUpperCase()
-      .replace(/[^A-Z0-9]+/g, '')
-      .substring(0, 10) || 'P1';
-    const code = `${slugTitle}_${slugPass}`;
+      .replace(/[^A-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .substring(0, 14);
+    if (!code) code = 'PALCO-' + Math.floor(100 + Math.random() * 900);
 
     const newRoomState = {
       id: code,
       name: cleanTitle,
-      eventPass: cleanPass,
-      updatedAt: Date.now(),
+      currentDay: 1,
+      days: { '1': [] },
+      timers: [],
       activeTimerId: null,
       message: { text: '', visible: false, level: 'info' },
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
-      timers: []
+      updatedAt: Date.now()
     };
 
     try {
-      localStorage.setItem(`stagetimer_v3_state_${code}`, JSON.stringify(newRoomState));
+      localStorage.setItem(`stagetimer_live_state_${code}`, JSON.stringify(newRoomState));
       localStorage.setItem('stagetimer_last_room', code);
-      sessionStorage.setItem(`stagetimer_event_unlocked_${code}`, 'true');
-      localStorage.setItem(`stagetimer_event_unlocked_${code}`, 'true');
     } catch (e) {}
 
-    // Publish empty state to that room's MQTT topic too
     if (this.mqttClient && this.mqttClient.connected) {
       try {
         this.mqttClient.publish(
-          `stagetimer_v3/${code}/state`,
+          `stagetimer_live/${code}/state`,
           JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: newRoomState }),
           { qos: 0, retain: true }
         );
@@ -441,9 +443,9 @@ class UniversalSyncClient {
       id: code,
       code,
       title: cleanTitle,
-      pass: cleanPass,
       timersCount: 0,
       artistCount: 0,
+      currentDay: 1,
       updatedAt: Date.now()
     });
     if (existingIdx >= 0) {
@@ -455,85 +457,46 @@ class UniversalSyncClient {
     return code;
   }
 
-  verifyEventAccess(titleOrCode, inputPass) {
-    const cleanInputPass = String(inputPass || '').trim().toLowerCase();
-    if (!cleanInputPass) return null;
-    const isMaster = ['1379', 'brito'].includes(cleanInputPass);
-    const list = this.getEventsList();
-    const target = String(titleOrCode || '').trim().toUpperCase();
-
-    const candidates = list.filter(
-      e => e.code.toUpperCase() === target || e.title.toUpperCase() === target
-    );
-    const pool = candidates.length > 0 ? candidates : list;
-
-    const exactPassMatch = pool.find(
-      e => String(e.pass || '').trim().toLowerCase() === cleanInputPass
-    );
-    if (exactPassMatch) return exactPassMatch;
-
-    if (isMaster && pool.length > 0) {
-      return pool[0];
-    }
-    return null;
-  }
-
   deleteEventFromRegistry(codeToDelete) {
-    if (!codeToDelete) return this.getEventsList();
+    if (!codeToDelete || codeToDelete === 'PALCO1') return this.getEventsList();
     const list = this.getEventsList().filter(e => e.code !== codeToDelete);
     try {
-      localStorage.removeItem(`stagetimer_v3_state_${codeToDelete}`);
-      localStorage.removeItem(`stagetimer_event_unlocked_${codeToDelete}`);
-      sessionStorage.removeItem(`stagetimer_event_unlocked_${codeToDelete}`);
+      localStorage.removeItem(`stagetimer_live_state_${codeToDelete}`);
     } catch (e) {}
     this._saveEventsList(list, true, true);
     return list;
   }
 
   clearAllEvents() {
+    const defaultList = [this._normalizeRegistryItem({ id: 'PALCO1', code: 'PALCO1', title: 'Palco Principal', timersCount: 0, currentDay: 1 })];
     try {
       Object.keys(localStorage).forEach((k) => {
-        if (k.startsWith('stagetimer_') && k !== 'stagetimer_master_auth_unlocked' && k !== 'stagetimer_clean_reset_v3') {
+        if (k.startsWith('stagetimer_live_') && k !== 'stagetimer_auth_unlocked') {
           localStorage.removeItem(k);
         }
       });
-      Object.keys(sessionStorage).forEach((k) => {
-        if (k.startsWith('stagetimer_') && k !== 'stagetimer_master_auth_unlocked') {
-          sessionStorage.removeItem(k);
-        }
-      });
     } catch (e) {}
-    this._saveEventsList([], true, true);
-    this._state = this._createDefaultRoom(this.cleanRoom, true);
+    this._saveEventsList(defaultList, true, true);
+    this._state = this._createDefaultRoom('PALCO1');
     this._saveLocal();
     this._commitStateChange(true);
-    return [];
-  }
-
-  loadPresetDay(day = 1) {
-    const timers = this._getDiaLineup(day);
-    if (!timers.length) return;
-    this._state.name = `Receção ao Caloiro 2026 - Dia ${day}`;
-    this._state.timers = timers;
-    this._state.activeTimerId = timers[0].id;
-    this._commitStateChange(true);
-  }
-
-  loadPresetDia1() {
-    this.loadPresetDay(1);
+    return defaultList;
   }
 
   replaceAllTimers(timers, roomName = null) {
-    if (!Array.isArray(timers) || timers.length === 0) return;
+    if (!Array.isArray(timers)) return;
+    this._ensureDaysStructure();
     if (roomName) this._state.name = roomName;
     this._state.timers = timers;
-    this._state.activeTimerId = timers[0].id;
+    this._state.days[String(this._state.currentDay || 1)] = [...timers];
+    this._state.activeTimerId = timers.length > 0 ? timers[0].id : null;
     this._commitStateChange(true);
   }
 
   clearAllTimers() {
-    this._state.name = 'Novo Evento';
+    this._ensureDaysStructure();
     this._state.timers = [];
+    this._state.days[String(this._state.currentDay || 1)] = [];
     this._state.activeTimerId = null;
     this._state.message = { text: '', visible: false, level: 'info' };
     this._commitStateChange(true);
@@ -553,7 +516,6 @@ class UniversalSyncClient {
     incoming.timers.forEach(t => {
       if (t.state === 'running') {
         if (typeof t.liveElapsed === 'number') {
-          // Exact relative elapsed at the moment packet was sent (immune to clock differences & retained delay)
           const transitMs = sentAt ? Math.max(0, Math.min(1500, localNow - sentAt)) : 0;
           t.elapsed = t.liveElapsed + transitMs;
           t.startedAt = localNow;
@@ -566,6 +528,7 @@ class UniversalSyncClient {
     });
 
     this._state = incoming;
+    this._ensureDaysStructure();
     this._enforceInactiveReset();
     this._saveLocal();
     this._syncEventInRegistry();
@@ -592,11 +555,15 @@ class UniversalSyncClient {
   }
 
   _commitStateChange(retain = true) {
+    this._ensureDaysStructure();
     this._enforceInactiveReset();
     const now = Date.now();
     this._state.updatedAt = now;
 
-    // Bake liveElapsed into each running timer so receivers don't depend on wall-clock alignment
+    // Save active day lineup in days map
+    this._state.days[String(this._state.currentDay || 1)] = [...(this._state.timers || [])];
+
+    // Bake liveElapsed into each running timer
     this._state.timers.forEach(t => {
       if (t.state === 'running' && t.startedAt) {
         t.liveElapsed = t.elapsed + (now - t.startedAt);
@@ -716,7 +683,6 @@ class UniversalSyncClient {
     if (idx < 0) return;
     const timer = this._state.timers[idx];
 
-    // If duration was edited, update this timer's exit time and shift subsequent timers
     if (typeof updates.duration === 'number' && updates.duration !== timer.duration) {
       const deltaMins = Math.round((updates.duration - timer.duration) / 60000);
       timer.duration = updates.duration;
@@ -728,11 +694,9 @@ class UniversalSyncClient {
       delete updates.duration;
     }
 
-    // If startTime was edited manually, shift subsequent timers by the difference in start time
     if (typeof updates.startTime === 'string' && updates.startTime !== timer.startTime) {
       const oldStart = this._parseStartMins(timer.startTime);
       const newStart = this._parseStartMins(updates.startTime);
-      // Check if user typed a full range "HH:MM - HH:MM" or single time "HH:MM"
       const rangeMatch = updates.startTime.match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
       if (rangeMatch && newStart !== null) {
         const endMins = parseInt(rangeMatch[3], 10) * 60 + parseInt(rangeMatch[4], 10);
@@ -774,8 +738,6 @@ class UniversalSyncClient {
 
     switch (action) {
       case 'start':
-        // Starting any timer automatically makes it the active ON AIR timer
-        // and resets all other timers
         this._state.activeTimerId = timer.id;
         if (timer.state !== 'running') {
           if (timer.state === 'finished') timer.elapsed = 0;
@@ -819,7 +781,6 @@ class UniversalSyncClient {
       timer.state = 'stopped';
     }
 
-    // Update current artist's exit time & cascade to all subsequent artists
     if (actualDeltaMins !== 0) {
       const sMins = this._parseStartMins(timer.startTime);
       if (sMins !== null) {
@@ -856,7 +817,6 @@ class UniversalSyncClient {
   reorderTimers(order) {
     if (Array.isArray(order)) {
       const oldTimers = this._state.timers || [];
-      // Capture original slot starts and inter-slot gaps by position index
       const posMeta = oldTimers.map((t, i) => {
         const sMins = this._parseStartMins(t.startTime);
         const durMins = Math.round((t.duration || 0) / 60000);
@@ -867,7 +827,6 @@ class UniversalSyncClient {
         let diff = cur.sMins - (posMeta[i - 1].endMins % 1440);
         if (diff < -720) diff += 1440;
         if (diff > 720) diff -= 1440;
-        // If gap is huge (> 2 hours, e.g. between afternoon soundcheck and 23:00 show), treat as new block anchor
         if (Math.abs(diff) > 120) return null;
         return diff;
       });
@@ -881,7 +840,6 @@ class UniversalSyncClient {
         if (!reordered.includes(t)) reordered.push(t);
       }
 
-      // Recalculate sequential slots for the new order
       let prevEnd = null;
       reordered.forEach((t, i) => {
         if (t.mode === 'clock') return;

@@ -62,13 +62,10 @@
               <strong id="ctrl-event-end" style="font-family: var(--font-mono); font-size: 1.15rem; color: #55efc4;">--:--</strong>
             </div>
           </div>
-          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+            <div id="ctrl-day-tabs" style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;"></div>
             <button id="open-import-btn" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff;">📂 Importar</button>
-            <button class="btn btn-sm preset-day-btn" data-day="1" title="Receção ao Caloiro - Dia 1">📅 Dia 1</button>
-            <button class="btn btn-sm preset-day-btn" data-day="2" title="Receção ao Caloiro - Dia 2">📅 Dia 2</button>
-            <button class="btn btn-sm preset-day-btn" data-day="3" title="Receção ao Caloiro - Dia 3">📅 Dia 3</button>
-            <button class="btn btn-sm preset-day-btn" data-day="4" title="Receção ao Caloiro - Dia 4">📅 Dia 4</button>
-            <button id="clear-event-btn" class="btn btn-sm btn-danger" title="Apagar todos os artistas para começar um evento novo do zero">🧹 Novo Evento</button>
+            <button id="clear-event-btn" class="btn btn-sm btn-danger" title="Apagar todos os artistas do dia atual">🧹 Limpar Dia</button>
             <button id="add-timer-btn" class="btn btn-primary btn-sm">+ Add Timer</button>
           </div>
         </div>
@@ -206,35 +203,30 @@
     </div>
   </div>
 
-  <!-- Create / Manage Events Modal (Controller Only) -->
+  <!-- Create / Manage Events Modal (Controller) -->
   <div id="new-event-modal" class="modal-overlay">
-    <div class="modal" style="max-width: 480px; width: 92vw;">
-      <h3 class="modal-title">🎪 Criar Novo Evento / Sessão</h3>
+    <div class="modal" style="max-width: 460px; width: 92vw;">
+      <h3 class="modal-title">🎪 Criar Novo Palco / Evento</h3>
       <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 14px;">
-        Defina o <strong>Nome do Evento</strong> e a <strong>Pass de Acesso</strong>. No Menu Inicial, os operadores e ecrãs escolhem o evento e entram com esta pass.
+        Crie uma nova sessão limpa e independente (com Dia 1 a 0 artistas).
       </p>
 
       <div class="modal-field">
-        <label class="modal-label" for="new-event-title-input">Nome do Evento (ex: RC26):</label>
-        <input id="new-event-title-input" class="input" placeholder="Ex: RC26" autocomplete="off">
+        <label class="modal-label" for="new-event-title-input">Nome do Evento / Palco:</label>
+        <input id="new-event-title-input" class="input" placeholder="Ex: Palco 2, Palco Secundário, RC26" autocomplete="off">
       </div>
 
-      <div class="modal-field">
-        <label class="modal-label" for="new-event-pass-input">Pass do Evento / Palco (ex: palco 1):</label>
-        <input id="new-event-pass-input" class="input" placeholder="Ex: palco 1" autocomplete="off">
-      </div>
-
-      <div style="margin-top: 12px; margin-bottom: 12px;">
+      <div style="margin-top: 14px; margin-bottom: 14px;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-          <div class="modal-label" style="margin-bottom: 0;">Eventos Criados (Controlador):</div>
-          <button id="ctrl-delete-all-events-btn" type="button" class="btn btn-sm btn-danger" style="padding: 3px 8px; font-size: 0.7rem;">🗑️ Apagar Todos os Eventos</button>
+          <div class="modal-label" style="margin-bottom: 0;">Palcos / Eventos Ativos:</div>
+          <button id="ctrl-delete-all-events-btn" type="button" class="btn btn-sm btn-danger" style="padding: 2px 7px; font-size: 0.7rem;">🗑️ Apagar Todos</button>
         </div>
         <div id="ctrl-events-manage-list" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
       </div>
 
       <div class="modal-actions">
         <button id="new-event-cancel" type="button" class="btn">Fechar</button>
-        <button id="new-event-confirm" type="button" class="btn btn-primary">✨ Criar Evento Limpo</button>
+        <button id="new-event-confirm" type="button" class="btn btn-primary">✨ Criar Palco Limpo</button>
       </div>
     </div>
   </div>
@@ -245,15 +237,15 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=10"></script>
+  <script src="js/schedule-importer.js?v=11"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=10"></script>
+  <script src="js/auth.js?v=11"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=10"></script>
-  <script src="js/local-sync.js?v=10"></script>
-  <script src="js/controller.js?v=10"></script>
+  <script src="js/pwa.js?v=11"></script>
+  <script src="js/local-sync.js?v=11"></script>
+  <script src="js/controller.js?v=11"></script>
 </body>
 </html>

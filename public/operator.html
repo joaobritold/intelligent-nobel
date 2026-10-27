@@ -19,7 +19,7 @@
     <header class="op-header">
       <div class="op-room-box" style="flex: 1; min-width: 0; gap: 6px;">
         <span style="font-size: 1rem;">🎪</span>
-        <span id="op-event-badge" style="font-size: 0.85rem; font-weight: 800; color: #fff; background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.45); padding: 4px 10px; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">RC26</span>
+        <select id="op-event-select" class="input" style="padding: 4px 8px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; background: rgba(108, 92, 231, 0.25); border: 1px solid rgba(108, 92, 231, 0.5); color: #fff; max-width: 170px; height: 30px;"></select>
         <input id="op-room-input" class="input input-mono op-room-input" value="PALCO1" aria-label="Room Code" style="display: none;">
         <button id="op-join-btn" class="btn btn-primary op-join-btn" style="display: none;">Sala</button>
       </div>
@@ -141,14 +141,11 @@
     <section class="op-section" style="margin-bottom: 24px;">
       <div class="op-section-title" style="flex-wrap: wrap; gap: 6px;">
         <span>📋 Lineup / Fila de Artistas</span>
-        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center;">
+          <div id="op-day-tabs" style="display: flex; gap: 3px; align-items: center; flex-wrap: wrap;"></div>
           <label for="op-import-file" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.7rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff; cursor: pointer;">📂 Ficheiro</label>
           <input type="file" id="op-import-file" accept=".pdf,.xlsx,.xls,.csv,.txt" style="display: none;">
-          <button class="btn btn-sm op-preset-day" data-day="1" style="padding: 3px 7px; font-size: 0.7rem;">Dia 1</button>
-          <button class="btn btn-sm op-preset-day" data-day="2" style="padding: 3px 7px; font-size: 0.7rem;">Dia 2</button>
-          <button class="btn btn-sm op-preset-day" data-day="3" style="padding: 3px 7px; font-size: 0.7rem;">Dia 3</button>
-          <button class="btn btn-sm op-preset-day" data-day="4" style="padding: 3px 7px; font-size: 0.7rem;">Dia 4</button>
-          <button id="op-clear-event" class="btn btn-sm btn-danger" style="padding: 3px 7px; font-size: 0.7rem;" title="Limpar tudo para Novo Evento">🧹 Limpar</button>
+          <button id="op-clear-event" class="btn btn-sm btn-danger" style="padding: 3px 7px; font-size: 0.7rem;" title="Limpar todos os artistas do dia atual">🧹 Limpar</button>
         </div>
       </div>
       <div id="op-queue-list" class="op-queue-list">
@@ -160,14 +157,14 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=10"></script>
+  <script src="js/schedule-importer.js?v=11"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=10"></script>
+  <script src="js/auth.js?v=11"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=10"></script>
-  <script src="js/local-sync.js?v=10"></script>
-  <script src="js/operator.js?v=10"></script>
+  <script src="js/pwa.js?v=11"></script>
+  <script src="js/local-sync.js?v=11"></script>
+  <script src="js/operator.js?v=11"></script>
 </body>
 </html>

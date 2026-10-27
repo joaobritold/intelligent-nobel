@@ -229,6 +229,24 @@ function render() {
     document.body.style.backgroundColor = state.theme.viewerBg;
   }
 
+  const $dayTabs = document.getElementById('lineup-day-tabs');
+  if ($dayTabs && state.days) {
+    const dayKeys = Object.keys(state.days).map(Number).sort((a, b) => a - b);
+    if (dayKeys.length > 1) {
+      $dayTabs.innerHTML = dayKeys.map(d => {
+        const isAct = d === (state.currentDay || 1);
+        return `<button type="button" class="btn btn-sm ${isAct ? 'btn-primary' : ''}" data-lineup-day="${d}" style="padding: 2px 7px; font-size: 0.7rem; font-weight: 700; border-radius: 6px;">Dia ${d}</button>`;
+      }).join('');
+    } else {
+      $dayTabs.innerHTML = '';
+    }
+  }
+
+  if ($roomBadge) {
+    const daySuffix = (state.currentDay && state.days && Object.keys(state.days).length > 1) ? ` • Dia ${state.currentDay}` : '';
+    $roomBadge.textContent = `${state.name || roomId}${daySuffix}`;
+  }
+
   const $eventEnd = document.getElementById('lineup-event-end');
   if ($eventEnd) {
     $eventEnd.textContent = getEventEndTime(state);
