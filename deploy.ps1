@@ -1,6 +1,8 @@
 $ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-# Script de Deploy Direto para Netlify (Sem precisar arrastar pasta!)
+# Script de Deploy Direto para Netlify (Sem gastar créditos de build!)
 $ConfigFile = "$PSScriptRoot\.netlify-site.json"
 $PublicDir  = "$PSScriptRoot\public"
 $ZipPath    = "$PSScriptRoot\deploy.zip"
@@ -10,7 +12,7 @@ Write-Host "   🚀 StageTimer - Auto Deploy Online     " -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 
 if (Test-Path $ZipPath) { Remove-Item $ZipPath -Force }
-Compress-Archive -Path "$PublicDir\*" -DestinationPath $ZipPath -Force
+[System.IO.Compression.ZipFile]::CreateFromDirectory($PublicDir, $ZipPath)
 
 if (Test-Path $ConfigFile) {
   $cfg = Get-Content $ConfigFile | ConvertFrom-Json
