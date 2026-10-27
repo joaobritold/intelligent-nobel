@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>StageTimer — Modo Lista (Lineup & Horários)</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/lineup.css">
+</head>
+<body>
+  <div id="lineup-screen" class="lineup-screen">
+    <!-- Top Header -->
+    <header class="lineup-header">
+      <div class="lineup-title-box">
+        <span style="font-size: 2rem;">📋</span>
+        <div>
+          <div class="lineup-title">Lineup & Horários</div>
+          <div style="font-size: 0.75rem; color: var(--text-secondary);">Duplo clique ou tecla 'F' para Ecrã Inteiro</div>
+        </div>
+        <span id="lineup-room-badge" class="lineup-room-badge">PALCO1</span>
+      </div>
+
+      <div class="lineup-clock-box">
+        <div class="lineup-clock-label">HORA LOCAL</div>
+        <div id="lineup-local-clock" class="lineup-clock-time">--:--:--</div>
+      </div>
+    </header>
+
+    <!-- Main Content: Active Stage + Full Artist List -->
+    <div class="lineup-body">
+      <!-- Left: Currently on Stage -->
+      <aside id="lineup-now-card" class="lineup-now-card">
+        <div id="lineup-now-badge" class="lineup-now-badge">● EM PALCO AGORA</div>
+        <div id="lineup-now-name" class="lineup-now-name">--</div>
+        <div id="lineup-now-slot" class="lineup-now-slot"></div>
+        <div id="lineup-now-timer" class="lineup-now-timer">--:--</div>
+        <div id="lineup-now-notes" class="lineup-now-notes" style="display: none;"></div>
+      </aside>
+
+      <!-- Right: Full Schedule List -->
+      <main>
+        <div id="lineup-list" class="lineup-list-container">
+          <!-- Injected by JS -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Cloud MQTT over WSS -->
+  <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
+  <script src="js/local-sync.js"></script>
+  <script src="js/lineup.js"></script>
+</body>
+</html>

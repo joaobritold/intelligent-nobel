@@ -315,6 +315,7 @@ class UniversalSyncClient {
       id: data.id || ('t_' + Math.random().toString(36).substring(2, 9)),
       name: data.name || 'Novo Artista',
       notes: data.notes || '',
+      startTime: data.startTime || '',
       mode: data.mode || 'countdown',
       duration: data.duration || 300000,
       elapsed: 0,

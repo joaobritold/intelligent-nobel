@@ -1,0 +1,271 @@
+/* ─── Lineup / Schedule Presentation Mode ───────────────────────── */
+
+html, body {
+  min-height: 100dvh;
+  background: #080811;
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+.lineup-screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 40px;
+  gap: 24px;
+}
+
+/* ─── Top Header ────────────────────────────────────────────────── */
+
+.lineup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 18px;
+}
+
+.lineup-title-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.lineup-title {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.lineup-room-badge {
+  background: rgba(108, 92, 231, 0.2);
+  border: 1px solid rgba(108, 92, 231, 0.5);
+  color: #a29bfe;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.lineup-clock-box {
+  text-align: right;
+}
+
+.lineup-clock-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.15em;
+  font-weight: 600;
+}
+
+.lineup-clock-time {
+  font-family: var(--font-mono);
+  font-size: clamp(1.6rem, 3vw, 2.6rem);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.1;
+}
+
+/* ─── Main Grid (Now Playing + Full Artist Schedule) ────────────── */
+
+.lineup-body {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 28px;
+  flex: 1;
+}
+
+/* ─── Left Column: Active Artist Card ───────────────────────────── */
+
+.lineup-now-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid var(--accent);
+  border-radius: 20px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.lineup-now-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 4px 14px;
+  border-radius: 20px;
+  background: var(--accent);
+  color: #fff;
+  margin-bottom: 14px;
+}
+
+.lineup-now-name {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.lineup-now-slot {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: #a29bfe;
+  margin-bottom: 14px;
+}
+
+.lineup-now-timer {
+  font-family: var(--font-mono);
+  font-size: clamp(3.5rem, 6vw, 5.2rem);
+  font-weight: 700;
+  color: var(--green);
+  line-height: 1;
+  margin: 8px 0 14px;
+}
+
+.lineup-now-timer.warn { color: var(--yellow); }
+.lineup-now-timer.danger { color: var(--red); }
+.lineup-now-timer.finished {
+  color: var(--red);
+  animation: lineup-flash 0.8s ease-in-out infinite;
+}
+
+@keyframes lineup-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.lineup-now-notes {
+  font-size: 1rem;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 8px 16px;
+  border-radius: 10px;
+  margin-top: 6px;
+  max-width: 100%;
+}
+
+/* ─── Right Column: Full Artist Schedule Table ──────────────────── */
+
+.lineup-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lineup-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 130px 140px;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  transition: all 0.25s ease;
+}
+
+.lineup-row.is-active {
+  background: rgba(108, 92, 231, 0.18);
+  border: 2px solid var(--accent);
+  transform: scale(1.01);
+  box-shadow: 0 8px 28px rgba(108, 92, 231, 0.25);
+}
+
+.lineup-row.is-next {
+  border-color: rgba(0, 184, 148, 0.5);
+  background: rgba(0, 184, 148, 0.08);
+}
+
+.lineup-row.is-done {
+  opacity: 0.45;
+}
+
+.lineup-col-time {
+  font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #a29bfe;
+}
+
+.lineup-col-artist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lineup-artist-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.lineup-artist-notes {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.lineup-col-duration {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.lineup-col-status {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.lineup-status-pill {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.status-live {
+  background: var(--green);
+  color: #fff;
+}
+
+.status-next {
+  background: rgba(0, 184, 148, 0.2);
+  color: var(--green);
+  border: 1px solid var(--green);
+}
+
+.status-upcoming {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+.status-done {
+  background: rgba(225, 112, 85, 0.2);
+  color: var(--red);
+}
+
+@media (max-width: 980px) {
+  .lineup-screen {
+    padding: 16px;
+  }
+  .lineup-body {
+    grid-template-columns: 1fr;
+  }
+  .lineup-row {
+    grid-template-columns: 90px 1fr auto;
+    padding: 14px 16px;
+  }
+  .lineup-col-duration {
+    display: none;
+  }
+}

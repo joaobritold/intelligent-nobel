@@ -94,7 +94,7 @@
 
     .modes-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 14px;
     }
 
@@ -218,6 +218,16 @@
         </div>
         <span class="mode-badge">Telão / Monitor</span>
       </a>
+
+      <!-- Modo Lista (Lineup & Horários) -->
+      <a id="card-lineup" href="lineup.html?room=PALCO1" class="mode-card">
+        <div class="mode-icon">📋</div>
+        <div class="mode-info">
+          <div class="mode-name">Modo Lista</div>
+          <div class="mode-desc">Apresentação com a lista completa de artistas, horários e quem está em palco.</div>
+        </div>
+        <span class="mode-badge">Backstage / Camarim</span>
+      </a>
     </div>
   </div>
 
@@ -226,6 +236,7 @@
     const $controller = document.getElementById('card-controller');
     const $operator = document.getElementById('card-operator');
     const $viewer = document.getElementById('card-viewer');
+    const $lineup = document.getElementById('card-lineup');
 
     const params = new URLSearchParams(location.search);
     if (params.get('room')) {
@@ -238,6 +249,7 @@
       $controller.href = `controller.html${q}`;
       $operator.href = `operator.html${q}`;
       $viewer.href = `viewer.html${q}`;
+      if ($lineup) $lineup.href = `lineup.html${q}`;
     }
 
     $room.addEventListener('input', updateLinks);

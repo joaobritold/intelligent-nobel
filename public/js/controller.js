@@ -222,9 +222,11 @@ function updateRoomInfo() {
   const topController = document.getElementById('top-nav-controller');
   const topOperator = document.getElementById('top-nav-operator');
   const topViewer = document.getElementById('top-nav-viewer');
+  const topLineup = document.getElementById('top-nav-lineup');
   if (topController) topController.href = controllerUrl;
   if (topOperator) topOperator.href = operatorUrl;
   if (topViewer) topViewer.href = viewerUrl;
+  if (topLineup) topLineup.href = `${basePath}/lineup.html?room=${encodeURIComponent(code)}`;
 }
 
 // ─── Render Timers ─────────────────────────────────────────────────
@@ -322,6 +324,15 @@ function renderTimers() {
                   value="${formatTime(timer.duration)}"
                   data-timer-id="${timer.id}"
                   data-field="duration"
+                  spellcheck="false"
+                />
+                <span style="margin-left: 6px;">Horário:</span>
+                <input
+                  class="input input-mono timer-duration-input"
+                  placeholder="21:00"
+                  value="${escapeHtml(timer.startTime || '')}"
+                  data-timer-id="${timer.id}"
+                  data-field="startTime"
                   spellcheck="false"
                 />
               </div>
@@ -472,6 +483,8 @@ $timerList.addEventListener('change', (e) => {
     client.updateTimer(timerId, { name: input.value });
   } else if (field === 'notes') {
     client.updateTimer(timerId, { notes: input.value });
+  } else if (field === 'startTime') {
+    client.updateTimer(timerId, { startTime: input.value });
   } else if (field === 'mode') {
     client.updateTimer(timerId, { mode: input.value });
   } else if (field === 'duration') {

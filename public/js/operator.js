@@ -42,6 +42,7 @@ const $msgStatus = document.getElementById('op-msg-status');
 const $queueList = document.getElementById('op-queue-list');
 
 const $artistName = document.getElementById('op-artist-name');
+const $artistStartTime = document.getElementById('op-artist-starttime');
 const $artistDuration = document.getElementById('op-artist-duration');
 const $artistNotes = document.getElementById('op-artist-notes');
 const $addArtistBtn = document.getElementById('op-add-artist-btn');
@@ -59,6 +60,8 @@ function updateNavLinks() {
   $navController.href = `controller.html?room=${code}`;
   $navOperator.href = `operator.html?room=${code}`;
   $navViewer.href = `viewer.html?room=${code}`;
+  const $navLineup = document.getElementById('nav-lineup');
+  if ($navLineup) $navLineup.href = `lineup.html?room=${code}`;
 }
 
 $joinBtn.addEventListener('click', () => {
@@ -210,7 +213,7 @@ function render() {
   }
 
   // Render queue only when structure changes to keep touch targets stable
-  const sig = state.timers.map(t => `${t.id}:${t.name}:${t.notes || ''}:${t.duration}:${t.mode}:${t.id === state.activeTimerId}`).join('|');
+  const sig = state.timers.map(t => `${t.id}:${t.name}:${t.startTime || ''}:${t.notes || ''}:${t.duration}:${t.mode}:${t.id === state.activeTimerId}`).join('|');
   if (sig !== lastQueueSignature) {
     lastQueueSignature = sig;
     $queueList.innerHTML = state.timers.map(t => {
@@ -218,9 +221,12 @@ function render() {
       return `
         <div class="op-queue-item ${isAct ? 'active' : ''}" data-id="${t.id}">
           <div class="op-queue-info" style="flex:1; margin-right: 8px;">
-            <span class="op-queue-name">${escapeHtml(t.name)}</span>
+            <span class="op-queue-name">${t.startTime ? `<strong style="color:var(--accent)">[${escapeHtml(t.startTime)}]</strong> ` : ''}${escapeHtml(t.name)}</span>
             <span class="op-queue-meta">${t.mode.toUpperCase()} • ${formatTime(t.duration)}</span>
-            <input class="input op-item-notes" data-note-id="${t.id}" value="${escapeHtml(t.notes || '')}" placeholder="📝 Notas deste artista..." style="margin-top: 6px; padding: 4px 8px; font-size: 16px !important; width: 100%;" onclick="event.stopPropagation()">
+            <div style="display:flex; gap:6px; margin-top: 6px;" onclick="event.stopPropagation()">
+              <input class="input" data-time-id="${t.id}" value="${escapeHtml(t.startTime || '')}" placeholder="🕒 21:00" style="padding: 4px 8px; font-size: 16px !important; width: 85px; text-align:center;">
+              <input class="input op-item-notes" data-note-id="${t.id}" value="${escapeHtml(t.notes || '')}" placeholder="📝 Notas deste artista..." style="padding: 4px 8px; font-size: 16px !important; flex: 1;">
+            </div>
           </div>
           <div class="op-queue-actions">
             <span class="op-queue-badge">${isAct ? '● NO AR' : 'ATIVAR'}</span>
@@ -311,10 +317,12 @@ document.querySelectorAll('.op-dur-chip').forEach(btn => {
 
 function handleCreateArtist(goLive = false) {
   const name = ($artistName.value || '').trim() || `Artista ${(state?.timers?.length || 0) + 1}`;
+  const startTime = ($artistStartTime?.value || '').trim();
   const notes = ($artistNotes?.value || '').trim();
   const duration = parseTimeInput($artistDuration.value);
   const created = client.createTimer({
     name,
+    startTime,
     notes,
     mode: 'countdown',
     duration,
@@ -326,6 +334,7 @@ function handleCreateArtist(goLive = false) {
     client.timerAction(created.id, 'start');
   }
   $artistName.value = '';
+  if ($artistStartTime) $artistStartTime.value = '';
   if ($artistNotes) $artistNotes.value = '';
   $artistName.blur();
 }
@@ -362,5 +371,9 @@ $queueList.addEventListener('change', (e) => {
   const noteInput = e.target.closest('[data-note-id]');
   if (noteInput) {
     client.updateTimer(noteInput.dataset.noteId, { notes: noteInput.value });
+  }
+  const timeInput = e.target.closest('[data-time-id]');
+  if (timeInput) {
+    client.updateTimer(timeInput.dataset.timeId, { startTime: timeInput.value });
   }
 });
