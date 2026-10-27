@@ -654,6 +654,101 @@ $modal.addEventListener('click', (e) => {
   }
 });
 
+// ─── Smart Schedule Importer Modal (PDF / Excel / CSV / Text) ──────
+
+const $openImportBtn = document.getElementById('open-import-btn');
+const $importModal = document.getElementById('import-modal');
+const $importFileInput = document.getElementById('import-file-input');
+const $importPageSelector = document.getElementById('import-page-selector');
+const $importPageSelect = document.getElementById('import-page-select');
+const $importTextArea = document.getElementById('import-text-area');
+const $importPreviewBox = document.getElementById('import-preview-box');
+const $importConfirm = document.getElementById('import-confirm');
+const $importCancel = document.getElementById('import-cancel');
+
+let extractedPagesText = [];
+
+function updateImportPreview() {
+  if (!$importTextArea || !$importPreviewBox) return;
+  const parsed = ScheduleImporter.parseTextToTimers($importTextArea.value);
+  if (parsed.length === 0) {
+    $importPreviewBox.style.display = 'none';
+    return;
+  }
+  $importPreviewBox.style.display = 'block';
+  $importPreviewBox.innerHTML = `<div style="color: var(--green); font-weight: 700; margin-bottom: 4px;">✓ ${parsed.length} Artista(s) detetado(s):</div>` +
+    parsed.map((t, i) => `<div>${i + 1}. <strong>${escapeHtml(t.name)}</strong> (${escapeHtml(t.startTime)}) — ${formatTime(t.duration)}</div>`).join('');
+}
+
+if ($openImportBtn && $importModal) {
+  $openImportBtn.addEventListener('click', () => {
+    $importModal.classList.add('visible');
+  });
+}
+
+if ($importCancel && $importModal) {
+  $importCancel.addEventListener('click', () => {
+    $importModal.classList.remove('visible');
+  });
+  $importModal.addEventListener('click', (e) => {
+    if (e.target === $importModal) $importModal.classList.remove('visible');
+  });
+}
+
+if ($importTextArea) {
+  $importTextArea.addEventListener('input', updateImportPreview);
+}
+
+if ($importPageSelect) {
+  $importPageSelect.addEventListener('change', () => {
+    const idx = parseInt($importPageSelect.value, 10) || 0;
+    if (extractedPagesText[idx] !== undefined) {
+      $importTextArea.value = extractedPagesText[idx];
+      updateImportPreview();
+    }
+  });
+}
+
+if ($importFileInput) {
+  $importFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'pdf') {
+        extractedPagesText = await ScheduleImporter.extractPdfPages(file);
+      } else {
+        extractedPagesText = await ScheduleImporter.extractSpreadsheetOrText(file);
+      }
+
+      if (extractedPagesText.length > 1) {
+        $importPageSelector.style.display = 'block';
+        $importPageSelect.innerHTML = extractedPagesText.map((_, i) => `<option value="${i}">Página / Dia ${i + 1}</option>`).join('');
+      } else {
+        $importPageSelector.style.display = 'none';
+      }
+
+      $importTextArea.value = extractedPagesText[0] || '';
+      updateImportPreview();
+    } catch (err) {
+      alert('Erro ao ler ficheiro: ' + err.message);
+    }
+  });
+}
+
+if ($importConfirm) {
+  $importConfirm.addEventListener('click', () => {
+    const parsed = ScheduleImporter.parseTextToTimers($importTextArea.value);
+    if (parsed.length === 0) {
+      alert('Nenhum artista com horário (ex: 23h00 - 00h15) foi encontrado no texto.');
+      return;
+    }
+    client.replaceAllTimers(parsed);
+    $importModal.classList.remove('visible');
+    showToast(`✓ ${parsed.length} artistas importados com sucesso!`);
+  });
+}
+
 // ─── Keyboard Shortcuts ────────────────────────────────────────────
 
 document.addEventListener('keydown', (e) => {

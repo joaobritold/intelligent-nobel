@@ -255,6 +255,14 @@ class UniversalSyncClient {
     this._commitStateChange(true);
   }
 
+  replaceAllTimers(timers, roomName = null) {
+    if (!Array.isArray(timers) || timers.length === 0) return;
+    if (roomName) this._state.name = roomName;
+    this._state.timers = timers;
+    this._state.activeTimerId = timers[0].id;
+    this._commitStateChange(true);
+  }
+
   _saveLocal() {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this._state));

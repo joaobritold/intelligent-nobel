@@ -369,6 +369,39 @@ if ($opLoadDia1) {
     }
   });
 }
+
+const $opImportFile = document.getElementById('op-import-file');
+if ($opImportFile) {
+  $opImportFile.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const ext = file.name.split('.').pop().toLowerCase();
+      let pages = [];
+      if (ext === 'pdf') {
+        pages = await ScheduleImporter.extractPdfPages(file);
+      } else {
+        pages = await ScheduleImporter.extractSpreadsheetOrText(file);
+      }
+      let pageIdx = 0;
+      if (pages.length > 1) {
+        const ans = prompt(`O ficheiro tem ${pages.length} páginas/dias. Qual página deseja carregar? (1 a ${pages.length})`, '1');
+        pageIdx = Math.max(0, Math.min(pages.length - 1, (parseInt(ans, 10) || 1) - 1));
+      }
+      const parsed = ScheduleImporter.parseTextToTimers(pages[pageIdx] || '');
+      if (parsed.length === 0) {
+        alert('Não foram encontrados horários válidos nesta página.');
+        return;
+      }
+      if (confirm(`Encontrados ${parsed.length} artistas (${parsed.map(p => p.name).join(', ')}). Carregar agora?`)) {
+        client.replaceAllTimers(parsed);
+      }
+    } catch (err) {
+      alert('Erro ao importar ficheiro: ' + err.message);
+    }
+    $opImportFile.value = '';
+  });
+}
 if ($liveArtistBtn) {
   $liveArtistBtn.addEventListener('click', () => handleCreateArtist(true));
 }

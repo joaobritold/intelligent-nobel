@@ -48,8 +48,9 @@
       <section class="timer-panel">
         <div class="panel-header">
           <div class="panel-title">Timers Rundown</div>
-          <div style="display: flex; gap: 8px;">
-            <button id="load-dia1-btn" class="btn btn-sm" title="Carregar alinhamento do Dia 1 (Receção ao Caloiro)">📅 Carregar Dia 1</button>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button id="open-import-btn" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff;">📂 Importar Horários (PDF/Excel)</button>
+            <button id="load-dia1-btn" class="btn btn-sm" title="Carregar alinhamento do Dia 1 (Receção ao Caloiro)">📅 Dia 1</button>
             <button id="add-timer-btn" class="btn btn-primary btn-sm">+ Add Timer</button>
           </div>
         </div>
@@ -154,8 +155,45 @@
     </div>
   </div>
 
+  <!-- Import Schedule Modal (PDF / Excel / CSV / Paste) -->
+  <div id="import-modal" class="modal-overlay">
+    <div class="modal" style="max-width: 540px; width: 92vw;">
+      <h3 class="modal-title">📂 Importar Mapa de Horários Automático</h3>
+      <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 14px;">
+        Carregue um ficheiro <strong>PDF, Excel (.xlsx/.csv) ou TXT</strong> (ou cole o texto da tabela abaixo) e o sistema cria todos os artistas, horários e durações automaticamente!
+      </p>
+
+      <div class="modal-field">
+        <label class="modal-label">1. Escolher Ficheiro (PDF, Excel, CSV, TXT):</label>
+        <input type="file" id="import-file-input" class="input" accept=".pdf,.xlsx,.xls,.csv,.txt" style="padding: 8px; cursor: pointer;">
+      </div>
+
+      <div id="import-page-selector" class="modal-field" style="display: none;">
+        <label class="modal-label">Escolher Página / Dia do Documento:</label>
+        <select id="import-page-select" class="input"></select>
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-label">2. Ou cole aqui as linhas da tabela (Artista + Horário On Stage):</label>
+        <textarea id="import-text-area" class="input input-mono" style="height: 110px; font-size: 0.78rem; resize: vertical;" placeholder="Exemplo:&#10;Dj Residente   23h00 - 00h15&#10;Tunas          23h30 - 01h30&#10;Minhotos       01:45 - 03h15"></textarea>
+      </div>
+
+      <div id="import-preview-box" style="max-height: 130px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; margin-bottom: 12px; display: none;"></div>
+
+      <div class="modal-actions">
+        <button id="import-cancel" class="btn">Cancelar</button>
+        <button id="import-confirm" class="btn btn-primary">⚡ Gerar Horários e Artistas</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="toast"></div>
+
+  <!-- PDF.js & SheetJS for client-side file parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="js/schedule-importer.js"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
   <script src="js/auth.js"></script>

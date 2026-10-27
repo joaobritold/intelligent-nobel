@@ -121,13 +121,22 @@
     <section class="op-section" style="margin-bottom: 24px;">
       <div class="op-section-title">
         <span>📋 Lineup / Fila de Artistas (Toque para pôr no ar)</span>
-        <button id="op-load-dia1" class="btn btn-sm" style="padding: 2px 8px; font-size: 0.7rem;">📅 Carregar Dia 1</button>
+        <div style="display: flex; gap: 6px;">
+          <label for="op-import-file" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.7rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff; cursor: pointer;">📂 Importar Ficheiro</label>
+          <input type="file" id="op-import-file" accept=".pdf,.xlsx,.xls,.csv,.txt" style="display: none;">
+          <button id="op-load-dia1" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.7rem;">📅 Dia 1</button>
+        </div>
       </div>
       <div id="op-queue-list" class="op-queue-list">
         <!-- Populated by JS -->
       </div>
     </section>
   </div>
+
+  <!-- PDF.js & SheetJS for client-side file parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="js/schedule-importer.js"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
   <script src="js/auth.js"></script>
