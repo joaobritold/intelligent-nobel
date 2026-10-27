@@ -134,12 +134,15 @@ function render() {
 
   const activeTimer = state.timers.find(t => t.id === state.activeTimerId);
 
-  // Message
+  // Message (High-impact stage prompter while keeping clock visible)
+  const $viewerRoot = document.querySelector('.viewer');
   if (state.message.visible && state.message.text) {
-    $message.textContent = state.message.text;
+    $message.textContent = `⚠️ ${state.message.text}`;
     $message.classList.add('visible');
+    if ($viewerRoot) $viewerRoot.classList.add('has-message');
   } else {
     $message.classList.remove('visible');
+    if ($viewerRoot) $viewerRoot.classList.remove('has-message');
   }
 
   // No active timer
