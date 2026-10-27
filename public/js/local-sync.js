@@ -4,7 +4,7 @@
  * - Multi-Day lineups per stage (Dia 1, Dia 2, + Dia)
  * - Cloud MQTT over WSS + Local BroadcastChannel
  * - Zero hardcoded demo bands: new events start 100% clean (0 artists)
- * - Real-time device presence & remote screen control
+ * - Real-time device presence & remote screen control with dual-channel dispatch
  * - Reliable event deletion & unified cumulative end time calculation
  */
 
@@ -15,6 +15,7 @@ class UniversalSyncClient {
     this.cleanRoom = this.room.replace(/[^A-Z0-9_-]/g, '') || 'PALCO1';
 
     this.channelName = `stagetimer_live_${this.cleanRoom}`;
+    this.cmdChannelName = 'stagetimer_global_cmds_v2';
     this.storageKey = `stagetimer_live_state_${this.cleanRoom}`;
     this.mqttTopicState = `stagetimer_live/${this.cleanRoom}/state`;
     this.mqttTopicPresence = `stagetimer_live/${this.cleanRoom}/presence`;
@@ -23,9 +24,15 @@ class UniversalSyncClient {
     this.registryStorageKey = 'stagetimer_events_registry_v4';
     this.deletedStorageKey = 'stagetimer_deleted_events_v2';
 
+    this.firstSeen = Date.now();
+
+    // Give each distinct tab/window its own unique screen UUID
     try {
-      this.deviceUuid = localStorage.getItem('stagetimer_device_uuid') || ('dev_' + Math.random().toString(36).substring(2, 9));
-      localStorage.setItem('stagetimer_device_uuid', this.deviceUuid);
+      this.deviceUuid = sessionStorage.getItem('stagetimer_screen_uuid');
+      if (!this.deviceUuid) {
+        this.deviceUuid = 'dev_' + Math.random().toString(36).substring(2, 7) + '_' + Math.random().toString(36).substring(2, 6);
+        sessionStorage.setItem('stagetimer_screen_uuid', this.deviceUuid);
+      }
     } catch (e) {
       this.deviceUuid = 'dev_' + Math.random().toString(36).substring(2, 9);
     }
@@ -37,6 +44,7 @@ class UniversalSyncClient {
     this.clientId = 'st_' + Math.random().toString(36).substring(2, 10);
     this.listeners = new Map();
     this.channel = null;
+    this.cmdChannel = null;
     this._state = null;
     this.tickInterval = null;
     this.mqttClient = null;
@@ -104,7 +112,7 @@ class UniversalSyncClient {
   }
 
   connect() {
-    // 1. Local Tab-to-Tab Sync (BroadcastChannel)
+    // 1. Local Tab-to-Tab State Sync (BroadcastChannel)
     if (typeof BroadcastChannel !== 'undefined') {
       try {
         this.channel = new BroadcastChannel(this.channelName);
@@ -112,6 +120,17 @@ class UniversalSyncClient {
           const msg = event.data;
           if (msg && msg.type === 'room-state' && msg.sender !== this.clientId) {
             this._applyIncomingState(msg.data, false);
+          }
+        };
+      } catch (e) {}
+
+      // Dual-channel instant local remote commands
+      try {
+        this.cmdChannel = new BroadcastChannel(this.cmdChannelName);
+        this.cmdChannel.onmessage = (event) => {
+          const msg = event.data;
+          if (msg && msg.sender !== this.clientId) {
+            this._handleRemoteCommand(msg);
           }
         };
       } catch (e) {}
@@ -184,6 +203,40 @@ class UniversalSyncClient {
     this._initCloudSync();
   }
 
+  _handleRemoteCommand(msg) {
+    if (!msg) return;
+    const isTarget = !msg.targetUuid || msg.targetUuid === 'ALL' || msg.targetUuid === this.deviceUuid;
+    if (!isTarget) return;
+
+    if (msg.action === 'reload') {
+      try {
+        const u = new URL(location.href);
+        u.searchParams.set('_ts', Date.now());
+        window.location.replace(u.toString());
+      } catch (err) {
+        window.location.reload();
+      }
+      return;
+    }
+
+    if (msg.action === 'navigate' && msg.url) {
+      let targetUrl = msg.url;
+      if (!targetUrl.includes('room=')) {
+        const sep = targetUrl.includes('?') ? '&' : '?';
+        targetUrl = `${targetUrl}${sep}room=${encodeURIComponent(this.cleanRoom)}`;
+      }
+      window.location.href = targetUrl;
+      return;
+    }
+
+    if (msg.action === 'switch_room' && msg.room) {
+      const u = new URL(location.href);
+      u.searchParams.set('room', msg.room);
+      window.location.replace(u.toString());
+      return;
+    }
+  }
+
   _initCloudSync() {
     if (typeof mqtt === 'undefined') {
       console.warn('MQTT library not loaded; using local sync only.');
@@ -240,19 +293,8 @@ class UniversalSyncClient {
         // Remote device commands (switch view, change room, reload)
         if (topic === this.mqttTopicDeviceCmd || topic === this.mqttTopicRoomCmd || topic === this.mqttTopicAllCmd) {
           if (msg.sender === this.clientId) return;
-          if (msg.action === 'navigate' && msg.url) {
-            location.href = msg.url;
-            return;
-          }
-          if (msg.action === 'reload') {
-            location.reload();
-            return;
-          }
-          if (msg.action === 'switch_room' && msg.room) {
-            const currentBase = location.pathname;
-            location.href = `${currentBase}?room=${encodeURIComponent(msg.room)}`;
-            return;
-          }
+          this._handleRemoteCommand(msg);
+          return;
         }
 
         // Room state update
@@ -288,8 +330,10 @@ class UniversalSyncClient {
           }
         } else if (topic === this.mqttTopicGlobalPresence) {
           if (msg.deviceUuid && msg.ts) {
+            const existing = this.globalDevicesMap.get(msg.deviceUuid);
             this.globalDevicesMap.set(msg.deviceUuid, {
               ...msg,
+              firstSeen: existing?.firstSeen || msg.firstSeen || Date.now(),
               lastSeen: Date.now()
             });
             this._cleanupGlobalDevices();
@@ -315,7 +359,7 @@ class UniversalSyncClient {
   _cleanupGlobalDevices() {
     const now = Date.now();
     for (const [uuid, dev] of this.globalDevicesMap.entries()) {
-      if (now - (dev.lastSeen || 0) > 18000) {
+      if (now - (dev.lastSeen || 0) > 20000) {
         this.globalDevicesMap.delete(uuid);
       }
     }
@@ -323,21 +367,38 @@ class UniversalSyncClient {
 
   getOnlineDevices() {
     this._cleanupGlobalDevices();
-    return Array.from(this.globalDevicesMap.values()).sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
+    // ALWAYS stable order: firstSeen ascending, then deviceUuid so order never swaps
+    return Array.from(this.globalDevicesMap.values()).sort((a, b) => {
+      const diff = (a.firstSeen || 0) - (b.firstSeen || 0);
+      if (diff !== 0) return diff;
+      return String(a.deviceUuid).localeCompare(String(b.deviceUuid));
+    });
   }
 
   sendDeviceCommand(targetDeviceUuid, command) {
-    if (!this.mqttClient || !this.mqttClient.connected) return;
-    try {
-      const topic = targetDeviceUuid === 'ALL'
-        ? this.mqttTopicAllCmd
-        : `stagetimer_live/_cmd/${targetDeviceUuid}`;
-      this.mqttClient.publish(
-        topic,
-        JSON.stringify({ sender: this.clientId, sentAt: Date.now(), ...command }),
-        { qos: 0, retain: false }
-      );
-    } catch (e) {}
+    const payload = {
+      sender: this.clientId,
+      sentAt: Date.now(),
+      targetUuid: targetDeviceUuid,
+      ...command
+    };
+
+    // 1. Instant local BroadcastChannel (cross-tab / same machine)
+    if (this.cmdChannel) {
+      try {
+        this.cmdChannel.postMessage(payload);
+      } catch (e) {}
+    }
+
+    // 2. Cloud MQTT (cross-device over network)
+    if (this.mqttClient && this.mqttClient.connected) {
+      try {
+        const topic = targetDeviceUuid === 'ALL'
+          ? this.mqttTopicAllCmd
+          : `stagetimer_live/_cmd/${targetDeviceUuid}`;
+        this.mqttClient.publish(topic, JSON.stringify(payload), { qos: 0, retain: false });
+      } catch (e) {}
+    }
   }
 
   sendRoomCommand(roomCode, command) {
@@ -365,6 +426,7 @@ class UniversalSyncClient {
         room: this.cleanRoom,
         roomTitle: this._state?.name || this.cleanRoom,
         path: pathFile,
+        firstSeen: this.firstSeen,
         ts: Date.now()
       };
       const jsonStr = JSON.stringify(devPayload);
@@ -372,7 +434,12 @@ class UniversalSyncClient {
       this.mqttClient.publish(this.mqttTopicGlobalPresence, jsonStr, { qos: 0, retain: false });
 
       // Record self in global devices
-      this.globalDevicesMap.set(this.deviceUuid, { ...devPayload, lastSeen: Date.now() });
+      const existing = this.globalDevicesMap.get(this.deviceUuid);
+      this.globalDevicesMap.set(this.deviceUuid, {
+        ...devPayload,
+        firstSeen: existing?.firstSeen || this.firstSeen,
+        lastSeen: Date.now()
+      });
       this._cleanupPeers();
     }
   }
@@ -736,7 +803,7 @@ class UniversalSyncClient {
 
     try {
       Object.keys(localStorage).forEach((k) => {
-        if (k.startsWith('stagetimer_live_') && k !== 'stagetimer_auth_unlocked' && k !== 'stagetimer_device_uuid') {
+        if (k.startsWith('stagetimer_live_') && k !== 'stagetimer_auth_unlocked' && k !== 'stagetimer_master_auth_v12' && k !== 'stagetimer_screen_uuid') {
           localStorage.removeItem(k);
         }
       });

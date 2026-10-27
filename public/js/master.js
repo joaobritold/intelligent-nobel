@@ -1,6 +1,7 @@
 /**
  * StageTimer Super Régie — Master Control Panel Logic (v12)
  * Dispositivos Remotos, Gestão Central de Palcos & Multiview
+ * Rock-solid in-place DOM rendering (zero reflow trembling, stable device ordering)
  */
 
 (function () {
@@ -95,22 +96,44 @@
       return;
     }
 
+    const emptyBox = $devicesList.querySelector('.empty-state-box');
+    if (emptyBox) emptyBox.remove();
+
     const eventsList = masterClient.getEventsList();
     const now = Date.now();
+    const activeUuids = new Set(devices.map(d => d.deviceUuid));
 
-    $devicesList.innerHTML = devices.map((dev) => {
+    // Remove any card whose device has disconnected
+    const currentCards = Array.from($devicesList.querySelectorAll('[data-device-uuid]'));
+    currentCards.forEach(card => {
+      const id = card.dataset.deviceUuid;
+      if (!activeUuids.has(id)) {
+        card.remove();
+      }
+    });
+
+    // In-place update or append without altering container innerHTML
+    devices.forEach((dev) => {
       const isSelf = dev.deviceUuid === masterClient.deviceUuid;
       const secondsAgo = Math.max(0, Math.round((now - (dev.lastSeen || dev.ts || now)) / 1000));
       const seenLabel = secondsAgo <= 2 ? 'Agora mesmo' : `há ${secondsAgo}s`;
 
-      const roomOptions = eventsList.map(e => `
-        <option value="${escapeHtml(e.code)}" ${e.code === dev.room ? 'selected' : ''}>
-          ${escapeHtml(e.title || e.code)} (${escapeHtml(e.code)})
-        </option>
-      `).join('');
+      let card = $devicesList.querySelector(`[data-device-uuid="${CSS.escape(dev.deviceUuid)}"]`);
 
-      return `
-        <div class="device-card ${isSelf ? 'self-device' : ''}" data-device-uuid="${escapeHtml(dev.deviceUuid)}" data-device-room="${escapeHtml(dev.room || 'PALCO1')}">
+      if (!card) {
+        // Create new device card
+        card = document.createElement('div');
+        card.className = `device-card ${isSelf ? 'self-device' : ''}`;
+        card.dataset.deviceUuid = dev.deviceUuid;
+        card.dataset.deviceRoom = dev.room || 'PALCO1';
+
+        const roomOptions = eventsList.map(e => `
+          <option value="${escapeHtml(e.code)}" ${e.code === dev.room ? 'selected' : ''}>
+            ${escapeHtml(e.title || e.code)} (${escapeHtml(e.code)})
+          </option>
+        `).join('');
+
+        card.innerHTML = `
           <div class="device-header">
             <div class="device-main-info">
               <div class="device-beacon"></div>
@@ -122,7 +145,7 @@
                 <div class="device-uuid-tag">${escapeHtml(dev.deviceUuid)}</div>
               </div>
             </div>
-            <div style="font-size: 0.72rem; color: var(--text-secondary); text-align: right;">
+            <div class="device-seen-text" style="font-size: 0.72rem; color: var(--text-secondary); text-align: right;">
               ${seenLabel}
             </div>
           </div>
@@ -150,7 +173,7 @@
                 🎛️ Régie
               </button>
               <button type="button" class="device-btn btn-warning-action" data-cmd="reload" title="Recarregar página no dispositivo">
-                🔄
+                🔄 Recarregar
               </button>
             </div>
 
@@ -161,9 +184,30 @@
               </select>
             </div>
           </div>
-        </div>
-      `;
-    }).join('');
+        `;
+
+        $devicesList.appendChild(card);
+      } else {
+        // In-place update of dynamic values only
+        card.dataset.deviceRoom = dev.room || 'PALCO1';
+
+        const seenEl = card.querySelector('.device-seen-text');
+        if (seenEl && seenEl.textContent.trim() !== seenLabel) seenEl.textContent = seenLabel;
+
+        const roomPill = card.querySelector('.device-room-pill');
+        const expectedRoomText = `Palco: ${dev.roomTitle || dev.room || 'PALCO1'}`;
+        if (roomPill && roomPill.textContent !== expectedRoomText) roomPill.textContent = expectedRoomText;
+
+        const viewPill = card.querySelector('.device-view-pill');
+        const expectedViewText = `Vista: ${dev.path || 'index.html'}`;
+        if (viewPill && viewPill.textContent !== expectedViewText) viewPill.textContent = expectedViewText;
+
+        const select = card.querySelector('.device-room-select');
+        if (select && document.activeElement !== select && select.value !== dev.room) {
+          select.value = dev.room;
+        }
+      }
+    });
   }
 
   masterClient.on('devices-update', (devices) => {
@@ -395,7 +439,21 @@
       return;
     }
 
-    $multiviewGrid.innerHTML = events.map(ev => {
+    const emptyBox = $multiviewGrid.querySelector('.empty-state-box');
+    if (emptyBox) emptyBox.remove();
+
+    const currentCodes = new Set(events.map(e => e.code));
+
+    // Remove any card whose event was deleted
+    const currentCards = Array.from($multiviewGrid.querySelectorAll('[data-mv-room]'));
+    currentCards.forEach(card => {
+      const code = card.dataset.mvRoom;
+      if (!currentCodes.has(code)) {
+        card.remove();
+      }
+    });
+
+    events.forEach(ev => {
       const stageState = stagesStateMap.get(ev.code) || {
         id: ev.code,
         name: ev.title || ev.code,
@@ -434,8 +492,14 @@
 
       const eventEndTime = StageTimerClient.computeEventEndTime(stageState);
 
-      return `
-        <div class="multiview-card status-${statusClass}" data-mv-room="${escapeHtml(ev.code)}">
+      let card = $multiviewGrid.querySelector(`[data-mv-room="${CSS.escape(ev.code)}"]`);
+
+      if (!card) {
+        // Create new card
+        card = document.createElement('div');
+        card.dataset.mvRoom = ev.code;
+        card.className = `multiview-card status-${statusClass}`;
+        card.innerHTML = `
           <div class="multiview-header">
             <div>
               <div class="multiview-stage-name">${escapeHtml(ev.title || stageState.name || ev.code)}</div>
@@ -465,14 +529,53 @@
               🎛️ Abrir Régie
             </a>
           </div>
-        </div>
-      `;
-    }).join('');
+        `;
+        $multiviewGrid.appendChild(card);
+      } else {
+        // In-place update: zero DOM destruction, zero reflow trembling
+        card.className = `multiview-card status-${statusClass}`;
+
+        const stageNameEl = card.querySelector('.multiview-stage-name');
+        const expectedStageName = ev.title || stageState.name || ev.code;
+        if (stageNameEl && stageNameEl.textContent !== expectedStageName) {
+          stageNameEl.textContent = expectedStageName;
+        }
+
+        const badgeEl = card.querySelector('.multiview-status-badge');
+        if (badgeEl) {
+          badgeEl.className = `multiview-status-badge ${statusClass}`;
+          if (badgeEl.textContent !== statusLabel) badgeEl.textContent = statusLabel;
+        }
+
+        const timeDisplayEl = card.querySelector('.multiview-timer-display');
+        if (timeDisplayEl) {
+          timeDisplayEl.className = `multiview-timer-display ${statusClass} ${isOvertime ? 'overtime' : ''}`;
+          if (timeDisplayEl.textContent.trim() !== displayTime) timeDisplayEl.textContent = displayTime;
+        }
+
+        const artistTitleEl = card.querySelector('.multiview-artist-title');
+        const expectedArtist = activeTimer ? (activeTimer.name || 'Artista') : 'Sem artistas programados';
+        if (artistTitleEl && artistTitleEl.textContent !== expectedArtist) {
+          artistTitleEl.textContent = expectedArtist;
+        }
+
+        const artistNotesEl = card.querySelector('.multiview-artist-notes');
+        const expectedNotes = activeTimer?.notes ? activeTimer.notes : (activeTimer?.startTime ? `Horário: ${activeTimer.startTime}` : '');
+        if (artistNotesEl && artistNotesEl.textContent !== expectedNotes) {
+          artistNotesEl.textContent = expectedNotes;
+        }
+
+        const endBadgeEl = card.querySelector('.multiview-end-badge');
+        if (endBadgeEl && endBadgeEl.textContent !== eventEndTime) {
+          endBadgeEl.textContent = eventEndTime;
+        }
+      }
+    });
 
     if ($kpiRunning) $kpiRunning.textContent = runningCount;
   }
 
-  // Live tick for multiview timers when stages are running
+  // Live smooth tick for multiview timers when stages are running (in-place updates)
   setInterval(() => {
     let hasAnyRunning = false;
     stagesStateMap.forEach(st => {

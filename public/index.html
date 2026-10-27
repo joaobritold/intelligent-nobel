@@ -346,9 +346,9 @@
         <div class="mode-icon">👑</div>
         <div class="mode-info">
           <div class="mode-name" style="color: #fdcb6e;">Painel Master (Super Régie)</div>
-          <div class="mode-desc">Exclusivo: ver dispositivos online, mudar ecrãs remotamente, apagar palcos e multiview.</div>
+          <div class="mode-desc">Exclusivo: ver dispositivos online, mudar ecrãs remotamente, apagar palcos e multiview. (Senha: 1379brito)</div>
         </div>
-        <span class="mode-badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border-color: #fdcb6e;">Super Admin</span>
+        <span class="mode-badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border-color: #fdcb6e;">Senha: 1379brito</span>
       </a>
     </div>
     <!-- Share / QR Code + Install App Box -->
@@ -436,7 +436,6 @@
               <span class="btn btn-sm ${isSelected ? 'btn-primary' : ''}" style="pointer-events: none; font-size: 0.75rem; padding: 4px 10px;">
                 ${isSelected ? '✓ Ativo' : 'Escolher'}
               </span>
-              <button type="button" class="btn btn-sm btn-danger" data-delete-code="${escapeHtml(ev.code)}" title="Apagar este palco da lista" style="padding: 4px 8px; font-size: 0.75rem;">🗑️</button>
             </div>
           </div>
         `;
@@ -460,19 +459,6 @@
 
     if ($eventsList) {
       $eventsList.addEventListener('click', (e) => {
-        const delBtn = e.target.closest('[data-delete-code]');
-        if (delBtn) {
-          e.stopPropagation();
-          const codeToDel = delBtn.dataset.deleteCode;
-          if (confirm(`Tem a certeza que pretende apagar o palco "${codeToDel}"?`)) {
-            const remaining = hubClient.deleteEventFromRegistry(codeToDel);
-            if (($room.value.trim() || '').toUpperCase() === codeToDel) {
-              $room.value = (remaining && remaining.length > 0) ? remaining[0].code : 'PALCO1';
-            }
-            updateLinks();
-          }
-          return;
-        }
         const row = e.target.closest('[data-select-code]');
         if (row) {
           $room.value = row.dataset.selectCode;
