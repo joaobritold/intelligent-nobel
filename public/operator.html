@@ -75,15 +75,18 @@
         <span id="op-msg-status" style="color: var(--accent); font-size: 0.7rem;"></span>
       </div>
       <div class="op-msg-row">
-        <input id="op-msg-input" class="input op-msg-input" placeholder="Ex: Terminar em 2 min...">
-        <button id="op-msg-send" class="btn btn-primary" style="padding: 0 16px;">Enviar</button>
-        <button id="op-msg-clear" class="btn btn-danger" style="padding: 0 12px;">✕</button>
+        <input id="op-msg-input" class="input op-msg-input" placeholder="Escreva a mensagem...">
+        <button id="op-msg-clear" class="btn btn-danger" style="padding: 0 14px;">✕</button>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+        <button id="op-msg-info" class="btn btn-primary" style="padding: 10px; font-weight: 600; border-radius: 10px;">💬 Informativo</button>
+        <button id="op-msg-urgent" class="btn" style="padding: 10px; font-weight: 600; border-radius: 10px; background: #d63031; border-color: #d63031; color: #fff;">🔴 Urgente</button>
       </div>
       <div class="op-presets">
-        <button class="op-preset-chip" data-msg="Por favor, conclua!">⏳ Concluir!</button>
-        <button class="op-preset-chip" data-msg="Últimos 2 minutos">⚠️ 2 Minutos</button>
-        <button class="op-preset-chip" data-msg="Tempo Esgotado!">🛑 Tempo Esgotado</button>
-        <button class="op-preset-chip" data-msg="Fale mais perto do microfone">🎤 Microfone</button>
+        <button class="op-preset-chip" data-level="urgent" data-msg="Por favor, conclua!">⏳ Concluir!</button>
+        <button class="op-preset-chip" data-level="info" data-msg="Últimos 2 minutos">⚠️ 2 Minutos</button>
+        <button class="op-preset-chip" data-level="urgent" data-msg="Tempo Esgotado!">🛑 Tempo Esgotado</button>
+        <button class="op-preset-chip" data-level="info" data-msg="Fale mais perto do microfone">🎤 Microfone</button>
       </div>
     </section>
 

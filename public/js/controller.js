@@ -25,7 +25,8 @@ const $previewDisplay = document.getElementById('preview-display');
 const $previewName = document.getElementById('preview-name');
 const $previewMessage = document.getElementById('preview-message');
 const $messageInput = document.getElementById('message-input');
-const $sendMsgBtn = document.getElementById('send-msg-btn');
+const $sendInfoBtn = document.getElementById('send-info-btn');
+const $sendUrgentBtn = document.getElementById('send-urgent-btn');
 const $clearMsgBtn = document.getElementById('clear-msg-btn');
 const $viewerLink = document.getElementById('viewer-link');
 const $controllerLink = document.getElementById('controller-link');
@@ -440,11 +441,10 @@ function renderMessageState() {
 
   if (state.message.visible && state.message.text) {
     $previewMessage.textContent = state.message.text;
+    $previewMessage.style.background = state.message.level === 'urgent' ? 'rgba(145, 20, 28, 0.95)' : 'rgba(15, 23, 42, 0.9)';
     $previewMessage.classList.add('visible');
-    $sendMsgBtn.textContent = '📝 Update';
   } else {
     $previewMessage.classList.remove('visible');
-    $sendMsgBtn.textContent = '📤 Send';
   }
 }
 
@@ -531,23 +531,30 @@ $globalStart.addEventListener('click', () => client.globalAction('start'));
 $globalPause.addEventListener('click', () => client.globalAction('pause'));
 $globalReset.addEventListener('click', () => client.globalAction('reset'));
 
-// Message controls
-$sendMsgBtn.addEventListener('click', () => {
-  const text = $messageInput.value.trim();
-  if (text) {
-    client.sendMessage(text, true);
-  }
-});
+// Message controls (Info vs Urgent)
+if ($sendInfoBtn) {
+  $sendInfoBtn.addEventListener('click', () => {
+    const text = $messageInput.value.trim();
+    if (text) client.sendMessage(text, true, 'info');
+  });
+}
+
+if ($sendUrgentBtn) {
+  $sendUrgentBtn.addEventListener('click', () => {
+    const text = $messageInput.value.trim();
+    if (text) client.sendMessage(text, true, 'urgent');
+  });
+}
 
 $clearMsgBtn.addEventListener('click', () => {
   $messageInput.value = '';
   client.clearMessage();
 });
 
-// Send message on Ctrl+Enter
+// Send message on Ctrl+Enter (defaults to Info)
 $messageInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-    $sendMsgBtn.click();
+    if ($sendInfoBtn) $sendInfoBtn.click();
   }
 });
 

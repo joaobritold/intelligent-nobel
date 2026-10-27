@@ -134,14 +134,15 @@ function render() {
 
   const activeTimer = state.timers.find(t => t.id === state.activeTimerId);
 
-  // Message (High-impact stage prompter while keeping clock visible)
+  // Message (Full-screen Info or Urgent while keeping clock visible at top)
   const $viewerRoot = document.querySelector('.viewer');
   if (state.message.visible && state.message.text) {
-    $message.textContent = `⚠️ ${state.message.text}`;
-    $message.classList.add('visible');
+    const level = state.message.level === 'urgent' ? 'urgent' : 'info';
+    $message.textContent = state.message.text;
+    $message.className = `viewer-message level-${level} visible`;
     if ($viewerRoot) $viewerRoot.classList.add('has-message');
   } else {
-    $message.classList.remove('visible');
+    $message.className = 'viewer-message';
     if ($viewerRoot) $viewerRoot.classList.remove('has-message');
   }
 

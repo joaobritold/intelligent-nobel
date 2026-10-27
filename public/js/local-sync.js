@@ -411,13 +411,13 @@ class UniversalSyncClient {
     }
   }
 
-  sendMessage(text, visible = true) {
-    this._state.message = { text, visible };
+  sendMessage(text, visible = true, level = 'info') {
+    this._state.message = { text, visible, level };
     this._commitStateChange();
   }
 
   clearMessage() {
-    this._state.message = { text: '', visible: false };
+    this._state.message = { text: '', visible: false, level: 'info' };
     this._commitStateChange();
   }
 

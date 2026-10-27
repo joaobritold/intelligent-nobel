@@ -82,16 +82,17 @@
 
         <!-- Stage Message -->
         <div class="message-section">
-          <div class="message-title">Stage Message (Prompter)</div>
+          <div class="message-title">Mensagem de Palco</div>
           <div class="message-input-wrapper">
             <textarea
               id="message-input"
               class="input message-textarea"
-              placeholder="Type a quick message for the stage (e.g. 'Wrap up!', '2 mins left')..."
+              placeholder="Escreva uma mensagem para o palco..."
             ></textarea>
-            <div class="message-actions">
-              <button id="send-msg-btn" class="btn btn-primary">📤 Send</button>
-              <button id="clear-msg-btn" class="btn">Clear</button>
+            <div class="message-actions" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px;">
+              <button id="send-info-btn" class="btn btn-primary" title="Mensagem Informativa (Leve)">💬 Informativo</button>
+              <button id="send-urgent-btn" class="btn" style="background: #d63031; border-color: #d63031; color: #fff;" title="Mensagem Urgente (Destaque)">🔴 Urgente</button>
+              <button id="clear-msg-btn" class="btn" title="Limpar mensagem">✕</button>
             </div>
           </div>
         </div>

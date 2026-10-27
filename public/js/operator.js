@@ -36,7 +36,8 @@ const $btnPlus1m = document.getElementById('op-btn-plus1m');
 const $btnPlus5m = document.getElementById('op-btn-plus5m');
 
 const $msgInput = document.getElementById('op-msg-input');
-const $msgSend = document.getElementById('op-msg-send');
+const $msgInfo = document.getElementById('op-msg-info');
+const $msgUrgent = document.getElementById('op-msg-urgent');
 const $msgClear = document.getElementById('op-msg-clear');
 const $msgStatus = document.getElementById('op-msg-status');
 const $queueList = document.getElementById('op-queue-list');
@@ -210,7 +211,8 @@ function render() {
 
   // Message status
   if (state.message?.visible && state.message?.text) {
-    $msgStatus.textContent = `● Visível: "${state.message.text}"`;
+    const label = state.message.level === 'urgent' ? '🔴 URGENTE' : '💬 INFO';
+    $msgStatus.textContent = `${label}: "${state.message.text}"`;
   } else {
     $msgStatus.textContent = '';
   }
@@ -288,13 +290,25 @@ $bgColor.addEventListener('input', (e) => {
   client.updateTheme({ viewerBg: e.target.value });
 });
 
-$msgSend.addEventListener('click', () => {
-  const txt = $msgInput.value.trim();
-  if (txt) {
-    client.sendMessage(txt, true);
-    $msgInput.blur();
-  }
-});
+if ($msgInfo) {
+  $msgInfo.addEventListener('click', () => {
+    const txt = $msgInput.value.trim();
+    if (txt) {
+      client.sendMessage(txt, true, 'info');
+      $msgInput.blur();
+    }
+  });
+}
+
+if ($msgUrgent) {
+  $msgUrgent.addEventListener('click', () => {
+    const txt = $msgInput.value.trim();
+    if (txt) {
+      client.sendMessage(txt, true, 'urgent');
+      $msgInput.blur();
+    }
+  });
+}
 
 $msgClear.addEventListener('click', () => {
   $msgInput.value = '';
@@ -304,8 +318,9 @@ $msgClear.addEventListener('click', () => {
 document.querySelectorAll('.op-preset-chip').forEach(btn => {
   btn.addEventListener('click', () => {
     const msg = btn.dataset.msg;
+    const level = btn.dataset.level || 'info';
     $msgInput.value = msg;
-    client.sendMessage(msg, true);
+    client.sendMessage(msg, true, level);
   });
 });
 
