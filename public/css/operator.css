@@ -1,13 +1,9 @@
 /* ─── Operator Mobile Layout (iOS Safari Optimized) ─────────────── */
 
 body {
-  width: 100%;
-  min-height: 100dvh;
   background: var(--bg-primary);
   color: var(--text-primary);
-  overflow-x: clip;
   -webkit-tap-highlight-color: transparent;
-  box-sizing: border-box;
 }
 
 .op-app {
