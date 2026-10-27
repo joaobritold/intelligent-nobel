@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>StageTimer — Escolha o Modo</title>
+  <meta name="description" content="StageTimer PFP - Sistema de timer, relógio de palco, lineup e controlo de eventos em tempo real.">
+  <meta name="keywords" content="stagetimer pfp, stage timer pfp, timer palco brito, stagetimer-pfp">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://stagetimer-pfp.netlify.app/">
+  <title>StageTimer PFP — Timer de Palco & Lineup</title>
   <link rel="stylesheet" href="css/common.css">
   <style>
     body {
@@ -229,9 +233,28 @@
         <span class="mode-badge">Backstage / Camarim</span>
       </a>
     </div>
+    <!-- Share / QR Code Box -->
+    <div style="text-align: center; margin-top: 4px;">
+      <button id="toggle-qr-btn" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-secondary);">
+        📱 Mostrar QR Code para abrir noutro dispositivo
+      </button>
+      <div id="qr-container" style="display: none; margin-top: 12px; padding: 16px; background: #fff; border-radius: 12px; width: fit-content; margin-left: auto; margin-right: auto; text-align: center;">
+        <img id="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://stagetimer-pfp.netlify.app/" alt="QR Code" style="width: 180px; height: 180px; display: block;">
+        <div style="color: #111; font-size: 0.75rem; font-weight: 700; margin-top: 6px;">Aponte a câmara do telemóvel</div>
+      </div>
+    </div>
   </div>
 
   <script>
+    const $toggleQr = document.getElementById('toggle-qr-btn');
+    const $qrContainer = document.getElementById('qr-container');
+    const $qrImg = document.getElementById('qr-img');
+    if ($toggleQr && $qrContainer) {
+      $toggleQr.addEventListener('click', () => {
+        const isHidden = $qrContainer.style.display === 'none';
+        $qrContainer.style.display = isHidden ? 'block' : 'none';
+      });
+    }
     const $room = document.getElementById('hub-room');
     const $controller = document.getElementById('card-controller');
     const $operator = document.getElementById('card-operator');
@@ -250,6 +273,10 @@
       $operator.href = `operator.html${q}`;
       $viewer.href = `viewer.html${q}`;
       if ($lineup) $lineup.href = `lineup.html${q}`;
+      if ($qrImg) {
+        const fullUrl = `${location.origin}/?room=${encodeURIComponent(code)}`;
+        $qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(fullUrl)}`;
+      }
     }
 
     $room.addEventListener('input', updateLinks);

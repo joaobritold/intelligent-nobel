@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://stagetimer-pfp.netlify.app/sitemap.xml
