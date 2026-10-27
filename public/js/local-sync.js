@@ -275,6 +275,14 @@ class UniversalSyncClient {
     this._commitStateChange(true);
   }
 
+  clearAllTimers() {
+    this._state.name = 'Novo Evento';
+    this._state.timers = [];
+    this._state.activeTimerId = null;
+    this._state.message = { text: '', visible: false, level: 'info' };
+    this._commitStateChange(true);
+  }
+
   _saveLocal() {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this._state));
@@ -639,6 +647,11 @@ class UniversalSyncClient {
   globalAction(action) {
     for (const t of this._state.timers) {
       this.timerAction(t.id, action);
+    }
+    if (action === 'reset' && this._state.timers.length > 0) {
+      this._state.activeTimerId = this._state.timers[0].id;
+      this._state.message = { text: '', visible: false, level: 'info' };
+      this._commitStateChange(true);
     }
   }
 

@@ -459,6 +459,15 @@ document.querySelectorAll('.op-preset-day').forEach(btn => {
   });
 });
 
+const $opClearEvent = document.getElementById('op-clear-event');
+if ($opClearEvent) {
+  $opClearEvent.addEventListener('click', () => {
+    if (confirm('🧹 Começar um Novo Evento do zero?\n\nIsto vai apagar todos os artistas atuais para poderes preparar um novo evento.')) {
+      client.clearAllTimers();
+    }
+  });
+}
+
 const $opImportFile = document.getElementById('op-import-file');
 if ($opImportFile) {
   $opImportFile.addEventListener('change', async (e) => {

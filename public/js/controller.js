@@ -669,6 +669,16 @@ document.querySelectorAll('.preset-day-btn').forEach(btn => {
   });
 });
 
+const $clearEventBtn = document.getElementById('clear-event-btn');
+if ($clearEventBtn) {
+  $clearEventBtn.addEventListener('click', () => {
+    if (confirm('🧹 Começar um Novo Evento do zero?\n\nIsto vai limpar todos os artistas atuais e mensagens de palco para poderes criar ou importar um novo evento.')) {
+      client.clearAllTimers();
+      showToast('✓ Lista limpa! Pronto para novo evento.');
+    }
+  });
+}
+
 // Global controls
 $globalStart.addEventListener('click', () => client.globalAction('start'));
 $globalPause.addEventListener('click', () => client.globalAction('pause'));
