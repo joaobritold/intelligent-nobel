@@ -58,6 +58,7 @@ class UniversalSyncClient {
     this.mqttClient = null;
     this.peersMap = new Map();
     this.globalDevicesMap = new Map();
+    this.purgedDevicesSet = new Set();
     this.connectedPeersCount = 1;
     this._needsInitialPublish = false;
     this.timeOffset = window._stagetimer_time_offset || 0;
@@ -331,6 +332,35 @@ class UniversalSyncClient {
       return;
     }
 
+    if (msg.action === 'delete_device') {
+      try {
+        // Clear all auth tokens to force immediate LOGOUT if in controller, operator, or master
+        try {
+          localStorage.removeItem('stagetimer_auth_unlocked');
+          sessionStorage.removeItem('stagetimer_auth_unlocked');
+          localStorage.removeItem('stagetimer_master_auth_v12');
+          sessionStorage.removeItem('stagetimer_master_auth_v12');
+        } catch (e) {}
+
+        // Broadcast removal notice to peers
+        if (this.mqttClient && this.mqttClient.connected) {
+          try {
+            this.mqttClient.publish(
+              'stagetimer_live/_device_removed',
+              JSON.stringify({ deviceUuid: this.deviceUuid, removed: true, ts: Date.now() }),
+              { qos: 0, retain: false }
+            );
+          } catch (e) {}
+        }
+
+        // Navigate immediately to initial menu (desautenticado)
+        window.location.replace(`index.html?disconnected=1&_ts=${Date.now()}`);
+      } catch (e) {
+        window.location.replace('index.html');
+      }
+      return;
+    }
+
     if (msg.action === 'navigate' && msg.url) {
       try {
         let targetUrl = msg.url;
@@ -468,7 +498,8 @@ class UniversalSyncClient {
         this.mqttTopicDeviceCmd,
         this.mqttTopicRoomCmd,
         'stagetimer_live/_cmd/+',
-        'stagetimer_live/_cmd_room/+'
+        'stagetimer_live/_cmd_room/+',
+        'stagetimer_live/_device_removed'
       ];
 
       // If in Master mode, also subscribe to all room state broadcasts
@@ -531,8 +562,17 @@ class UniversalSyncClient {
             this.peersMap.set(msg.clientId, Date.now());
             this._cleanupPeers();
           }
+        } else if (topic === 'stagetimer_live/_device_removed') {
+          if (msg && msg.deviceUuid) {
+            this.purgedDevicesSet.add(msg.deviceUuid);
+            this.globalDevicesMap.delete(msg.deviceUuid);
+            this._emit('devices-update', this.getOnlineDevices());
+          }
         } else if (topic === this.mqttTopicGlobalPresence) {
           if (msg.deviceUuid && msg.ts) {
+            if (this.purgedDevicesSet.has(msg.deviceUuid)) {
+              return;
+            }
             const existing = this.globalDevicesMap.get(msg.deviceUuid);
             this.globalDevicesMap.set(msg.deviceUuid, {
               ...msg,
@@ -577,6 +617,36 @@ class UniversalSyncClient {
       if (diff !== 0) return diff;
       return String(a.deviceUuid).localeCompare(String(b.deviceUuid));
     });
+  }
+
+  deleteDevice(deviceUuid) {
+    if (!deviceUuid) return;
+    this.purgedDevicesSet.add(deviceUuid);
+    this.globalDevicesMap.delete(deviceUuid);
+
+    // Send remote command to tell device to log out and go to index
+    this.sendDeviceCommand(deviceUuid, { action: 'delete_device', logout: true });
+
+    if (this.mqttClient && this.mqttClient.connected) {
+      try {
+        this.mqttClient.publish(
+          'stagetimer_live/_device_removed',
+          JSON.stringify({ deviceUuid, removed: true, ts: Date.now() }),
+          { qos: 0, retain: false }
+        );
+      } catch (e) {}
+    }
+
+    this._emit('devices-update', this.getOnlineDevices());
+  }
+
+  clearInactiveDevices(maxIdleMs = 10000) {
+    const now = Date.now();
+    for (const [uuid, dev] of this.globalDevicesMap.entries()) {
+      if (uuid !== this.deviceUuid && (now - (dev.lastSeen || 0) > maxIdleMs)) {
+        this.deleteDevice(uuid);
+      }
+    }
   }
 
   sendDeviceCommand(targetDeviceUuid, command) {

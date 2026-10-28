@@ -7,8 +7,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f0f1a">
-  <link rel="stylesheet" href="css/master.css?v=22">
-  <script src="js/auth.js?v=22"></script>
+  <link rel="stylesheet" href="css/master.css?v=23">
+  <script src="js/auth.js?v=23"></script>
 </head>
 <body>
   <div class="master-container">
@@ -115,8 +115,11 @@
           <button id="cmd-all-lineup" type="button" class="btn btn-sm btn-broadcast-action" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe;">
             📋 Todos Lista
           </button>
-          <button id="cmd-all-reload" type="button" class="btn btn-sm btn-danger btn-broadcast-action">
+          <button id="cmd-all-reload" type="button" class="btn btn-sm btn-broadcast-action" style="background: rgba(243, 156, 18, 0.15); border-color: #f39c12; color: #fed330;">
             🔄 Recarregar Todos
+          </button>
+          <button id="cmd-clear-offline" type="button" class="btn btn-sm btn-danger btn-broadcast-action" title="Eliminar dispositivos sem sinal">
+            🗑️ Limpar Inativos
           </button>
         </div>
       </div>
@@ -186,8 +189,8 @@
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=22"></script>
-  <script src="js/local-sync.js?v=22"></script>
-  <script src="js/master.js?v=22"></script>
+  <script src="js/pwa.js?v=23"></script>
+  <script src="js/local-sync.js?v=23"></script>
+  <script src="js/master.js?v=23"></script>
 </body>
 </html>

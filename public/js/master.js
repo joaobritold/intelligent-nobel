@@ -27,6 +27,7 @@
   const $cmdAllViewer = document.getElementById('cmd-all-viewer');
   const $cmdAllLineup = document.getElementById('cmd-all-lineup');
   const $cmdAllReload = document.getElementById('cmd-all-reload');
+  const $cmdClearOffline = document.getElementById('cmd-clear-offline');
 
   // Multi-room state store
   const stagesStateMap = new Map();
@@ -275,6 +276,12 @@
                 ${roomOptions}
               </select>
             </div>
+
+            <div class="device-danger-zone">
+              <button type="button" class="device-btn btn-delete-device" data-cmd="delete_device" data-target-uuid="${escapeHtml(dev.deviceUuid)}" title="Eliminar este dispositivo e fechar a sua sessão (logout se for controlador/operador)">
+                🗑️ Eliminar Dispositivo
+              </button>
+            </div>
           </div>
         `;
 
@@ -359,6 +366,21 @@
           btn.style.borderColor = '';
         }, 1200);
         masterClient.sendDeviceCommand(uuid, { action: 'reload' });
+        return;
+      }
+
+      if (cmd === 'delete_device') {
+        const isCurrentSelf = uuid === masterClient.deviceUuid;
+        const confirmMsg = isCurrentSelf
+          ? 'Tem a certeza que deseja eliminar o seu próprio ecrã? A sua sessão do Painel Master será terminada e voltará ao menu inicial.'
+          : 'Eliminar este dispositivo da rede?\nSe estiver no Modo Controlador ou Operador, a sua sessão será terminada imediatamente (logout forçado).';
+
+        if (confirm(confirmMsg)) {
+          if (navigator.vibrate) { try { navigator.vibrate(50); } catch (e) {} }
+          masterClient.deleteDevice(uuid);
+          card?.remove();
+          renderDevicesList();
+        }
         return;
       }
 
@@ -455,6 +477,18 @@
         masterClient.sendDeviceCommand('ALL', { action: 'reload' });
         $cmdAllReload.textContent = '⚡ Recarregar Enviado!';
         setTimeout(() => { $cmdAllReload.textContent = '🔄 Recarregar Todos'; }, 1500);
+      }
+    });
+  }
+
+  if ($cmdClearOffline) {
+    $cmdClearOffline.addEventListener('click', () => {
+      if (confirm('Eliminar todos os dispositivos inativos (sem sinal há mais de 10 segundos)?')) {
+        if (navigator.vibrate) { try { navigator.vibrate(50); } catch (e) {} }
+        masterClient.clearInactiveDevices(10000);
+        renderDevicesList();
+        $cmdClearOffline.textContent = '⚡ Inativos Limpos!';
+        setTimeout(() => { $cmdClearOffline.textContent = '🗑️ Limpar Inativos'; }, 1500);
       }
     });
   }

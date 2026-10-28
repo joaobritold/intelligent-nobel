@@ -557,6 +557,32 @@
   outline: none;
 }
 
+/* ─── Device Danger Zone (Delete Device) ─────────────────────────── */
+.device-danger-zone {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.device-btn.btn-delete-device {
+  width: 100%;
+  justify-content: center;
+  background: rgba(235, 77, 75, 0.12);
+  border-color: rgba(235, 77, 75, 0.35);
+  color: #ff7675;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all var(--transition);
+}
+
+.device-btn.btn-delete-device:hover {
+  background: #d63031;
+  border-color: #ff4757;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(255, 71, 87, 0.4);
+}
+
 /* ─── Events Central Manager ──────────────────────────────────────── */
 
 .master-events-grid {
