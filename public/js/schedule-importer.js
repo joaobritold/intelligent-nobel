@@ -1,37 +1,21 @@
 /**
- * StageTimer Smart Schedule Importer (v2)
+ * StageTimer Smart Schedule Importer (v3)
  * Advanced timetable & schedule parser for PDF, Excel (.xlsx, .xls, .csv), and pasted text.
  *
- * Capabilities:
- * - Multi-day detection:
- *   - Explicit "Dia X", "Day X", "Xº Dia", "1ª Noite"
- *   - Days of the week in Portuguese & English (Segunda, Terça, ..., Sunday)
- *   - Standalone dates (24/10, 24 de Outubro, 24-10-2026)
- *   - Multi-page PDFs (each page can be a day, skipping non-timetable pages)
- *   - Multi-sheet Excel workbooks (sheet names as days, or rows grouped by "Dia" column)
- * - Flexible time format support:
- *   - Colons: 23:00, 00:15
- *   - Dots: 23.00, 00.15 (very common in European / Portuguese festival sheets)
- *   - H-notation: 23h00, 23h, 4h30, 0h
- *   - Excel time fractions: 0.95833
- * - Flexible range separators:
- *   - Hyphens / dashes: "-", "–" (en-dash), "—" (em-dash), "~"
- *   - Portuguese words: "às", "as", "até", "ate", "a"
- *   - English words: "to", "till", "until"
- *   - Arrows: "->", "-->", ">"
- *   - Slashes: "/", "\"
- *   - Tab or multi-space separation between columns in tables
- * - Single start-time timetables:
- *   - When lines only specify start times (e.g. "23:00 DJ Residente"), calculates sequential durations automatically
- * - Smart artist name extraction:
- *   - Cleans matched times and delimiters regardless of whether time is before or after the artist name
- *   - Preserves internal artist hyphens (e.g. "Pedro Abrunhosa - Trio")
- *   - Ignores Curfew / Load-in times and column headers
- * - Options:
- *   - includeSoundchecks: boolean (default false -> imports only the main On Stage performance; true -> creates Soundcheck/Changeover timers)
- * - PDF Dynamic Row Clustering:
- *   - Groups text items by baseline proximity (Math.abs(y - row.y) <= 5.5) instead of fixed division buckets
- *   - Reconstructs columns using tab separation
+ * Core Principles:
+ * 1. PRIORITIZES ON STAGE (ATUAÇÃO):
+ *    - The main artist entry ALWAYS receives the real On Stage performance time!
+ *    - Never confused with Load In (arrival of gear) or Soundcheck (afternoon rehearsal).
+ * 2. SOUNDCHECKS INCLUDED:
+ *    - Automatically identifies afternoon soundchecks (11:00 to 21:30) and creates separate timers:
+ *      e.g. "Minhotos Marotos (Soundcheck) 18:00 – 19:30".
+ * 3. CHANGEOVERS INCLUDED:
+ *    - Automatically identifies changeovers/line checks preceding an act and creates timers:
+ *      e.g. "Minhotos Marotos (Changeover) 01:30 – 01:45".
+ * 4. FESTIVAL CHRONOLOGICAL ORDER:
+ *    - Soundchecks in the afternoon -> Evening acts -> Night acts with changeovers in seamless sequence!
+ * 5. MULTI-DAY DETECTION:
+ *    - Detects all days (Dia 1, Dia 2..., days of week, dates, multi-page PDFs and multi-sheet Excel).
  */
 
 class ScheduleImporter {
@@ -100,7 +84,7 @@ class ScheduleImporter {
       id: 'imp_' + Math.random().toString(36).substring(2, 9),
       name: cleanName,
       startTime: `${cleanStart} – ${cleanEnd}`,
-      notes: '', // Clean empty notes as requested!
+      notes: '', // Clean empty notes
       mode: 'countdown',
       duration,
       elapsed: 0,
@@ -119,11 +103,12 @@ class ScheduleImporter {
   }
 
   /**
-   * Regex matching time ranges with any separator:
-   * "-", "–", "—", "~", "às", "as", "até", "ate", "a", "to", "till", "until", "->", ">", "/", "|", tabs, spaces
+   * Regex matching time ranges strictly with explicit range connectors:
+   * "-", "–", "—", "~", "às", "as", "até", "ate", "a", "to", "till", "until", "->", ">", "/"
+   * IMPORTANT: Does NOT allow tabs or spaces across columns to prevent mashing different columns together!
    */
   static _getTimeRangeRegex() {
-    return /(\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b)\s*(?:[-–—~]|às|as|até|ate|\ba\b|\bto\b|\btill\b|\buntil\b|-->?|>|=>|\/|\\|\||\t|\s{2,})\s*(\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b)/gi;
+    return /(\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b)\s*(?:[-–—~]|às|as|até|ate|\ba\b|\bto\b|\btill\b|\buntil\b|-->?|>|=>|\/|\\)\s*(\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b)/gi;
   }
 
   /**
@@ -146,7 +131,7 @@ class ScheduleImporter {
   }
 
   /**
-   * Extract a clean artist name from a line by removing matched time ranges and table punctuation
+   * Extract clean artist name by removing matched times, curfew, load-ins and punctuation
    */
   static _cleanArtistName(rawLine, timeMatches = []) {
     let clean = rawLine;
@@ -162,7 +147,7 @@ class ScheduleImporter {
       }
     }
 
-    // Remove any remaining standalone time tokens (e.g. curfew or load-in times)
+    // Remove any remaining standalone time tokens (e.g. single load-in or curfew times)
     clean = clean.replace(/\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b/gi, ' ');
 
     // Remove common column header words if left behind
@@ -177,13 +162,120 @@ class ScheduleImporter {
   }
 
   /**
-   * Fallback parser for timetables that only list single start times per row:
-   * e.g.:
-   * 23:00 DJ Residente
-   * 00:15 Batalha de Berço
-   * 01:30 Tay
-   * 03:00 DJ Beça
-   * 04:30 Fim / Curfew
+   * Classify time ranges for an artist into Soundcheck, Changeover, and On Stage.
+   * ALWAYS prioritizes the On Stage performance as the artist's main entry!
+   */
+  static _classifyArtistRanges(line, matches, artistName) {
+    if (!matches || matches.length === 0) return { soundchecks: [], changeovers: [], onStage: null };
+
+    const parsedRanges = matches.map(m => {
+      const startStr = m[1];
+      const endStr = m[2];
+      const startMins = this.parseTimeStrToMinutes(startStr);
+      const endMins = this.parseTimeStrToMinutes(endStr);
+      const durationMs = this.calcDurationMs(startStr, endStr);
+
+      const matchIndex = m.index || 0;
+      const precedingText = line.substring(Math.max(0, matchIndex - 35), matchIndex).toLowerCase();
+      const isExplicitSoundcheck = /soundcheck|passagem|ensaio|set\s*up/i.test(precedingText);
+      const isExplicitChangeover = /changeover|line\s*check|mudan[çc]a/i.test(precedingText);
+      const isExplicitOnStage = /on\s*stage|atua[çc][ãa]o|palco|show|live/i.test(precedingText);
+
+      return {
+        raw: m[0],
+        startStr,
+        endStr,
+        startMins,
+        endMins,
+        durationMs,
+        isExplicitSoundcheck,
+        isExplicitChangeover,
+        isExplicitOnStage
+      };
+    });
+
+    let soundcheckRange = null;
+    let changeoverRange = null;
+    let onStageRange = null;
+
+    if (parsedRanges.length === 1) {
+      // 1 single range -> This is ALWAYS On Stage!
+      onStageRange = parsedRanges[0];
+    } else if (parsedRanges.length === 2) {
+      // 2 ranges:
+      // Check explicit labels
+      if (parsedRanges[0].isExplicitSoundcheck) soundcheckRange = parsedRanges[0];
+      if (parsedRanges[0].isExplicitChangeover) changeoverRange = parsedRanges[0];
+      if (parsedRanges[1].isExplicitOnStage) onStageRange = parsedRanges[1];
+
+      if (!onStageRange) {
+        // Last range is ALWAYS the main performance On Stage!
+        onStageRange = parsedRanges[1];
+      }
+
+      if (!soundcheckRange && !changeoverRange) {
+        const first = parsedRanges[0];
+        // If first range is in the afternoon / early evening (11:00 to 21:30), it's Soundcheck!
+        if (first.startMins !== null && first.startMins >= 11 * 60 && first.startMins < 21.5 * 60) {
+          soundcheckRange = first;
+        } else {
+          // If at night and connects to the act or has short duration (<= 45m), it's Changeover!
+          changeoverRange = first;
+        }
+      }
+    } else if (parsedRanges.length >= 3) {
+      // 3 or more ranges (e.g. Minhotos Marotos in reference PDF):
+      // Range 0: Soundcheck (afternoon rehearsal)
+      // Range 1: Changeover / Line check
+      // Range Last: On Stage (Main performance!)
+      soundcheckRange = parsedRanges[0];
+      changeoverRange = parsedRanges[1];
+      onStageRange = parsedRanges[parsedRanges.length - 1];
+    }
+
+    const soundchecks = soundcheckRange
+      ? [this.makeTimerObj(`${artistName} (Soundcheck)`, soundcheckRange.startStr, soundcheckRange.endStr, soundcheckRange.durationMs)]
+      : [];
+    const changeovers = changeoverRange
+      ? [this.makeTimerObj(`${artistName} (Changeover)`, changeoverRange.startStr, changeoverRange.endStr, changeoverRange.durationMs)]
+      : [];
+    const onStage = onStageRange
+      ? this.makeTimerObj(artistName, onStageRange.startStr, onStageRange.endStr, onStageRange.durationMs)
+      : null;
+
+    return { soundchecks, changeovers, onStage };
+  }
+
+  /**
+   * Sort timers in chronological festival sequence:
+   * Afternoon soundchecks (11:00 - 21:00) -> Evening (21:00 - 23:59) -> Night/Morning acts (00:00 - 09:59)
+   */
+  static _getFestivalMinutes(timeRangeStr) {
+    if (!timeRangeStr) return 9999;
+    const firstTime = timeRangeStr.split(/[-–—~]/)[0].trim();
+    const mins = this.parseTimeStrToMinutes(firstTime);
+    if (mins === null) return 9999;
+    // Festival day starts at 10:00 AM. Hours 00:00 to 09:59 belong to the night of the same festival day (+1440 mins)
+    return mins < 10 * 60 ? mins + 1440 : mins;
+  }
+
+  static _sortTimersChronologically(timers) {
+    return [...timers].sort((a, b) => {
+      const aMin = this._getFestivalMinutes(a.startTime);
+      const bMin = this._getFestivalMinutes(b.startTime);
+      if (aMin !== bMin) return aMin - bMin;
+      // If same start time, put Soundcheck first, then Changeover, then On Stage
+      const getPriority = (name) => {
+        if (name.includes('(Soundcheck)')) return 1;
+        if (name.includes('(Changeover)')) return 2;
+        return 3;
+      };
+      return getPriority(a.name) - getPriority(b.name);
+    });
+  }
+
+  /**
+   * Fallback parser for timetables that only list single start times per row
    */
   static _parseSingleStartTimeLines(lines) {
     const timeTokenRegex = /\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b/i;
@@ -238,7 +330,7 @@ class ScheduleImporter {
         endStr = curfewStr;
         durationMs = this.calcDurationMs(cur.startStr, curfewStr);
       } else {
-        // Last artist of the night: default to 60 or 90 minutes
+        // Last artist: default 60 minutes
         const endMins = (cur.startMinutes + 60) % 1440;
         const h = String(Math.floor(endMins / 60)).padStart(2, '0');
         const m = String(endMins % 60).padStart(2, '0');
@@ -255,10 +347,12 @@ class ScheduleImporter {
   /**
    * Parse a block of text into timer objects.
    * Options:
-   * - includeSoundchecks: boolean (default false -> extracts only On Stage performance)
+   * - includeSoundchecks: boolean (default true)
+   * - includeChangeovers: boolean (default true)
    */
   static parseTextToTimers(rawText, options = {}) {
-    const includeSoundchecks = !!options.includeSoundchecks;
+    const includeSoundchecks = options.includeSoundchecks !== false; // Default: TRUE
+    const includeChangeovers = options.includeChangeovers !== false; // Default: TRUE
     if (!rawText) return [];
 
     const lines = rawText
@@ -266,8 +360,7 @@ class ScheduleImporter {
       .map(l => l.replace(/\u00A0/g, ' ').trim())
       .filter(Boolean);
 
-    const soundchecks = [];
-    const mainActs = [];
+    const allTimers = [];
     const rangeRegex = this._getTimeRangeRegex();
 
     for (const line of lines) {
@@ -278,37 +371,27 @@ class ScheduleImporter {
         const artistName = this._cleanArtistName(line, matches);
         if (!artistName || artistName.length < 2) continue;
 
-        if (includeSoundchecks) {
-          if (matches.length === 1) {
-            mainActs.push(this.makeTimerObj(artistName, matches[0][1], matches[0][2]));
-          } else if (matches.length === 2) {
-            const firstStart = this.parseTimeStrToMinutes(matches[0][1]);
-            if (firstStart !== null && firstStart >= 12 * 60 && firstStart < 22 * 60) {
-              soundchecks.push(this.makeTimerObj(`${artistName} (Soundcheck)`, matches[0][1], matches[0][2]));
-            } else {
-              mainActs.push(this.makeTimerObj(`${artistName} (Changeover)`, matches[0][1], matches[0][2]));
-            }
-            mainActs.push(this.makeTimerObj(artistName, matches[1][1], matches[1][2]));
-          } else if (matches.length >= 3) {
-            soundchecks.push(this.makeTimerObj(`${artistName} (Soundcheck)`, matches[0][1], matches[0][2]));
-            mainActs.push(this.makeTimerObj(`${artistName} (Changeover)`, matches[1][1], matches[1][2]));
-            const last = matches[matches.length - 1];
-            mainActs.push(this.makeTimerObj(artistName, last[1], last[2]));
-          }
-        } else {
-          // Default: Only the main performance (last range before curfew in production tables)
-          const lastRange = matches[matches.length - 1];
-          mainActs.push(this.makeTimerObj(artistName, lastRange[1], lastRange[2]));
+        const classified = this._classifyArtistRanges(line, matches, artistName);
+
+        if (includeSoundchecks && classified.soundchecks.length > 0) {
+          allTimers.push(...classified.soundchecks);
+        }
+        if (includeChangeovers && classified.changeovers.length > 0) {
+          allTimers.push(...classified.changeovers);
+        }
+        if (classified.onStage) {
+          allTimers.push(classified.onStage);
         }
       }
     }
 
-    if (mainActs.length === 0 && soundchecks.length === 0) {
+    if (allTimers.length === 0) {
       // Fallback: Check if schedule uses single start times per row
       return this._parseSingleStartTimeLines(lines);
     }
 
-    return [...soundchecks, ...mainActs];
+    // Sort all timers in chronological festival order
+    return this._sortTimersChronologically(allTimers);
   }
 
   /**
@@ -372,7 +455,7 @@ class ScheduleImporter {
 
       // Check if line is a day header (and NOT a full artist row with time range)
       const hasTimeRange = rangeRegex.test(trimmed);
-      rangeRegex.lastIndex = 0; // reset state
+      rangeRegex.lastIndex = 0;
 
       if (!hasTimeRange) {
         const headerInfo = this._detectDayHeader(trimmed);
@@ -413,7 +496,8 @@ class ScheduleImporter {
    * Universal multi-day schedule parser.
    * Handles multi-page PDFs, multi-sheet spreadsheets, or multi-day pasted text.
    * Options:
-   * - includeSoundchecks: boolean
+   * - includeSoundchecks: boolean (default true)
+   * - includeChangeovers: boolean (default true)
    */
   static parseMultiDaySchedule(input, options = {}) {
     let pages = [];
@@ -519,7 +603,6 @@ class ScheduleImporter {
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
 
-      // Collect items with positions
       const items = [];
       for (const item of textContent.items) {
         const str = (item.str || '').trim();
@@ -536,7 +619,7 @@ class ScheduleImporter {
       // Sort items by Y descending (top of page first), then X ascending
       items.sort((a, b) => b.y - a.y || a.x - b.x);
 
-      // Dynamic Row Clustering: items within ~5.5px belong to the same baseline
+      // Dynamic Row Clustering
       const rows = [];
       for (const it of items) {
         let placed = false;
@@ -575,7 +658,7 @@ class ScheduleImporter {
 
       const pageText = lines.join('\n');
       pages.push(pageText);
-      titles.push(`Página ${pageNum}`);
+      titles.push(`Dia ${pageNum}`);
     }
 
     return { pages, titles };

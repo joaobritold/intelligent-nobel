@@ -1052,6 +1052,7 @@ const $openImportBtn = document.getElementById('open-import-btn');
 const $importModal = document.getElementById('import-modal');
 const $importDropZone = document.getElementById('import-drop-zone');
 const $importIncludeSoundchecks = document.getElementById('import-include-soundchecks');
+const $importIncludeChangeovers = document.getElementById('import-include-changeovers');
 const $importFileInput = document.getElementById('import-file-input');
 const $importPageSelector = document.getElementById('import-page-selector');
 const $importPageSelect = document.getElementById('import-page-select');
@@ -1065,8 +1066,19 @@ let currentSchedule = null;
 
 function getImportOptions() {
   return {
-    includeSoundchecks: $importIncludeSoundchecks ? $importIncludeSoundchecks.checked : false
+    includeSoundchecks: $importIncludeSoundchecks ? $importIncludeSoundchecks.checked : true,
+    includeChangeovers: $importIncludeChangeovers ? $importIncludeChangeovers.checked : true
   };
+}
+
+function formatTimerBadge(name) {
+  if (name.includes('(Soundcheck)')) {
+    return `<span style="display: inline-block; padding: 1px 5px; font-size: 0.65rem; border-radius: 4px; background: rgba(253, 203, 110, 0.2); color: #ffeaa7; margin-right: 4px; border: 1px solid rgba(253, 203, 110, 0.4);">Soundcheck</span>`;
+  }
+  if (name.includes('(Changeover)')) {
+    return `<span style="display: inline-block; padding: 1px 5px; font-size: 0.65rem; border-radius: 4px; background: rgba(9, 132, 227, 0.2); color: #74b9ff; margin-right: 4px; border: 1px solid rgba(9, 132, 227, 0.4);">Changeover</span>`;
+  }
+  return `<span style="display: inline-block; padding: 1px 5px; font-size: 0.65rem; border-radius: 4px; background: rgba(0, 184, 148, 0.2); color: #55efc4; margin-right: 4px; border: 1px solid rgba(0, 184, 148, 0.4);">Atuação Palco</span>`;
 }
 
 function formatScheduleSummaryText(sched) {
@@ -1075,7 +1087,7 @@ function formatScheduleSummaryText(sched) {
   return dayKeys.map(k => {
     const title = sched.dayTitles[k] || `Dia ${k}`;
     const timers = sched.days[k] || [];
-    const lines = timers.map(t => `${t.name.padEnd(24, ' ')} ${t.startTime}`);
+    const lines = timers.map(t => `${t.name.padEnd(28, ' ')} ${t.startTime}`);
     return `=== ${title.toUpperCase()} ===\n${lines.join('\n')}`;
   }).join('\n\n');
 }
@@ -1111,19 +1123,19 @@ function updateImportPreview() {
     const dayKeys = Object.keys(sched.days).sort((a, b) => Number(a) - Number(b));
     $importPreviewBox.innerHTML = `
       <div style="color: var(--green); font-weight: 700; margin-bottom: 8px; font-size: 0.82rem; display: flex; align-items: center; justify-content: space-between;">
-        <span>✓ Detetados ${sched.totalDays} Dias (${sched.totalTimers} artistas no total):</span>
-        <span style="font-size: 0.72rem; color: #a29bfe; font-weight: 500;">Pronto a importar todos</span>
+        <span>✓ Detetados ${sched.totalDays} Dias (${sched.totalTimers} entradas no total):</span>
+        <span style="font-size: 0.72rem; color: #a29bfe; font-weight: 500;">Cronologia de festival</span>
       </div>
       <div style="display: flex; flex-direction: column; gap: 6px;">
         ${dayKeys.map(k => {
           const list = sched.days[k];
-          const lines = list.map(t => `<div>• <strong>${escapeHtml(t.name)}</strong> (${escapeHtml(t.startTime)}) — ${formatTime(t.duration)}</div>`).join('');
+          const lines = list.map(t => `<div style="margin: 2px 0;">${formatTimerBadge(t.name)}<strong>${escapeHtml(t.name)}</strong> (${escapeHtml(t.startTime)}) — <span style="color: #81ecec;">${formatTime(t.duration)}</span></div>`).join('');
           return `
             <div style="background: rgba(255,255,255,0.05); padding: 7px 10px; border-radius: 6px; border-left: 3px solid var(--accent);">
-              <div style="font-weight: 700; color: #fdcb6e; font-size: 0.78rem; margin-bottom: 3px;">
-                📅 ${escapeHtml(sched.dayTitles[k] || 'Dia ' + k)} (${list.length} artistas)
+              <div style="font-weight: 700; color: #fdcb6e; font-size: 0.78rem; margin-bottom: 4px;">
+                📅 ${escapeHtml(sched.dayTitles[k] || 'Dia ' + k)} (${list.length} itens)
               </div>
-              <div style="font-size: 0.72rem; color: #cbd5e1; line-height: 1.4;">${lines}</div>
+              <div style="font-size: 0.72rem; color: #cbd5e1; line-height: 1.5;">${lines}</div>
             </div>
           `;
         }).join('')}
@@ -1133,12 +1145,12 @@ function updateImportPreview() {
     const timers = sched.days['1'] || [];
     $importPreviewBox.innerHTML = `
       <div style="color: var(--green); font-weight: 700; margin-bottom: 6px; font-size: 0.82rem;">
-        ✓ ${timers.length} Artista(s) detetado(s):
+        ✓ ${timers.length} Entrada(s) detetada(s) (ordenadas cronologicamente):
       </div>
-      <div style="display: flex; flex-direction: column; gap: 3px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
         ${timers.map((t, i) => `
           <div style="font-size: 0.74rem; color: #e2e8f0;">
-            ${i + 1}. <strong>${escapeHtml(t.name)}</strong> (${escapeHtml(t.startTime)}) — <span style="color: #81ecec;">${formatTime(t.duration)}</span>
+            ${formatTimerBadge(t.name)}<strong>${escapeHtml(t.name)}</strong> (${escapeHtml(t.startTime)}) — <span style="color: #81ecec;">${formatTime(t.duration)}</span>
           </div>
         `).join('')}
       </div>
@@ -1223,17 +1235,23 @@ if ($importFileInput) {
   });
 }
 
-if ($importIncludeSoundchecks) {
-  $importIncludeSoundchecks.addEventListener('change', () => {
-    const opts = getImportOptions();
-    if (rawExtractedData) {
-      currentSchedule = ScheduleImporter.parseMultiDaySchedule(rawExtractedData, opts);
-      if (currentSchedule.isMultiDay && $importPageSelect && $importPageSelect.value === 'all_days') {
-        $importTextArea.value = formatScheduleSummaryText(currentSchedule);
-      }
+function handleImportOptionsChanged() {
+  const opts = getImportOptions();
+  if (rawExtractedData) {
+    currentSchedule = ScheduleImporter.parseMultiDaySchedule(rawExtractedData, opts);
+    if (currentSchedule.isMultiDay && $importPageSelect && $importPageSelect.value === 'all_days') {
+      $importTextArea.value = formatScheduleSummaryText(currentSchedule);
     }
-    updateImportPreview();
-  });
+  }
+  updateImportPreview();
+}
+
+if ($importIncludeSoundchecks) {
+  $importIncludeSoundchecks.addEventListener('change', handleImportOptionsChanged);
+}
+
+if ($importIncludeChangeovers) {
+  $importIncludeChangeovers.addEventListener('change', handleImportOptionsChanged);
 }
 
 if ($openImportBtn && $importModal) {

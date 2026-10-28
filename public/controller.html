@@ -10,8 +10,8 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <title>StageTimer — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=31">
-  <link rel="stylesheet" href="css/controller.css?v=31">
+  <link rel="stylesheet" href="css/common.css?v=32">
+  <link rel="stylesheet" href="css/controller.css?v=32">
 </head>
 <body>
   <div class="app">
@@ -202,13 +202,23 @@
         <input type="file" id="import-file-input" accept=".pdf,.xlsx,.xls,.csv,.txt" style="display: none;">
       </div>
 
-      <!-- Soundcheck & Changeover Toggle -->
-      <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
-        <input type="checkbox" id="import-include-soundchecks" style="width: 16px; height: 16px; margin-top: 2px; cursor: pointer; accent-color: var(--accent);">
-        <label for="import-include-soundchecks" style="font-size: 0.76rem; cursor: pointer; color: #e2e8f0; line-height: 1.4; user-select: none;">
-          <strong>Incluir Soundchecks e Changeovers como timers separados</strong><br>
-          <span style="color: var(--text-secondary); font-size: 0.72rem;">Se desmarcado, importa apenas a atuação no palco (On Stage), deixando a fila limpa.</span>
-        </label>
+      <!-- Soundcheck & Changeover Toggles -->
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="import-include-soundchecks" checked style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent);">
+          <label for="import-include-soundchecks" style="font-size: 0.76rem; cursor: pointer; color: #e2e8f0; user-select: none;">
+            <strong>Incluir Soundchecks</strong> (passagens de som da tarde como timers separados)
+          </label>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="import-include-changeovers" checked style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent);">
+          <label for="import-include-changeovers" style="font-size: 0.76rem; cursor: pointer; color: #e2e8f0; user-select: none;">
+            <strong>Incluir Changeovers</strong> (mudanças de palco e testes de linha entre atuações)
+          </label>
+        </div>
+        <div style="font-size: 0.7rem; color: #55efc4; margin-top: 2px;">
+          ✓ A atuação principal (On Stage) tem sempre prioridade máxima e nunca é confundida com soundchecks ou load-ins.
+        </div>
       </div>
 
       <div id="import-page-selector" class="modal-field" style="display: none;">
@@ -264,15 +274,15 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=31"></script>
+  <script src="js/schedule-importer.js?v=32"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=31"></script>
+  <script src="js/auth.js?v=32"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=31"></script>
-  <script src="js/local-sync.js?v=31"></script>
-  <script src="js/controller.js?v=31"></script>
+  <script src="js/pwa.js?v=32"></script>
+  <script src="js/local-sync.js?v=32"></script>
+  <script src="js/controller.js?v=32"></script>
 </body>
 </html>

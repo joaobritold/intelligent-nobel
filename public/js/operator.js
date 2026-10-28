@@ -532,7 +532,7 @@ if ($opImportFile) {
         extractedData = await ScheduleImporter.extractSpreadsheetOrText(file);
       }
 
-      const sched = ScheduleImporter.parseMultiDaySchedule(extractedData, { includeSoundchecks: false });
+      const sched = ScheduleImporter.parseMultiDaySchedule(extractedData, { includeSoundchecks: true, includeChangeovers: true });
       if (sched.totalTimers === 0) {
         alert('Nenhum artista com horário válido (ex: 23h00 - 00h15 ou 23:00) foi encontrado no ficheiro.');
         return;
