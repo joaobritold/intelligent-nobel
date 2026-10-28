@@ -108,12 +108,17 @@ class UniversalSyncClient {
 
   _getCurrentViewKey() {
     const path = typeof location !== 'undefined' ? location.pathname.toLowerCase() : '';
-    if (path.includes('master') || this.role === 'master') return 'master';
-    if (path.includes('controller') || this.role === 'controller') return 'controller';
-    if (path.includes('operator') || this.role === 'operator') return 'operator';
-    if (path.includes('viewer') || this.role === 'viewer') return 'viewer';
+    if (path.includes('master')) return 'master';
     if (path.includes('lineup')) return 'lineup';
+    if (path.includes('operator')) return 'operator';
+    if (path.includes('viewer')) return 'viewer';
+    if (path.includes('controller')) return 'controller';
     if (path.includes('index') || path === '' || path === '/') return 'index';
+
+    if (this.role === 'master') return 'master';
+    if (this.role === 'operator') return 'operator';
+    if (this.role === 'viewer') return 'viewer';
+    if (this.role === 'controller') return 'controller';
     return this.role || 'index';
   }
 
@@ -335,6 +340,35 @@ class UniversalSyncClient {
         }
         const sepTs = targetUrl.includes('?') ? '&' : '?';
         targetUrl = `${targetUrl}${sepTs}_ts=${Date.now()}`;
+
+        // Broadcast departing presence with anticipated target view before leaving
+        try {
+          const targetPath = targetUrl.split('?')[0].split('/').pop() || 'viewer.html';
+          let anticipatedView = 'viewer';
+          if (targetPath.includes('lineup')) anticipatedView = 'lineup';
+          else if (targetPath.includes('operator')) anticipatedView = 'operator';
+          else if (targetPath.includes('controller')) anticipatedView = 'controller';
+          else if (targetPath.includes('master')) anticipatedView = 'master';
+          else if (targetPath.includes('index')) anticipatedView = 'index';
+
+          const devPayload = {
+            clientId: this.clientId,
+            deviceUuid: this.deviceUuid,
+            label: this._getDeviceLabel(),
+            os: this._getDeviceOS(),
+            viewKey: anticipatedView,
+            role: this.role,
+            room: this.cleanRoom,
+            roomTitle: this._state?.name || this.cleanRoom,
+            path: targetPath,
+            firstSeen: this.firstSeen,
+            ts: Date.now()
+          };
+          if (this.mqttClient && this.mqttClient.connected) {
+            this.mqttClient.publish(this.mqttTopicGlobalPresence, JSON.stringify(devPayload), { qos: 0, retain: false });
+          }
+        } catch (errDepart) {}
+
         window.location.replace(targetUrl);
       } catch (e) {
         window.location.href = msg.url;

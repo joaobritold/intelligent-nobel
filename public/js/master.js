@@ -74,30 +74,7 @@
     const viewKey = String(dev.viewKey || '').toLowerCase();
     const label = String(dev.label || '').toLowerCase();
 
-    if (viewKey === 'viewer' || path.includes('viewer') || role === 'viewer' || label.includes('palco') || label.includes('telao') || label.includes('telão')) {
-      return {
-        key: 'viewer',
-        name: '📺 Modo Palco',
-        shortName: 'Palco',
-        badgeClass: 'view-viewer'
-      };
-    }
-    if (viewKey === 'controller' || path.includes('controller') || role === 'controller' || label.includes('régie') || label.includes('regie') || label.includes('controlador')) {
-      return {
-        key: 'controller',
-        name: '🎛️ Régie (Controlador)',
-        shortName: 'Régie',
-        badgeClass: 'view-controller'
-      };
-    }
-    if (viewKey === 'operator' || path.includes('operator') || role === 'operator' || label.includes('operador')) {
-      return {
-        key: 'operator',
-        name: '📱 Operador Mobile',
-        shortName: 'Operador',
-        badgeClass: 'view-operator'
-      };
-    }
+    // 1. Lineup / Modo Lista
     if (viewKey === 'lineup' || path.includes('lineup') || label.includes('lista') || label.includes('backstage')) {
       return {
         key: 'lineup',
@@ -106,6 +83,38 @@
         badgeClass: 'view-lineup'
       };
     }
+
+    // 2. Operador Mobile
+    if (viewKey === 'operator' || path.includes('operator') || role === 'operator' || label.includes('operador')) {
+      return {
+        key: 'operator',
+        name: '📱 Operador Mobile',
+        shortName: 'Operador',
+        badgeClass: 'view-operator'
+      };
+    }
+
+    // 3. Modo Palco (Viewer)
+    if (viewKey === 'viewer' || path.includes('viewer') || label.includes('palco') || label.includes('telao') || label.includes('telão')) {
+      return {
+        key: 'viewer',
+        name: '📺 Modo Palco',
+        shortName: 'Palco',
+        badgeClass: 'view-viewer'
+      };
+    }
+
+    // 4. Controlador Régie
+    if (viewKey === 'controller' || path.includes('controller') || label.includes('régie') || label.includes('regie') || label.includes('controlador')) {
+      return {
+        key: 'controller',
+        name: '🎛️ Régie (Controlador)',
+        shortName: 'Régie',
+        badgeClass: 'view-controller'
+      };
+    }
+
+    // 5. Painel Master
     if (viewKey === 'master' || path.includes('master') || role === 'master' || label.includes('master')) {
       return {
         key: 'master',
@@ -114,6 +123,25 @@
         badgeClass: 'view-master'
       };
     }
+
+    // 6. Generic role fallbacks
+    if (role === 'viewer') {
+      return {
+        key: 'viewer',
+        name: '📺 Modo Palco',
+        shortName: 'Palco',
+        badgeClass: 'view-viewer'
+      };
+    }
+    if (role === 'controller') {
+      return {
+        key: 'controller',
+        name: '🎛️ Régie (Controlador)',
+        shortName: 'Régie',
+        badgeClass: 'view-controller'
+      };
+    }
+
     return {
       key: 'index',
       name: '🏠 Menu Inicial',
@@ -320,20 +348,44 @@
         try { navigator.vibrate(35); } catch (e) {}
       }
 
-      // Instant visual click feedback
-      const originalHtml = btn.innerHTML;
-      btn.innerHTML = '⚡ Enviado!';
-      btn.style.filter = 'brightness(1.5)';
-      btn.style.borderColor = '#55efc4';
-      setTimeout(() => {
-        btn.innerHTML = originalHtml;
-        btn.style.filter = '';
-        btn.style.borderColor = '';
-      }, 1000);
-
       if (cmd === 'reload') {
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '🔄 A recarregar...';
+        btn.style.filter = 'brightness(1.5)';
+        btn.style.borderColor = '#55efc4';
+        setTimeout(() => {
+          btn.innerHTML = originalHtml;
+          btn.style.filter = '';
+          btn.style.borderColor = '';
+        }, 1200);
         masterClient.sendDeviceCommand(uuid, { action: 'reload' });
-      } else if (cmd === 'viewer') {
+        return;
+      }
+
+      // Optimistic instant UI update for view modes:
+      // Update global devices map so the active button and banner update immediately!
+      const existingDev = masterClient.globalDevicesMap.get(uuid);
+      if (existingDev) {
+        existingDev.viewKey = cmd;
+        existingDev.path = `${cmd}.html`;
+        masterClient.globalDevicesMap.set(uuid, existingDev);
+      }
+
+      // Re-render device cards in-place immediately
+      renderDevicesList();
+
+      // Brief glowing effect on the card
+      if (card) {
+        card.style.transition = 'box-shadow 0.3s ease, border-color 0.3s ease';
+        card.style.borderColor = '#00b894';
+        card.style.boxShadow = '0 0 16px rgba(0, 184, 148, 0.4)';
+        setTimeout(() => {
+          card.style.borderColor = '';
+          card.style.boxShadow = '';
+        }, 800);
+      }
+
+      if (cmd === 'viewer') {
         masterClient.sendDeviceCommand(uuid, { action: 'navigate', url: `viewer.html?room=${encodeURIComponent(room)}` });
       } else if (cmd === 'lineup') {
         masterClient.sendDeviceCommand(uuid, { action: 'navigate', url: `lineup.html?room=${encodeURIComponent(room)}` });
@@ -350,6 +402,12 @@
       const uuid = select.dataset.roomForDevice;
       const targetRoom = select.value;
       if (uuid && targetRoom) {
+        const existingDev = masterClient.globalDevicesMap.get(uuid);
+        if (existingDev) {
+          existingDev.room = targetRoom;
+          masterClient.globalDevicesMap.set(uuid, existingDev);
+        }
+        renderDevicesList();
         masterClient.sendDeviceCommand(uuid, { action: 'switch_room', room: targetRoom });
         select.style.borderColor = '#55efc4';
         setTimeout(() => { select.style.borderColor = ''; }, 1000);
@@ -362,6 +420,11 @@
     $cmdAllViewer.addEventListener('click', () => {
       if (confirm('Mudar TODOS os dispositivos online para o Modo Palco?')) {
         if (navigator.vibrate) { try { navigator.vibrate(35); } catch (e) {} }
+        masterClient.globalDevicesMap.forEach(dev => {
+          dev.viewKey = 'viewer';
+          dev.path = 'viewer.html';
+        });
+        renderDevicesList();
         masterClient.sendDeviceCommand('ALL', { action: 'navigate', url: 'viewer.html' });
         $cmdAllViewer.textContent = '⚡ Enviado a Todos!';
         setTimeout(() => { $cmdAllViewer.textContent = '📺 Todos Palco'; }, 1500);
@@ -373,6 +436,11 @@
     $cmdAllLineup.addEventListener('click', () => {
       if (confirm('Mudar TODOS os dispositivos online para o Modo Lista?')) {
         if (navigator.vibrate) { try { navigator.vibrate(35); } catch (e) {} }
+        masterClient.globalDevicesMap.forEach(dev => {
+          dev.viewKey = 'lineup';
+          dev.path = 'lineup.html';
+        });
+        renderDevicesList();
         masterClient.sendDeviceCommand('ALL', { action: 'navigate', url: 'lineup.html' });
         $cmdAllLineup.textContent = '⚡ Enviado a Todos!';
         setTimeout(() => { $cmdAllLineup.textContent = '📋 Todos Lista'; }, 1500);
