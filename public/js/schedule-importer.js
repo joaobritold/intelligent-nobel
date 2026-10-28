@@ -1,5 +1,5 @@
 /**
- * StageTimer Smart Schedule Importer (v3)
+ * StageTimer Smart Schedule Importer (v4 - Paulo Ferrão Produções Calibrated)
  * Advanced timetable & schedule parser for PDF, Excel (.xlsx, .xls, .csv), and pasted text.
  *
  * Core Principles:
@@ -8,14 +8,18 @@
  *    - Never confused with Load In (arrival of gear) or Soundcheck (afternoon rehearsal).
  * 2. SOUNDCHECKS INCLUDED:
  *    - Automatically identifies afternoon soundchecks (11:00 to 21:30) and creates separate timers:
- *      e.g. "Minhotos Marotos (Soundcheck) 18:00 – 19:30".
+ *      e.g. "Hinoportuna (Soundcheck) 18:45 – 19:30".
  * 3. CHANGEOVERS INCLUDED:
  *    - Automatically identifies changeovers/line checks preceding an act and creates timers:
- *      e.g. "Minhotos Marotos (Changeover) 01:30 – 01:45".
- * 4. FESTIVAL CHRONOLOGICAL ORDER:
- *    - Soundchecks in the afternoon -> Evening acts -> Night acts with changeovers in seamless sequence!
- * 5. MULTI-DAY DETECTION:
- *    - Detects all days (Dia 1, Dia 2..., days of week, dates, multi-page PDFs and multi-sheet Excel).
+ *      e.g. "Hinoportuna (Changeover) 00:30 – 00:35".
+ * 4. LOAD-IN & CURFEW ISOLATION:
+ *    - Load-in intervals (e.g. "18h30 > 18h45" or "14:00 | 17:00") and Curfews are never converted to timers.
+ * 5. ALL SEPARATORS SUPPORTED:
+ *    - ">", "|", "-", "–", "—", "~", "às", "as", "até", "ate", "a", "to", "->", "/"
+ * 6. MULTI-DAY DETECTION:
+ *    - Detects explicit dates ("05 de novembro de 2025", "23 outubro 2025", "18 maio 2026"), "Dia X", days of week, and multi-page PDFs.
+ * 7. MULTIPLE SLOTS PRESERVED:
+ *    - If an artist performs multiple times (e.g. Dj Residente opening at 23:00 and closing at 04:30), both slots are preserved.
  */
 
 class ScheduleImporter {
@@ -35,7 +39,7 @@ class ScheduleImporter {
       }
     }
 
-    // Match "23:00", "23.00", "23h00", "23h15", "4h30", "01:30"
+    // Match "23:00", "23.00", "23h00", "23H00", "23h15", "4h30", "01:30", "23h"
     const m = str.match(/^(\d{1,2})\s*[:.hH]\s*(\d{1,2})?$/) || str.match(/^(\d{1,2})\s*[hH]$/);
     if (!m) return null;
     let h = parseInt(m[1], 10);
@@ -96,7 +100,7 @@ class ScheduleImporter {
   }
 
   /**
-   * Regex matching individual time tokens: 23:00, 23.00, 23h00, 23h, 4h30, 0h
+   * Regex matching individual time tokens: 23:00, 23.00, 23h00, 23H00, 23h, 4h30, 0h
    */
   static _getTimeTokenRegex() {
     return /\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b/gi;
@@ -104,11 +108,11 @@ class ScheduleImporter {
 
   /**
    * Regex matching time ranges strictly with explicit range connectors:
-   * "-", "–", "—", "~", "às", "as", "até", "ate", "a", "to", "till", "until", "->", ">", "/"
+   * "-", "–", "—", "~", "às", "as", "até", "ate", "a", "to", "till", "until", "->", ">", "=>", "/", "|"
    * IMPORTANT: Does NOT allow tabs or spaces across columns to prevent mashing different columns together!
    */
   static _getTimeRangeRegex() {
-    return /(\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b)\s*(?:[-–—~]|às|as|até|ate|\ba\b|\bto\b|\btill\b|\buntil\b|-->?|>|=>|\/|\\)\s*(\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b)/gi;
+    return /(\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b)\s*(?:[-–—~]|às|as|até|ate|\ba\b|\bto\b|\btill\b|\buntil\b|-->?|>|=>|\/|\\|\|)\s*(\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b)/gi;
   }
 
   /**
@@ -119,19 +123,23 @@ class ScheduleImporter {
     if (!l) return true;
 
     // Header column names without concrete artist times
-    if (/^(artista|hor[áa]rio|palco|stage|lineup|line-up|programação|programa|data|dia|day|load\s*in|set\s*up|soundcheck|changeover|on\s*stage|curfew|obs|observa[çc][õo]es|contacto[s]?|rider|catering)\b/i.test(l) &&
+    if (/^(artist|artista|hor[áa]rio|palco|stage|lineup|line-up|programação|programa|data|dia|day|load-?in|set\s*up|soundcheck|change-?over|on\s*stage|curfew|obs|observa[çc][õo]es|contacto[s]?|rider|catering)\b/i.test(l) &&
         !/\d{1,2}\s*[:.hH]/.test(l)) {
       return true;
     }
-    // Production notices
-    if (/^(a\s*impossibilidade|regras|normas|contacto[s]?\s*de\s*produção|respons[áa]vel|ficheiro|página)/i.test(l)) {
+    // Production notices and footer info
+    if (/^(a\s*impossibilidade|regras|normas|contacto[s]?\s*de\s*produção|respons[áa]vel|ficheiro|página|stage\s*manager|produção|load-in\s*\|)/i.test(l)) {
+      return true;
+    }
+    // Pure note lines (e.g. "***ESTE HORÁRIO JÁ CONSIDERA...")
+    if (/^nota\s*:/i.test(l)) {
       return true;
     }
     return false;
   }
 
   /**
-   * Extract clean artist name by removing matched times, curfew, load-ins and punctuation
+   * Extract clean artist name by removing matched times, durations "(60m)", "n/a", curfew and punctuation
    */
   static _cleanArtistName(rawLine, timeMatches = []) {
     let clean = rawLine;
@@ -147,11 +155,20 @@ class ScheduleImporter {
       }
     }
 
-    // Remove any remaining standalone time tokens (e.g. single load-in or curfew times)
+    // Remove standalone time tokens (e.g. single curfew times)
     clean = clean.replace(/\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b/gi, ' ');
 
+    // Remove duration notes like "(60m)", "(140min)", "(30m)"
+    clean = clean.replace(/\s*\(\s*\d+\s*m(?:in)?\s*\)/gi, ' ');
+
+    // Remove asterisks denoting notes
+    clean = clean.replace(/[*]+/g, ' ');
+
+    // Remove "n/a" indicators
+    clean = clean.replace(/\bn\s*\/\s*a\b/gi, ' ');
+
     // Remove common column header words if left behind
-    clean = clean.replace(/\b(?:artista|load\s*in|soundcheck|set\s*up|changeover|line\s*check|on\s*stage|palco|stage|live|hora|hor[áa]rio)\b/gi, ' ');
+    clean = clean.replace(/\b(?:artist|artista|load-?in|soundcheck|set\s*up|change-?over|line\s*check|on\s*stage|palco|stage|live|hora|hor[áa]rio)\b/gi, ' ');
 
     // Remove table borders, tabs, bullet characters, leading/trailing punctuation
     clean = clean.replace(/[|•\t;~_]+/g, ' ');
@@ -164,86 +181,102 @@ class ScheduleImporter {
   /**
    * Classify time ranges for an artist into Soundcheck, Changeover, and On Stage.
    * ALWAYS prioritizes the On Stage performance as the artist's main entry!
+   * Ignores Load-In intervals!
    */
   static _classifyArtistRanges(line, matches, artistName) {
     if (!matches || matches.length === 0) return { soundchecks: [], changeovers: [], onStage: null };
 
-    const parsedRanges = matches.map(m => {
+    const parsed = matches.map(m => {
       const startStr = m[1];
       const endStr = m[2];
-      const startMins = this.parseTimeStrToMinutes(startStr);
-      const endMins = this.parseTimeStrToMinutes(endStr);
-      const durationMs = this.calcDurationMs(startStr, endStr);
-
-      const matchIndex = m.index || 0;
-      const precedingText = line.substring(Math.max(0, matchIndex - 35), matchIndex).toLowerCase();
-      const isExplicitSoundcheck = /soundcheck|passagem|ensaio|set\s*up/i.test(precedingText);
-      const isExplicitChangeover = /changeover|line\s*check|mudan[çc]a/i.test(precedingText);
-      const isExplicitOnStage = /on\s*stage|atua[çc][ãa]o|palco|show|live/i.test(precedingText);
+      const sMins = this.parseTimeStrToMinutes(startStr);
+      const eMins = this.parseTimeStrToMinutes(endStr);
+      let diff = (eMins !== null && sMins !== null) ? eMins - sMins : 60;
+      if (diff <= 0) diff += 1440;
 
       return {
         raw: m[0],
         startStr,
         endStr,
-        startMins,
-        endMins,
-        durationMs,
-        isExplicitSoundcheck,
-        isExplicitChangeover,
-        isExplicitOnStage
+        startMins: sMins,
+        endMins: eMins,
+        durMins: diff,
+        durationMs: diff * 60000
       };
     });
 
-    let soundcheckRange = null;
-    let changeoverRange = null;
-    let onStageRange = null;
+    let soundcheck = null;
+    let changeover = null;
+    let onStage = null;
 
-    if (parsedRanges.length === 1) {
+    if (parsed.length === 1) {
       // 1 single range -> This is ALWAYS On Stage!
-      onStageRange = parsedRanges[0];
-    } else if (parsedRanges.length === 2) {
+      onStage = parsed[0];
+    } else if (parsed.length === 2) {
       // 2 ranges:
-      // Check explicit labels
-      if (parsedRanges[0].isExplicitSoundcheck) soundcheckRange = parsedRanges[0];
-      if (parsedRanges[0].isExplicitChangeover) changeoverRange = parsedRanges[0];
-      if (parsedRanges[1].isExplicitOnStage) onStageRange = parsedRanges[1];
+      // Last range is ALWAYS On Stage!
+      onStage = parsed[1];
+      const first = parsed[0];
 
-      if (!onStageRange) {
-        // Last range is ALWAYS the main performance On Stage!
-        onStageRange = parsedRanges[1];
+      // Check if first range is Changeover:
+      // It is Changeover if its end connects directly (or within 15 mins) to On Stage,
+      // its duration is <= 45m, and it occurs during event night/morning (>= 21:00 or < 06:00)
+      let gapToStage = (onStage.startMins !== null && first.endMins !== null) ? onStage.startMins - first.endMins : 999;
+      if (gapToStage < 0) gapToStage += 1440;
+
+      const isNightTime = first.startMins !== null && (first.startMins >= 21 * 60 || first.startMins < 6 * 60);
+
+      if (gapToStage <= 15 && first.durMins <= 45 && isNightTime) {
+        changeover = first;
+      } else if (first.startMins !== null && first.startMins >= 11 * 60 && first.startMins <= 21.5 * 60 && first.durMins >= 20) {
+        // Afternoon/evening soundcheck (11:00 to 21:30)
+        soundcheck = first;
+      } else {
+        // Otherwise it is Load-In (e.g. Dj Pablu 02h15 > 02h30)! Ignored!
       }
+    } else if (parsed.length === 3) {
+      // 3 ranges:
+      // Last range is ALWAYS On Stage!
+      onStage = parsed[2];
+      const mid = parsed[1];
+      const first = parsed[0];
 
-      if (!soundcheckRange && !changeoverRange) {
-        const first = parsedRanges[0];
-        // If first range is in the afternoon / early evening (11:00 to 21:30), it's Soundcheck!
-        if (first.startMins !== null && first.startMins >= 11 * 60 && first.startMins < 21.5 * 60) {
-          soundcheckRange = first;
-        } else {
-          // If at night and connects to the act or has short duration (<= 45m), it's Changeover!
-          changeoverRange = first;
+      let gapMidToStage = (onStage.startMins !== null && mid.endMins !== null) ? onStage.startMins - mid.endMins : 999;
+      if (gapMidToStage < 0) gapMidToStage += 1440;
+
+      if (gapMidToStage <= 15 && mid.durMins <= 45) {
+        // Middle is Changeover! (e.g. Miss, Mister IPVC or Minhotos Marotos)
+        changeover = mid;
+        // Check if first range is Soundcheck (afternoon) or Load-In (night)
+        if (first.startMins !== null && first.startMins >= 11 * 60 && first.startMins <= 21.5 * 60 && first.durMins >= 20) {
+          soundcheck = first;
         }
+        // If first is at night (e.g. 02h20 > 02h30), it was Load-In! Ignored!
+      } else if (mid.startMins !== null && mid.startMins >= 11 * 60 && mid.startMins <= 21.5 * 60) {
+        // Middle is Soundcheck! (e.g. Tunice: 19h15>19h30 Load-in, 19h30>20h00 Soundcheck, 00h00>00h30 On Stage)
+        soundcheck = mid;
+      } else if (first.startMins !== null && first.startMins >= 11 * 60 && first.startMins <= 21.5 * 60) {
+        soundcheck = first;
       }
-    } else if (parsedRanges.length >= 3) {
-      // 3 or more ranges (e.g. Minhotos Marotos in reference PDF):
-      // Range 0: Soundcheck (afternoon rehearsal)
-      // Range 1: Changeover / Line check
-      // Range Last: On Stage (Main performance!)
-      soundcheckRange = parsedRanges[0];
-      changeoverRange = parsedRanges[1];
-      onStageRange = parsedRanges[parsedRanges.length - 1];
+    } else if (parsed.length >= 4) {
+      // 4 ranges: Load-in [0], Soundcheck [1], Changeover [2], On Stage [3]!
+      // (e.g. Hinoportuna, A.H.P., KBK, ProfJam)
+      soundcheck = parsed[1];
+      changeover = parsed[2];
+      onStage = parsed[3];
     }
 
-    const soundchecks = soundcheckRange
-      ? [this.makeTimerObj(`${artistName} (Soundcheck)`, soundcheckRange.startStr, soundcheckRange.endStr, soundcheckRange.durationMs)]
+    const soundchecks = soundcheck
+      ? [this.makeTimerObj(`${artistName} (Soundcheck)`, soundcheck.startStr, soundcheck.endStr, soundcheck.durationMs)]
       : [];
-    const changeovers = changeoverRange
-      ? [this.makeTimerObj(`${artistName} (Changeover)`, changeoverRange.startStr, changeoverRange.endStr, changeoverRange.durationMs)]
+    const changeovers = changeover
+      ? [this.makeTimerObj(`${artistName} (Changeover)`, changeover.startStr, changeover.endStr, changeover.durationMs)]
       : [];
-    const onStage = onStageRange
-      ? this.makeTimerObj(artistName, onStageRange.startStr, onStageRange.endStr, onStageRange.durationMs)
+    const onStageTimer = onStage
+      ? this.makeTimerObj(artistName, onStage.startStr, onStage.endStr, onStage.durationMs)
       : null;
 
-    return { soundchecks, changeovers, onStage };
+    return { soundchecks, changeovers, onStage: onStageTimer };
   }
 
   /**
@@ -294,6 +327,9 @@ class ScheduleImporter {
       if (mins === null) continue;
 
       let name = line.replace(timeStr, ' ');
+      name = name.replace(/\s*\(\s*\d+\s*m(?:in)?\s*\)/gi, ' ');
+      name = name.replace(/[*]+/g, ' ');
+      name = name.replace(/\bn\s*\/\s*a\b/gi, ' ');
       name = name.replace(/[|•\t;~_]+/g, ' ');
       name = name.replace(/\s+/g, ' ');
       name = name.replace(/^[\s\-–—:=/]+|[\s\-–—:=/]+$/g, '').trim();
@@ -395,37 +431,37 @@ class ScheduleImporter {
   }
 
   /**
-   * Helper to detect if a line is a Day Header (Dia 1, Sexta, 24/10, etc.)
+   * Helper to detect if a line is a Day Header (05 de novembro de 2025, 23 outubro, Dia 1, Sexta, etc.)
    */
   static _detectDayHeader(line) {
     if (!line) return null;
     const l = line.trim();
 
-    // 1. Explicit "Dia X" or "Day X"
+    // 1. Full or short date: "05 de novembro de 2025", "23 outubro 2025", "18 maio 2026", "24/10"
+    const mDate = l.match(/\b(\d{1,2})\s*(?:de\s+)?(janeiro|fevereiro|mar[çc]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)(?:\s*(?:de\s+)?\d{2,4})?\b/i) ||
+                  l.match(/^\s*(?:===+\s*)?(\d{1,2})[\/\.-](\d{1,2})(?:[\/\.-]\d{2,4})?\b/i);
+    if (mDate) {
+      return { dayNumber: null, title: l.replace(/^[=–—#*\s]+|[=–—#*\s]+$/g, ''), isDate: true };
+    }
+
+    // 2. Explicit "Dia X" or "Day X"
     const mDia = l.match(/\b(?:dia|day)\s*0?(\d{1,2})\b/i);
     if (mDia) {
       const num = parseInt(mDia[1], 10);
       return { dayNumber: num, title: l.replace(/^[=–—#*\s]+|[=–—#*\s]+$/g, '') };
     }
 
-    // 2. Ordinal Day ("1º Dia", "2º Dia", "1ª Noite")
+    // 3. Ordinal Day ("1º Dia", "2º Dia", "1ª Noite")
     const mOrd = l.match(/\b(\d{1,2})\s*[ºªo\.]*\s*(?:dia|noite)\b/i);
     if (mOrd) {
       const num = parseInt(mOrd[1], 10);
       return { dayNumber: num, title: l.replace(/^[=–—#*\s]+|[=–—#*\s]+$/g, '') };
     }
 
-    // 3. Days of the week in Portuguese / English
+    // 4. Days of the week in Portuguese / English
     const mWeek = l.match(/\b(segunda|ter[çc]a|quarta|quinta|sexta|s[áa]bado|domingo|monday|tuesday|wednesday|thursday|friday|saturday|sunday)(?:-feira|\s*feira)?\b/i);
     if (mWeek) {
       return { dayNumber: null, title: l.replace(/^[=–—#*\s]+|[=–—#*\s]+$/g, ''), isWeekDay: true };
-    }
-
-    // 4. Standalone Date (e.g. "24 de Outubro" or "24/10" or "24/10/2026")
-    const mDate = l.match(/\b(\d{1,2})\s*(?:de\s+)?(janeiro|fevereiro|mar[çc]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\b/i) ||
-                  l.match(/^\s*(?:===+\s*)?(\d{1,2})[\/\.-](\d{1,2})(?:[\/\.-]\d{2,4})?\b/i);
-    if (mDate) {
-      return { dayNumber: null, title: l.replace(/^[=–—#*\s]+|[=–—#*\s]+$/g, ''), isDate: true };
     }
 
     return null;
@@ -453,7 +489,7 @@ class ScheduleImporter {
         continue;
       }
 
-      // Check if line is a day header (and NOT a full artist row with time range)
+      // Check if line is a day header (and NOT an artist row with time range)
       const hasTimeRange = rangeRegex.test(trimmed);
       rangeRegex.lastIndex = 0;
 
@@ -544,20 +580,20 @@ class ScheduleImporter {
           let detectedDay = null;
           let detectedTitle = null;
 
-          if (assignedTitle) {
+          if (assignedTitle && assignedTitle !== `Dia ${p + 1}`) {
             const h = this._detectDayHeader(assignedTitle);
             if (h && h.dayNumber) detectedDay = h.dayNumber;
             detectedTitle = assignedTitle;
           }
 
-          if (!detectedDay) {
-            // Scan first 20 lines of the page
-            const topLines = pageText.split(/\r?\n/).slice(0, 20);
+          if (!detectedDay || !detectedTitle) {
+            // Scan first 15 lines of the page for explicit date or day header
+            const topLines = pageText.split(/\r?\n/).slice(0, 15);
             for (const l of topLines) {
               const h = this._detectDayHeader(l);
               if (h) {
                 if (h.dayNumber) detectedDay = h.dayNumber;
-                if (!detectedTitle) detectedTitle = h.title;
+                detectedTitle = h.title;
                 break;
               }
             }
