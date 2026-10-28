@@ -58,23 +58,36 @@ html, body {
 }
 
 .viewer-timer.safe {
-  color: var(--green);
-  text-shadow: 0 0 40px var(--green-glow);
+  color: #00b894;
+  text-shadow: 0 0 40px rgba(0, 184, 148, 0.45);
 }
 
 .viewer-timer.warn {
-  color: var(--yellow);
-  text-shadow: 0 0 40px var(--yellow-glow);
+  color: #fa8231;
+  text-shadow: 0 0 40px rgba(250, 130, 49, 0.45);
 }
 
 .viewer-timer.danger {
-  color: var(--red);
-  text-shadow: 0 0 40px var(--red-glow);
+  color: #ff4757;
+  text-shadow: 0 0 40px rgba(255, 71, 87, 0.55);
+  animation: viewer-gentle-pulse 1.3s ease-in-out infinite;
 }
 
 .viewer-timer.finished {
-  color: var(--red);
-  animation: viewer-flash 0.8s ease-in-out infinite;
+  color: #ff4757;
+  text-shadow: 0 0 50px rgba(255, 71, 87, 0.75);
+  animation: viewer-gentle-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes viewer-gentle-pulse {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.38;
+    filter: brightness(1.2);
+  }
 }
 
 @keyframes viewer-flash {
@@ -95,18 +108,35 @@ html, body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 10px;
-  background: rgba(255, 255, 255, 0.08);
+  height: 24px;
+  background: rgba(0, 0, 0, 0.65);
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7);
+  z-index: 20;
 }
 
 .viewer-progress-bar {
   height: 100%;
-  transition: width 100ms linear, background-color 0.4s ease;
+  width: 0%;
+  border-radius: 0 4px 4px 0;
+  transition: width 100ms linear, background 0.35s ease, box-shadow 0.35s ease;
 }
 
-.viewer-progress-bar.safe { background: var(--green); }
-.viewer-progress-bar.warn { background: var(--yellow); }
-.viewer-progress-bar.danger { background: var(--red); }
+.viewer-progress-bar.safe {
+  background: linear-gradient(90deg, #00b894 0%, #00d2a0 100%);
+  box-shadow: 0 0 16px rgba(0, 184, 148, 0.7);
+}
+
+.viewer-progress-bar.warn {
+  background: linear-gradient(90deg, #e67e22 0%, #fa8231 100%);
+  box-shadow: 0 0 16px rgba(250, 130, 49, 0.75);
+}
+
+.viewer-progress-bar.danger,
+.viewer-progress-bar.finished {
+  background: linear-gradient(90deg, #eb4d4b 0%, #ff4757 100%);
+  box-shadow: 0 0 22px rgba(255, 71, 87, 0.85);
+}
 
 /* ─── Message Overlay (Full-screen Info & Urgent Modes) ─────────── */
 
@@ -291,7 +321,7 @@ html, body {
 
 .viewer-local-clock {
   position: absolute;
-  bottom: 24px;
+  bottom: 38px;
   left: 28px;
   display: flex;
   flex-direction: column;
@@ -355,4 +385,15 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .viewer-progress {
+    height: 16px;
+  }
+  .viewer-local-clock {
+    bottom: 24px;
+    left: 14px;
+    padding: 6px 12px;
+  }
 }

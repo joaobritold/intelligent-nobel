@@ -128,8 +128,15 @@ function getTimerColor(timer) {
   if (timer.mode === 'clock') return 'clock';
   if (timer.state === 'finished') return 'finished';
   if (timer.mode === 'countdown') {
-    const remaining = timer.duration - getTimerElapsed(timer);
-    if (remaining <= 0) return 'finished';
+    const elapsed = getTimerElapsed(timer);
+    const remaining = timer.duration - elapsed;
+    if (remaining <= 0) return 'danger';
+    if (timer.duration > 0) {
+      const pct = (elapsed / timer.duration) * 100;
+      if (pct > 95) return 'danger';
+      if (pct > 80) return 'warn';
+      return 'safe';
+    }
     if (remaining <= timer.dangerAt) return 'danger';
     if (remaining <= timer.warnAt) return 'warn';
     return 'safe';
@@ -231,13 +238,20 @@ function render() {
   $timer.textContent = display;
   $timer.className = `viewer-timer ${color}${isLong ? ' is-long' : ''}`;
 
-  // Progress bar (countdown only - smooth linear animation)
+  // Progress bar (countdown only - cresce da esquerda para a direita de 0% a 100%)
   if (activeTimer.mode === 'countdown' && activeTimer.duration > 0) {
     const elapsed = getTimerElapsed(activeTimer);
-    const progress = Math.min(1, Math.max(0, elapsed / activeTimer.duration));
-    const remaining = 1 - progress;
-    $progress.style.width = `${(remaining * 100).toFixed(2)}%`;
-    $progress.className = `viewer-progress-bar ${color === 'finished' ? 'danger' : color}`;
+    const pct = Math.min(100, Math.max(0, (elapsed / activeTimer.duration) * 100));
+    $progress.style.width = `${pct.toFixed(2)}%`;
+
+    // 0 aos 80% é verde, 81% aos 95% é laranja, > 95% é vermelho
+    let phase = 'safe';
+    if (pct > 95 || activeTimer.state === 'finished' || elapsed >= activeTimer.duration) {
+      phase = 'danger';
+    } else if (pct > 80) {
+      phase = 'warn';
+    }
+    $progress.className = `viewer-progress-bar ${phase}`;
   } else {
     $progress.style.width = '0%';
   }

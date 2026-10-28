@@ -88,6 +88,12 @@ function getTimerColor(timer) {
   if (timer.mode === 'countdown') {
     const remaining = timer.duration - elapsed;
     if (remaining <= 0) return 'finished';
+    if (timer.duration > 0) {
+      const pct = (elapsed / timer.duration) * 100;
+      if (pct > 95) return 'danger';
+      if (pct > 80) return 'warn';
+      return 'safe';
+    }
     if (remaining <= timer.dangerAt) return 'danger';
     if (remaining <= timer.warnAt) return 'warn';
     return 'safe';
