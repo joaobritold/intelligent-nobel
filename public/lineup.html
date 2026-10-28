@@ -30,9 +30,15 @@
         <div id="lineup-day-tabs" style="display: flex; gap: 4px; align-items: center; margin-left: 4px;"></div>
       </div>
 
-      <div class="lineup-clock-box">
-        <div class="lineup-clock-label">HORA LOCAL</div>
-        <div id="lineup-local-clock" class="lineup-clock-time">--:--:--</div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <div style="display: flex; flex-direction: column; align-items: flex-end; background: rgba(0, 184, 148, 0.14); border: 1px solid rgba(0, 184, 148, 0.4); padding: 4px 10px; border-radius: 8px;">
+          <span style="font-size: 0.65rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase;">Fim do Evento</span>
+          <span id="lineup-event-end" style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 800; color: #55efc4;">--:--</span>
+        </div>
+        <div class="lineup-clock-box">
+          <div class="lineup-clock-label">HORA LOCAL</div>
+          <div id="lineup-local-clock" class="lineup-clock-time">--:--:--</div>
+        </div>
       </div>
     </header>
 
@@ -65,8 +71,8 @@
 
   <!-- Cloud MQTT over WSS -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=13"></script>
-  <script src="js/local-sync.js?v=13"></script>
-  <script src="js/lineup.js?v=13"></script>
+  <script src="js/pwa.js?v=14"></script>
+  <script src="js/local-sync.js?v=14"></script>
+  <script src="js/lineup.js?v=14"></script>
 </body>
 </html>

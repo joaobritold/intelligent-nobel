@@ -285,6 +285,15 @@ client.connect();
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
+function updateLocalClock() {
+  const el = document.getElementById('ctrl-local-clock');
+  if (el) {
+    el.textContent = new Date().toLocaleTimeString('pt-PT', { hour12: false });
+  }
+}
+updateLocalClock();
+setInterval(updateLocalClock, 1000);
+
 function formatTime(ms) {
   const isNegative = ms < 0;
   const absMs = Math.abs(ms);
@@ -295,14 +304,14 @@ function formatTime(ms) {
 
   const prefix = isNegative ? '-' : '';
   if (hours > 0) {
-    return `${prefix}${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return `${prefix}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
   return `${prefix}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 function parseTimeInput(str) {
   // Accept formats: "5:00", "05:00", "1:30:00", "90" (seconds), "5m", "1h30m"
-  str = str.trim();
+  str = (str || '').trim();
 
   // HH:MM:SS or MM:SS
   const colonMatch = str.match(/^(\d+):(\d{1,2})(?::(\d{1,2}))?$/);
@@ -315,9 +324,10 @@ function parseTimeInput(str) {
     return (parseInt(colonMatch[1]) * 60 + parseInt(colonMatch[2])) * 1000;
   }
 
-  // Just a number = seconds
+  // Just a number = minutes in stage scheduling (or seconds if <= 0)
   if (/^\d+$/.test(str)) {
-    return parseInt(str) * 1000;
+    const num = parseInt(str, 10);
+    return num <= 10 ? num * 60000 : num * 1000;
   }
 
   // Xh Ym Zs format
@@ -350,8 +360,7 @@ function getTimerColor(timer) {
 
 function getTimerDisplayValue(timer) {
   if (timer.mode === 'clock') {
-    const now = new Date();
-    return now.toLocaleTimeString('en-US', { hour12: false });
+    return new Date().toLocaleTimeString('pt-PT', { hour12: false });
   }
   let elapsed = timer.elapsed;
   if (timer.state === 'running' && timer.startedAt) {
@@ -524,7 +533,8 @@ function renderTimers() {
             value="${display}"
             data-timer-id="${timer.id}"
             data-field="duration"
-            title="Clique para editar a duração total"
+            ${timer.mode === 'clock' ? 'readonly' : ''}
+            title="${timer.mode === 'clock' ? 'Hora Atual (Modo Relógio)' : 'Duração / Contagem (Clique para editar)'}"
             spellcheck="false"
           />
           <div class="timer-meta">
@@ -539,15 +549,26 @@ function renderTimers() {
               ` : ''}
             </div>
             ${timer.mode !== 'clock' ? `
-              <div class="timer-duration-row" style="flex-wrap: wrap;">
-                <span>Horário:</span>
+              <div class="timer-duration-row" style="flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px;">
+                <span style="font-size: 0.75rem; color: var(--text-secondary);">Duração:</span>
                 <input
                   class="input input-mono timer-duration-input"
-                  style="width: 138px;"
+                  style="width: 78px; padding: 2px 6px; font-size: 0.8rem; text-align: center;"
+                  value="${formatTime(timer.duration)}"
+                  data-timer-id="${timer.id}"
+                  data-field="duration"
+                  title="Editar duração total (ex: 45:00 ou 1h15m)"
+                  spellcheck="false"
+                />
+                <span style="font-size: 0.75rem; color: var(--text-secondary);">Horário:</span>
+                <input
+                  class="input input-mono timer-duration-input"
+                  style="width: 125px; padding: 2px 6px; font-size: 0.8rem; text-align: center;"
                   placeholder="23:00 – 00:15"
                   value="${escapeHtml(timer.startTime || '')}"
                   data-timer-id="${timer.id}"
                   data-field="startTime"
+                  title="Horário programado (ex: 21:00 ou 21:00 – 22:30)"
                   spellcheck="false"
                 />
               </div>
@@ -729,7 +750,31 @@ $timerList.addEventListener('click', (e) => {
   }
 });
 
-// Timer name editing
+// Display editing handlers (prevents live countdown from overwriting total duration on blur)
+$timerList.addEventListener('focusin', (e) => {
+  const input = e.target;
+  if (input.classList.contains('timer-display') && input.dataset.timerId) {
+    const t = state?.timers?.find(item => item.id === input.dataset.timerId);
+    if (t && t.mode !== 'clock') {
+      input.dataset.editing = 'true';
+      input.value = formatTime(t.duration);
+      input.select();
+    }
+  }
+});
+
+$timerList.addEventListener('focusout', (e) => {
+  const input = e.target;
+  if (input.classList.contains('timer-display') && input.dataset.timerId) {
+    input.dataset.editing = 'false';
+    const t = state?.timers?.find(item => item.id === input.dataset.timerId);
+    if (t) {
+      input.value = getTimerDisplayValue(t);
+    }
+  }
+});
+
+// Timer field editing
 $timerList.addEventListener('change', (e) => {
   const input = e.target;
   const timerId = input.dataset.timerId;
@@ -746,7 +791,8 @@ $timerList.addEventListener('change', (e) => {
     client.updateTimer(timerId, { mode: input.value });
   } else if (field === 'duration') {
     const ms = parseTimeInput(input.value);
-    if (ms && ms > 0) {
+    const t = state?.timers?.find(item => item.id === timerId);
+    if (ms && ms > 0 && t && ms !== t.duration) {
       client.updateTimer(timerId, { duration: ms });
     }
   }

@@ -958,16 +958,25 @@ class UniversalSyncClient {
 
     const localNow = Date.now();
 
-    incoming.timers.forEach(t => {
-      if (t.state === 'running') {
-        if (typeof t.liveElapsed === 'number') {
-          const transitMs = sentAt ? Math.max(0, Math.min(1500, localNow - sentAt)) : 0;
-          t.elapsed = t.liveElapsed + transitMs;
-          t.startedAt = localNow;
-        } else if (t.startedAt) {
-          const senderNow = incoming.updatedAt || localNow;
-          const clockOffset = localNow - senderNow;
-          t.startedAt = t.startedAt + clockOffset;
+    incoming.timers.forEach(incomingT => {
+      if (incomingT.state === 'running') {
+        const localT = this._state?.timers?.find(t => t.id === incomingT.id);
+        const liveElapsed = typeof incomingT.liveElapsed === 'number'
+          ? incomingT.liveElapsed
+          : (incomingT.elapsed || 0);
+
+        let localElapsed = 0;
+        if (localT && localT.state === 'running' && localT.startedAt) {
+          localElapsed = (localT.elapsed || 0) + (localNow - localT.startedAt);
+        }
+
+        // Smooth jitter (< 1000ms): keep local ticking baseline so timer never jumps backward
+        if (!localT || localT.state !== 'running' || Math.abs(localElapsed - liveElapsed) > 1000) {
+          incomingT.elapsed = liveElapsed;
+          incomingT.startedAt = localNow;
+        } else {
+          incomingT.elapsed = localT.elapsed;
+          incomingT.startedAt = localT.startedAt;
         }
       }
     });
@@ -975,14 +984,12 @@ class UniversalSyncClient {
     this._state = incoming;
     this._ensureDaysStructure();
     this._enforceInactiveReset();
-    this._saveLocal();
-    this._syncEventInRegistry();
 
-    if (fromCloud && this.channel) {
-      try {
-        this.channel.postMessage({ type: 'room-state', sender: this.clientId, data: this._state });
-      } catch (e) {}
+    // Prevent storage circular feedback ping-pong between local tabs
+    if (fromCloud) {
+      this._saveLocal();
     }
+    this._syncEventInRegistry();
 
     this._emit('room-state', this._state);
   }
@@ -1051,15 +1058,20 @@ class UniversalSyncClient {
     if (this.tickInterval) clearInterval(this.tickInterval);
     this.tickInterval = setInterval(() => {
       if (!this._state) return;
-      let anyRunning = false;
+      let shouldTick = false;
+
+      const activeTimer = this._state.timers.find(t => t.id === this._state.activeTimerId);
+      if (activeTimer && activeTimer.mode === 'clock') {
+        shouldTick = true;
+      }
 
       for (const timer of this._state.timers) {
         if (timer.state === 'running' && timer.startedAt) {
-          anyRunning = true;
+          shouldTick = true;
         }
       }
 
-      if (anyRunning) {
+      if (shouldTick) {
         this._emit('room-state', this._state);
       }
     }, 100);
@@ -1333,11 +1345,12 @@ class UniversalSyncClient {
     }
 
     const activeRemaining = activeTimer ? Math.max(0, (activeTimer.duration || 0) - activeElapsed) : 0;
-    const activeOvertimeMins = activeTimer && activeElapsed > (activeTimer.duration || 0)
-      ? Math.floor((activeElapsed - activeTimer.duration) / 60000)
+    const activeOvertimeMs = activeTimer && activeElapsed > (activeTimer.duration || 0)
+      ? activeElapsed - activeTimer.duration
       : 0;
+    const activeOvertimeMins = Math.floor(activeOvertimeMs / 60000);
 
-    // Scheduled slot range (e.g., "21:00 - 22:30")
+    // 1. Explicit scheduled slot range (e.g. "21:00 - 22:30")
     if (targetTimer.startTime) {
       const rangeMatch = String(targetTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
       if (rangeMatch) {
@@ -1347,26 +1360,70 @@ class UniversalSyncClient {
         const mm = String(norm % 60).padStart(2, '0');
         return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
       }
+
+      // 2. Explicit start time only (e.g. "21:00") -> add targetTimer duration
+      const singleMatch = String(targetTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+      if (singleMatch) {
+        const startMins = parseInt(singleMatch[1], 10) * 60 + parseInt(singleMatch[2], 10);
+        const durMins = Math.round((targetTimer.duration || 0) / 60000);
+        const endMins = startMins + durMins + activeOvertimeMins;
+        const norm = ((endMins % 1440) + 1440) % 1440;
+        const hh = String(Math.floor(norm / 60)).padStart(2, '0');
+        const mm = String(norm % 60).padStart(2, '0');
+        return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
+      }
     }
 
-    // Active timer finishing time
+    // 3. Active timer finishing time (live if running)
     if (targetIdx === activeIdx) {
-      const end = new Date(Date.now() + activeRemaining);
-      return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
+      if (activeTimer?.state === 'running') {
+        const end = new Date(Date.now() + activeRemaining);
+        const hh = String(end.getHours()).padStart(2, '0');
+        const mm = String(end.getMinutes()).padStart(2, '0');
+        return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
+      }
+      return `${Math.round((activeTimer?.duration || 0) / 60000)} min`;
     }
 
-    // Future timer: activeRemaining + durations of all intermediate artists
+    // 4. Future timer: cumulative projection
     if (targetIdx > activeIdx) {
-      let accumMs = (activeIdx >= 0) ? activeRemaining : 0;
-      const startFrom = (activeIdx >= 0) ? activeIdx + 1 : 0;
-      for (let i = startFrom; i <= targetIdx; i++) {
-        const t = state.timers[i];
-        if (t && t.mode !== 'clock') {
-          accumMs += (t.duration || 0);
+      if (activeTimer?.state === 'running') {
+        let accumMs = activeRemaining;
+        for (let i = (activeIdx >= 0 ? activeIdx + 1 : 0); i <= targetIdx; i++) {
+          const t = state.timers[i];
+          if (t && t.mode !== 'clock') {
+            accumMs += (t.duration || 0);
+          }
+        }
+        const end = new Date(Date.now() + accumMs);
+        const hh = String(end.getHours()).padStart(2, '0');
+        const mm = String(end.getMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+      } else {
+        // Not running: calculate from earlier scheduled timers if available
+        let baseMins = null;
+        let accumDur = 0;
+        for (let i = 0; i <= targetIdx; i++) {
+          const t = state.timers[i];
+          if (t.startTime) {
+            const m = String(t.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+            if (m) {
+              baseMins = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+              accumDur = Math.round((t.duration || 0) / 60000);
+              continue;
+            }
+          }
+          if (baseMins !== null && i > 0) {
+            accumDur += Math.round((t.duration || 0) / 60000);
+          }
+        }
+        if (baseMins !== null) {
+          const endMins = (baseMins + accumDur) % 1440;
+          const hh = String(Math.floor(endMins / 60)).padStart(2, '0');
+          const mm = String(endMins % 60).padStart(2, '0');
+          return `${hh}:${mm}`;
         }
       }
-      const end = new Date(Date.now() + accumMs);
-      return end.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
     return '--:--';
@@ -1391,42 +1448,66 @@ class UniversalSyncClient {
       : 0;
     const activeOvertimeMins = Math.floor(activeOvertimeMs / 60000);
 
-    // If last timer has an explicit scheduled exit time
-    const lastTimer = [...countdownTimers].reverse()[0];
-    if (lastTimer && lastTimer.startTime) {
-      const rangeMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
-      if (rangeMatch) {
-        const schedEndMins = parseInt(rangeMatch[3], 10) * 60 + parseInt(rangeMatch[4], 10) + activeOvertimeMins;
-        const norm = ((schedEndMins % 1440) + 1440) % 1440;
-        const hh = String(Math.floor(norm / 60)).padStart(2, '0');
-        const mm = String(norm % 60).padStart(2, '0');
-        return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
+    // 1. Check for scheduled time in countdown timers
+    let lastKnownEndMins = null;
+    let subsequentDurMins = 0;
+
+    for (let i = 0; i < countdownTimers.length; i++) {
+      const t = countdownTimers[i];
+      if (t.startTime) {
+        const rangeMatch = String(t.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
+        if (rangeMatch) {
+          lastKnownEndMins = parseInt(rangeMatch[3], 10) * 60 + parseInt(rangeMatch[4], 10);
+          subsequentDurMins = 0;
+          continue;
+        }
+        const singleMatch = String(t.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+        if (singleMatch) {
+          const sMins = parseInt(singleMatch[1], 10) * 60 + parseInt(singleMatch[2], 10);
+          lastKnownEndMins = sMins + Math.round((t.duration || 0) / 60000);
+          subsequentDurMins = 0;
+          continue;
+        }
       }
-      const singleMatch = String(lastTimer.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
-      if (singleMatch) {
-        const startMins = parseInt(singleMatch[1], 10) * 60 + parseInt(singleMatch[2], 10);
-        const endMins = startMins + Math.round((lastTimer.duration || 0) / 60000) + activeOvertimeMins;
-        const norm = ((endMins % 1440) + 1440) % 1440;
-        const hh = String(Math.floor(norm / 60)).padStart(2, '0');
-        const mm = String(norm % 60).padStart(2, '0');
-        return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
+      if (lastKnownEndMins !== null) {
+        subsequentDurMins += Math.round((t.duration || 0) / 60000);
       }
     }
 
-    // Sequential cumulative calculation: active remaining + all subsequent timers
-    let totalRemainingMs = (activeIdx >= 0) ? activeRemaining : 0;
-    const startFrom = (activeIdx >= 0) ? activeIdx + 1 : 0;
-    for (let i = startFrom; i < state.timers.length; i++) {
-      const t = state.timers[i];
-      if (t && t.mode !== 'clock') {
-        totalRemainingMs += (t.duration || 0);
-      }
+    if (lastKnownEndMins !== null) {
+      const finalEndMins = (lastKnownEndMins + subsequentDurMins + activeOvertimeMins) % 1440;
+      const hh = String(Math.floor(finalEndMins / 60)).padStart(2, '0');
+      const mm = String(finalEndMins % 60).padStart(2, '0');
+      return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
     }
 
-    const endDate = new Date(Date.now() + totalRemainingMs);
-    const hh = String(endDate.getHours()).padStart(2, '0');
-    const mm = String(endDate.getMinutes()).padStart(2, '0');
-    return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
+    // 2. Real-time finish if active timer is running
+    if (activeTimer && activeTimer.state === 'running') {
+      let totalRemainingMs = activeRemaining;
+      const startFrom = (activeIdx >= 0) ? activeIdx + 1 : 0;
+      for (let i = startFrom; i < state.timers.length; i++) {
+        const t = state.timers[i];
+        if (t && t.mode !== 'clock') {
+          totalRemainingMs += (t.duration || 0);
+        }
+      }
+      const endDate = new Date(Date.now() + totalRemainingMs);
+      const hh = String(endDate.getHours()).padStart(2, '0');
+      const mm = String(endDate.getMinutes()).padStart(2, '0');
+      return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
+    }
+
+    // 3. Otherwise show total planned duration
+    let totalDurMins = 0;
+    for (const t of countdownTimers) {
+      totalDurMins += Math.round((t.duration || 0) / 60000);
+    }
+    const totalHours = Math.floor(totalDurMins / 60);
+    const remMins = totalDurMins % 60;
+    if (totalHours > 0) {
+      return `${totalHours}h ${remMins > 0 ? `${remMins}m` : ''}`.trim();
+    }
+    return `${totalDurMins}m`;
   }
 
   // ─── Event System ───────────────────────────────────────────────────

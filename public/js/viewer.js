@@ -119,7 +119,7 @@ function formatTime(ms) {
 
   const prefix = isNegative ? '-' : '';
   if (hours > 0) {
-    return `${prefix}${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return `${prefix}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
   return `${prefix}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
@@ -147,8 +147,7 @@ function getTimerColor(timer) {
 
 function getTimerDisplayValue(timer) {
   if (timer.mode === 'clock') {
-    const now = new Date();
-    return now.toLocaleTimeString('en-US', { hour12: false });
+    return new Date().toLocaleTimeString('pt-PT', { hour12: false });
   }
   const elapsed = getTimerElapsed(timer);
   if (timer.mode === 'countdown') {

@@ -81,7 +81,7 @@ function formatTime(ms) {
 
   const prefix = isNegative ? '-' : '';
   if (hours > 0) {
-    return `${prefix}${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return `${prefix}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
   return `${prefix}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
@@ -339,6 +339,18 @@ client.on('room-state', (data) => {
   renderLineupEventSelector();
   render();
 });
+
+setInterval(() => {
+  if (state?.timers) {
+    const active = state.timers.find(t => t.id === state.activeTimerId);
+    if (active && active.mode === 'clock') {
+      const $nowTimer = document.getElementById('lineup-now-timer');
+      if ($nowTimer) {
+        $nowTimer.textContent = getTimerDisplayValue(active);
+      }
+    }
+  }
+}, 1000);
 
 client.on('connected', () => {
   renderLineupEventSelector();

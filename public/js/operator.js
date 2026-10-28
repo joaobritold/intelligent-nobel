@@ -141,6 +141,15 @@ $roomInput.addEventListener('keydown', (e) => {
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
+function updateOpClock() {
+  const el = document.getElementById('op-local-clock');
+  if (el) {
+    el.textContent = new Date().toLocaleTimeString('pt-PT', { hour12: false });
+  }
+}
+updateOpClock();
+setInterval(updateOpClock, 1000);
+
 function formatTime(ms) {
   const isNegative = ms < 0;
   const absMs = Math.abs(ms);
@@ -151,7 +160,7 @@ function formatTime(ms) {
 
   const prefix = isNegative ? '-' : '';
   if (hours > 0) {
-    return `${prefix}${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return `${prefix}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
   return `${prefix}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
@@ -357,6 +366,16 @@ client.on('room-state', (data) => {
   state = data;
   render();
 });
+
+setInterval(() => {
+  if (state?.timers) {
+    const active = state.timers.find(t => t.id === state.activeTimerId);
+    if (active && active.mode === 'clock') {
+      const $heroTime = document.getElementById('op-hero-time');
+      if ($heroTime) $heroTime.textContent = getTimerDisplayValue(active);
+    }
+  }
+}, 1000);
 
 client.on('p2p-peers-update', (data) => {
   $connBadge.innerHTML = `<span class="connection-dot"></span> Online (${data.count})`;

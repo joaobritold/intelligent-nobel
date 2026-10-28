@@ -39,6 +39,10 @@
         </div>
       </div>
       <div class="header-right">
+        <div class="clock-display" style="font-family: var(--font-mono); font-size: 1.05rem; font-weight: 800; color: #fff; background: rgba(255,255,255,0.06); padding: 3px 10px; border-radius: 8px; border: 1px solid var(--border); text-align: center;">
+          <span style="font-size: 0.65rem; color: var(--text-muted); display: block; line-height: 1;">HORA LOCAL</span>
+          <span id="ctrl-local-clock">--:--:--</span>
+        </div>
         <button type="button" class="btn btn-sm st-install-app-btn" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff;">📲 Instalar App</button>
         <!-- Theme Background Selector -->
         <div class="theme-selector" title="Stage Background Color">
@@ -238,15 +242,15 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=13"></script>
+  <script src="js/schedule-importer.js?v=14"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=13"></script>
+  <script src="js/auth.js?v=14"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=13"></script>
-  <script src="js/local-sync.js?v=13"></script>
-  <script src="js/controller.js?v=13"></script>
+  <script src="js/pwa.js?v=14"></script>
+  <script src="js/local-sync.js?v=14"></script>
+  <script src="js/controller.js?v=14"></script>
 </body>
 </html>
