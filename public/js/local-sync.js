@@ -128,28 +128,42 @@ class UniversalSyncClient {
       const dateHdr = res.headers.get('date');
       if (dateHdr) {
         const serverMs = new Date(dateHdr).getTime();
-        const roundTrip = (t1 - t0) / 2;
-        const estServerNow = serverMs + roundTrip;
-        this.timeOffset = Math.round(estServerNow - Date.now());
-        window._stagetimer_time_offset = this.timeOffset;
+        if (Number.isFinite(serverMs)) {
+          const roundTrip = (t1 - t0) / 2;
+          const estServerNow = serverMs + roundTrip;
+          const offset = Math.round(estServerNow - Date.now());
+          if (Number.isFinite(offset) && Math.abs(offset) < 86400000) {
+            this.timeOffset = offset;
+            window._stagetimer_time_offset = offset;
+          }
+        }
       }
     } catch (e) {}
   }
 
   getTrueTime() {
-    return Date.now() + (this.timeOffset || window._stagetimer_time_offset || 0);
+    const off = Number(this.timeOffset || window._stagetimer_time_offset || 0);
+    return Date.now() + (Number.isFinite(off) ? off : 0);
   }
 
   static globalTrueTime() {
-    return Date.now() + (window._stagetimer_time_offset || 0);
+    const off = Number(window._stagetimer_time_offset || 0);
+    return Date.now() + (Number.isFinite(off) ? off : 0);
   }
 
   static getTrueLocalDate() {
-    return new Date(UniversalSyncClient.globalTrueTime());
+    const t = UniversalSyncClient.globalTrueTime();
+    const d = new Date(Number.isFinite(t) ? t : Date.now());
+    return isNaN(d.getTime()) ? new Date() : d;
   }
 
-  static getTrueTimeString() {
-    return UniversalSyncClient.getTrueLocalDate().toLocaleTimeString('pt-PT', { hour12: false });
+  static getTrueTimeString(includeSeconds = true) {
+    const d = UniversalSyncClient.getTrueLocalDate();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    if (!includeSeconds) return `${hh}:${mm}`;
+    const ss = String(d.getSeconds()).padStart(2, '0');
+    return `${hh}:${mm}:${ss}`;
   }
 
   static getTimerElapsed(timer) {

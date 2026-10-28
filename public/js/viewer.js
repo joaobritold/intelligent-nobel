@@ -219,9 +219,10 @@ function render() {
   // Timer display
   const color = getTimerColor(activeTimer);
   const display = getTimerDisplayValue(activeTimer);
+  const isLong = (display || '').length > 5;
 
   $timer.textContent = display;
-  $timer.className = `viewer-timer ${color}`;
+  $timer.className = `viewer-timer ${color}${isLong ? ' is-long' : ''}`;
 
   // Progress bar (countdown only - smooth linear animation)
   if (activeTimer.mode === 'countdown' && activeTimer.duration > 0) {
