@@ -38,26 +38,14 @@
   }
 
   function formatTime(ms) {
-    const isNegative = ms < 0;
-    const absMs = Math.abs(ms);
-    const totalSecs = Math.floor(absMs / 1000);
-    const hours = Math.floor(totalSecs / 3600);
-    const mins = Math.floor((totalSecs % 3600) / 60);
-    const secs = totalSecs % 60;
-    const sign = isNegative ? '-' : '';
-
-    if (hours > 0) {
-      return `${sign}${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    }
-    return `${sign}${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    return StageTimerClient.formatTime(ms);
   }
 
   // ─── Live Master Clock ─────────────────────────────────────────────
 
   function updateMasterClock() {
     if (!$liveClock) return;
-    const now = new Date();
-    $liveClock.textContent = now.toLocaleTimeString('pt-PT', { hour12: false });
+    $liveClock.textContent = StageTimerClient.getTrueTimeString();
   }
   setInterval(updateMasterClock, 1000);
   updateMasterClock();
@@ -507,9 +495,8 @@
       let statusLabel = '⏹️ Parado';
 
       if (activeTimer) {
-        let elapsed = activeTimer.elapsed || 0;
-        if (activeTimer.state === 'running' && activeTimer.startedAt) {
-          elapsed += Date.now() - activeTimer.startedAt;
+        const elapsed = StageTimerClient.getTimerElapsed(activeTimer);
+        if (activeTimer.state === 'running') {
           isRunning = true;
           runningCount++;
         }

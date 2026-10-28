@@ -60,6 +60,7 @@ class UniversalSyncClient {
     this.globalDevicesMap = new Map();
     this.connectedPeersCount = 1;
     this._needsInitialPublish = false;
+    this.timeOffset = window._stagetimer_time_offset || 0;
   }
 
   // ─── Deleted Events Tombstones ──────────────────────────────────────
@@ -119,7 +120,74 @@ class UniversalSyncClient {
     return this._state;
   }
 
+  async syncServerTime() {
+    try {
+      const t0 = performance.now();
+      const res = await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+      const t1 = performance.now();
+      const dateHdr = res.headers.get('date');
+      if (dateHdr) {
+        const serverMs = new Date(dateHdr).getTime();
+        const roundTrip = (t1 - t0) / 2;
+        const estServerNow = serverMs + roundTrip;
+        this.timeOffset = Math.round(estServerNow - Date.now());
+        window._stagetimer_time_offset = this.timeOffset;
+      }
+    } catch (e) {}
+  }
+
+  getTrueTime() {
+    return Date.now() + (this.timeOffset || window._stagetimer_time_offset || 0);
+  }
+
+  static globalTrueTime() {
+    return Date.now() + (window._stagetimer_time_offset || 0);
+  }
+
+  static getTrueLocalDate() {
+    return new Date(UniversalSyncClient.globalTrueTime());
+  }
+
+  static getTrueTimeString() {
+    return UniversalSyncClient.getTrueLocalDate().toLocaleTimeString('pt-PT', { hour12: false });
+  }
+
+  static getTimerElapsed(timer) {
+    if (!timer) return 0;
+    let elapsed = timer.elapsed || 0;
+    if (timer.state === 'running') {
+      const anchor = timer.serverStartedAt || timer.startedAt;
+      if (anchor) {
+        elapsed += Math.max(0, UniversalSyncClient.globalTrueTime() - anchor);
+      }
+    }
+    return elapsed;
+  }
+
+  static formatTime(ms) {
+    const isNegative = ms < 0;
+    const absMs = Math.abs(ms);
+    const totalSeconds = Math.floor(absMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const prefix = isNegative ? '-' : '';
+    if (hours > 0) {
+      return `${prefix}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+    return `${prefix}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
   connect() {
+    this.syncServerTime();
+    setInterval(() => this.syncServerTime(), 60000);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) this.syncServerTime();
+      });
+    }
+
     // 1. Local Tab-to-Tab State Sync (BroadcastChannel)
     if (typeof BroadcastChannel !== 'undefined') {
       try {
@@ -422,10 +490,11 @@ class UniversalSyncClient {
     setInterval(() => this._announcePresence(), 5000);
     setInterval(() => this._cleanupGlobalDevices(), 4000);
     setInterval(() => {
-      if (this.role === 'controller' && this._state?.timers?.some(t => t.state === 'running')) {
+      const isControllerRole = this.role === 'controller' || this.role === 'operator' || this.role === 'master';
+      if (isControllerRole && this._state?.timers?.some(t => t.state === 'running')) {
         this._commitStateChange(true);
       }
-    }, 3000);
+    }, 1500);
   }
 
   _cleanupGlobalDevices() {
@@ -956,27 +1025,20 @@ class UniversalSyncClient {
   _applyIncomingState(incoming, fromCloud = false, sentAt = null) {
     if (!incoming || !Array.isArray(incoming.timers)) return;
 
-    const localNow = Date.now();
+    const trueNow = this.getTrueTime();
 
     incoming.timers.forEach(incomingT => {
       if (incomingT.state === 'running') {
-        const localT = this._state?.timers?.find(t => t.id === incomingT.id);
-        const liveElapsed = typeof incomingT.liveElapsed === 'number'
-          ? incomingT.liveElapsed
-          : (incomingT.elapsed || 0);
-
-        let localElapsed = 0;
-        if (localT && localT.state === 'running' && localT.startedAt) {
-          localElapsed = (localT.elapsed || 0) + (localNow - localT.startedAt);
-        }
-
-        // Smooth jitter (< 1000ms): keep local ticking baseline so timer never jumps backward
-        if (!localT || localT.state !== 'running' || Math.abs(localElapsed - liveElapsed) > 1000) {
-          incomingT.elapsed = liveElapsed;
-          incomingT.startedAt = localNow;
+        const anchor = incomingT.serverStartedAt || incomingT.startedAt;
+        if (anchor) {
+          incomingT.serverStartedAt = anchor;
+          incomingT.startedAt = anchor;
         } else {
-          incomingT.elapsed = localT.elapsed;
-          incomingT.startedAt = localT.startedAt;
+          const liveElapsed = typeof incomingT.liveElapsed === 'number'
+            ? incomingT.liveElapsed
+            : (incomingT.elapsed || 0);
+          incomingT.serverStartedAt = trueNow - liveElapsed;
+          incomingT.startedAt = incomingT.serverStartedAt;
         }
       }
     });
@@ -1002,6 +1064,7 @@ class UniversalSyncClient {
         t.elapsed = 0;
         t.liveElapsed = 0;
         t.startedAt = null;
+        t.serverStartedAt = null;
       }
     }
   }
@@ -1009,18 +1072,21 @@ class UniversalSyncClient {
   _commitStateChange(retain = true) {
     this._ensureDaysStructure();
     this._enforceInactiveReset();
-    const now = Date.now();
-    this._state.updatedAt = now;
+    const trueNow = this.getTrueTime();
+    this._state.updatedAt = trueNow;
 
     // Save active day lineup in days map
     this._state.days[String(this._state.currentDay || 1)] = [...(this._state.timers || [])];
 
-    // Bake liveElapsed into each running timer
+    // Bake liveElapsed and maintain atomic anchor serverStartedAt
     this._state.timers.forEach(t => {
-      if (t.state === 'running' && t.startedAt) {
-        t.liveElapsed = t.elapsed + (now - t.startedAt);
+      if (t.state === 'running') {
+        const anchor = t.serverStartedAt || t.startedAt || trueNow;
+        t.serverStartedAt = anchor;
+        t.startedAt = anchor;
+        t.liveElapsed = (t.elapsed || 0) + Math.max(0, trueNow - anchor);
       } else {
-        t.liveElapsed = t.elapsed;
+        t.liveElapsed = t.elapsed || 0;
       }
     });
 
@@ -1033,7 +1099,7 @@ class UniversalSyncClient {
         this.channel.postMessage({
           type: 'room-state',
           sender: this.clientId,
-          sentAt: now,
+          sentAt: trueNow,
           data: this._state
         });
       } catch (e) {}
@@ -1044,7 +1110,7 @@ class UniversalSyncClient {
       try {
         const payload = JSON.stringify({
           sender: this.clientId,
-          sentAt: now,
+          sentAt: trueNow,
           data: this._state
         });
         this.mqttClient.publish(this.mqttTopicState, payload, { qos: 0, retain });
@@ -1191,7 +1257,7 @@ class UniversalSyncClient {
   timerAction(id, action) {
     const timer = this._state.timers.find(t => t.id === id);
     if (!timer) return;
-    const now = Date.now();
+    const trueNow = this.getTrueTime();
 
     switch (action) {
       case 'start':
@@ -1199,20 +1265,25 @@ class UniversalSyncClient {
         if (timer.state !== 'running') {
           if (timer.state === 'finished') timer.elapsed = 0;
           timer.state = 'running';
-          timer.startedAt = now;
+          timer.startedAt = trueNow;
+          timer.serverStartedAt = trueNow;
         }
         break;
       case 'pause':
         if (timer.state === 'running') {
-          if (timer.startedAt) timer.elapsed += now - timer.startedAt;
+          const anchor = timer.serverStartedAt || timer.startedAt;
+          if (anchor) timer.elapsed += Math.max(0, trueNow - anchor);
           timer.state = 'stopped';
           timer.startedAt = null;
+          timer.serverStartedAt = null;
         }
         break;
       case 'reset':
         timer.state = 'stopped';
         timer.elapsed = 0;
+        timer.liveElapsed = 0;
         timer.startedAt = null;
+        timer.serverStartedAt = null;
         break;
       case 'toggle':
         if (timer.state === 'running') {
@@ -1339,10 +1410,7 @@ class UniversalSyncClient {
     const targetIdx = state.timers.findIndex(t => t.id === timerId);
     const activeTimer = activeIdx >= 0 ? state.timers[activeIdx] : null;
 
-    let activeElapsed = activeTimer?.elapsed || 0;
-    if (activeTimer?.state === 'running' && activeTimer?.startedAt) {
-      activeElapsed += Date.now() - activeTimer.startedAt;
-    }
+    let activeElapsed = UniversalSyncClient.getTimerElapsed(activeTimer);
 
     const activeRemaining = activeTimer ? Math.max(0, (activeTimer.duration || 0) - activeElapsed) : 0;
     const activeOvertimeMs = activeTimer && activeElapsed > (activeTimer.duration || 0)
@@ -1437,10 +1505,7 @@ class UniversalSyncClient {
     const activeIdx = state.timers.findIndex(t => t.id === state.activeTimerId);
     const activeTimer = activeIdx >= 0 ? state.timers[activeIdx] : null;
 
-    let activeElapsed = activeTimer?.elapsed || 0;
-    if (activeTimer?.state === 'running' && activeTimer?.startedAt) {
-      activeElapsed += Date.now() - activeTimer.startedAt;
-    }
+    let activeElapsed = UniversalSyncClient.getTimerElapsed(activeTimer);
 
     const activeRemaining = activeTimer ? Math.max(0, (activeTimer.duration || 0) - activeElapsed) : 0;
     const activeOvertimeMs = activeTimer && activeElapsed > (activeTimer.duration || 0)
@@ -1491,7 +1556,7 @@ class UniversalSyncClient {
           totalRemainingMs += (t.duration || 0);
         }
       }
-      const endDate = new Date(Date.now() + totalRemainingMs);
+      const endDate = new Date(UniversalSyncClient.globalTrueTime() + totalRemainingMs);
       const hh = String(endDate.getHours()).padStart(2, '0');
       const mm = String(endDate.getMinutes()).padStart(2, '0');
       return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;

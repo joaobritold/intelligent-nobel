@@ -81,7 +81,7 @@ document.addEventListener('touchstart', showTopBar, { passive: true });
 
 function updateLocalClock() {
   if ($viewerClockTime) {
-    $viewerClockTime.textContent = new Date().toLocaleTimeString('pt-PT', { hour12: false });
+    $viewerClockTime.textContent = StageTimerClient.getTrueTimeString();
   }
 }
 updateLocalClock();
@@ -110,26 +110,11 @@ client.connect();
 // ─── Helpers ───────────────────────────────────────────────────────
 
 function formatTime(ms) {
-  const isNegative = ms < 0;
-  const absMs = Math.abs(ms);
-  const totalSeconds = Math.floor(absMs / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  const prefix = isNegative ? '-' : '';
-  if (hours > 0) {
-    return `${prefix}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  }
-  return `${prefix}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  return StageTimerClient.formatTime(ms);
 }
 
 function getTimerElapsed(timer) {
-  let elapsed = timer.elapsed || 0;
-  if (timer.state === 'running' && timer.startedAt) {
-    elapsed += Date.now() - timer.startedAt;
-  }
-  return elapsed;
+  return StageTimerClient.getTimerElapsed(timer);
 }
 
 function getTimerColor(timer) {
@@ -147,7 +132,7 @@ function getTimerColor(timer) {
 
 function getTimerDisplayValue(timer) {
   if (timer.mode === 'clock') {
-    return new Date().toLocaleTimeString('pt-PT', { hour12: false });
+    return StageTimerClient.getTrueTimeString();
   }
   const elapsed = getTimerElapsed(timer);
   if (timer.mode === 'countdown') {

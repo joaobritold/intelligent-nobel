@@ -63,7 +63,7 @@ const q = `?room=${encodeURIComponent(roomId)}`;
 
 function updateClock() {
   if ($localClock) {
-    $localClock.textContent = new Date().toLocaleTimeString('pt-PT', { hour12: false });
+    $localClock.textContent = StageTimerClient.getTrueTimeString();
   }
 }
 updateClock();
@@ -72,27 +72,17 @@ setInterval(updateClock, 1000);
 // ─── Helpers ───────────────────────────────────────────────────────
 
 function formatTime(ms) {
-  const isNegative = ms < 0;
-  const absMs = Math.abs(ms);
-  const totalSeconds = Math.floor(absMs / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
+  return StageTimerClient.formatTime(ms);
+}
 
-  const prefix = isNegative ? '-' : '';
-  if (hours > 0) {
-    return `${prefix}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  }
-  return `${prefix}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+function getTimerElapsed(timer) {
+  return StageTimerClient.getTimerElapsed(timer);
 }
 
 function getTimerColor(timer) {
   if (!timer) return 'safe';
   if (timer.state === 'finished') return 'finished';
-  let elapsed = timer.elapsed;
-  if (timer.state === 'running' && timer.startedAt) {
-    elapsed += Date.now() - timer.startedAt;
-  }
+  const elapsed = getTimerElapsed(timer);
   if (timer.mode === 'countdown') {
     const remaining = timer.duration - elapsed;
     if (remaining <= 0) return 'finished';
@@ -106,12 +96,9 @@ function getTimerColor(timer) {
 function getTimerDisplayValue(timer) {
   if (!timer) return '--:--';
   if (timer.mode === 'clock') {
-    return new Date().toLocaleTimeString('pt-PT', { hour12: false });
+    return StageTimerClient.getTrueTimeString();
   }
-  let elapsed = timer.elapsed;
-  if (timer.state === 'running' && timer.startedAt) {
-    elapsed += Date.now() - timer.startedAt;
-  }
+  const elapsed = getTimerElapsed(timer);
   if (timer.mode === 'countdown') {
     const remaining = timer.duration - elapsed;
     return formatTime(remaining);
@@ -121,7 +108,7 @@ function getTimerDisplayValue(timer) {
 
 // Compute automatic estimated times if startTime isn't explicitly set
 function computeScheduleSlots(timers, activeIdx) {
-  let rollingDate = new Date();
+  const rollingMs = StageTimerClient.globalTrueTime();
   return timers.map((t, i) => {
     if (t.startTime && t.startTime.trim()) {
       return t.startTime.trim();
@@ -139,12 +126,12 @@ function computeScheduleSlots(timers, activeIdx) {
       if (!prev) continue;
       let rem = prev.duration;
       if (j === activeIdx && prev.mode === 'countdown') {
-        let el = prev.elapsed + (prev.state === 'running' && prev.startedAt ? Date.now() - prev.startedAt : 0);
+        const el = getTimerElapsed(prev);
         rem = Math.max(0, prev.duration - el);
       }
       offsetMs += rem;
     }
-    const est = new Date(rollingDate.getTime() + offsetMs);
+    const est = new Date(rollingMs + offsetMs);
     return est.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
   });
 }

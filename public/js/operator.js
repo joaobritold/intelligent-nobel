@@ -144,25 +144,18 @@ $roomInput.addEventListener('keydown', (e) => {
 function updateOpClock() {
   const el = document.getElementById('op-local-clock');
   if (el) {
-    el.textContent = new Date().toLocaleTimeString('pt-PT', { hour12: false });
+    el.textContent = StageTimerClient.getTrueTimeString();
   }
 }
 updateOpClock();
 setInterval(updateOpClock, 1000);
 
 function formatTime(ms) {
-  const isNegative = ms < 0;
-  const absMs = Math.abs(ms);
-  const totalSeconds = Math.floor(absMs / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
+  return StageTimerClient.formatTime(ms);
+}
 
-  const prefix = isNegative ? '-' : '';
-  if (hours > 0) {
-    return `${prefix}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  }
-  return `${prefix}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+function getTimerElapsed(timer) {
+  return StageTimerClient.getTimerElapsed(timer);
 }
 
 function parseTimeInput(str) {
@@ -190,10 +183,7 @@ function parseTimeInput(str) {
 function getTimerColor(timer) {
   if (timer.mode === 'clock') return 'safe';
   if (timer.state === 'finished') return 'finished';
-  let elapsed = timer.elapsed;
-  if (timer.state === 'running' && timer.startedAt) {
-    elapsed += Date.now() - timer.startedAt;
-  }
+  const elapsed = getTimerElapsed(timer);
   if (timer.mode === 'countdown') {
     const remaining = timer.duration - elapsed;
     if (remaining <= 0) return 'finished';
@@ -206,12 +196,9 @@ function getTimerColor(timer) {
 
 function getTimerDisplayValue(timer) {
   if (timer.mode === 'clock') {
-    return new Date().toLocaleTimeString('pt-PT', { hour12: false });
+    return StageTimerClient.getTrueTimeString();
   }
-  let elapsed = timer.elapsed;
-  if (timer.state === 'running' && timer.startedAt) {
-    elapsed += Date.now() - timer.startedAt;
-  }
+  const elapsed = getTimerElapsed(timer);
   if (timer.mode === 'countdown') {
     const remaining = timer.duration - elapsed;
     return formatTime(remaining);
@@ -285,8 +272,7 @@ function render() {
     }
 
     if (active.mode === 'countdown' && active.duration > 0) {
-      let elapsed = active.elapsed;
-      if (isRunning && active.startedAt) elapsed += Date.now() - active.startedAt;
+      const elapsed = getTimerElapsed(active);
       const pct = Math.min(100, (elapsed / active.duration) * 100);
       $heroBar.style.width = `${pct}%`;
       $heroBar.className = `op-hero-progress-bar ${color}`;
