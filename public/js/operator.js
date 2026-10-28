@@ -312,18 +312,21 @@ function render() {
   }
 
   // Render queue only when structure changes to keep touch targets stable
-  const sig = state.timers.map(t => `${t.id}:${t.name}:${t.startTime || ''}:${t.notes || ''}:${t.duration}:${t.mode}:${t.id === state.activeTimerId}`).join('|');
+  const sig = state.timers.map(t => `${t.id}:${t.name}:${t.startTime || ''}:${t.notes || ''}:${t.duration}:${t.mode}:${t.id === state.activeTimerId}:${t.state}`).join('|');
   if (sig !== lastQueueSignature && !opDraggedId) {
     lastQueueSignature = sig;
     $queueList.innerHTML = state.timers.map((t, idx) => {
       const isAct = t.id === state.activeTimerId;
+      const isRunning = t.state === 'running';
       const endTimeStr = getEstimatedEndTime(t);
       return `
         <div class="op-queue-item ${isAct ? 'active' : ''}" data-id="${t.id}">
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
             <span class="op-queue-name" style="flex: 1; min-width: 0; overflow-wrap: break-word;"><span style="color:var(--text-muted); margin-right:6px;">⠿</span>${escapeHtml(t.name)}</span>
-            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
-              <span class="op-queue-badge">${isAct ? '● NO AR' : 'ATIVAR'}</span>
+            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+              <button type="button" class="op-btn-fire ${isAct ? 'is-active' : ''}" data-fire-id="${t.id}" title="Disparar direto: coloca no ar e arranca imediatamente o contador">
+                ${isAct && isRunning ? '● NO AR' : (isAct ? '▶ ARRANCA' : '🚀 DISPARAR')}
+              </button>
               <button type="button" class="op-move-btn" data-move-up="${t.id}" title="Subir" ${idx === 0 ? 'disabled style="opacity:0.35"' : ''}>↑</button>
               <button type="button" class="op-move-btn" data-move-down="${t.id}" title="Descer" ${idx === state.timers.length - 1 ? 'disabled style="opacity:0.35"' : ''}>↓</button>
               <button type="button" class="op-queue-del" data-del-id="${t.id}" title="Apagar">🗑️</button>
@@ -529,6 +532,15 @@ if ($artistName) {
 }
 
 $queueList.addEventListener('click', (e) => {
+  const fireBtn = e.target.closest('[data-fire-id]');
+  if (fireBtn) {
+    e.stopPropagation();
+    const id = fireBtn.dataset.fireId;
+    // Disparo direto: coloca como ativo e arranca logo o contador!
+    client.timerAction(id, 'start');
+    return;
+  }
+
   const upBtn = e.target.closest('[data-move-up]');
   if (upBtn) {
     e.stopPropagation();
@@ -562,11 +574,37 @@ $queueList.addEventListener('click', (e) => {
     }
     return;
   }
-  const item = e.target.closest('.op-queue-item');
-  if (item && item.dataset.id) {
-    client.setActiveTimer(item.dataset.id);
-  }
+  // IMPORTANTE: Tocar na caixa (.op-queue-item) NÃO LANÇA!
+  // Evita disparos acidentais ao fazer scroll ou tocar no ecrã.
 });
+
+// Navegação Anterior / Próximo no Modo Operador
+const $btnPrev = document.getElementById('op-btn-prev');
+const $btnNext = document.getElementById('op-btn-next');
+
+if ($btnPrev) {
+  $btnPrev.addEventListener('click', () => {
+    if (!state || !state.timers || state.timers.length === 0) return;
+    const currentIdx = state.timers.findIndex(t => t.id === state.activeTimerId);
+    const targetIdx = currentIdx > 0 ? currentIdx - 1 : 0;
+    const target = state.timers[targetIdx];
+    if (target && target.id !== state.activeTimerId) {
+      client.setActiveTimer(target.id);
+    }
+  });
+}
+
+if ($btnNext) {
+  $btnNext.addEventListener('click', () => {
+    if (!state || !state.timers || state.timers.length === 0) return;
+    const currentIdx = state.timers.findIndex(t => t.id === state.activeTimerId);
+    const targetIdx = currentIdx >= 0 && currentIdx < state.timers.length - 1 ? currentIdx + 1 : state.timers.length - 1;
+    const target = state.timers[targetIdx];
+    if (target && target.id !== state.activeTimerId) {
+      client.setActiveTimer(target.id);
+    }
+  });
+}
 
 // Drag & Drop reordering in Operator Queue
 $queueList.addEventListener('dragstart', (e) => {

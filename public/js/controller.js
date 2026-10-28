@@ -516,13 +516,25 @@ function renderTimers() {
             data-field="name"
             spellcheck="false"
           />
-          <button
-            class="btn btn-sm timer-active-btn ${isActive ? 'is-active' : ''}"
-            data-action="set-active"
-            data-timer-id="${timer.id}"
-          >
-            ${isActive ? '● ON AIR' : 'SET LIVE'}
-          </button>
+          <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+            <button
+              class="btn btn-sm btn-success timer-fire-direct-btn"
+              data-action="fire-direct"
+              data-timer-id="${timer.id}"
+              title="Disparar direto: coloca no ar e arranca imediatamente o contador"
+              style="font-weight: 800; padding: 4px 10px; box-shadow: 0 2px 6px rgba(0, 184, 148, 0.4);"
+            >
+              🚀 Disparar
+            </button>
+            <button
+              class="btn btn-sm timer-active-btn ${isActive ? 'is-active' : ''}"
+              data-action="set-active"
+              data-timer-id="${timer.id}"
+              title="Colocar como timer ativo no palco (sem arrancar)"
+            >
+              ${isActive ? '● NO AR' : 'SET LIVE'}
+            </button>
+          </div>
         </div>
 
         <div class="timer-card-middle">
@@ -674,6 +686,19 @@ function renderPreview() {
     const nextTimer = idx >= 0 ? state.timers[idx + 1] : null;
     $previewNext.textContent = nextTimer ? `NEXT: ${nextTimer.name}` : '';
   }
+
+  const $ctrlPrevToggle = document.getElementById('ctrl-preview-toggle');
+  if ($ctrlPrevToggle) {
+    if (activeTimer.state === 'running') {
+      $ctrlPrevToggle.textContent = '⏸ Pausar';
+      $ctrlPrevToggle.classList.remove('btn-primary');
+      $ctrlPrevToggle.classList.add('btn-warning');
+    } else {
+      $ctrlPrevToggle.textContent = '▶ Iniciar';
+      $ctrlPrevToggle.classList.add('btn-primary');
+      $ctrlPrevToggle.classList.remove('btn-warning');
+    }
+  }
 }
 
 // ─── Render Message State ──────────────────────────────────────────
@@ -715,6 +740,9 @@ $timerList.addEventListener('click', (e) => {
       break;
     case 'plus5m':
       client.adjustTime(timerId, 300000);
+      break;
+    case 'fire-direct':
+      client.timerAction(timerId, 'start');
       break;
     case 'set-active':
       client.setActiveTimer(timerId);
@@ -1111,5 +1139,60 @@ document.addEventListener('keydown', (e) => {
     case 'Escape':
       $modal.classList.remove('visible');
       break;
+    case 'ArrowLeft':
+    case '[':
+      e.preventDefault();
+      stepControllerTimer(-1);
+      break;
+    case 'ArrowRight':
+    case ']':
+      e.preventDefault();
+      stepControllerTimer(1);
+      break;
   }
 });
+
+// ─── Step Navigation (Passar para trás / Passar para a frente) ───────
+
+function stepControllerTimer(delta) {
+  if (!state || !state.timers || state.timers.length === 0) return;
+  const currentIdx = state.timers.findIndex(t => t.id === state.activeTimerId);
+  let targetIdx = 0;
+  if (currentIdx === -1) {
+    targetIdx = 0;
+  } else {
+    targetIdx = Math.max(0, Math.min(state.timers.length - 1, currentIdx + delta));
+  }
+  const target = state.timers[targetIdx];
+  if (target && target.id !== state.activeTimerId) {
+    client.setActiveTimer(target.id);
+  }
+}
+
+const $ctrlNavPrev = document.getElementById('ctrl-nav-prev');
+const $ctrlNavNext = document.getElementById('ctrl-nav-next');
+const $ctrlPrevPrev = document.getElementById('ctrl-preview-prev');
+const $ctrlPrevNext = document.getElementById('ctrl-preview-next');
+
+if ($ctrlNavPrev) $ctrlNavPrev.addEventListener('click', () => stepControllerTimer(-1));
+if ($ctrlNavNext) $ctrlNavNext.addEventListener('click', () => stepControllerTimer(1));
+if ($ctrlPrevPrev) $ctrlPrevPrev.addEventListener('click', () => stepControllerTimer(-1));
+if ($ctrlPrevNext) $ctrlPrevNext.addEventListener('click', () => stepControllerTimer(1));
+
+const $ctrlPrevToggle = document.getElementById('ctrl-preview-toggle');
+if ($ctrlPrevToggle) {
+  $ctrlPrevToggle.addEventListener('click', () => {
+    if (state?.activeTimerId) {
+      client.timerAction(state.activeTimerId, 'toggle');
+    }
+  });
+}
+
+const $ctrlPrevReset = document.getElementById('ctrl-preview-reset');
+if ($ctrlPrevReset) {
+  $ctrlPrevReset.addEventListener('click', () => {
+    if (state?.activeTimerId) {
+      client.timerAction(state.activeTimerId, 'reset');
+    }
+  });
+}
