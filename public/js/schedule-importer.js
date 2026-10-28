@@ -128,11 +128,11 @@ class ScheduleImporter {
       return true;
     }
     // Production notices and footer info
-    if (/^(a\s*impossibilidade|regras|normas|contacto[s]?\s*de\s*produção|respons[áa]vel|ficheiro|página|stage\s*manager|produção|load-in\s*\|)/i.test(l)) {
+    if (/^(a\s*impossibilidade|regras|normas|contacto[s]?\s*de\s*produção|respons[áa]vel|ficheiro|página|stage\s*manager|produção|load-in\s*[:|])/i.test(l)) {
       return true;
     }
     // Pure note lines (e.g. "***ESTE HORÁRIO JÁ CONSIDERA...")
-    if (/^nota\s*:/i.test(l)) {
+    if (/^(?:[*]+\s*)?nota\s*:/i.test(l) || /^[*]{2,}/.test(l)) {
       return true;
     }
     return false;
@@ -264,6 +264,16 @@ class ScheduleImporter {
       soundcheck = parsed[1];
       changeover = parsed[2];
       onStage = parsed[3];
+    }
+
+    // Check if line contains explicit duration annotation: e.g. "(180min)", "(60m)", "(55min)", "(25min)"
+    // Essential for daylight savings transitions (e.g. 23:00 to 01:00 = 180min) and exact production timer accuracy
+    const mExplicitDur = (line || '').match(/\(\s*(\d+)\s*m(?:in)?\s*\)/i);
+    if (mExplicitDur && onStage) {
+      const explicitMins = parseInt(mExplicitDur[1], 10);
+      if (explicitMins > 0 && explicitMins <= 720) {
+        onStage.durationMs = explicitMins * 60000;
+      }
     }
 
     const soundchecks = soundcheck
