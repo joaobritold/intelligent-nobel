@@ -306,6 +306,179 @@
   font-size: 0.74rem;
 }
 
+/* ─── Device Active View Banner ───────────────────────────────────── */
+.device-view-status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.85);
+  transition: all var(--transition);
+  margin-top: 2px;
+}
+
+.device-view-label-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.device-view-tag-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+
+.device-view-tag-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.device-view-live-pill {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.device-view-live-pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  animation: beacon-pulse 1.5s infinite;
+}
+
+/* Color Themes for each screen */
+.device-view-status-banner.view-viewer {
+  background: linear-gradient(135deg, rgba(0, 184, 148, 0.22) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: rgba(0, 184, 148, 0.6);
+  color: #55efc4;
+}
+.device-view-status-banner.view-viewer .device-view-tag-name {
+  color: #00ffb3;
+  text-shadow: 0 0 10px rgba(0, 255, 179, 0.35);
+}
+.device-view-status-banner.view-viewer .device-view-live-pill {
+  background: rgba(0, 184, 148, 0.25);
+  border-color: rgba(0, 184, 148, 0.5);
+  color: #00ffb3;
+}
+
+.device-view-status-banner.view-controller {
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.25) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: rgba(108, 92, 231, 0.6);
+  color: #a29bfe;
+}
+.device-view-status-banner.view-controller .device-view-tag-name {
+  color: #c4b5fd;
+  text-shadow: 0 0 10px rgba(196, 181, 253, 0.35);
+}
+.device-view-status-banner.view-controller .device-view-live-pill {
+  background: rgba(108, 92, 231, 0.25);
+  border-color: rgba(108, 92, 231, 0.5);
+  color: #c4b5fd;
+}
+
+.device-view-status-banner.view-operator {
+  background: linear-gradient(135deg, rgba(243, 156, 18, 0.22) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: rgba(243, 156, 18, 0.6);
+  color: #fed330;
+}
+.device-view-status-banner.view-operator .device-view-tag-name {
+  color: #fbc531;
+  text-shadow: 0 0 10px rgba(251, 197, 49, 0.35);
+}
+.device-view-status-banner.view-operator .device-view-live-pill {
+  background: rgba(243, 156, 18, 0.25);
+  border-color: rgba(243, 156, 18, 0.5);
+  color: #fbc531;
+}
+
+.device-view-status-banner.view-lineup {
+  background: linear-gradient(135deg, rgba(9, 132, 227, 0.22) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: rgba(9, 132, 227, 0.6);
+  color: #74b9ff;
+}
+.device-view-status-banner.view-lineup .device-view-tag-name {
+  color: #38bdf8;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+.device-view-status-banner.view-lineup .device-view-live-pill {
+  background: rgba(9, 132, 227, 0.25);
+  border-color: rgba(9, 132, 227, 0.5);
+  color: #38bdf8;
+}
+
+.device-view-status-banner.view-master {
+  background: linear-gradient(135deg, rgba(253, 203, 110, 0.22) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: rgba(253, 203, 110, 0.6);
+  color: #ffeaa7;
+}
+.device-view-status-banner.view-master .device-view-tag-name {
+  color: #fef08a;
+  text-shadow: 0 0 10px rgba(254, 240, 138, 0.35);
+}
+.device-view-status-banner.view-master .device-view-live-pill {
+  background: rgba(253, 203, 110, 0.25);
+  border-color: rgba(253, 203, 110, 0.5);
+  color: #fef08a;
+}
+
+.device-view-status-banner.view-index {
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.15) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #cbd5e1;
+}
+.device-view-status-banner.view-index .device-view-tag-name {
+  color: #f1f5f9;
+}
+.device-view-status-banner.view-index .device-view-live-pill {
+  background: rgba(148, 163, 184, 0.2);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
+}
+
+/* Active Button Indicator */
+.device-btn.is-current-view {
+  background: rgba(0, 184, 148, 0.2) !important;
+  border-color: #00b894 !important;
+  color: #55efc4 !important;
+  font-weight: 700;
+  box-shadow: 0 0 8px rgba(0, 184, 148, 0.25);
+}
+
+.btn-active-check {
+  font-size: 0.65rem;
+  background: #00b894;
+  color: #0b101b;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+  margin-left: 3px;
+}
+
 /* Remote Actions Toolbar */
 .device-actions-toolbar {
   display: flex;

@@ -95,23 +95,38 @@ class UniversalSyncClient {
 
   // ─── Device Info & Remote Control ───────────────────────────────────
 
-  _getDeviceLabel() {
+  _getDeviceOS() {
     const ua = (typeof navigator !== 'undefined' ? navigator.userAgent : '') || '';
-    let os = 'Dispositivo';
-    if (/iPhone/i.test(ua)) os = 'iPhone';
-    else if (/iPad/i.test(ua)) os = 'iPad';
-    else if (/Android/i.test(ua)) os = 'Android';
-    else if (/Mac/i.test(ua)) os = 'Mac';
-    else if (/Windows/i.test(ua)) os = 'PC Windows';
-    else if (/Linux/i.test(ua)) os = 'Linux';
+    if (/iPhone/i.test(ua)) return 'iPhone';
+    if (/iPad/i.test(ua)) return 'iPad';
+    if (/Android/i.test(ua)) return 'Android';
+    if (/Mac/i.test(ua)) return 'Mac';
+    if (/Windows/i.test(ua)) return 'PC Windows';
+    if (/Linux/i.test(ua)) return 'Linux';
+    return 'Dispositivo';
+  }
 
-    let roleLabel = 'Ecrã';
+  _getCurrentViewKey() {
     const path = typeof location !== 'undefined' ? location.pathname.toLowerCase() : '';
-    if (path.includes('master')) roleLabel = '👑 Painel Master';
-    else if (this.role === 'controller' || path.includes('controller')) roleLabel = '🎛️ PC Régie (Controlador)';
-    else if (this.role === 'operator' || path.includes('operator')) roleLabel = '📱 Telemóvel Operador';
-    else if (path.includes('lineup')) roleLabel = '📋 Ecrã Lista / Backstage';
-    else if (this.role === 'viewer' || path.includes('viewer')) roleLabel = '📺 Telão de Palco';
+    if (path.includes('master') || this.role === 'master') return 'master';
+    if (path.includes('controller') || this.role === 'controller') return 'controller';
+    if (path.includes('operator') || this.role === 'operator') return 'operator';
+    if (path.includes('viewer') || this.role === 'viewer') return 'viewer';
+    if (path.includes('lineup')) return 'lineup';
+    if (path.includes('index') || path === '' || path === '/') return 'index';
+    return this.role || 'index';
+  }
+
+  _getDeviceLabel() {
+    const os = this._getDeviceOS();
+    const viewKey = this._getCurrentViewKey();
+    let roleLabel = 'Ecran';
+    if (viewKey === 'master') roleLabel = 'Painel Master';
+    else if (viewKey === 'controller') roleLabel = 'Controlador Regie';
+    else if (viewKey === 'operator') roleLabel = 'Operador Mobile';
+    else if (viewKey === 'lineup') roleLabel = 'Modo Lista';
+    else if (viewKey === 'viewer') roleLabel = 'Telao de Palco';
+    else if (viewKey === 'index') roleLabel = 'Menu Inicial';
 
     return `${roleLabel} (${os})`;
   }
@@ -583,6 +598,8 @@ class UniversalSyncClient {
         clientId: this.clientId,
         deviceUuid: this.deviceUuid,
         label: this._getDeviceLabel(),
+        os: this._getDeviceOS(),
+        viewKey: this._getCurrentViewKey(),
         role: this.role,
         room: this.cleanRoom,
         roomTitle: this._state?.name || this.cleanRoom,

@@ -68,6 +68,68 @@
 
   // ─── Section 1: Dispositivos Online & Controlo Remoto ──────────────
 
+  function getViewDetails(dev) {
+    const path = String(dev.path || '').toLowerCase();
+    const role = String(dev.role || '').toLowerCase();
+    const viewKey = String(dev.viewKey || '').toLowerCase();
+    const label = String(dev.label || '').toLowerCase();
+
+    if (viewKey === 'viewer' || path.includes('viewer') || role === 'viewer' || label.includes('palco') || label.includes('telao') || label.includes('telão')) {
+      return {
+        key: 'viewer',
+        name: '📺 Modo Palco (Telão)',
+        shortName: 'Palco',
+        badgeClass: 'view-viewer'
+      };
+    }
+    if (viewKey === 'controller' || path.includes('controller') || role === 'controller' || label.includes('régie') || label.includes('regie') || label.includes('controlador')) {
+      return {
+        key: 'controller',
+        name: '🎛️ Régie (Controlador)',
+        shortName: 'Régie',
+        badgeClass: 'view-controller'
+      };
+    }
+    if (viewKey === 'operator' || path.includes('operator') || role === 'operator' || label.includes('operador')) {
+      return {
+        key: 'operator',
+        name: '📱 Operador Mobile',
+        shortName: 'Operador',
+        badgeClass: 'view-operator'
+      };
+    }
+    if (viewKey === 'lineup' || path.includes('lineup') || label.includes('lista') || label.includes('backstage')) {
+      return {
+        key: 'lineup',
+        name: '📋 Modo Lista (Backstage)',
+        shortName: 'Lista',
+        badgeClass: 'view-lineup'
+      };
+    }
+    if (viewKey === 'master' || path.includes('master') || role === 'master' || label.includes('master')) {
+      return {
+        key: 'master',
+        name: '👑 Painel Master',
+        shortName: 'Master',
+        badgeClass: 'view-master'
+      };
+    }
+    return {
+      key: 'index',
+      name: '🏠 Menu Inicial',
+      shortName: 'Menu',
+      badgeClass: 'view-index'
+    };
+  }
+
+  function getDeviceCleanOS(dev) {
+    if (dev.os) return dev.os;
+    const raw = String(dev.label || '');
+    const m = raw.match(/\(([^)]+)\)/);
+    if (m && m[1]) return m[1];
+    return 'Dispositivo';
+  }
+
   function renderDevicesList(devices = masterClient.getOnlineDevices()) {
     if (!$devicesList) return;
     if ($kpiDevices) $kpiDevices.textContent = devices.length;
@@ -110,6 +172,9 @@
 
       let card = $devicesList.querySelector(`[data-device-uuid="${CSS.escape(dev.deviceUuid)}"]`);
 
+      const viewInfo = getViewDetails(dev);
+      const deviceOs = getDeviceCleanOS(dev);
+
       if (!card) {
         // Create new device card
         card = document.createElement('div');
@@ -129,41 +194,50 @@
               <div class="device-beacon"></div>
               <div>
                 <div class="device-name">
-                  ${escapeHtml(dev.label || 'Dispositivo')}
-                  ${isSelf ? '<span style="font-size: 0.7rem; color: #a29bfe; font-weight: normal;">(Este ecrã)</span>' : ''}
+                  ${escapeHtml(deviceOs)}
+                  ${isSelf ? '<span class="device-self-tag">(Este ecrã)</span>' : ''}
                 </div>
                 <div class="device-uuid-tag">${escapeHtml(dev.deviceUuid)}</div>
               </div>
             </div>
-            <div class="device-seen-text" style="font-size: 0.72rem; color: var(--text-secondary); text-align: right;">
-              ${seenLabel}
+            <div class="device-seen-badge">
+              <span class="device-seen-text">${seenLabel}</span>
             </div>
           </div>
 
+          <!-- Highlighted High-Visibility View Badge -->
+          <div class="device-view-status-banner ${viewInfo.badgeClass}">
+            <div class="device-view-label-col">
+              <span class="device-view-tag-label">VISTA ATUAL DO ECRÃ:</span>
+              <strong class="device-view-tag-name">${viewInfo.name}</strong>
+            </div>
+            <span class="device-view-live-pill">● ONLINE</span>
+          </div>
+
           <div class="device-meta-row">
-            <span class="device-room-pill">Palco: ${escapeHtml(dev.roomTitle || dev.room || 'PALCO1')}</span>
-            <span class="device-view-pill">Vista: ${escapeHtml(dev.path || 'index.html')}</span>
+            <span class="device-room-pill">🎪 Palco: <strong>${escapeHtml(dev.roomTitle || dev.room || 'PALCO1')}</strong></span>
+            <span class="device-os-pill">📱 ${escapeHtml(deviceOs)}</span>
           </div>
 
           <div class="device-actions-toolbar">
             <div class="device-actions-title">
-              <span>Mudar Modo do Ecrã Remoto:</span>
+              <span>Mudar Modo do Ecrã:</span>
             </div>
             <div class="device-btn-group">
-              <button type="button" class="device-btn" data-cmd="viewer" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Telão de Palco">
-                📺 Palco
+              <button type="button" class="device-btn ${viewInfo.key === 'viewer' ? 'is-current-view' : ''}" data-cmd="viewer" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Telão de Palco">
+                📺 Palco ${viewInfo.key === 'viewer' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
               </button>
-              <button type="button" class="device-btn" data-cmd="lineup" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Lista Backstage">
-                📋 Lista
+              <button type="button" class="device-btn ${viewInfo.key === 'lineup' ? 'is-current-view' : ''}" data-cmd="lineup" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Lista Backstage">
+                📋 Lista ${viewInfo.key === 'lineup' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
               </button>
-              <button type="button" class="device-btn" data-cmd="operator" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Operador Mobile">
-                📱 Operador
+              <button type="button" class="device-btn ${viewInfo.key === 'operator' ? 'is-current-view' : ''}" data-cmd="operator" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Operador Mobile">
+                📱 Operador ${viewInfo.key === 'operator' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
               </button>
-              <button type="button" class="device-btn" data-cmd="controller" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Controlador Régie">
-                🎛️ Régie
+              <button type="button" class="device-btn ${viewInfo.key === 'controller' ? 'is-current-view' : ''}" data-cmd="controller" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Controlador Régie">
+                🎛️ Régie ${viewInfo.key === 'controller' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
               </button>
               <button type="button" class="device-btn btn-warning-action" data-cmd="reload" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Recarregar página no dispositivo">
-                🔄 Recarregar
+                🔄 Recarregar Ecrã Remoto
               </button>
             </div>
 
@@ -181,22 +255,42 @@
         // In-place update of dynamic values only
         card.dataset.deviceRoom = dev.room || 'PALCO1';
 
-        // Update button targets
+        // Update banner
+        const bannerEl = card.querySelector('.device-view-status-banner');
+        if (bannerEl) {
+          bannerEl.className = `device-view-status-banner ${viewInfo.badgeClass}`;
+          const nameEl = bannerEl.querySelector('.device-view-tag-name');
+          if (nameEl && nameEl.textContent !== viewInfo.name) {
+            nameEl.textContent = viewInfo.name;
+          }
+        }
+
+        // Update button targets & active state
         card.querySelectorAll('[data-cmd]').forEach(b => {
           b.dataset.targetUuid = dev.deviceUuid;
           b.dataset.targetRoom = dev.room || 'PALCO1';
+          const cmd = b.dataset.cmd;
+          const isCurrent = cmd === viewInfo.key;
+          b.classList.toggle('is-current-view', isCurrent);
+          const checkEl = b.querySelector('.btn-active-check');
+          if (isCurrent && !checkEl && cmd !== 'reload') {
+            const check = document.createElement('span');
+            check.className = 'btn-active-check';
+            check.textContent = '✓ Ativo';
+            b.appendChild(check);
+          } else if (!isCurrent && checkEl) {
+            checkEl.remove();
+          }
         });
 
         const seenEl = card.querySelector('.device-seen-text');
         if (seenEl && seenEl.textContent.trim() !== seenLabel) seenEl.textContent = seenLabel;
 
         const roomPill = card.querySelector('.device-room-pill');
-        const expectedRoomText = `Palco: ${dev.roomTitle || dev.room || 'PALCO1'}`;
-        if (roomPill && roomPill.textContent !== expectedRoomText) roomPill.textContent = expectedRoomText;
-
-        const viewPill = card.querySelector('.device-view-pill');
-        const expectedViewText = `Vista: ${dev.path || 'index.html'}`;
-        if (viewPill && viewPill.textContent !== expectedViewText) viewPill.textContent = expectedViewText;
+        const expectedRoomText = `🎪 Palco: ${dev.roomTitle || dev.room || 'PALCO1'}`;
+        if (roomPill && roomPill.textContent !== expectedRoomText) {
+          roomPill.innerHTML = `🎪 Palco: <strong>${escapeHtml(dev.roomTitle || dev.room || 'PALCO1')}</strong>`;
+        }
 
         const select = card.querySelector('.device-room-select');
         if (select && document.activeElement !== select && select.value !== dev.room) {
