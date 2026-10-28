@@ -5,6 +5,14 @@
   max-width: 1340px;
   margin: 0 auto;
   padding: 24px 20px 80px;
+  touch-action: pan-y;
+}
+
+.device-btn,
+.master-tab-item,
+.btn-broadcast-action,
+.master-nav-btn {
+  touch-action: manipulation;
 }
 
 /* ─── Header ──────────────────────────────────────────────────────── */
@@ -910,7 +918,7 @@
 
   /* Sticky Tab Bar */
   .master-tab-bar {
-    top: 6px;
+    top: calc(6px + env(safe-area-inset-top, 0px));
     margin-bottom: 12px;
     padding: 4px;
     border-radius: 10px;

@@ -728,7 +728,7 @@
     'section-multiview': document.getElementById('section-multiview')
   };
 
-  function switchMobileTab(targetId) {
+  function switchMobileTab(targetId, shouldScroll = false) {
     if (!targetId) return;
 
     $tabItems.forEach(item => {
@@ -745,14 +745,25 @@
           el.style.display = 'none';
         }
       });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      if (shouldScroll) {
+        const tabBar = document.getElementById('master-tab-bar');
+        if (tabBar) {
+          const rect = tabBar.getBoundingClientRect();
+          if (rect.top < 0) {
+            tabBar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }
     } else {
       Object.values(masterSections).forEach(el => {
         if (el) el.style.display = '';
       });
-      const targetEl = masterSections[targetId];
-      if (targetEl) {
-        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (shouldScroll) {
+        const targetEl = masterSections[targetId];
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
     }
   }
@@ -762,23 +773,30 @@
       if (navigator.vibrate) {
         try { navigator.vibrate(25); } catch (e) {}
       }
-      switchMobileTab(btn.dataset.target);
+      switchMobileTab(btn.dataset.target, true);
     });
   });
 
+  let lastScreenWidth = window.innerWidth;
   window.addEventListener('resize', () => {
+    // CRITICAL: On mobile phones, scrolling down collapses the address bar,
+    // which fires a window resize event (height change only).
+    // NEVER switch tabs or scroll if width has not changed!
+    if (window.innerWidth === lastScreenWidth) return;
+    lastScreenWidth = window.innerWidth;
+
     if (window.innerWidth > 768) {
       Object.values(masterSections).forEach(el => {
         if (el) el.style.display = '';
       });
     } else {
       const activeBtn = document.querySelector('.master-tab-item.active') || $tabItems[0];
-      if (activeBtn) switchMobileTab(activeBtn.dataset.target);
+      if (activeBtn) switchMobileTab(activeBtn.dataset.target, false);
     }
   });
 
   if (window.innerWidth <= 768) {
-    switchMobileTab('section-devices');
+    switchMobileTab('section-devices', false);
   }
 
   // Initial Boot
