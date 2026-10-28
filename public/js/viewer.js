@@ -5,7 +5,8 @@
 // ─── Init ──────────────────────────────────────────────────────────
 
 const params = new URLSearchParams(location.search);
-const roomId = (params.get('room') || 'PALCO1').toUpperCase();
+const roomId = (params.get('room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
+try { localStorage.setItem('stagetimer_last_room', roomId); } catch (e) {}
 
 const client = new StageTimerClient({
   role: 'viewer',
@@ -56,9 +57,15 @@ if ($viewerEventSelect) {
   $viewerEventSelect.addEventListener('change', () => {
     const chosen = $viewerEventSelect.value;
     if (chosen) {
+      try { localStorage.setItem('stagetimer_last_room', chosen.toUpperCase()); } catch (e) {}
       location.search = `?room=${encodeURIComponent(chosen)}`;
     }
   });
+}
+
+const $viewerMenuBtn = document.querySelector('a[href^="index.html"]');
+if ($viewerMenuBtn) {
+  $viewerMenuBtn.href = `index.html?room=${encodeURIComponent(roomId)}`;
 }
 
 client.on('events-list-update', () => {

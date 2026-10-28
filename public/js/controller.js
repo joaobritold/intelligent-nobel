@@ -5,7 +5,8 @@
 // ─── Init ──────────────────────────────────────────────────────────
 
 const params = new URLSearchParams(location.search);
-let roomId = (params.get('room') || 'PALCO1').toUpperCase();
+let roomId = (params.get('room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
+try { localStorage.setItem('stagetimer_last_room', roomId); } catch (e) {}
 
 const client = new StageTimerClient({
   role: 'controller',
@@ -49,6 +50,10 @@ const $newEventCancel = document.getElementById('new-event-cancel');
 const $ctrlEventsManageList = document.getElementById('ctrl-events-manage-list');
 const $ctrlDeleteAllEventsBtn = document.getElementById('ctrl-delete-all-events-btn');
 const $ctrlDayTabs = document.getElementById('ctrl-day-tabs');
+const $topNavHub = document.getElementById('top-nav-hub');
+if ($topNavHub) {
+  $topNavHub.href = `index.html?room=${encodeURIComponent(roomId)}`;
+}
 
 function renderDayTabs() {
   if (!$ctrlDayTabs || !state) return;
@@ -144,6 +149,7 @@ if ($ctrlEventSelect) {
       return;
     }
     if (val && val !== (state?.id || roomId)) {
+      try { localStorage.setItem('stagetimer_last_room', val.toUpperCase()); } catch (e) {}
       location.search = `?room=${encodeURIComponent(val)}`;
     }
   });
@@ -181,7 +187,9 @@ if ($ctrlEventsManageList) {
   $ctrlEventsManageList.addEventListener('click', (e) => {
     const openBtn = e.target.closest('[data-open-ev]');
     if (openBtn) {
-      location.search = `?room=${encodeURIComponent(openBtn.dataset.openEv)}`;
+      const code = openBtn.dataset.openEv.toUpperCase();
+      try { localStorage.setItem('stagetimer_last_room', code); } catch (e) {}
+      location.search = `?room=${encodeURIComponent(code)}`;
       return;
     }
     const delBtn = e.target.closest('[data-del-ev]');

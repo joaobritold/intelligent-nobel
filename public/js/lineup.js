@@ -3,7 +3,8 @@
  */
 
 const params = new URLSearchParams(location.search);
-const roomId = (params.get('room') || 'PALCO1').toUpperCase();
+const roomId = (params.get('room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
+try { localStorage.setItem('stagetimer_last_room', roomId); } catch (e) {}
 
 const client = new StageTimerClient({
   role: 'viewer',
@@ -43,6 +44,7 @@ if ($lineupEventSelect) {
   $lineupEventSelect.addEventListener('change', () => {
     const chosen = $lineupEventSelect.value;
     if (chosen) {
+      try { localStorage.setItem('stagetimer_last_room', chosen.toUpperCase()); } catch (e) {}
       location.search = `?room=${encodeURIComponent(chosen)}`;
     }
   });

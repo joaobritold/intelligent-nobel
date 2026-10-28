@@ -13,6 +13,11 @@ class UniversalSyncClient {
     this.role = role;
     this.room = (room || 'PALCO1').trim().toUpperCase();
     this.cleanRoom = this.room.replace(/[^A-Z0-9_-]/g, '') || 'PALCO1';
+    try {
+      if (this.cleanRoom && (this.cleanRoom !== 'PALCO1' || !localStorage.getItem('stagetimer_last_room'))) {
+        localStorage.setItem('stagetimer_last_room', this.cleanRoom);
+      }
+    } catch (e) {}
 
     this.channelName = `stagetimer_live_${this.cleanRoom}`;
     this.cmdChannelName = 'stagetimer_global_cmds_v2';
@@ -867,6 +872,9 @@ class UniversalSyncClient {
           updatedAt: Date.now()
         }));
       }
+
+      // Always sort so most recently used / updated event is first
+      list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
       return list;
     } catch (e) {
       return [this._normalizeRegistryItem({ id: 'PALCO1', code: 'PALCO1', title: 'Palco Principal', timersCount: 0, currentDay: 1 })];

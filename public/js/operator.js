@@ -3,7 +3,8 @@
  */
 
 const params = new URLSearchParams(location.search);
-let roomId = (params.get('room') || 'PALCO1').toUpperCase();
+let roomId = (params.get('room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
+try { localStorage.setItem('stagetimer_last_room', roomId); } catch (e) {}
 
 const client = new StageTimerClient({
   role: 'controller',
@@ -34,9 +35,15 @@ if ($opEventSelect) {
   $opEventSelect.addEventListener('change', () => {
     const val = $opEventSelect.value;
     if (val && val !== (state?.id || roomId)) {
+      try { localStorage.setItem('stagetimer_last_room', val.toUpperCase()); } catch (e) {}
       location.search = `?room=${encodeURIComponent(val)}`;
     }
   });
+}
+
+const $navHub = document.getElementById('nav-hub');
+if ($navHub) {
+  $navHub.href = `index.html?room=${encodeURIComponent(roomId)}`;
 }
 
 function renderOpDayTabs() {
