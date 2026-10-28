@@ -71,6 +71,8 @@
   function renderDevicesList(devices = masterClient.getOnlineDevices()) {
     if (!$devicesList) return;
     if ($kpiDevices) $kpiDevices.textContent = devices.length;
+    const tabDevBadge = document.getElementById('tab-devices-badge');
+    if (tabDevBadge) tabDevBadge.textContent = devices.length;
 
     if (devices.length === 0) {
       $devicesList.innerHTML = `
@@ -220,6 +222,10 @@
 
       if (!uuid) return;
 
+      if (navigator.vibrate) {
+        try { navigator.vibrate(35); } catch (e) {}
+      }
+
       // Instant visual click feedback
       const originalHtml = btn.innerHTML;
       btn.innerHTML = '⚡ Enviado!';
@@ -261,9 +267,10 @@
   if ($cmdAllViewer) {
     $cmdAllViewer.addEventListener('click', () => {
       if (confirm('Mudar TODOS os dispositivos online para o Modo Palco (Telão)?')) {
+        if (navigator.vibrate) { try { navigator.vibrate(35); } catch (e) {} }
         masterClient.sendDeviceCommand('ALL', { action: 'navigate', url: 'viewer.html' });
         $cmdAllViewer.textContent = '⚡ Enviado a Todos!';
-        setTimeout(() => { $cmdAllViewer.textContent = '📺 Mudar TODOS para Palco'; }, 1500);
+        setTimeout(() => { $cmdAllViewer.textContent = '📺 Todos Palco'; }, 1500);
       }
     });
   }
@@ -271,9 +278,10 @@
   if ($cmdAllLineup) {
     $cmdAllLineup.addEventListener('click', () => {
       if (confirm('Mudar TODOS os dispositivos online para o Modo Lista?')) {
+        if (navigator.vibrate) { try { navigator.vibrate(35); } catch (e) {} }
         masterClient.sendDeviceCommand('ALL', { action: 'navigate', url: 'lineup.html' });
         $cmdAllLineup.textContent = '⚡ Enviado a Todos!';
-        setTimeout(() => { $cmdAllLineup.textContent = '📋 Mudar TODOS para Lista'; }, 1500);
+        setTimeout(() => { $cmdAllLineup.textContent = '📋 Todos Lista'; }, 1500);
       }
     });
   }
@@ -281,9 +289,10 @@
   if ($cmdAllReload) {
     $cmdAllReload.addEventListener('click', () => {
       if (confirm('Recarregar TODOS os ecrãs e dispositivos remotos agora?')) {
+        if (navigator.vibrate) { try { navigator.vibrate(50); } catch (e) {} }
         masterClient.sendDeviceCommand('ALL', { action: 'reload' });
         $cmdAllReload.textContent = '⚡ Recarregar Enviado!';
-        setTimeout(() => { $cmdAllReload.textContent = '🔄 Recarregar TODOS os Ecrãs'; }, 1500);
+        setTimeout(() => { $cmdAllReload.textContent = '🔄 Recarregar Todos'; }, 1500);
       }
     });
   }
@@ -294,6 +303,8 @@
     if (!$eventsList) return;
     const events = masterClient.getEventsList();
     if ($kpiEvents) $kpiEvents.textContent = events.length;
+    const tabEvBadge = document.getElementById('tab-events-badge');
+    if (tabEvBadge) tabEvBadge.textContent = events.length;
 
     $eventsList.innerHTML = events.map(ev => {
       const count = typeof ev.timersCount === 'number' ? ev.timersCount : 0;
@@ -598,6 +609,8 @@
     });
 
     if ($kpiRunning) $kpiRunning.textContent = runningCount;
+    const tabRunBadge = document.getElementById('tab-running-badge');
+    if (tabRunBadge) tabRunBadge.textContent = runningCount;
   }
 
   // Live smooth tick for multiview timers when stages are running (in-place updates)
@@ -612,6 +625,67 @@
       renderMultiview();
     }
   }, 250);
+
+  // ─── Mobile Segmented Tab Navigation ──────────────────────────────
+  const $tabItems = document.querySelectorAll('.master-tab-item');
+  const masterSections = {
+    'section-devices': document.getElementById('section-devices'),
+    'section-events': document.getElementById('section-events'),
+    'section-multiview': document.getElementById('section-multiview')
+  };
+
+  function switchMobileTab(targetId) {
+    if (!targetId) return;
+
+    $tabItems.forEach(item => {
+      const isTarget = item.dataset.target === targetId;
+      item.classList.toggle('active', isTarget);
+    });
+
+    if (window.innerWidth <= 768) {
+      Object.entries(masterSections).forEach(([id, el]) => {
+        if (!el) return;
+        if (id === targetId) {
+          el.style.display = 'block';
+        } else {
+          el.style.display = 'none';
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      Object.values(masterSections).forEach(el => {
+        if (el) el.style.display = '';
+      });
+      const targetEl = masterSections[targetId];
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }
+
+  $tabItems.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (navigator.vibrate) {
+        try { navigator.vibrate(25); } catch (e) {}
+      }
+      switchMobileTab(btn.dataset.target);
+    });
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      Object.values(masterSections).forEach(el => {
+        if (el) el.style.display = '';
+      });
+    } else {
+      const activeBtn = document.querySelector('.master-tab-item.active') || $tabItems[0];
+      if (activeBtn) switchMobileTab(activeBtn.dataset.target);
+    }
+  });
+
+  if (window.innerWidth <= 768) {
+    switchMobileTab('section-devices');
+  }
 
   // Initial Boot
   preloadLocalStagesState();

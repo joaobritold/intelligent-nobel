@@ -2,42 +2,43 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>StageTimer — Painel Master (Super Régie)</title>
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f0f1a">
-  <link rel="stylesheet" href="css/master.css">
-  <script src="js/auth.js"></script>
+  <link rel="stylesheet" href="css/master.css?v=17">
+  <script src="js/auth.js?v=17"></script>
 </head>
 <body>
   <div class="master-container">
 
     <!-- Header -->
     <header class="master-header">
-      <div class="master-header-left">
-        <div class="master-crown">👑</div>
-        <div>
-          <h1 class="master-header-title">
-            Painel Master
-            <span class="badge">Super Régie</span>
-          </h1>
-          <div class="master-header-sub">
-            Gestão Central de Ecrãs, Palcos em Paralelo e Controlo Remoto
+      <div class="master-header-main">
+        <div class="master-header-left">
+          <div class="master-crown">👑</div>
+          <div>
+            <h1 class="master-header-title">
+              Painel Master
+              <span class="badge">Super Régie</span>
+            </h1>
+            <div class="master-header-sub">
+              Gestão Central de Ecrãs e Palcos
+            </div>
           </div>
         </div>
+
+        <div id="master-live-clock" class="master-clock-box">--:--:--</div>
       </div>
 
-      <div class="master-header-right">
-        <div id="master-live-clock" class="master-clock-box">--:--:--</div>
-        <nav class="master-nav-links">
-          <a href="index.html" class="master-nav-btn">🏠 Menu</a>
-          <a href="controller.html" class="master-nav-btn">🎛️ Controlador</a>
-          <a href="operator.html" class="master-nav-btn">📱 Operador</a>
-          <a href="viewer.html" class="master-nav-btn">📺 Telão Palco</a>
-          <a href="lineup.html" class="master-nav-btn">📋 Modo Lista</a>
-        </nav>
-      </div>
+      <nav class="master-nav-links">
+        <a href="index.html" class="master-nav-btn">🏠 Menu</a>
+        <a href="controller.html" class="master-nav-btn">🎛️ Régie</a>
+        <a href="operator.html" class="master-nav-btn">📱 Operador</a>
+        <a href="viewer.html" class="master-nav-btn">📺 Telão</a>
+        <a href="lineup.html" class="master-nav-btn">📋 Lista</a>
+      </nav>
     </header>
 
     <!-- Top KPI Metrics -->
@@ -75,12 +76,31 @@
       </div>
     </div>
 
+    <!-- Mobile Segmented Tab Control (Sticky) -->
+    <nav class="master-tab-bar" id="master-tab-bar" aria-label="Navegação de Secções">
+      <button type="button" class="master-tab-item active" data-target="section-devices">
+        <span class="master-tab-icon">📱</span>
+        <span class="master-tab-text">Dispositivos</span>
+        <span id="tab-devices-badge" class="master-tab-badge">0</span>
+      </button>
+      <button type="button" class="master-tab-item" data-target="section-events">
+        <span class="master-tab-icon">🎪</span>
+        <span class="master-tab-text">Palcos</span>
+        <span id="tab-events-badge" class="master-tab-badge">0</span>
+      </button>
+      <button type="button" class="master-tab-item" data-target="section-multiview">
+        <span class="master-tab-icon">⏱️</span>
+        <span class="master-tab-text">Multiview</span>
+        <span id="tab-running-badge" class="master-tab-badge">0</span>
+      </button>
+    </nav>
+
     <!-- Section 1: Dispositivos Online & Controlo Remoto de Ecrãs -->
-    <section class="master-section">
+    <section id="section-devices" class="master-section">
       <div class="master-section-header">
         <div>
           <h2 class="master-section-title">
-            <span>📱 Dispositivos Online & Controlo Remoto de Ecrãs</span>
+            <span>📱 Dispositivos Online & Controlo Remoto</span>
           </h2>
           <div class="master-section-sub">
             Todos os telemóveis, computadores e telões conectados em tempo real. Mude a vista ou o palco de qualquer ecrã com 1 clique.
@@ -88,15 +108,15 @@
         </div>
 
         <!-- Global Broadcast Actions -->
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button id="cmd-all-viewer" type="button" class="btn btn-sm" style="background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4;">
-            📺 Mudar TODOS para Palco
+        <div class="master-broadcast-actions">
+          <button id="cmd-all-viewer" type="button" class="btn btn-sm btn-broadcast-action" style="background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4;">
+            📺 Todos Palco
           </button>
-          <button id="cmd-all-lineup" type="button" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe;">
-            📋 Mudar TODOS para Lista
+          <button id="cmd-all-lineup" type="button" class="btn btn-sm btn-broadcast-action" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe;">
+            📋 Todos Lista
           </button>
-          <button id="cmd-all-reload" type="button" class="btn btn-sm btn-danger">
-            🔄 Recarregar TODOS os Ecrãs
+          <button id="cmd-all-reload" type="button" class="btn btn-sm btn-danger btn-broadcast-action">
+            🔄 Recarregar Todos
           </button>
         </div>
       </div>
@@ -109,7 +129,7 @@
     </section>
 
     <!-- Section 2: Gestão Central de Palcos & Eventos -->
-    <section class="master-section">
+    <section id="section-events" class="master-section">
       <div class="master-section-header">
         <div>
           <h2 class="master-section-title">
@@ -120,21 +140,21 @@
           </div>
         </div>
 
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <div class="master-stage-actions">
           <button id="master-clean-ghosts-btn" type="button" class="btn btn-sm" style="background: rgba(253, 203, 110, 0.18); border-color: #fdcb6e; color: #ffeaa7; font-weight: 700;" title="Eliminar palcos inexistentes da nuvem e forçar sincronização">
-            👻 Purgar Fantasmas da Nuvem
+            👻 Purgar Fantasmas
           </button>
           <button id="master-wipe-all-btn" type="button" class="btn btn-sm btn-danger" style="font-weight: 700;">
-            🧹 Reset Geral (Limpar Tudo)
+            🧹 Reset Geral
           </button>
         </div>
       </div>
 
       <!-- Quick Add Stage Bar -->
-      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; background: #0b1322; padding: 14px; border-radius: 10px; border: 1px solid var(--border);">
-        <input id="master-new-stage-input" class="input" style="flex: 1; min-width: 220px;" placeholder="Nome do novo palco (ex: Palco Sunset, Tenda VIP, Palco 2)..." autocomplete="off">
+      <div class="master-quick-add">
+        <input id="master-new-stage-input" class="input" placeholder="Nome do novo palco (ex: Sunset, VIP)..." autocomplete="off">
         <button id="master-create-stage-btn" type="button" class="btn btn-primary" style="font-weight: 700;">
-          ✨ + Criar Novo Palco do Zero
+          ✨ + Criar Palco
         </button>
       </div>
 
@@ -144,7 +164,7 @@
     </section>
 
     <!-- Section 3: Multiview Simultâneo dos Palcos -->
-    <section class="master-section">
+    <section id="section-multiview" class="master-section">
       <div class="master-section-header">
         <div>
           <h2 class="master-section-title">
@@ -166,8 +186,8 @@
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=16"></script>
-  <script src="js/local-sync.js?v=16"></script>
-  <script src="js/master.js?v=16"></script>
+  <script src="js/pwa.js?v=17"></script>
+  <script src="js/local-sync.js?v=17"></script>
+  <script src="js/master.js?v=17"></script>
 </body>
 </html>
