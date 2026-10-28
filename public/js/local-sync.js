@@ -9,14 +9,34 @@
  */
 
 class UniversalSyncClient {
-  constructor({ role = 'viewer', room = 'PALCO1' } = {}) {
+  constructor({ role = 'viewer', room } = {}) {
     this.role = role;
-    this.room = (room || 'PALCO1').trim().toUpperCase();
+    let initialRoom = (room || '').trim().toUpperCase();
+
+    // Check saved device room in localStorage (device-specific binding)
+    let savedDeviceRoom = '';
+    let savedLastRoom = '';
+    try {
+      savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim().toUpperCase();
+      savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim().toUpperCase();
+    } catch (e) {}
+
+    // If initialRoom is missing, or is default 'PALCO1' while device already has a configured room:
+    if (!initialRoom || (initialRoom === 'PALCO1' && savedDeviceRoom && savedDeviceRoom !== 'PALCO1')) {
+      initialRoom = savedDeviceRoom || savedLastRoom || 'PALCO1';
+    } else if (!initialRoom || (initialRoom === 'PALCO1' && savedLastRoom && savedLastRoom !== 'PALCO1')) {
+      initialRoom = savedLastRoom || 'PALCO1';
+    } else if (!initialRoom) {
+      initialRoom = 'PALCO1';
+    }
+
+    this.room = initialRoom;
     this.cleanRoom = this.room.replace(/[^A-Z0-9_-]/g, '') || 'PALCO1';
     try {
-      if (this.cleanRoom && (this.cleanRoom !== 'PALCO1' || !localStorage.getItem('stagetimer_last_room'))) {
-        localStorage.setItem('stagetimer_last_room', this.cleanRoom);
+      if (this.cleanRoom !== 'PALCO1' || !localStorage.getItem('stagetimer_device_room')) {
+        localStorage.setItem('stagetimer_device_room', this.cleanRoom);
       }
+      localStorage.setItem('stagetimer_last_room', this.cleanRoom);
     } catch (e) {}
 
     this.channelName = `stagetimer_live_${this.cleanRoom}`;
@@ -39,13 +59,14 @@ class UniversalSyncClient {
 
     this.firstSeen = Date.now();
 
-    // Give each distinct tab/window its own unique screen UUID
+    // Give each distinct device/browser a persistent UUID (persists across navigation/reloads)
     try {
-      this.deviceUuid = sessionStorage.getItem('stagetimer_screen_uuid');
+      this.deviceUuid = localStorage.getItem('stagetimer_device_uuid') || sessionStorage.getItem('stagetimer_screen_uuid');
       if (!this.deviceUuid) {
         this.deviceUuid = 'dev_' + Math.random().toString(36).substring(2, 7) + '_' + Math.random().toString(36).substring(2, 6);
-        sessionStorage.setItem('stagetimer_screen_uuid', this.deviceUuid);
       }
+      localStorage.setItem('stagetimer_device_uuid', this.deviceUuid);
+      sessionStorage.setItem('stagetimer_screen_uuid', this.deviceUuid);
     } catch (e) {
       this.deviceUuid = 'dev_' + Math.random().toString(36).substring(2, 9);
     }
@@ -369,12 +390,18 @@ class UniversalSyncClient {
     if (msg.action === 'navigate' && msg.url) {
       try {
         let targetUrl = msg.url;
-        if (!targetUrl.includes('room=')) {
-          const sep = targetUrl.includes('?') ? '&' : '?';
-          targetUrl = `${targetUrl}${sep}room=${encodeURIComponent(this.cleanRoom)}`;
-        }
-        const sepTs = targetUrl.includes('?') ? '&' : '?';
-        targetUrl = `${targetUrl}${sepTs}_ts=${Date.now()}`;
+        const uTarget = new URL(targetUrl, location.href);
+        const urlRoom = uTarget.searchParams.get('room');
+        const effectiveRoom = (msg.room || urlRoom || localStorage.getItem('stagetimer_device_room') || this.cleanRoom || 'PALCO1').toUpperCase();
+
+        try {
+          localStorage.setItem('stagetimer_device_room', effectiveRoom);
+          localStorage.setItem('stagetimer_last_room', effectiveRoom);
+        } catch (e) {}
+
+        uTarget.searchParams.set('room', effectiveRoom);
+        uTarget.searchParams.set('_ts', Date.now());
+        targetUrl = uTarget.toString();
 
         // Broadcast departing presence with anticipated target view before leaving
         try {
@@ -393,8 +420,8 @@ class UniversalSyncClient {
             os: this._getDeviceOS(),
             viewKey: anticipatedView,
             role: this.role,
-            room: this.cleanRoom,
-            roomTitle: this._state?.name || this.cleanRoom,
+            room: effectiveRoom,
+            roomTitle: effectiveRoom,
             path: targetPath,
             firstSeen: this.firstSeen,
             ts: Date.now()
@@ -414,6 +441,10 @@ class UniversalSyncClient {
     if (msg.action === 'switch_room' && msg.room) {
       try {
         const cleanTargetRoom = String(msg.room).toUpperCase().replace(/[^A-Z0-9_-]/g, '') || 'PALCO1';
+        try {
+          localStorage.setItem('stagetimer_device_room', cleanTargetRoom);
+          localStorage.setItem('stagetimer_last_room', cleanTargetRoom);
+        } catch (e) {}
         const u = new URL(location.href);
         u.searchParams.set('room', cleanTargetRoom);
         u.searchParams.set('_ts', Date.now());
@@ -997,6 +1028,7 @@ class UniversalSyncClient {
 
     try {
       localStorage.setItem(`stagetimer_live_state_${code}`, JSON.stringify(newRoomState));
+      localStorage.setItem('stagetimer_device_room', code);
       localStorage.setItem('stagetimer_last_room', code);
     } catch (e) {}
 
@@ -1055,6 +1087,12 @@ class UniversalSyncClient {
     let list = this.getEventsList().filter(e => e.code !== cleanCode);
     try {
       localStorage.removeItem(`stagetimer_live_state_${cleanCode}`);
+      if (localStorage.getItem('stagetimer_device_room') === cleanCode) {
+        localStorage.removeItem('stagetimer_device_room');
+      }
+      if (localStorage.getItem('stagetimer_last_room') === cleanCode) {
+        localStorage.removeItem('stagetimer_last_room');
+      }
     } catch (e) {}
 
     // Broadcast purge command so every connected screen purges this event immediately

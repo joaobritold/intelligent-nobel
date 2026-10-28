@@ -5,8 +5,21 @@
 // ─── Init ──────────────────────────────────────────────────────────
 
 const params = new URLSearchParams(location.search);
-let roomId = (params.get('room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
-try { localStorage.setItem('stagetimer_last_room', roomId); } catch (e) {}
+const paramRoom = params.get('room');
+const savedDeviceRoom = localStorage.getItem('stagetimer_device_room');
+const savedLastRoom = localStorage.getItem('stagetimer_last_room');
+
+let roomId = (
+  (paramRoom && paramRoom.toUpperCase() !== 'PALCO1') ? paramRoom :
+  (savedDeviceRoom && savedDeviceRoom.toUpperCase() !== 'PALCO1') ? savedDeviceRoom :
+  (savedLastRoom && savedLastRoom.toUpperCase() !== 'PALCO1') ? savedLastRoom :
+  (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1')
+).toUpperCase();
+
+try {
+  localStorage.setItem('stagetimer_device_room', roomId);
+  localStorage.setItem('stagetimer_last_room', roomId);
+} catch (e) {}
 
 const client = new StageTimerClient({
   role: 'controller',
@@ -149,7 +162,10 @@ if ($ctrlEventSelect) {
       return;
     }
     if (val && val !== (state?.id || roomId)) {
-      try { localStorage.setItem('stagetimer_last_room', val.toUpperCase()); } catch (e) {}
+      try {
+        localStorage.setItem('stagetimer_device_room', val.toUpperCase());
+        localStorage.setItem('stagetimer_last_room', val.toUpperCase());
+      } catch (e) {}
       location.search = `?room=${encodeURIComponent(val)}`;
     }
   });
@@ -188,7 +204,10 @@ if ($ctrlEventsManageList) {
     const openBtn = e.target.closest('[data-open-ev]');
     if (openBtn) {
       const code = openBtn.dataset.openEv.toUpperCase();
-      try { localStorage.setItem('stagetimer_last_room', code); } catch (e) {}
+      try {
+        localStorage.setItem('stagetimer_device_room', code);
+        localStorage.setItem('stagetimer_last_room', code);
+      } catch (e) {}
       location.search = `?room=${encodeURIComponent(code)}`;
       return;
     }
@@ -217,9 +236,21 @@ if ($ctrlDeleteAllEventsBtn) {
   });
 }
 
-client.on('events-list-update', () => {
+client.on('events-list-update', (list) => {
   renderEventSelector();
   renderDayTabs();
+  if (roomId === 'PALCO1' && (!state || !state.timers || state.timers.length === 0) && !location.search.includes('clean=1') && Array.isArray(list) && list.length > 0) {
+    const activeEv = list.find(e => (e.timersCount > 0 || e.artistCount > 0)) || list.find(e => e.code !== 'PALCO1');
+    if (activeEv && activeEv.code && activeEv.code !== 'PALCO1') {
+      try {
+        localStorage.setItem('stagetimer_device_room', activeEv.code);
+        localStorage.setItem('stagetimer_last_room', activeEv.code);
+      } catch (e) {}
+      const u = new URL(location.href);
+      u.searchParams.set('room', activeEv.code);
+      location.replace(u.toString());
+    }
+  }
 });
 
 if ($roomCodeInput) {
@@ -423,11 +454,12 @@ function updateRoomInfo() {
   const topOperator = document.getElementById('top-nav-operator');
   const topViewer = document.getElementById('top-nav-viewer');
   const topLineup = document.getElementById('top-nav-lineup');
-  if (topHub) topHub.href = `${basePath}/index.html?room=${encodeURIComponent(code)}`;
-  if (topController) topController.href = controllerUrl;
-  if (topOperator) topOperator.href = operatorUrl;
-  if (topViewer) topViewer.href = viewerUrl;
-  if (topLineup) topLineup.href = `${basePath}/lineup.html?room=${encodeURIComponent(code)}`;
+  const q = `?room=${encodeURIComponent(code)}`;
+  if (topHub) topHub.href = `index.html${q}`;
+  if (topController) topController.href = `controller.html${q}`;
+  if (topOperator) topOperator.href = `operator.html${q}`;
+  if (topViewer) topViewer.href = `viewer.html${q}`;
+  if (topLineup) topLineup.href = `lineup.html${q}`;
   renderEventSelector();
   renderDayTabs();
 }

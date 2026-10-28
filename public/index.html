@@ -302,7 +302,7 @@
     <!-- 3 Mode Cards -->
     <div class="modes-grid">
       <!-- Modo Configurador -->
-      <a id="card-controller" href="controller.html?room=PALCO1" class="mode-card">
+      <a id="card-controller" href="controller.html" class="mode-card">
         <div class="mode-icon">🎛️</div>
         <div class="mode-info">
           <div class="mode-name">Configurador</div>
@@ -312,7 +312,7 @@
       </a>
 
       <!-- Modo Operador (Mobile Safari) -->
-      <a id="card-operator" href="operator.html?room=PALCO1" class="mode-card">
+      <a id="card-operator" href="operator.html" class="mode-card">
         <div class="mode-icon">📱</div>
         <div class="mode-info">
           <div class="mode-name">Modo Operador</div>
@@ -322,7 +322,7 @@
       </a>
 
       <!-- Modo Palco -->
-      <a id="card-viewer" href="viewer.html?room=PALCO1" class="mode-card">
+      <a id="card-viewer" href="viewer.html" class="mode-card">
         <div class="mode-icon">📺</div>
         <div class="mode-info">
           <div class="mode-name">Modo de Palco</div>
@@ -332,7 +332,7 @@
       </a>
 
       <!-- Modo Lista (Lineup & Horários) -->
-      <a id="card-lineup" href="lineup.html?room=PALCO1" class="mode-card">
+      <a id="card-lineup" href="lineup.html" class="mode-card">
         <div class="mode-icon">📋</div>
         <div class="mode-info">
           <div class="mode-name">Modo Lista</div>
@@ -368,8 +368,8 @@
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=28"></script>
-  <script src="js/local-sync.js?v=28"></script>
+  <script src="js/pwa.js?v=29"></script>
+  <script src="js/local-sync.js?v=29"></script>
   <script>
     const $toggleQr = document.getElementById('toggle-qr-btn');
     const $qrContainer = document.getElementById('qr-container');
@@ -390,8 +390,14 @@
     const $createEventBtn = document.getElementById('hub-create-event-btn');
 
     const params = new URLSearchParams(location.search);
-    let initialRoom = params.get('room') || localStorage.getItem('stagetimer_last_room');
-    if (!initialRoom) initialRoom = 'PALCO1';
+    const paramRoom = params.get('room');
+    const savedDeviceRoom = localStorage.getItem('stagetimer_device_room');
+    const savedLastRoom = localStorage.getItem('stagetimer_last_room');
+
+    let initialRoom = (paramRoom && paramRoom.toUpperCase() !== 'PALCO1') ? paramRoom :
+                      (savedDeviceRoom && savedDeviceRoom.toUpperCase() !== 'PALCO1') ? savedDeviceRoom :
+                      (savedLastRoom && savedLastRoom.toUpperCase() !== 'PALCO1') ? savedLastRoom :
+                      (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1');
     $room.value = initialRoom.toUpperCase();
 
     const hubClient = new StageTimerClient({
@@ -400,11 +406,14 @@
     });
     hubClient.connect();
 
-    // If initial room was not explicit in URL and registry has other active events, pick freshest
+    // If initial room was default 'PALCO1' and registry has active events, pick freshest active event
     const regList = hubClient.getEventsList();
-    if (!params.get('room') && regList.length > 0) {
-      if (!regList.some(e => e.code === $room.value)) {
-        $room.value = regList[0].code;
+    if ((!paramRoom || paramRoom.toUpperCase() === 'PALCO1') &&
+        (!savedDeviceRoom || savedDeviceRoom.toUpperCase() === 'PALCO1') &&
+        regList.length > 0) {
+      const activeEv = regList.find(e => (e.timersCount > 0 || e.artistCount > 0)) || regList.find(e => e.code !== 'PALCO1') || regList[0];
+      if (activeEv && activeEv.code) {
+        $room.value = activeEv.code;
       }
     }
 
@@ -417,7 +426,7 @@
     function renderEventsList() {
       if (!$eventsList) return;
       const list = hubClient.getEventsList();
-      let currentCode = ($room.value.trim() || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
+      let currentCode = ($room.value.trim() || localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
 
       if (!list.some(e => e.code === currentCode)) {
         currentCode = list[0]?.code || 'PALCO1';
@@ -449,8 +458,11 @@
     }
 
     function updateLinks() {
-      const code = ($room.value.trim() || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
-      try { localStorage.setItem('stagetimer_last_room', code); } catch (_) {}
+      const code = ($room.value.trim() || localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
+      try {
+        localStorage.setItem('stagetimer_device_room', code);
+        localStorage.setItem('stagetimer_last_room', code);
+      } catch (_) {}
       const q = `?room=${encodeURIComponent(code)}`;
       if ($controller) $controller.href = `controller.html${q}`;
       if ($operator) $operator.href = `operator.html${q}`;
@@ -466,8 +478,11 @@
     // Intercept clicks on mode cards to guarantee the latest selected event is always opened
     document.querySelectorAll('.mode-card').forEach(card => {
       card.addEventListener('click', () => {
-        const code = ($room.value.trim() || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
-        try { localStorage.setItem('stagetimer_last_room', code); } catch (_) {}
+        const code = ($room.value.trim() || localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
+        try {
+          localStorage.setItem('stagetimer_device_room', code);
+          localStorage.setItem('stagetimer_last_room', code);
+        } catch (_) {}
         const currentHref = card.getAttribute('href');
         if (currentHref && !currentHref.includes('master.html')) {
           const page = currentHref.split('?')[0];
@@ -513,8 +528,14 @@
     hubClient.on('events-list-update', (list) => {
       if (Array.isArray(list) && list.length > 0) {
         const current = ($room.value.trim() || '').toUpperCase();
-        if (!list.some(e => e.code === current)) {
-          $room.value = list[0].code;
+        const savedDev = (localStorage.getItem('stagetimer_device_room') || '').toUpperCase();
+        if (savedDev && list.some(e => e.code === savedDev)) {
+          $room.value = savedDev;
+        } else if (current === 'PALCO1' || !list.some(e => e.code === current)) {
+          const activeEv = list.find(e => (e.timersCount > 0 || e.artistCount > 0)) || list.find(e => e.code !== 'PALCO1') || list[0];
+          if (activeEv && activeEv.code) {
+            $room.value = activeEv.code;
+          }
         }
       }
       updateLinks();

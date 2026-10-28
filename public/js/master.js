@@ -327,6 +327,8 @@
           roomPill.innerHTML = `🎪 Palco: <strong>${escapeHtml(dev.roomTitle || dev.room || 'PALCO1')}</strong>`;
         }
 
+        card.dataset.deviceRoom = dev.room || 'PALCO1';
+
         const select = card.querySelector('.device-room-select');
         if (select && document.activeElement !== select && select.value !== dev.room) {
           select.value = dev.room;
@@ -334,6 +336,24 @@
       }
     });
   }
+
+  function updateMasterNavLinks() {
+    const events = masterClient.getEventsList();
+    const activeCode = (localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || events[0]?.code || 'PALCO1').toUpperCase();
+    const q = `?room=${encodeURIComponent(activeCode)}`;
+    document.querySelectorAll('.master-nav-btn').forEach(btn => {
+      const href = btn.getAttribute('href');
+      if (href && !href.startsWith('index.html')) {
+        const page = href.split('?')[0];
+        btn.href = `${page}${q}`;
+      }
+    });
+  }
+  updateMasterNavLinks();
+
+  masterClient.on('events-list-update', () => {
+    updateMasterNavLinks();
+  });
 
   masterClient.on('devices-update', (devices) => {
     renderDevicesList(devices);
@@ -346,7 +366,9 @@
       if (!btn) return;
       const card = btn.closest('[data-device-uuid]');
       const uuid = btn.dataset.targetUuid || card?.dataset.deviceUuid;
-      const room = btn.dataset.targetRoom || card?.dataset.deviceRoom || 'PALCO1';
+      const select = card?.querySelector('.device-room-select');
+      const devObj = masterClient.globalDevicesMap.get(uuid);
+      const room = select?.value || devObj?.room || btn.dataset.targetRoom || card?.dataset.deviceRoom || 'PALCO1';
       const cmd = btn.dataset.cmd;
 
       if (!uuid) return;
@@ -390,6 +412,7 @@
       if (existingDev) {
         existingDev.viewKey = cmd;
         existingDev.path = `${cmd}.html`;
+        existingDev.room = room;
         masterClient.globalDevicesMap.set(uuid, existingDev);
       }
 
@@ -398,6 +421,7 @@
 
       // Brief glowing effect on the card
       if (card) {
+        card.dataset.deviceRoom = room;
         card.style.transition = 'box-shadow 0.3s ease, border-color 0.3s ease';
         card.style.borderColor = '#00b894';
         card.style.boxShadow = '0 0 16px rgba(0, 184, 148, 0.4)';
@@ -407,14 +431,12 @@
         }, 800);
       }
 
-      if (cmd === 'viewer') {
-        masterClient.sendDeviceCommand(uuid, { action: 'navigate', url: `viewer.html?room=${encodeURIComponent(room)}` });
-      } else if (cmd === 'lineup') {
-        masterClient.sendDeviceCommand(uuid, { action: 'navigate', url: `lineup.html?room=${encodeURIComponent(room)}` });
-      } else if (cmd === 'operator') {
-        masterClient.sendDeviceCommand(uuid, { action: 'navigate', url: `operator.html?room=${encodeURIComponent(room)}` });
-      } else if (cmd === 'controller') {
-        masterClient.sendDeviceCommand(uuid, { action: 'navigate', url: `controller.html?room=${encodeURIComponent(room)}` });
+      if (cmd === 'viewer' || cmd === 'lineup' || cmd === 'operator' || cmd === 'controller') {
+        masterClient.sendDeviceCommand(uuid, {
+          action: 'navigate',
+          url: `${cmd}.html?room=${encodeURIComponent(room)}`,
+          room: room
+        });
       }
     });
 
@@ -422,8 +444,10 @@
       const select = e.target.closest('[data-room-for-device]');
       if (!select) return;
       const uuid = select.dataset.roomForDevice;
-      const targetRoom = select.value;
+      const targetRoom = (select.value || 'PALCO1').toUpperCase();
       if (uuid && targetRoom) {
+        const card = select.closest('[data-device-uuid]');
+        if (card) card.dataset.deviceRoom = targetRoom;
         const existingDev = masterClient.globalDevicesMap.get(uuid);
         if (existingDev) {
           existingDev.room = targetRoom;

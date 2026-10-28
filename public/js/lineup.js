@@ -3,8 +3,21 @@
  */
 
 const params = new URLSearchParams(location.search);
-const roomId = (params.get('room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
-try { localStorage.setItem('stagetimer_last_room', roomId); } catch (e) {}
+const paramRoom = params.get('room');
+const savedDeviceRoom = localStorage.getItem('stagetimer_device_room');
+const savedLastRoom = localStorage.getItem('stagetimer_last_room');
+
+let roomId = (
+  (paramRoom && paramRoom.toUpperCase() !== 'PALCO1') ? paramRoom :
+  (savedDeviceRoom && savedDeviceRoom.toUpperCase() !== 'PALCO1') ? savedDeviceRoom :
+  (savedLastRoom && savedLastRoom.toUpperCase() !== 'PALCO1') ? savedLastRoom :
+  (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1')
+).toUpperCase();
+
+try {
+  localStorage.setItem('stagetimer_device_room', roomId);
+  localStorage.setItem('stagetimer_last_room', roomId);
+} catch (e) {}
 
 const client = new StageTimerClient({
   role: 'viewer',
@@ -44,14 +57,29 @@ if ($lineupEventSelect) {
   $lineupEventSelect.addEventListener('change', () => {
     const chosen = $lineupEventSelect.value;
     if (chosen) {
-      try { localStorage.setItem('stagetimer_last_room', chosen.toUpperCase()); } catch (e) {}
+      try {
+        localStorage.setItem('stagetimer_device_room', chosen.toUpperCase());
+        localStorage.setItem('stagetimer_last_room', chosen.toUpperCase());
+      } catch (e) {}
       location.search = `?room=${encodeURIComponent(chosen)}`;
     }
   });
 }
 
-client.on('events-list-update', () => {
+client.on('events-list-update', (list) => {
   renderLineupEventSelector();
+  if (roomId === 'PALCO1' && (!state || !state.timers || state.timers.length === 0) && Array.isArray(list) && list.length > 0) {
+    const activeEv = list.find(e => (e.timersCount > 0 || e.artistCount > 0)) || list.find(e => e.code !== 'PALCO1');
+    if (activeEv && activeEv.code && activeEv.code !== 'PALCO1') {
+      try {
+        localStorage.setItem('stagetimer_device_room', activeEv.code);
+        localStorage.setItem('stagetimer_last_room', activeEv.code);
+      } catch (e) {}
+      const u = new URL(location.href);
+      u.searchParams.set('room', activeEv.code);
+      location.replace(u.toString());
+    }
+  }
 });
 
 // Update navigation links with current room
