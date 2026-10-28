@@ -105,12 +105,12 @@
       };
     }
 
-    // 4. Controlador Régie
-    if (viewKey === 'controller' || path.includes('controller') || label.includes('régie') || label.includes('regie') || label.includes('controlador')) {
+    // 4. Configurador
+    if (viewKey === 'controller' || path.includes('controller') || label.includes('configurador') || label.includes('régie') || label.includes('regie') || label.includes('controlador')) {
       return {
         key: 'controller',
-        name: '🎛️ Régie (Controlador)',
-        shortName: 'Régie',
+        name: '🎛️ Configurador',
+        shortName: 'Configurador',
         badgeClass: 'view-controller'
       };
     }
@@ -137,16 +137,16 @@
     if (role === 'controller') {
       return {
         key: 'controller',
-        name: '🎛️ Régie (Controlador)',
-        shortName: 'Régie',
+        name: '🎛️ Configurador',
+        shortName: 'Configurador',
         badgeClass: 'view-controller'
       };
     }
 
     return {
       key: 'index',
-      name: '🏠 Menu Inicial',
-      shortName: 'Menu',
+      name: '🏠 Início',
+      shortName: 'Início',
       badgeClass: 'view-index'
     };
   }
@@ -262,8 +262,8 @@
               <button type="button" class="device-btn ${viewInfo.key === 'operator' ? 'is-current-view' : ''}" data-cmd="operator" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Operador Mobile">
                 📱 Operador ${viewInfo.key === 'operator' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
               </button>
-              <button type="button" class="device-btn ${viewInfo.key === 'controller' ? 'is-current-view' : ''}" data-cmd="controller" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Controlador Régie">
-                🎛️ Régie ${viewInfo.key === 'controller' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
+              <button type="button" class="device-btn ${viewInfo.key === 'controller' ? 'is-current-view' : ''}" data-cmd="controller" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Configurador">
+                🎛️ Configurador ${viewInfo.key === 'controller' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
               </button>
               <button type="button" class="device-btn btn-warning-action" data-cmd="reload" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Recarregar página no dispositivo">
                 🔄 Recarregar Ecrã Remoto
@@ -519,8 +519,8 @@
           </div>
 
           <div class="event-manage-btns">
-            <a href="controller.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm btn-primary" title="Abrir controlador para este palco">
-              🎛️ Régie
+            <a href="controller.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm btn-primary" title="Abrir configurador para este palco">
+              🎛️ Configurador
             </a>
             <a href="viewer.html?room=${encodeURIComponent(ev.code)}" target="_blank" class="btn btn-sm" title="Abrir ecrã de palco noutro separador">
               📺 Palco
@@ -758,7 +758,7 @@
               🏁 Fim: <span class="multiview-end-badge">${eventEndTime}</span>
             </div>
             <a href="controller.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm btn-primary" style="padding: 4px 10px; font-size: 0.75rem;">
-              🎛️ Abrir Régie
+              🎛️ Abrir Configurador
             </a>
           </div>
         `;

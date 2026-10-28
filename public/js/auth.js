@@ -132,7 +132,7 @@
         />
         <button type="submit" class="st-auth-btn">Entrar</button>
         <div class="st-auth-error" id="st-auth-err"></div>
-        <a href="index.html${location.search}" class="st-auth-back">← Voltar ao Menu</a>
+        <a href="index.html${location.search}" class="st-auth-back">← Voltar ao Início</a>
       </form>
     `;
     document.body.appendChild(overlay);
