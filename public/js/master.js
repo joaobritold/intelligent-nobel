@@ -77,7 +77,7 @@
     if (viewKey === 'viewer' || path.includes('viewer') || role === 'viewer' || label.includes('palco') || label.includes('telao') || label.includes('telão')) {
       return {
         key: 'viewer',
-        name: '📺 Modo Palco (Telão)',
+        name: '📺 Modo Palco',
         shortName: 'Palco',
         badgeClass: 'view-viewer'
       };
@@ -141,7 +141,7 @@
         <div class="empty-state-box" style="grid-column: 1 / -1;">
           Nenhum dispositivo detetado neste momento.<br>
           <span style="font-size: 0.8rem; color: var(--text-muted);">
-            Abra o StageTimer em qualquer telemóvel, computador ou telão para que apareça aqui instantaneamente.
+            Abre o StageTimer em qualquer telemóvel, computador ou ecrã de palco para que apareça aqui instantaneamente.
           </span>
         </div>
       `;
@@ -224,7 +224,7 @@
               <span>Mudar Modo do Ecrã:</span>
             </div>
             <div class="device-btn-group">
-              <button type="button" class="device-btn ${viewInfo.key === 'viewer' ? 'is-current-view' : ''}" data-cmd="viewer" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Telão de Palco">
+              <button type="button" class="device-btn ${viewInfo.key === 'viewer' ? 'is-current-view' : ''}" data-cmd="viewer" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Palco">
                 📺 Palco ${viewInfo.key === 'viewer' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
               </button>
               <button type="button" class="device-btn ${viewInfo.key === 'lineup' ? 'is-current-view' : ''}" data-cmd="lineup" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Lista Backstage">
@@ -360,7 +360,7 @@
   // Global Broadcast Buttons
   if ($cmdAllViewer) {
     $cmdAllViewer.addEventListener('click', () => {
-      if (confirm('Mudar TODOS os dispositivos online para o Modo Palco (Telão)?')) {
+      if (confirm('Mudar TODOS os dispositivos online para o Modo Palco?')) {
         if (navigator.vibrate) { try { navigator.vibrate(35); } catch (e) {} }
         masterClient.sendDeviceCommand('ALL', { action: 'navigate', url: 'viewer.html' });
         $cmdAllViewer.textContent = '⚡ Enviado a Todos!';
@@ -420,8 +420,8 @@
             <a href="controller.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm btn-primary" title="Abrir controlador para este palco">
               🎛️ Régie
             </a>
-            <a href="viewer.html?room=${encodeURIComponent(ev.code)}" target="_blank" class="btn btn-sm" title="Abrir telão noutro separador">
-              📺 Telão
+            <a href="viewer.html?room=${encodeURIComponent(ev.code)}" target="_blank" class="btn btn-sm" title="Abrir ecrã de palco noutro separador">
+              📺 Palco
             </a>
             <a href="lineup.html?room=${encodeURIComponent(ev.code)}" target="_blank" class="btn btn-sm" title="Abrir lista noutro separador">
               📋 Lista

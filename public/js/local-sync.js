@@ -120,12 +120,12 @@ class UniversalSyncClient {
   _getDeviceLabel() {
     const os = this._getDeviceOS();
     const viewKey = this._getCurrentViewKey();
-    let roleLabel = 'Ecran';
+    let roleLabel = 'Ecrã';
     if (viewKey === 'master') roleLabel = 'Painel Master';
-    else if (viewKey === 'controller') roleLabel = 'Controlador Regie';
+    else if (viewKey === 'controller') roleLabel = 'Controlador Régie';
     else if (viewKey === 'operator') roleLabel = 'Operador Mobile';
     else if (viewKey === 'lineup') roleLabel = 'Modo Lista';
-    else if (viewKey === 'viewer') roleLabel = 'Telao de Palco';
+    else if (viewKey === 'viewer') roleLabel = 'Ecrã de Palco';
     else if (viewKey === 'index') roleLabel = 'Menu Inicial';
 
     return `${roleLabel} (${os})`;
