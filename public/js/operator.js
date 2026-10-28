@@ -531,23 +531,43 @@ if ($opImportFile) {
       } else {
         pages = await ScheduleImporter.extractSpreadsheetOrText(file);
       }
-      let pageIdx = 0;
-      if (pages.length > 1) {
-        const ans = prompt(`O ficheiro tem ${pages.length} páginas/dias. Qual página deseja carregar? (1 a ${pages.length})`, '1');
-        pageIdx = Math.max(0, Math.min(pages.length - 1, (parseInt(ans, 10) || 1) - 1));
-      }
-      const parsed = ScheduleImporter.parseTextToTimers(pages[pageIdx] || '');
-      if (parsed.length === 0) {
-        alert('Não foram encontrados horários válidos nesta página.');
+
+      const sched = ScheduleImporter.parseMultiDaySchedule(pages);
+      if (sched.totalTimers === 0) {
+        alert('Nenhum artista com horário válido foi encontrado no ficheiro.');
         return;
       }
-      if (confirm(`Encontrados ${parsed.length} artistas (${parsed.map(p => p.name).join(', ')}). Carregar agora?`)) {
-        client.replaceAllTimers(parsed);
+
+      if (sched.isMultiDay) {
+        const daySummary = Object.keys(sched.days).sort((a, b) => Number(a) - Number(b))
+          .map(k => `• ${sched.dayTitles[k] || 'Dia ' + k}: ${sched.days[k].length} artista(s)`)
+          .join('\n');
+
+        const confirmAll = confirm(`O ficheiro contém ${sched.totalDays} dias (${sched.totalTimers} artistas no total):\n\n${daySummary}\n\nDeseja importar TODOS os ${sched.totalDays} dias automaticamente?`);
+        if (confirmAll) {
+          client.replaceAllDays(sched.days);
+          alert(`✓ ${sched.totalDays} dias importados com sucesso!`);
+          return;
+        } else {
+          const ans = prompt(`Qual dia específico deseja carregar para o dia atual? (1 a ${sched.totalDays})`, '1');
+          const dKey = String(parseInt(ans, 10) || 1);
+          if (sched.days[dKey]) {
+            client.replaceDayTimers(state?.currentDay || 1, sched.days[dKey]);
+            alert(`✓ Dia ${state?.currentDay || 1} atualizado com ${sched.days[dKey].length} artistas!`);
+          }
+          return;
+        }
+      } else {
+        const singleTimers = sched.days['1'] || [];
+        if (confirm(`Encontrados ${singleTimers.length} artistas (${singleTimers.map(p => p.name).join(', ')}). Carregar agora?`)) {
+          client.replaceAllTimers(singleTimers);
+        }
       }
     } catch (err) {
       alert('Erro ao importar ficheiro: ' + err.message);
+    } finally {
+      $opImportFile.value = '';
     }
-    $opImportFile.value = '';
   });
 }
 if ($liveArtistBtn) {

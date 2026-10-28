@@ -10,8 +10,8 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <title>StageTimer — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=29">
-  <link rel="stylesheet" href="css/controller.css?v=29">
+  <link rel="stylesheet" href="css/common.css?v=30">
+  <link rel="stylesheet" href="css/controller.css?v=30">
 </head>
 <body>
   <div class="app">
@@ -191,7 +191,7 @@
     <div class="modal" style="max-width: 540px; width: 92vw;">
       <h3 class="modal-title">📂 Importar Mapa de Horários Automático</h3>
       <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 14px;">
-        Carregue um ficheiro <strong>PDF, Excel (.xlsx/.csv) ou TXT</strong> (ou cole o texto da tabela abaixo) e o sistema cria todos os artistas, horários e durações automaticamente!
+        Carregue um ficheiro <strong>PDF, Excel (.xlsx/.csv) ou TXT</strong> (ou cole o texto da tabela abaixo) e o sistema cria todos os artistas, horários, durações e <strong>todos os dias (Dia 1, Dia 2...)</strong> automaticamente!
       </p>
 
       <div class="modal-field">
@@ -200,7 +200,7 @@
       </div>
 
       <div id="import-page-selector" class="modal-field" style="display: none;">
-        <label class="modal-label">Escolher Página / Dia do Documento:</label>
+        <label class="modal-label">Dias do Documento:</label>
         <select id="import-page-select" class="input"></select>
       </div>
 
@@ -252,15 +252,15 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=29"></script>
+  <script src="js/schedule-importer.js?v=30"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=29"></script>
+  <script src="js/auth.js?v=30"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=29"></script>
-  <script src="js/local-sync.js?v=29"></script>
-  <script src="js/controller.js?v=29"></script>
+  <script src="js/pwa.js?v=30"></script>
+  <script src="js/local-sync.js?v=30"></script>
+  <script src="js/controller.js?v=30"></script>
 </body>
 </html>

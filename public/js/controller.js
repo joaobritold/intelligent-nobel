@@ -1059,17 +1059,64 @@ const $importConfirm = document.getElementById('import-confirm');
 const $importCancel = document.getElementById('import-cancel');
 
 let extractedPagesText = [];
+let currentSchedule = null;
+
+function formatScheduleSummaryText(sched) {
+  if (!sched || !sched.days) return '';
+  const dayKeys = Object.keys(sched.days).sort((a, b) => Number(a) - Number(b));
+  return dayKeys.map(k => {
+    const title = sched.dayTitles[k] || `Dia ${k}`;
+    const timers = sched.days[k] || [];
+    const lines = timers.map(t => `${t.name.padEnd(24, ' ')} ${t.startTime}`);
+    return `=== ${title.toUpperCase()} ===\n${lines.join('\n')}`;
+  }).join('\n\n');
+}
 
 function updateImportPreview() {
   if (!$importTextArea || !$importPreviewBox) return;
-  const parsed = ScheduleImporter.parseTextToTimers($importTextArea.value);
-  if (parsed.length === 0) {
+  const text = $importTextArea.value.trim();
+  if (!text) {
     $importPreviewBox.style.display = 'none';
     return;
   }
+
+  let sched = null;
+  if (currentSchedule && currentSchedule.isMultiDay && $importPageSelect && $importPageSelect.value === 'all_days') {
+    sched = currentSchedule;
+  } else {
+    sched = ScheduleImporter.parseMultiDaySchedule(text);
+  }
+
+  if (sched.totalTimers === 0) {
+    $importPreviewBox.style.display = 'none';
+    return;
+  }
+
   $importPreviewBox.style.display = 'block';
-  $importPreviewBox.innerHTML = `<div style="color: var(--green); font-weight: 700; margin-bottom: 4px;">✓ ${parsed.length} Artista(s) detetado(s):</div>` +
-    parsed.map((t, i) => `<div>${i + 1}. <strong>${escapeHtml(t.name)}</strong> (${escapeHtml(t.startTime)}) — ${formatTime(t.duration)}</div>`).join('');
+  if (sched.isMultiDay) {
+    const dayKeys = Object.keys(sched.days).sort((a, b) => Number(a) - Number(b));
+    $importPreviewBox.innerHTML = `
+      <div style="color: var(--green); font-weight: 700; margin-bottom: 6px; font-size: 0.82rem;">
+        ✓ Detetados ${sched.totalDays} Dias (${sched.totalTimers} artistas no total):
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        ${dayKeys.map(k => {
+          const list = sched.days[k];
+          const names = list.map(t => escapeHtml(t.name)).join(', ');
+          return `
+            <div style="background: rgba(255,255,255,0.06); padding: 5px 8px; border-radius: 6px; border-left: 3px solid var(--accent);">
+              <div style="font-weight: 700; color: #fdcb6e;">📅 ${escapeHtml(sched.dayTitles[k] || 'Dia ' + k)} (${list.length} artistas):</div>
+              <div style="font-size: 0.72rem; color: #cbd5e1; margin-top: 2px;">${names}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  } else {
+    const timers = sched.days['1'] || [];
+    $importPreviewBox.innerHTML = `<div style="color: var(--green); font-weight: 700; margin-bottom: 4px;">✓ ${timers.length} Artista(s) detetado(s):</div>` +
+      timers.map((t, i) => `<div>${i + 1}. <strong>${escapeHtml(t.name)}</strong> (${escapeHtml(t.startTime)}) — ${formatTime(t.duration)}</div>`).join('');
+  }
 }
 
 if ($openImportBtn && $importModal) {
@@ -1093,16 +1140,21 @@ if ($importTextArea) {
 
 if ($importPageSelect) {
   $importPageSelect.addEventListener('change', () => {
-    if ($importPageSelect.value === 'all') {
-      $importTextArea.value = extractedPagesText.join('\n\n');
-      updateImportPreview();
-      return;
+    if (!currentSchedule) return;
+    const val = $importPageSelect.value;
+    if (val === 'all_days') {
+      $importTextArea.value = formatScheduleSummaryText(currentSchedule);
+    } else {
+      const dKey = String(val);
+      const dTimers = currentSchedule.days[dKey] || [];
+      if (dTimers.length > 0) {
+        $importTextArea.value = dTimers.map(t => `${t.name.padEnd(24, ' ')} ${t.startTime}`).join('\n');
+      } else {
+        const idx = parseInt(val, 10) - 1;
+        $importTextArea.value = extractedPagesText[idx] || '';
+      }
     }
-    const idx = parseInt($importPageSelect.value, 10) || 0;
-    if (extractedPagesText[idx] !== undefined) {
-      $importTextArea.value = extractedPagesText[idx];
-      updateImportPreview();
-    }
+    updateImportPreview();
   });
 }
 
@@ -1118,16 +1170,24 @@ if ($importFileInput) {
         extractedPagesText = await ScheduleImporter.extractSpreadsheetOrText(file);
       }
 
-      if (extractedPagesText.length > 1) {
+      currentSchedule = ScheduleImporter.parseMultiDaySchedule(extractedPagesText);
+
+      if (currentSchedule.isMultiDay) {
         $importPageSelector.style.display = 'block';
+        const dayKeys = Object.keys(currentSchedule.days).sort((a, b) => Number(a) - Number(b));
         $importPageSelect.innerHTML =
-          extractedPagesText.map((_, i) => `<option value="${i}">Página / Dia ${i + 1}</option>`).join('') +
-          `<option value="all">Todos os Dias (${extractedPagesText.length} páginas)</option>`;
+          `<option value="all_days">🌟 Todos os Dias (${currentSchedule.totalDays} dias / ${currentSchedule.totalTimers} artistas)</option>` +
+          dayKeys.map(k => {
+            const count = currentSchedule.days[k].length;
+            return `<option value="${k}">Apenas Dia ${k} (${count} artistas)</option>`;
+          }).join('');
+        $importPageSelect.value = 'all_days';
+        $importTextArea.value = formatScheduleSummaryText(currentSchedule);
       } else {
         $importPageSelector.style.display = 'none';
+        $importTextArea.value = extractedPagesText[0] || '';
       }
 
-      $importTextArea.value = extractedPagesText[0] || '';
       updateImportPreview();
     } catch (err) {
       alert('Erro ao ler ficheiro: ' + err.message);
@@ -1137,14 +1197,41 @@ if ($importFileInput) {
 
 if ($importConfirm) {
   $importConfirm.addEventListener('click', () => {
-    const parsed = ScheduleImporter.parseTextToTimers($importTextArea.value);
-    if (parsed.length === 0) {
+    let sched = null;
+    if (currentSchedule && currentSchedule.isMultiDay && $importPageSelect && $importPageSelect.value === 'all_days') {
+      sched = currentSchedule;
+    } else {
+      sched = ScheduleImporter.parseMultiDaySchedule($importTextArea.value);
+    }
+
+    if (sched.totalTimers === 0) {
       alert('Nenhum artista com horário (ex: 23h00 - 00h15) foi encontrado no texto.');
       return;
     }
-    client.replaceAllTimers(parsed);
-    $importModal.classList.remove('visible');
-    showToast(`✓ ${parsed.length} artistas importados com sucesso!`);
+
+    if ($importPageSelect && $importPageSelect.value !== 'all_days' && $importPageSelect.value) {
+      // Single day chosen
+      const dayNum = parseInt($importPageSelect.value, 10) || 1;
+      const dayTimers = (currentSchedule && currentSchedule.days[String(dayNum)]) || sched.days[String(dayNum)] || sched.days['1'] || [];
+      if (dayTimers.length === 0) {
+        alert('Nenhum artista encontrado para o dia selecionado.');
+        return;
+      }
+      client.replaceDayTimers(dayNum, dayTimers);
+      $importModal.classList.remove('visible');
+      showToast(`✓ Dia ${dayNum} atualizado com ${dayTimers.length} artistas!`);
+    } else if (sched.isMultiDay) {
+      // Import all days at once
+      client.replaceAllDays(sched.days);
+      $importModal.classList.remove('visible');
+      showToast(`✓ ${sched.totalDays} dias e ${sched.totalTimers} artistas importados com sucesso!`);
+    } else {
+      // Single day import
+      const singleTimers = sched.days['1'] || [];
+      client.replaceAllTimers(singleTimers);
+      $importModal.classList.remove('visible');
+      showToast(`✓ ${singleTimers.length} artistas importados com sucesso!`);
+    }
   });
 }
 

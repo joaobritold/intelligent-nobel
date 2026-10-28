@@ -987,7 +987,15 @@ class UniversalSyncClient {
     }
 
     const existing = list[idx];
-    const count = Array.isArray(this._state.timers) ? this._state.timers.length : 0;
+    let count = 0;
+    if (this._state.days && typeof this._state.days === 'object') {
+      Object.values(this._state.days).forEach(arr => {
+        if (Array.isArray(arr)) count += arr.length;
+      });
+    }
+    if (count === 0 && Array.isArray(this._state.timers)) {
+      count = this._state.timers.length;
+    }
     const entry = this._normalizeRegistryItem({
       id: this.cleanRoom,
       code: this.cleanRoom,
@@ -1185,6 +1193,40 @@ class UniversalSyncClient {
     this._state.timers = timers;
     this._state.days[String(this._state.currentDay || 1)] = [...timers];
     this._state.activeTimerId = timers.length > 0 ? timers[0].id : null;
+    this._commitStateChange(true);
+  }
+
+  replaceAllDays(daysMap, roomName = null, activeDay = 1) {
+    if (!daysMap || typeof daysMap !== 'object') return;
+    this._ensureDaysStructure();
+    if (roomName) this._state.name = roomName;
+
+    const newDays = {};
+    const dayKeys = Object.keys(daysMap).map(Number).filter(n => !isNaN(n)).sort((a, b) => a - b);
+    if (dayKeys.length === 0) return;
+
+    dayKeys.forEach(k => {
+      const arr = Array.isArray(daysMap[String(k)]) ? daysMap[String(k)] : (Array.isArray(daysMap[k]) ? daysMap[k] : []);
+      newDays[String(k)] = [...arr];
+    });
+
+    this._state.days = newDays;
+    const targetDay = newDays[String(activeDay)] ? Number(activeDay) : (dayKeys[0] || 1);
+    this._state.currentDay = targetDay;
+    this._state.timers = [...(newDays[String(targetDay)] || [])];
+    this._state.activeTimerId = this._state.timers.length > 0 ? this._state.timers[0].id : null;
+    this._commitStateChange(true);
+  }
+
+  replaceDayTimers(dayNumber, timers) {
+    if (!Array.isArray(timers)) return;
+    this._ensureDaysStructure();
+    const dKey = String(Number(dayNumber) || 1);
+    this._state.days[dKey] = [...timers];
+    if (String(this._state.currentDay || 1) === dKey) {
+      this._state.timers = [...timers];
+      this._state.activeTimerId = timers.length > 0 ? timers[0].id : null;
+    }
     this._commitStateChange(true);
   }
 

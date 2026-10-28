@@ -104,6 +104,156 @@ class ScheduleImporter {
     return [...soundchecks, ...mainActs];
   }
 
+  /**
+   * Helper to detect an explicit Day Number in lines of text
+   */
+  static _detectDayNumberInText(text) {
+    if (!text) return null;
+    const lines = text.split(/\r?\n/).slice(0, 12);
+    for (const l of lines) {
+      const line = l.trim();
+      const mDia = line.match(/\b(?:dia|day)\s*(\d{1,2})\b/i);
+      if (mDia) return parseInt(mDia[1], 10);
+      const mOrdinal = line.match(/\b(\d{1,2})\s*[ºªo]\s*dia\b/i);
+      if (mOrdinal) return parseInt(mOrdinal[1], 10);
+    }
+    return null;
+  }
+
+  /**
+   * Split a single block of text by day section headers
+   */
+  static _splitTextByDayHeaders(text) {
+    if (!text) return [];
+    const lines = text.split(/\r?\n/);
+    const timeRangeRegex = /\d{1,2}\s*[:hH]\s*\d{0,2}\s*[-–—a]\s*\d{1,2}\s*[:hH]\s*\d{0,2}/;
+    const dayHeaderRegex = /^\s*(?:===+\s*)?(?:(?:dia|day)\s*(\d{1,2})|(\d{1,2})\s*[ºªo]\s*dia|(?:segunda|ter[çc]a|quarta|quinta|sexta|s[áa]bado|domingo)(?:-feira|\s*feira)?|(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday))\b/i;
+
+    const sections = [];
+    let currentTitle = 'Dia 1';
+    let currentDayNum = 1;
+    let currentLines = [];
+    let foundHeaders = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      // Only lines without time ranges can be day headers
+      if (trimmed && !timeRangeRegex.test(trimmed)) {
+        const match = trimmed.match(dayHeaderRegex);
+        if (match) {
+          if (currentLines.length > 0) {
+            sections.push({
+              title: currentTitle,
+              dayNumber: currentDayNum,
+              text: currentLines.join('\n')
+            });
+            currentLines = [];
+          }
+          foundHeaders++;
+          const explicitNum = match[1] || match[2];
+          currentDayNum = explicitNum ? parseInt(explicitNum, 10) : foundHeaders;
+          currentTitle = trimmed.replace(/^[=–—\s]+|[=–—\s]+$/g, '');
+          continue;
+        }
+      }
+      currentLines.push(line);
+    }
+
+    if (currentLines.length > 0) {
+      sections.push({
+        title: currentTitle,
+        dayNumber: currentDayNum,
+        text: currentLines.join('\n')
+      });
+    }
+
+    if (foundHeaders >= 1 && sections.length > 1) {
+      return sections;
+    }
+    return [{ title: 'Dia 1', dayNumber: 1, text }];
+  }
+
+  /**
+   * Universal multi-day schedule parser.
+   * Handles multi-page PDFs, multi-sheet spreadsheets, or multi-day pasted text.
+   */
+  static parseMultiDaySchedule(input) {
+    let pages = [];
+    if (Array.isArray(input)) {
+      pages = input;
+    } else if (typeof input === 'string') {
+      pages = [input];
+    } else {
+      return { isMultiDay: false, totalDays: 0, totalTimers: 0, days: {}, dayTitles: {} };
+    }
+
+    const daysMap = {};
+    const titlesMap = {};
+
+    if (pages.length > 1) {
+      let dayIndex = 1;
+      for (let p = 0; p < pages.length; p++) {
+        const pageText = pages[p] || '';
+        const internalDays = this._splitTextByDayHeaders(pageText);
+        if (internalDays.length > 1) {
+          for (const s of internalDays) {
+            const parsed = this.parseTextToTimers(s.text);
+            if (parsed.length > 0) {
+              const dNum = s.dayNumber || dayIndex;
+              daysMap[String(dNum)] = parsed;
+              titlesMap[String(dNum)] = s.title || `Dia ${dNum}`;
+              dayIndex = Math.max(dayIndex, dNum) + 1;
+            }
+          }
+        } else {
+          const parsed = this.parseTextToTimers(pageText);
+          if (parsed.length > 0) {
+            const detectedDay = this._detectDayNumberInText(pageText) || dayIndex;
+            const finalDay = daysMap[String(detectedDay)] ? dayIndex : detectedDay;
+            daysMap[String(finalDay)] = parsed;
+            titlesMap[String(finalDay)] = `Dia ${finalDay}`;
+            dayIndex = Math.max(dayIndex, finalDay) + 1;
+          }
+        }
+      }
+    } else if (pages.length === 1) {
+      const singleText = pages[0] || '';
+      const sections = this._splitTextByDayHeaders(singleText);
+      if (sections.length > 1) {
+        let dayIdx = 1;
+        for (const s of sections) {
+          const parsed = this.parseTextToTimers(s.text);
+          if (parsed.length > 0) {
+            const dNum = s.dayNumber || dayIdx;
+            daysMap[String(dNum)] = parsed;
+            titlesMap[String(dNum)] = s.title || `Dia ${dNum}`;
+            dayIdx = Math.max(dayIdx, dNum) + 1;
+          }
+        }
+      } else {
+        const parsed = this.parseTextToTimers(singleText);
+        if (parsed.length > 0) {
+          daysMap['1'] = parsed;
+          titlesMap['1'] = 'Dia 1';
+        }
+      }
+    }
+
+    const dayKeys = Object.keys(daysMap).sort((a, b) => Number(a) - Number(b));
+    let totalTimers = 0;
+    dayKeys.forEach(k => { totalTimers += daysMap[k].length; });
+
+    return {
+      isMultiDay: dayKeys.length > 1,
+      totalDays: dayKeys.length,
+      totalTimers,
+      days: daysMap,
+      dayTitles: titlesMap
+    };
+  }
+
   static async extractPdfPages(file) {
     if (typeof pdfjsLib === 'undefined') {
       throw new Error('Biblioteca PDF.js ainda a carregar. Tente novamente em 2 segundos.');
