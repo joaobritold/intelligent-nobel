@@ -10,8 +10,8 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <title>StageTimer — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=30">
-  <link rel="stylesheet" href="css/controller.css?v=30">
+  <link rel="stylesheet" href="css/common.css?v=31">
+  <link rel="stylesheet" href="css/controller.css?v=31">
 </head>
 <body>
   <div class="app">
@@ -188,32 +188,44 @@
 
   <!-- Import Schedule Modal (PDF / Excel / CSV / Paste) -->
   <div id="import-modal" class="modal-overlay">
-    <div class="modal" style="max-width: 540px; width: 92vw;">
-      <h3 class="modal-title">📂 Importar Mapa de Horários Automático</h3>
-      <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 14px;">
-        Carregue um ficheiro <strong>PDF, Excel (.xlsx/.csv) ou TXT</strong> (ou cole o texto da tabela abaixo) e o sistema cria todos os artistas, horários, durações e <strong>todos os dias (Dia 1, Dia 2...)</strong> automaticamente!
+    <div class="modal" style="max-width: 580px; width: 94vw;">
+      <h3 class="modal-title">📂 Importar Mapa de Horários Inteligente</h3>
+      <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+        Arraste ou carregue um ficheiro <strong>PDF, Excel (.xlsx/.xls/.csv) ou TXT</strong> (ou cole o texto da tabela abaixo). O sistema deteta automaticamente todos os artistas, horários, durações e <strong>todos os dias do festival (Dia 1, Dia 2...)</strong>!
       </p>
 
-      <div class="modal-field">
-        <label class="modal-label">1. Escolher Ficheiro (PDF, Excel, CSV, TXT):</label>
-        <input type="file" id="import-file-input" class="input" accept=".pdf,.xlsx,.xls,.csv,.txt" style="padding: 8px; cursor: pointer;">
+      <!-- Drag & Drop Zone -->
+      <div id="import-drop-zone" style="border: 2px dashed rgba(108, 92, 231, 0.6); border-radius: 12px; padding: 18px 12px; text-align: center; background: rgba(108, 92, 231, 0.08); cursor: pointer; transition: all 0.2s ease; margin-bottom: 12px;">
+        <div style="font-size: 2rem; line-height: 1; margin-bottom: 6px;">📄</div>
+        <div style="font-weight: 700; font-size: 0.88rem; color: #fff;">Arraste e solte o ficheiro aqui</div>
+        <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 3px;">PDF, Excel (.xlsx, .xls, .csv) ou TXT — ou clique para escolher</div>
+        <input type="file" id="import-file-input" accept=".pdf,.xlsx,.xls,.csv,.txt" style="display: none;">
+      </div>
+
+      <!-- Soundcheck & Changeover Toggle -->
+      <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+        <input type="checkbox" id="import-include-soundchecks" style="width: 16px; height: 16px; margin-top: 2px; cursor: pointer; accent-color: var(--accent);">
+        <label for="import-include-soundchecks" style="font-size: 0.76rem; cursor: pointer; color: #e2e8f0; line-height: 1.4; user-select: none;">
+          <strong>Incluir Soundchecks e Changeovers como timers separados</strong><br>
+          <span style="color: var(--text-secondary); font-size: 0.72rem;">Se desmarcado, importa apenas a atuação no palco (On Stage), deixando a fila limpa.</span>
+        </label>
       </div>
 
       <div id="import-page-selector" class="modal-field" style="display: none;">
-        <label class="modal-label">Dias do Documento:</label>
+        <label class="modal-label">Escolher Dias a Importar:</label>
         <select id="import-page-select" class="input"></select>
       </div>
 
       <div class="modal-field">
-        <label class="modal-label">2. Ou cole aqui as linhas da tabela (Artista + Horário On Stage):</label>
+        <label class="modal-label">Ou cole / ajuste aqui o texto da programação:</label>
         <textarea id="import-text-area" class="input input-mono" style="height: 110px; font-size: 0.78rem; resize: vertical;" placeholder="Exemplo:&#10;Dj Residente   23h00 - 00h15&#10;Tunas          23h30 - 01h30&#10;Minhotos       01:45 - 03h15"></textarea>
       </div>
 
-      <div id="import-preview-box" style="max-height: 130px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; margin-bottom: 12px; display: none;"></div>
+      <div id="import-preview-box" style="max-height: 160px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; margin-bottom: 14px; display: none;"></div>
 
       <div class="modal-actions">
         <button id="import-cancel" class="btn">Cancelar</button>
-        <button id="import-confirm" class="btn btn-primary">⚡ Gerar Horários e Artistas</button>
+        <button id="import-confirm" class="btn btn-primary">⚡ Importar Horários e Artistas</button>
       </div>
     </div>
   </div>
@@ -252,15 +264,15 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=30"></script>
+  <script src="js/schedule-importer.js?v=31"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=30"></script>
+  <script src="js/auth.js?v=31"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=30"></script>
-  <script src="js/local-sync.js?v=30"></script>
-  <script src="js/controller.js?v=30"></script>
+  <script src="js/pwa.js?v=31"></script>
+  <script src="js/local-sync.js?v=31"></script>
+  <script src="js/controller.js?v=31"></script>
 </body>
 </html>

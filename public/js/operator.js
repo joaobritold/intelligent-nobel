@@ -525,16 +525,16 @@ if ($opImportFile) {
     if (!file) return;
     try {
       const ext = file.name.split('.').pop().toLowerCase();
-      let pages = [];
+      let extractedData = null;
       if (ext === 'pdf') {
-        pages = await ScheduleImporter.extractPdfPages(file);
+        extractedData = await ScheduleImporter.extractPdfPages(file);
       } else {
-        pages = await ScheduleImporter.extractSpreadsheetOrText(file);
+        extractedData = await ScheduleImporter.extractSpreadsheetOrText(file);
       }
 
-      const sched = ScheduleImporter.parseMultiDaySchedule(pages);
+      const sched = ScheduleImporter.parseMultiDaySchedule(extractedData, { includeSoundchecks: false });
       if (sched.totalTimers === 0) {
-        alert('Nenhum artista com horário válido foi encontrado no ficheiro.');
+        alert('Nenhum artista com horário válido (ex: 23h00 - 00h15 ou 23:00) foi encontrado no ficheiro.');
         return;
       }
 
