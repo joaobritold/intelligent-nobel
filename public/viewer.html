@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <title>StageTimer — Stage Screen</title>
-  <link rel="stylesheet" href="css/common.css?v=25">
-  <link rel="stylesheet" href="css/viewer.css?v=25">
+  <link rel="stylesheet" href="css/common.css?v=26">
+  <link rel="stylesheet" href="css/viewer.css?v=26">
 </head>
 <body>
   <div class="viewer">
@@ -15,7 +15,7 @@
     <div id="viewer-connection" class="viewer-connection disconnected" title="Connection status"></div>
 
     <!-- Top Control Bar (Event Selector & Fast Navigation) -->
-    <div id="viewer-top-bar" class="viewer-top-bar" style="position: absolute; top: 12px; left: 16px; display: flex; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(10px); padding: 6px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5); z-index: 50; transition: opacity 0.3s ease;">
+    <div id="viewer-top-bar" class="viewer-top-bar" style="position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: calc(16px + env(safe-area-inset-left, 0px)); display: flex; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(10px); padding: 6px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5); z-index: 50; transition: opacity 0.3s ease;">
       <div style="display: flex; align-items: center; gap: 6px;">
         <span style="font-size: 0.95rem;">🎪</span>
         <select id="viewer-event-select" style="background: rgba(108, 92, 231, 0.25); color: #fff; border: 1px solid rgba(108, 92, 231, 0.5); border-radius: 6px; font-size: 0.82rem; font-weight: 700; outline: none; cursor: pointer; padding: 3px 8px; max-width: 190px;" title="Mudar de Palco/Evento">
@@ -71,8 +71,8 @@
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=25"></script>
-  <script src="js/local-sync.js?v=25"></script>
-  <script src="js/viewer.js?v=25"></script>
+  <script src="js/pwa.js?v=26"></script>
+  <script src="js/local-sync.js?v=26"></script>
+  <script src="js/viewer.js?v=26"></script>
 </body>
 </html>

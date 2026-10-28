@@ -2,7 +2,13 @@
 
 html, body {
   height: 100%;
+  height: -webkit-fill-available;
+  margin: 0;
+  padding: 0;
+  background: #000;
   overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
   cursor: none;
 }
 
@@ -11,11 +17,19 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  width: 100vw;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  min-height: -webkit-fill-available;
   background: #000;
-  position: relative;
   user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
 }
 
 /* ─── Timer Name (Artist on Stage) ──────────────────────────────── */
@@ -50,6 +64,8 @@ html, body {
   font-variant-numeric: tabular-nums;
   max-width: 96vw;
   display: inline-block;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 .viewer-timer.is-long {
@@ -82,11 +98,13 @@ html, body {
 @keyframes viewer-gentle-pulse {
   0%, 100% {
     opacity: 1;
-    filter: brightness(1);
+    -webkit-transform: scale(1);
+    transform: scale(1);
   }
   50% {
-    opacity: 0.38;
-    filter: brightness(1.2);
+    opacity: 0.35;
+    -webkit-transform: scale(1.008);
+    transform: scale(1.008);
   }
 }
 
@@ -108,34 +126,47 @@ html, body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 24px;
-  background: rgba(0, 0, 0, 0.65);
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7);
-  z-index: 20;
+  height: calc(24px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(12, 16, 26, 0.94);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.7);
+  z-index: 25;
+  overflow: hidden;
+  box-sizing: border-box;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
 }
 
 .viewer-progress-bar {
-  height: 100%;
+  height: 24px;
   width: 0%;
-  border-radius: 0 4px 4px 0;
-  transition: width 100ms linear, background 0.35s ease, box-shadow 0.35s ease;
+  box-sizing: border-box;
+  transition: width 100ms linear;
+  will-change: width;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .viewer-progress-bar.safe {
+  background: #00b894;
   background: linear-gradient(90deg, #00b894 0%, #00d2a0 100%);
-  box-shadow: 0 0 16px rgba(0, 184, 148, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 10px rgba(0, 184, 148, 0.55);
 }
 
 .viewer-progress-bar.warn {
+  background: #fa8231;
   background: linear-gradient(90deg, #e67e22 0%, #fa8231 100%);
-  box-shadow: 0 0 16px rgba(250, 130, 49, 0.75);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 10px rgba(250, 130, 49, 0.55);
 }
 
 .viewer-progress-bar.danger,
 .viewer-progress-bar.finished {
+  background: #ff4757;
   background: linear-gradient(90deg, #eb4d4b 0%, #ff4757 100%);
-  box-shadow: 0 0 22px rgba(255, 71, 87, 0.85);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 14px rgba(255, 71, 87, 0.75);
 }
 
 /* ─── Message Overlay (Full-screen Info & Urgent Modes) ─────────── */
@@ -321,8 +352,8 @@ html, body {
 
 .viewer-local-clock {
   position: absolute;
-  bottom: 38px;
-  left: 28px;
+  bottom: calc(38px + env(safe-area-inset-bottom, 0px));
+  left: calc(28px + env(safe-area-inset-left, 0px));
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -330,8 +361,10 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 8px 16px;
   border-radius: 10px;
-  z-index: 8;
+  z-index: 26;
   white-space: nowrap;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .viewer-clock-label {
@@ -357,8 +390,8 @@ html, body {
 
 .viewer-next {
   position: absolute;
-  top: 24px;
-  right: 36px;
+  top: calc(24px + env(safe-area-inset-top, 0px));
+  right: calc(36px + env(safe-area-inset-right, 0px));
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -389,11 +422,15 @@ html, body {
 
 @media (max-width: 768px) {
   .viewer-progress {
-    height: 16px;
+    height: calc(18px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .viewer-progress-bar {
+    height: 18px;
   }
   .viewer-local-clock {
-    bottom: 24px;
-    left: 14px;
+    bottom: calc(26px + env(safe-area-inset-bottom, 0px));
+    left: calc(14px + env(safe-area-inset-left, 0px));
     padding: 6px 12px;
   }
 }
