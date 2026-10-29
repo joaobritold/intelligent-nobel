@@ -385,20 +385,109 @@ client.on('connected', () => {
 renderLineupEventSelector();
 client.connect();
 
-document.addEventListener('dblclick', () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(() => {});
-  } else {
-    document.exitFullscreen().catch(() => {});
+// ─── Universal Fullscreen System ───────────────────────────────────
+
+const $lineupFsBtn = document.getElementById('lineup-fs-btn');
+const $lineupFsText = document.getElementById('lineup-fs-text');
+
+function isFullscreen() {
+  return !!(
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement
+  );
+}
+
+function enterFullscreen() {
+  const el = document.documentElement;
+  const fn = el.requestFullscreen ||
+             el.webkitRequestFullscreen ||
+             el.mozRequestFullScreen ||
+             el.msRequestFullscreen;
+  if (fn) {
+    try {
+      const p = fn.call(el);
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
   }
+}
+
+function exitFullscreen() {
+  const fn = document.exitFullscreen ||
+             document.webkitExitFullscreen ||
+             document.mozCancelFullScreen ||
+             document.msExitFullscreen;
+  if (fn) {
+    try {
+      const p = fn.call(document);
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+  }
+}
+
+function toggleFullscreen() {
+  if (isFullscreen()) {
+    exitFullscreen();
+  } else {
+    enterFullscreen();
+  }
+}
+
+function updateFullscreenUI() {
+  const active = isFullscreen();
+  if ($lineupFsText) {
+    $lineupFsText.textContent = active ? 'Janela' : 'Ecrã Inteiro';
+  }
+  if ($lineupFsBtn) {
+    $lineupFsBtn.title = active ? 'Sair do Ecrã Inteiro (Esc)' : 'Entrar em Ecrã Inteiro (F)';
+  }
+}
+
+['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
+  document.addEventListener(evt, updateFullscreenUI);
 });
 
+// Auto-enter fullscreen attempt on load
+try {
+  enterFullscreen();
+} catch (e) {}
+
+// Auto-fullscreen on first user tap / interaction anywhere
+let autoFsTriggered = false;
+window.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('a, button, select, input, .lineup-day-tab')) return;
+  if (!isFullscreen() && !autoFsTriggered) {
+    autoFsTriggered = true;
+    enterFullscreen();
+  }
+}, { capture: true });
+
+// Button click
+if ($lineupFsBtn) {
+  $lineupFsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleFullscreen();
+  });
+}
+
+// Double click shortcut
+document.addEventListener('dblclick', (e) => {
+  if (e.target.closest('a, button, select, input')) return;
+  toggleFullscreen();
+});
+
+// Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'f' || e.key === 'F') {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
+  switch (e.key) {
+    case 'f':
+    case 'F':
+      toggleFullscreen();
+      break;
+    case 'Escape':
+      if (isFullscreen()) {
+        exitFullscreen();
+      }
+      break;
   }
 });

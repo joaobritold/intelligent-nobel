@@ -312,31 +312,129 @@ function render() {
   }
 }
 
-// ─── Fullscreen on Double Click ────────────────────────────────────
+// ─── Universal Fullscreen System ───────────────────────────────────
 
-document.addEventListener('dblclick', () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(() => {});
-  } else {
-    document.exitFullscreen().catch(() => {});
+const $viewerFsBtn = document.getElementById('viewer-fs-btn');
+const $viewerFsText = document.getElementById('viewer-fs-text');
+const $viewerFsHint = document.getElementById('viewer-fs-hint');
+
+function isFullscreen() {
+  return !!(
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement
+  );
+}
+
+function enterFullscreen() {
+  const el = document.documentElement;
+  const fn = el.requestFullscreen ||
+             el.webkitRequestFullscreen ||
+             el.mozRequestFullScreen ||
+             el.msRequestFullscreen;
+  if (fn) {
+    try {
+      const p = fn.call(el);
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
   }
+}
+
+function exitFullscreen() {
+  const fn = document.exitFullscreen ||
+             document.webkitExitFullscreen ||
+             document.mozCancelFullScreen ||
+             document.msExitFullscreen;
+  if (fn) {
+    try {
+      const p = fn.call(document);
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+  }
+}
+
+function toggleFullscreen() {
+  if (isFullscreen()) {
+    exitFullscreen();
+  } else {
+    enterFullscreen();
+  }
+}
+
+function updateFullscreenUI() {
+  const active = isFullscreen();
+  if ($viewerFsText) {
+    $viewerFsText.textContent = active ? 'Janela' : 'Ecrã Inteiro';
+  }
+  if ($viewerFsBtn) {
+    $viewerFsBtn.title = active ? 'Sair do Ecrã Inteiro (Esc)' : 'Entrar em Ecrã Inteiro (F)';
+  }
+  if ($viewerFsHint) {
+    if (active) {
+      $viewerFsHint.classList.add('is-fullscreen');
+    } else {
+      $viewerFsHint.classList.remove('is-fullscreen');
+    }
+  }
+}
+
+['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
+  document.addEventListener(evt, updateFullscreenUI);
 });
 
-// ─── Keyboard Shortcuts ────────────────────────────────────────────
+// Auto-enter fullscreen attempt on load
+try {
+  enterFullscreen();
+} catch (e) {}
 
+// Auto-fullscreen on first user tap / interaction anywhere
+let autoFsTriggered = false;
+window.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('a, button, select, input, #viewer-top-bar')) return;
+  if (!isFullscreen() && !autoFsTriggered) {
+    autoFsTriggered = true;
+    enterFullscreen();
+  }
+}, { capture: true });
+
+// Button click
+if ($viewerFsBtn) {
+  $viewerFsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleFullscreen();
+  });
+}
+
+// Hint pill click
+if ($viewerFsHint) {
+  $viewerFsHint.addEventListener('click', (e) => {
+    e.stopPropagation();
+    enterFullscreen();
+  });
+}
+
+// Click anywhere on viewer background toggles fullscreen
+document.addEventListener('click', (e) => {
+  if (e.target.closest('a, button, select, input, #viewer-top-bar, .viewer-hint')) return;
+  toggleFullscreen();
+});
+
+// Double click as secondary shortcut
+document.addEventListener('dblclick', () => {
+  toggleFullscreen();
+});
+
+// Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
   switch (e.key) {
     case 'f':
     case 'F':
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen().catch(() => {});
-      }
+      toggleFullscreen();
       break;
     case 'Escape':
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
+      if (isFullscreen()) {
+        exitFullscreen();
       }
       break;
   }

@@ -596,6 +596,19 @@
     const $qrContainer = document.getElementById('qr-container');
     const $qrImg = document.getElementById('qr-img');
 
+    function tryEnterFullscreen() {
+      const el = document.documentElement;
+      const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+      if (fn) {
+        try {
+          const p = fn.call(el);
+          if (p && p.catch) p.catch(() => {});
+        } catch (e) {}
+      }
+    }
+    if ($viewer) $viewer.addEventListener('click', tryEnterFullscreen);
+    if ($lineup) $lineup.addEventListener('click', tryEnterFullscreen);
+
     if ($toggleQr && $qrContainer) {
       $toggleQr.addEventListener('click', () => {
         const isHidden = $qrContainer.style.display === 'none';
