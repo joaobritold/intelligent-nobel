@@ -5,16 +5,11 @@
 // ─── Init ──────────────────────────────────────────────────────────
 
 const params = new URLSearchParams(location.search);
-const paramRoom = params.get('room');
-const savedDeviceRoom = localStorage.getItem('stagetimer_device_room');
-const savedLastRoom = localStorage.getItem('stagetimer_last_room');
+const paramRoom = (params.get('room') || '').trim();
+const savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim();
+const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim();
 
-let roomId = (
-  (paramRoom && paramRoom.toUpperCase() !== 'PALCO1') ? paramRoom :
-  (savedDeviceRoom && savedDeviceRoom.toUpperCase() !== 'PALCO1') ? savedDeviceRoom :
-  (savedLastRoom && savedLastRoom.toUpperCase() !== 'PALCO1') ? savedLastRoom :
-  (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1')
-).toUpperCase();
+let roomId = (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
 
 try {
   localStorage.setItem('stagetimer_device_room', roomId);
@@ -65,7 +60,7 @@ const $ctrlDeleteAllEventsBtn = document.getElementById('ctrl-delete-all-events-
 const $ctrlDayTabs = document.getElementById('ctrl-day-tabs');
 const $topNavHub = document.getElementById('top-nav-hub');
 if ($topNavHub) {
-  $topNavHub.href = (roomId && roomId !== 'PALCO1') ? `index.html?room=${encodeURIComponent(roomId)}` : `index.html`;
+  $topNavHub.href = `index.html?room=${encodeURIComponent(roomId)}`;
 }
 
 function renderDayTabs() {
@@ -239,18 +234,6 @@ if ($ctrlDeleteAllEventsBtn) {
 client.on('events-list-update', (list) => {
   renderEventSelector();
   renderDayTabs();
-  if (roomId === 'PALCO1' && (!state || !state.timers || state.timers.length === 0) && !location.search.includes('clean=1') && Array.isArray(list) && list.length > 0) {
-    const activeEv = list.find(e => (e.timersCount > 0 || e.artistCount > 0)) || list.find(e => e.code !== 'PALCO1');
-    if (activeEv && activeEv.code && activeEv.code !== 'PALCO1') {
-      try {
-        localStorage.setItem('stagetimer_device_room', activeEv.code);
-        localStorage.setItem('stagetimer_last_room', activeEv.code);
-      } catch (e) {}
-      const u = new URL(location.href);
-      u.searchParams.set('room', activeEv.code);
-      location.replace(u.toString());
-    }
-  }
 });
 
 if ($roomCodeInput) {

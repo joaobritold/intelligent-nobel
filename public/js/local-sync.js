@@ -13,29 +13,21 @@ class UniversalSyncClient {
     this.role = role;
     let initialRoom = (room || '').trim().toUpperCase();
 
-    // Check saved device room in localStorage (device-specific binding)
-    let savedDeviceRoom = '';
-    let savedLastRoom = '';
-    try {
-      savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim().toUpperCase();
-      savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim().toUpperCase();
-    } catch (e) {}
-
-    // If initialRoom is missing, or is default 'PALCO1' while device already has a configured room:
-    if (!initialRoom || (initialRoom === 'PALCO1' && savedDeviceRoom && savedDeviceRoom !== 'PALCO1')) {
+    // Check saved device room in localStorage if no room was explicitly provided
+    if (!initialRoom) {
+      let savedDeviceRoom = '';
+      let savedLastRoom = '';
+      try {
+        savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim().toUpperCase();
+        savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim().toUpperCase();
+      } catch (e) {}
       initialRoom = savedDeviceRoom || savedLastRoom || 'PALCO1';
-    } else if (!initialRoom || (initialRoom === 'PALCO1' && savedLastRoom && savedLastRoom !== 'PALCO1')) {
-      initialRoom = savedLastRoom || 'PALCO1';
-    } else if (!initialRoom) {
-      initialRoom = 'PALCO1';
     }
 
     this.room = initialRoom;
     this.cleanRoom = this.room.replace(/[^A-Z0-9_-]/g, '') || 'PALCO1';
     try {
-      if (this.cleanRoom !== 'PALCO1' || !localStorage.getItem('stagetimer_device_room')) {
-        localStorage.setItem('stagetimer_device_room', this.cleanRoom);
-      }
+      localStorage.setItem('stagetimer_device_room', this.cleanRoom);
       localStorage.setItem('stagetimer_last_room', this.cleanRoom);
     } catch (e) {}
 
@@ -902,11 +894,13 @@ class UniversalSyncClient {
             if (code && !deletedSet.has(code) && !list.some(e => e.code === code)) {
               let tCount = 0;
               let title = code === 'PALCO1' ? 'Palco Principal' : code;
+              let itemUpdatedAt = 0;
               try {
                 const s = JSON.parse(localStorage.getItem(k));
                 if (s) {
                   title = s.name || title;
                   tCount = Array.isArray(s.timers) ? s.timers.length : 0;
+                  itemUpdatedAt = Number(s.updatedAt) || 0;
                 }
               } catch (_) {}
               list.push(this._normalizeRegistryItem({
@@ -914,7 +908,7 @@ class UniversalSyncClient {
                 code,
                 title,
                 timersCount: tCount,
-                updatedAt: Date.now()
+                updatedAt: itemUpdatedAt
               }));
             }
           }
@@ -928,12 +922,16 @@ class UniversalSyncClient {
           title: 'Palco Principal',
           timersCount: 0,
           currentDay: 1,
-          updatedAt: Date.now()
+          updatedAt: 0
         }));
       }
 
-      // Always sort so most recently used / updated event is first
-      list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      // Stable deterministic sort: most recently updated first, secondary sort by title/code
+      list.sort((a, b) => {
+        const diff = (b.updatedAt || 0) - (a.updatedAt || 0);
+        if (diff !== 0) return diff;
+        return (a.title || a.code || '').localeCompare(b.title || b.code || '');
+      });
       return list;
     } catch (e) {
       return [this._normalizeRegistryItem({ id: 'PALCO1', code: 'PALCO1', title: 'Palco Principal', timersCount: 0, currentDay: 1 })];

@@ -299,6 +299,21 @@
       <div class="room-hint">Cada palco/evento corre de forma 100% independente em simultâneo.</div>
     </div>
 
+    <!-- Active Stage Banner -->
+    <div id="hub-active-banner" style="background: rgba(108, 92, 231, 0.12); border: 1.5px solid rgba(108, 92, 231, 0.4); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Palco Pronto para Entrar:</div>
+        <div style="font-size: 1.15rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; margin-top: 3px;">
+          <span style="color: #00b894;">🟢</span>
+          <span id="hub-selected-name">Palco Principal</span>
+          <span id="hub-selected-code" class="event-code-pill">PALCO1</span>
+        </div>
+      </div>
+      <div style="font-size: 0.8rem; color: #fdcb6e; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+        <span>👇 Escolha o modo abaixo:</span>
+      </div>
+    </div>
+
     <!-- 3 Mode Cards -->
     <div class="modes-grid">
       <!-- Modo Configurador -->
@@ -368,8 +383,8 @@
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=35"></script>
-  <script src="js/local-sync.js?v=35"></script>
+  <script src="js/pwa.js?v=36"></script>
+  <script src="js/local-sync.js?v=36"></script>
   <script>
     const $toggleQr = document.getElementById('toggle-qr-btn');
     const $qrContainer = document.getElementById('qr-container');
@@ -392,35 +407,34 @@
     const params = new URLSearchParams(location.search);
     const paramRoom = (params.get('room') || '').trim();
 
-    // Remove dangling '?room' with no value from browser address bar
+    // Clean address bar if dangling ?room
     if (location.search === '?room' || (params.has('room') && !paramRoom)) {
       try {
         window.history.replaceState({}, document.title, location.pathname);
       } catch (_) {}
     }
-    const savedDeviceRoom = localStorage.getItem('stagetimer_device_room');
-    const savedLastRoom = localStorage.getItem('stagetimer_last_room');
 
-    let initialRoom = (paramRoom && paramRoom.toUpperCase() !== 'PALCO1') ? paramRoom :
-                      (savedDeviceRoom && savedDeviceRoom.toUpperCase() !== 'PALCO1') ? savedDeviceRoom :
-                      (savedLastRoom && savedLastRoom.toUpperCase() !== 'PALCO1') ? savedLastRoom :
-                      (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1');
-    $room.value = initialRoom.toUpperCase();
+    const savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim();
+    const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim();
+
+    let initialRoom = (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
+    $room.value = initialRoom;
+
+    let userHasManuallySelected = Boolean(paramRoom);
 
     const hubClient = new StageTimerClient({
       role: 'viewer',
-      room: ($room.value.trim() || 'PALCO1').toUpperCase(),
+      room: initialRoom,
     });
     hubClient.connect();
 
-    // If initial room was default 'PALCO1' and registry has active events, pick freshest active event
-    const regList = hubClient.getEventsList();
-    if ((!paramRoom || paramRoom.toUpperCase() === 'PALCO1') &&
-        (!savedDeviceRoom || savedDeviceRoom.toUpperCase() === 'PALCO1') &&
-        regList.length > 0) {
-      const activeEv = regList.find(e => (e.timersCount > 0 || e.artistCount > 0)) || regList.find(e => e.code !== 'PALCO1') || regList[0];
+    // If initial room was default 'PALCO1' without param or saved room, pick first active event if present
+    if (!paramRoom && (!savedDeviceRoom || savedDeviceRoom === 'PALCO1')) {
+      const regList = hubClient.getEventsList();
+      const activeEv = regList.find(e => (e.timersCount > 0 || e.artistCount > 0)) || regList.find(e => e.code !== 'PALCO1');
       if (activeEv && activeEv.code) {
-        $room.value = activeEv.code;
+        initialRoom = activeEv.code;
+        $room.value = initialRoom;
       }
     }
 
@@ -433,12 +447,19 @@
     function renderEventsList() {
       if (!$eventsList) return;
       const list = hubClient.getEventsList();
-      let currentCode = ($room.value.trim() || localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
+      let currentCode = ($room.value.trim() || localStorage.getItem('stagetimer_device_room') || 'PALCO1').toUpperCase();
 
-      if (!list.some(e => e.code === currentCode)) {
-        currentCode = list[0]?.code || 'PALCO1';
+      const matched = list.find(e => e.code === currentCode);
+      if (!matched && list.length > 0) {
+        currentCode = list[0].code;
         $room.value = currentCode;
       }
+
+      const activeItem = list.find(e => e.code === currentCode) || { title: currentCode, code: currentCode };
+      const $bannerName = document.getElementById('hub-selected-name');
+      const $bannerCode = document.getElementById('hub-selected-code');
+      if ($bannerName) $bannerName.textContent = activeItem.title || activeItem.code;
+      if ($bannerCode) $bannerCode.textContent = activeItem.code;
 
       $eventsList.innerHTML = list.map((ev) => {
         const isSelected = ev.code === currentCode;
@@ -452,20 +473,41 @@
                 <span>${isSelected ? '🟢' : '⚪'} ${escapeHtml(ev.title || ev.code)}</span>
                 <span class="event-code-pill">${escapeHtml(ev.code)}</span>
               </div>
-              <div class="event-row-meta">${countLabel} ${isSelected ? '• PALCO SELECIONADO' : '• Clique para selecionar'}</div>
+              <div class="event-row-meta">${countLabel} ${isSelected ? '• PALCO ATIVO' : '• Clique para selecionar'}</div>
             </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="btn btn-sm ${isSelected ? 'btn-primary' : ''}" style="pointer-events: none; font-size: 0.75rem; padding: 4px 10px;">
-                ${isSelected ? '✓ Selecionado' : 'Selecionar'}
-              </span>
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              ${isSelected ? `
+                <span class="btn btn-sm" style="pointer-events: none; font-size: 0.75rem; padding: 5px 10px; background: #00b894; border-color: #00b894; color: #fff; font-weight: 700;">
+                  ✓ Selecionado
+                </span>
+                <button type="button" class="btn btn-sm" data-mode-page="operator.html" data-for-code="${escapeHtml(ev.code)}" style="font-size: 0.75rem; padding: 5px 10px; background: rgba(108, 92, 231, 0.25); border: 1px solid var(--accent); color: #fff; font-weight: 700;">
+                  📱 Operador
+                </button>
+              ` : `
+                <button type="button" class="btn btn-sm" data-select-trigger="${escapeHtml(ev.code)}" style="font-size: 0.75rem; padding: 5px 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: #e2e8f0; font-weight: 600;">
+                  Selecionar
+                </button>
+              `}
             </div>
           </div>
         `;
       }).join('');
     }
 
-    function updateLinks() {
-      const code = ($room.value.trim() || localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
+    function selectRoom(code) {
+      if (!code) return;
+      const clean = String(code).trim().toUpperCase();
+      userHasManuallySelected = true;
+      $room.value = clean;
+      try {
+        localStorage.setItem('stagetimer_device_room', clean);
+        localStorage.setItem('stagetimer_last_room', clean);
+      } catch (_) {}
+      updateLinks(clean);
+    }
+
+    function updateLinks(overrideCode) {
+      const code = (overrideCode || $room.value.trim() || localStorage.getItem('stagetimer_device_room') || 'PALCO1').toUpperCase();
       try {
         localStorage.setItem('stagetimer_device_room', code);
         localStorage.setItem('stagetimer_last_room', code);
@@ -476,34 +518,50 @@
       if ($viewer) $viewer.href = `viewer.html${q}`;
       if ($lineup) $lineup.href = `lineup.html${q}`;
       if ($qrImg) {
-        const fullUrl = `${location.origin}/viewer.html?room=${encodeURIComponent(code)}`;
+        const baseUrl = location.href.split('?')[0].replace(/\/index\.html$/i, '').replace(/\/+$/, '');
+        const fullUrl = `${baseUrl}/viewer.html${q}`;
         $qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(fullUrl)}`;
       }
       renderEventsList();
     }
 
-    // Intercept clicks on mode cards to guarantee the latest selected event is always opened
+    // Intercept clicks on mode cards to guarantee the latest selected event is always opened cleanly
     document.querySelectorAll('.mode-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const code = ($room.value.trim() || localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1').toUpperCase();
+      card.addEventListener('click', (e) => {
+        const rawHref = card.getAttribute('href') || '';
+        if (rawHref.includes('master.html')) {
+          return;
+        }
+        e.preventDefault();
+        const code = ($room.value.trim() || localStorage.getItem('stagetimer_device_room') || 'PALCO1').toUpperCase();
         try {
           localStorage.setItem('stagetimer_device_room', code);
           localStorage.setItem('stagetimer_last_room', code);
         } catch (_) {}
-        const currentHref = card.getAttribute('href');
-        if (currentHref && !currentHref.includes('master.html')) {
-          const page = currentHref.split('?')[0];
-          card.href = `${page}?room=${encodeURIComponent(code)}`;
-        }
+        const page = rawHref.split('?')[0];
+        window.location.href = `${page}?room=${encodeURIComponent(code)}`;
       });
     });
 
     if ($eventsList) {
       $eventsList.addEventListener('click', (e) => {
+        const actionBtn = e.target.closest('[data-mode-page]');
+        if (actionBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const targetCode = (actionBtn.dataset.forCode || $room.value).trim().toUpperCase();
+          const page = actionBtn.dataset.modePage;
+          selectRoom(targetCode);
+          window.location.href = `${page}?room=${encodeURIComponent(targetCode)}`;
+          return;
+        }
+
         const row = e.target.closest('[data-select-code]');
         if (row) {
-          $room.value = row.dataset.selectCode;
-          updateLinks();
+          const code = (row.dataset.selectCode || '').trim().toUpperCase();
+          if (code) {
+            selectRoom(code);
+          }
         }
       });
     }
@@ -518,8 +576,7 @@
         }
         const newCode = hubClient.createNewCleanEvent(name);
         if ($newEventName) $newEventName.value = '';
-        $room.value = newCode;
-        updateLinks();
+        selectRoom(newCode);
       });
     }
 
@@ -533,19 +590,21 @@
     }
 
     hubClient.on('events-list-update', (list) => {
-      if (Array.isArray(list) && list.length > 0) {
-        const current = ($room.value.trim() || '').toUpperCase();
-        const savedDev = (localStorage.getItem('stagetimer_device_room') || '').toUpperCase();
-        if (savedDev && list.some(e => e.code === savedDev)) {
-          $room.value = savedDev;
-        } else if (current === 'PALCO1' || !list.some(e => e.code === current)) {
-          const activeEv = list.find(e => (e.timersCount > 0 || e.artistCount > 0)) || list.find(e => e.code !== 'PALCO1') || list[0];
-          if (activeEv && activeEv.code) {
-            $room.value = activeEv.code;
-          }
+      if (!Array.isArray(list) || list.length === 0) return;
+      const current = ($room.value.trim() || '').toUpperCase();
+      if (list.some(e => e.code === current)) {
+        renderEventsList();
+        return;
+      }
+      if (!userHasManuallySelected) {
+        const activeEv = list.find(e => (e.timersCount > 0 || e.artistCount > 0)) || list[0];
+        if (activeEv && activeEv.code) {
+          $room.value = activeEv.code;
+          updateLinks(activeEv.code);
+          return;
         }
       }
-      updateLinks();
+      renderEventsList();
     });
 
     updateLinks();

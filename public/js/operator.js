@@ -3,16 +3,11 @@
  */
 
 const params = new URLSearchParams(location.search);
-const paramRoom = params.get('room');
-const savedDeviceRoom = localStorage.getItem('stagetimer_device_room');
-const savedLastRoom = localStorage.getItem('stagetimer_last_room');
+const paramRoom = (params.get('room') || '').trim();
+const savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim();
+const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim();
 
-let roomId = (
-  (paramRoom && paramRoom.toUpperCase() !== 'PALCO1') ? paramRoom :
-  (savedDeviceRoom && savedDeviceRoom.toUpperCase() !== 'PALCO1') ? savedDeviceRoom :
-  (savedLastRoom && savedLastRoom.toUpperCase() !== 'PALCO1') ? savedLastRoom :
-  (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1')
-).toUpperCase();
+let roomId = (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
 
 try {
   localStorage.setItem('stagetimer_device_room', roomId);
@@ -59,7 +54,7 @@ if ($opEventSelect) {
 
 const $navHub = document.getElementById('nav-hub');
 if ($navHub) {
-  $navHub.href = (roomId && roomId !== 'PALCO1') ? `index.html?room=${encodeURIComponent(roomId)}` : `index.html`;
+  $navHub.href = `index.html?room=${encodeURIComponent(roomId)}`;
 }
 
 function renderOpDayTabs() {
@@ -99,18 +94,6 @@ if ($opDayTabs) {
 client.on('events-list-update', (list) => {
   renderOpEventSelector();
   renderOpDayTabs();
-  if (roomId === 'PALCO1' && (!state || !state.timers || state.timers.length === 0) && Array.isArray(list) && list.length > 0) {
-    const activeEv = list.find(e => (e.timersCount > 0 || e.artistCount > 0)) || list.find(e => e.code !== 'PALCO1');
-    if (activeEv && activeEv.code && activeEv.code !== 'PALCO1') {
-      try {
-        localStorage.setItem('stagetimer_device_room', activeEv.code);
-        localStorage.setItem('stagetimer_last_room', activeEv.code);
-      } catch (e) {}
-      const u = new URL(location.href);
-      u.searchParams.set('room', activeEv.code);
-      location.replace(u.toString());
-    }
-  }
 });
 
 const $navController = document.getElementById('nav-controller');
@@ -153,7 +136,7 @@ updateNavLinks();
 function updateNavLinks() {
   const code = encodeURIComponent(roomId);
   const $navHub = document.getElementById('nav-hub');
-  if ($navHub) $navHub.href = (roomId && roomId !== 'PALCO1') ? `index.html?room=${code}` : `index.html`;
+  if ($navHub) $navHub.href = `index.html?room=${code}`;
   $navController.href = `controller.html?room=${code}`;
   $navOperator.href = `operator.html?room=${code}`;
   $navViewer.href = `viewer.html?room=${code}`;

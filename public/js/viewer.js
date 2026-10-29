@@ -5,16 +5,11 @@
 // ─── Init ──────────────────────────────────────────────────────────
 
 const params = new URLSearchParams(location.search);
-const paramRoom = params.get('room');
-const savedDeviceRoom = localStorage.getItem('stagetimer_device_room');
-const savedLastRoom = localStorage.getItem('stagetimer_last_room');
+const paramRoom = (params.get('room') || '').trim();
+const savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim();
+const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim();
 
-let roomId = (
-  (paramRoom && paramRoom.toUpperCase() !== 'PALCO1') ? paramRoom :
-  (savedDeviceRoom && savedDeviceRoom.toUpperCase() !== 'PALCO1') ? savedDeviceRoom :
-  (savedLastRoom && savedLastRoom.toUpperCase() !== 'PALCO1') ? savedLastRoom :
-  (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1')
-).toUpperCase();
+let roomId = (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
 
 try {
   localStorage.setItem('stagetimer_device_room', roomId);
@@ -85,23 +80,11 @@ if ($viewerEventSelect) {
 
 const $viewerMenuBtn = document.querySelector('a[href^="index.html"]');
 if ($viewerMenuBtn) {
-  $viewerMenuBtn.href = (roomId && roomId !== 'PALCO1') ? `index.html?room=${encodeURIComponent(roomId)}` : `index.html`;
+  $viewerMenuBtn.href = `index.html?room=${encodeURIComponent(roomId)}`;
 }
 
 client.on('events-list-update', (list) => {
   renderViewerEventSelector();
-  if (roomId === 'PALCO1' && (!state || !state.timers || state.timers.length === 0) && Array.isArray(list) && list.length > 0) {
-    const activeEv = list.find(e => (e.timersCount > 0 || e.artistCount > 0)) || list.find(e => e.code !== 'PALCO1');
-    if (activeEv && activeEv.code && activeEv.code !== 'PALCO1') {
-      try {
-        localStorage.setItem('stagetimer_device_room', activeEv.code);
-        localStorage.setItem('stagetimer_last_room', activeEv.code);
-      } catch (e) {}
-      const u = new URL(location.href);
-      u.searchParams.set('room', activeEv.code);
-      location.replace(u.toString());
-    }
-  }
 });
 
 // Auto-dim top bar after 5s of mouse idle when a timer is running
