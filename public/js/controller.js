@@ -49,6 +49,7 @@ const $joinRoomBtn = document.getElementById('join-room-btn');
 const $p2pStatusText = document.getElementById('p2p-status-text');
 const $p2pPeerCount = document.getElementById('p2p-peer-count');
 const $viewerLinkBtn = document.getElementById('viewer-link-btn');
+const $ctrlStageBadge = document.getElementById('ctrl-stage-badge');
 const $ctrlEventSelect = document.getElementById('ctrl-event-select');
 const $ctrlNewCleanEventBtn = document.getElementById('ctrl-new-clean-event-btn');
 const $newEventModal = document.getElementById('new-event-modal');
@@ -110,13 +111,31 @@ if ($ctrlDayTabs) {
 }
 
 function renderEventSelector() {
-  if (!$ctrlEventSelect || typeof client.getEventsList !== 'function') return;
   const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
-  const list = client.getEventsList();
+  const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+  if ($ctrlStageBadge) {
+    let name = currentCode;
+    for (const ev of list) {
+      if (ev.code === currentCode) {
+        name = ev.title || ev.code;
+        break;
+      }
+      if (Array.isArray(ev.stages)) {
+        const st = ev.stages.find(s => s.code === currentCode);
+        if (st) {
+          name = `${ev.title || ev.code} • ${st.name || st.code}`;
+          break;
+        }
+      }
+    }
+    $ctrlStageBadge.textContent = name;
+  }
 
-  $ctrlEventSelect.innerHTML = list.map(ev => {
-    return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>${ev.title || ev.code}</option>`;
-  }).join('') + `<option value="__NEW_CLEAN__">✨ + Criar Novo Palco / Evento...</option>`;
+  if ($ctrlEventSelect) {
+    $ctrlEventSelect.innerHTML = list.map(ev => {
+      return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>${ev.title || ev.code}</option>`;
+    }).join('');
+  }
 
   if ($ctrlEventsManageList) {
     $ctrlEventsManageList.innerHTML = list.map(ev => {

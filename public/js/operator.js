@@ -27,29 +27,28 @@ const $roomInput = document.getElementById('op-room-input');
 const $joinBtn = document.getElementById('op-join-btn');
 const $connBadge = document.getElementById('op-conn-badge');
 const $bgColor = document.getElementById('op-bg-color');
-const $opEventSelect = document.getElementById('op-event-select');
+const $opStageBadge = document.getElementById('op-stage-badge');
 const $opDayTabs = document.getElementById('op-day-tabs');
 
-function renderOpEventSelector() {
-  if (!$opEventSelect || typeof client.getEventsList !== 'function') return;
+function renderOpStageBadge() {
+  if (!$opStageBadge) return;
   const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
-  const list = client.getEventsList();
-  $opEventSelect.innerHTML = list.map(ev => {
-    return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>${ev.title || ev.code}</option>`;
-  }).join('');
-}
-
-if ($opEventSelect) {
-  $opEventSelect.addEventListener('change', () => {
-    const val = $opEventSelect.value;
-    if (val && val !== (state?.id || roomId)) {
-      try {
-        localStorage.setItem('stagetimer_device_room', val.toUpperCase());
-        localStorage.setItem('stagetimer_last_room', val.toUpperCase());
-      } catch (e) {}
-      location.search = `?room=${encodeURIComponent(val)}`;
+  const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+  let name = currentCode;
+  for (const ev of list) {
+    if (ev.code === currentCode) {
+      name = ev.title || ev.code;
+      break;
     }
-  });
+    if (Array.isArray(ev.stages)) {
+      const st = ev.stages.find(s => s.code === currentCode);
+      if (st) {
+        name = `${ev.title || ev.code} • ${st.name || st.code}`;
+        break;
+      }
+    }
+  }
+  $opStageBadge.textContent = name;
 }
 
 const $navHub = document.getElementById('nav-hub');
@@ -92,7 +91,7 @@ if ($opDayTabs) {
 }
 
 client.on('events-list-update', (list) => {
-  renderOpEventSelector();
+  renderOpStageBadge();
   renderOpDayTabs();
 });
 
@@ -142,7 +141,7 @@ function updateNavLinks() {
   $navViewer.href = `viewer.html?room=${code}`;
   const $navLineup = document.getElementById('nav-lineup');
   if ($navLineup) $navLineup.href = `lineup.html?room=${code}`;
-  renderOpEventSelector();
+  renderOpStageBadge();
 }
 
 $joinBtn.addEventListener('click', () => {
@@ -275,7 +274,7 @@ let opDraggedId = null;
 
 function render() {
   if (!state) return;
-  renderOpEventSelector();
+  renderOpStageBadge();
   renderOpDayTabs();
 
   const $opEventEnd = document.getElementById('op-event-end');
@@ -672,8 +671,21 @@ if ($btnNext) {
     const currentIdx = state.timers.findIndex(t => t.id === state.activeTimerId);
     const targetIdx = currentIdx >= 0 && currentIdx < state.timers.length - 1 ? currentIdx + 1 : state.timers.length - 1;
     const target = state.timers[targetIdx];
-    if (target && target.id !== state.activeTimerId) {
-      client.setActiveTimer(target.id);
+    if (target) {
+      // Optimistic instant visual update
+      if (state && Array.isArray(state.timers)) {
+        state.activeTimerId = target.id;
+        state.timers.forEach(t => {
+          if (t.id === target.id) {
+            t.state = 'running';
+          } else if (t.state === 'running') {
+            t.state = 'stopped';
+          }
+        });
+        render();
+      }
+      // Direct atomic start: activates and starts countdown immediately!
+      client.timerAction(target.id, 'start');
     }
   });
 }

@@ -25,6 +25,7 @@ let state = null;
 
 const $screen = document.getElementById('lineup-screen');
 const $roomBadge = document.getElementById('lineup-room-badge');
+const $lineupStageBadge = document.getElementById('lineup-stage-badge');
 const $lineupEventSelect = document.getElementById('lineup-event-select');
 const $localClock = document.getElementById('lineup-local-clock');
 
@@ -38,14 +39,33 @@ const $list = document.getElementById('lineup-list');
 if ($roomBadge) $roomBadge.textContent = roomId;
 
 function renderLineupEventSelector() {
-  if (!$lineupEventSelect) return;
-  const list = client.getEventsList();
   const currentCode = (state?.id || roomId).toUpperCase();
-  $lineupEventSelect.innerHTML = list.map(ev => `
-    <option value="${escapeHtml(ev.code)}" ${ev.code === currentCode ? 'selected' : ''}>
-      ${escapeHtml(ev.title || ev.code)} (${escapeHtml(ev.code)})
-    </option>
-  `).join('');
+  if ($lineupStageBadge) {
+    const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+    let name = currentCode;
+    for (const ev of list) {
+      if (ev.code === currentCode) {
+        name = ev.title || ev.code;
+        break;
+      }
+      if (Array.isArray(ev.stages)) {
+        const st = ev.stages.find(s => s.code === currentCode);
+        if (st) {
+          name = `${ev.title || ev.code} • ${st.name || st.code}`;
+          break;
+        }
+      }
+    }
+    $lineupStageBadge.textContent = name;
+  }
+  if ($lineupEventSelect) {
+    const list = client.getEventsList();
+    $lineupEventSelect.innerHTML = list.map(ev => `
+      <option value="${escapeHtml(ev.code)}" ${ev.code === currentCode ? 'selected' : ''}>
+        ${escapeHtml(ev.title || ev.code)} (${escapeHtml(ev.code)})
+      </option>
+    `).join('');
+  }
 }
 
 if ($lineupEventSelect) {

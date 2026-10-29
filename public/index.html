@@ -9,6 +9,7 @@
   <meta name="theme-color" content="#0f0f1a">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
   <meta name="description" content="StageTimer PFP - Sistema de timer, relógio de palco, lineup e controlo de eventos em tempo real.">
   <meta name="keywords" content="stagetimer pfp, stage timer pfp, timer palco brito, stagetimer-pfp">
   <meta name="robots" content="index, follow">
@@ -276,30 +277,30 @@
     <div id="view-portal">
       <!-- Portal Header -->
       <div class="hub-header">
-        <div class="hub-logo">⏱️</div>
+        <div class="hub-logo" id="portal-secret-clock-btn" style="cursor: pointer; user-select: none; display: inline-block; transition: transform 0.2s ease;" title="StageTimer">⏱️</div>
         <h1 class="hub-title">StageTimer Portal</h1>
-        <p class="hub-sub">Selecione o seu Evento para aceder à produção e aos palcos</p>
+        <p class="hub-sub">Selecione o seu Evento para aceder aos palcos</p>
       </div>
 
-      <!-- Master Action Bar -->
-      <div id="portal-master-bar" style="background: rgba(253, 203, 110, 0.08); border: 1px solid rgba(253, 203, 110, 0.3); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+      <!-- Master Action Bar (Escondido por defeito; desbloqueado ao clicar no relógio ⏱️) -->
+      <div id="portal-master-bar" style="display: none; background: rgba(253, 203, 110, 0.08); border: 1px solid rgba(253, 203, 110, 0.3); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 1.25rem;">👑</span>
           <div>
-            <div id="portal-master-status-title" style="font-size: 0.85rem; font-weight: 700; color: #fdcb6e;">Produção & Gestão Master</div>
-            <div id="portal-master-status-sub" style="font-size: 0.72rem; color: var(--text-secondary);">Apenas o Master pode criar novos eventos e consultar PINs de acesso</div>
+            <div id="portal-master-status-title" style="font-size: 0.85rem; font-weight: 700; color: #fdcb6e;">👑 Modo Master Ativo</div>
+            <div id="portal-master-status-sub" style="font-size: 0.72rem; color: var(--text-secondary);">Acesso total a todos os eventos, palcos e PINs de segurança</div>
           </div>
         </div>
         <div id="portal-master-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <button id="portal-btn-master-login" type="button" class="btn btn-sm" style="background: rgba(253, 203, 110, 0.15); border: 1px solid #fdcb6e; color: #fdcb6e; font-weight: 700;">
-            👑 Acesso Master
-          </button>
-          <button id="portal-btn-create-event" type="button" class="btn btn-sm btn-primary" style="display: none; font-weight: 700; background: #6c5ce7; border-color: #6c5ce7;">
+          <button id="portal-btn-create-event" type="button" class="btn btn-sm btn-primary" style="font-weight: 700; background: #6c5ce7; border-color: #6c5ce7;">
             ✨ + Criar Novo Evento
           </button>
-          <a id="portal-link-master-panel" href="master.html" class="btn btn-sm" style="display: none; background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff;">
+          <a id="portal-link-master-panel" href="master.html" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff;">
             👑 Painel Super Régie
           </a>
+          <button id="portal-btn-master-logout" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-muted);">
+            🚪 Sair do Master
+          </button>
         </div>
       </div>
 
@@ -307,7 +308,7 @@
       <div class="room-card" style="margin-bottom: 20px;">
         <div class="room-label">
           <span>🎪 Eventos Ativos</span>
-          <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; text-transform: none;">Escolha o evento para introduzir o PIN</span>
+          <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; text-transform: none;">Escolha o evento</span>
         </div>
         <div id="portal-events-list" class="events-list-box" style="max-height: 380px;"></div>
       </div>
@@ -374,7 +375,7 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- VIEW 2: MENU DO EVENTO (Exatamente os menus que já temos!)    -->
+    <!-- VIEW 2: MENU DO EVENTO                                          -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <div id="view-hub" style="display: none;">
       <!-- Header do Evento com botão de voltar ao portal -->
@@ -383,8 +384,9 @@
           <span>←</span> Escolher Outro Evento
         </button>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Evento Atual:</span>
+          <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Evento:</span>
           <span id="hub-current-event-name" style="font-size: 0.95rem; font-weight: 800; color: #55efc4;"></span>
+          <span id="hub-current-stage-badge" class="event-code-pill" style="display: none;"></span>
         </div>
       </div>
 
@@ -395,36 +397,17 @@
         <p class="hub-sub">Sincronização em Tempo Real para Eventos & Palcos</p>
       </div>
 
-      <!-- Event / Stage Selection Box -->
-      <div class="room-card">
-        <div class="room-label">
-          <span>🎪 Escolher Palco</span>
-          <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; text-transform: none;">Selecione o palco ativo para operar ou monitorizar</span>
+      <!-- Seletor de Palcos (só é mostrado se o evento tiver mais de 1 palco) -->
+      <div id="hub-stages-box" style="display: none; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 20px;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; margin-bottom: 10px;">
+          🎪 Palcos deste Evento (clique para alternar):
         </div>
-
-        <!-- List of stages belonging to this event -->
-        <div id="hub-events-list" class="events-list-box"></div>
-
-        <input id="hub-room" type="hidden" value="PALCO1">
-        <div class="room-hint">Cada palco corre de forma 100% independente em simultâneo.</div>
+        <div id="hub-stages-pills" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;"></div>
       </div>
 
-      <!-- Active Stage Banner -->
-      <div id="hub-active-banner" style="background: rgba(108, 92, 231, 0.12); border: 1.5px solid rgba(108, 92, 231, 0.4); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-        <div>
-          <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Palco Pronto para Entrar:</div>
-          <div style="font-size: 1.15rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; margin-top: 3px;">
-            <span style="color: #00b894;">🟢</span>
-            <span id="hub-selected-name">Palco Principal</span>
-            <span id="hub-selected-code" class="event-code-pill">PALCO1</span>
-          </div>
-        </div>
-        <div style="font-size: 0.8rem; color: #fdcb6e; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-          <span>👇 Escolha o modo abaixo:</span>
-        </div>
-      </div>
+      <input id="hub-room" type="hidden" value="PALCO1">
 
-      <!-- 3 Mode Cards -->
+      <!-- 4 Mode Cards -->
       <div class="modes-grid">
         <!-- Modo Configurador -->
         <a id="card-controller" href="controller.html" class="mode-card">
@@ -477,12 +460,8 @@
         </a>
       </div>
 
-      <!-- Share / QR Code + Install App Box -->
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 4px;">
-        <button type="button" class="btn btn-primary st-install-app-btn" style="padding: 12px 22px; font-weight: 700; border-radius: 12px; box-shadow: 0 8px 20px rgba(108, 92, 231, 0.35);">
-          📲 Instalar App Leve (Telemóvel / PC)
-        </button>
-
+      <!-- Share / QR Code Box -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 14px;">
         <button id="toggle-qr-btn" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-secondary);">
           📱 Mostrar QR Code para abrir noutro dispositivo
         </button>
@@ -495,8 +474,8 @@
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=37"></script>
-  <script src="js/local-sync.js?v=37"></script>
+  <script src="js/pwa.js?v=38"></script>
+  <script src="js/local-sync.js?v=38"></script>
   <script>
     const hubClient = new StageTimerClient({
       role: 'viewer',
@@ -509,12 +488,12 @@
     const $viewHub = document.getElementById('view-hub');
 
     // Portal
+    const $portalSecretClockBtn = document.getElementById('portal-secret-clock-btn');
+    const $portalMasterBar = document.getElementById('portal-master-bar');
     const $portalEventsList = document.getElementById('portal-events-list');
-    const $portalBtnMasterLogin = document.getElementById('portal-btn-master-login');
     const $portalBtnCreateEvent = document.getElementById('portal-btn-create-event');
     const $portalLinkMasterPanel = document.getElementById('portal-link-master-panel');
-    const $portalMasterStatusTitle = document.getElementById('portal-master-status-title');
-    const $portalMasterStatusSub = document.getElementById('portal-master-status-sub');
+    const $portalBtnMasterLogout = document.getElementById('portal-btn-master-logout');
 
     // PIN Modal
     const $pinModal = document.getElementById('portal-pin-modal');
@@ -538,12 +517,14 @@
     // Hub
     const $hubBackBtn = document.getElementById('hub-back-to-portal-btn');
     const $hubCurrentEventName = document.getElementById('hub-current-event-name');
+    const $hubCurrentStageBadge = document.getElementById('hub-current-stage-badge');
+    const $hubStagesBox = document.getElementById('hub-stages-box');
+    const $hubStagesPills = document.getElementById('hub-stages-pills');
     const $room = document.getElementById('hub-room');
     const $controller = document.getElementById('card-controller');
     const $operator = document.getElementById('card-operator');
     const $viewer = document.getElementById('card-viewer');
     const $lineup = document.getElementById('card-lineup');
-    const $eventsList = document.getElementById('hub-events-list');
     const $toggleQr = document.getElementById('toggle-qr-btn');
     const $qrContainer = document.getElementById('qr-container');
     const $qrImg = document.getElementById('qr-img');
@@ -599,18 +580,8 @@
     }
 
     function renderMasterBar() {
-      if (isMasterActive) {
-        if ($portalMasterStatusTitle) $portalMasterStatusTitle.textContent = '👑 Modo Master Ativo';
-        if ($portalMasterStatusSub) $portalMasterStatusSub.textContent = 'Acesso total a todos os eventos, palcos e PINs de segurança';
-        if ($portalBtnMasterLogin) $portalBtnMasterLogin.style.display = 'none';
-        if ($portalBtnCreateEvent) $portalBtnCreateEvent.style.display = 'inline-flex';
-        if ($portalLinkMasterPanel) $portalLinkMasterPanel.style.display = 'inline-flex';
-      } else {
-        if ($portalMasterStatusTitle) $portalMasterStatusTitle.textContent = 'Produção & Gestão Master';
-        if ($portalMasterStatusSub) $portalMasterStatusSub.textContent = 'Apenas o Master pode criar novos eventos e consultar PINs de acesso';
-        if ($portalBtnMasterLogin) $portalBtnMasterLogin.style.display = 'inline-flex';
-        if ($portalBtnCreateEvent) $portalBtnCreateEvent.style.display = 'none';
-        if ($portalLinkMasterPanel) $portalLinkMasterPanel.style.display = 'none';
+      if ($portalMasterBar) {
+        $portalMasterBar.style.display = isMasterActive ? 'flex' : 'none';
       }
     }
 
@@ -623,7 +594,7 @@
           <div style="text-align: center; padding: 28px 16px; color: var(--text-secondary);">
             <div style="font-size: 2.2rem; margin-bottom: 8px;">🎪</div>
             <div style="font-size: 1rem; font-weight: 700; color: #fff;">Nenhum evento ativo no momento.</div>
-            <div style="font-size: 0.8rem; margin-top: 4px;">Inicie sessão como Master acima para criar o primeiro evento.</div>
+            <div style="font-size: 0.8rem; margin-top: 4px;">Clique no ícone ⏱️ acima com a senha Master para criar o primeiro evento.</div>
           </div>
         `;
         return;
@@ -634,7 +605,7 @@
         const stageLabel = count > 1 ? `${count} palcos` : '1 palco';
         const pinBadge = isMasterActive
           ? `<span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 800; font-family: var(--font-mono); padding: 4px 10px; border-radius: 8px; border: 1px solid #fdcb6e; font-size: 0.82rem;">🔑 PIN: ${escapeHtml(ev.pin)}</span>`
-          : `<span style="background: rgba(255,255,255,0.06); color: var(--text-secondary); font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;">🔒 Protegido com PIN</span>`;
+          : '';
 
         const copyButtons = isMasterActive ? `
           <button type="button" class="btn btn-sm btn-copy-pin" data-copy-pin="${escapeHtml(ev.pin)}" style="padding: 4px 8px; font-size: 0.72rem; background: rgba(255,255,255,0.08); border: 1px solid var(--border);" title="Copiar PIN">📋 Copiar PIN</button>
@@ -644,19 +615,18 @@
         return `
           <div class="event-row" data-portal-code="${escapeHtml(ev.code)}" style="padding: 14px 16px; cursor: pointer;">
             <div class="event-row-left">
-              <div class="event-row-title" style="font-size: 1.05rem;">
+               <div class="event-row-title" style="font-size: 1.05rem;">
                 <span>🎪 ${escapeHtml(ev.title || ev.code)}</span>
               </div>
               <div class="event-row-meta" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
                 <span>${stageLabel}</span>
-                <span>•</span>
-                ${pinBadge}
+                ${pinBadge ? `<span>•</span>${pinBadge}` : ''}
                 ${copyButtons}
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
               <button type="button" class="btn btn-sm btn-primary" data-portal-enter="${escapeHtml(ev.code)}" style="font-weight: 700; padding: 8px 16px; background: #6c5ce7; border-color: #6c5ce7;">
-                ${isMasterActive ? 'Abrir Evento' : '🔑 Entrar no Evento'}
+                ${isMasterActive ? 'Abrir Evento' : 'Entrar'}
               </button>
             </div>
           </div>
@@ -665,7 +635,6 @@
     }
 
     function renderEventHub(unlockedEv) {
-      if (!$eventsList) return;
       if ($hubCurrentEventName) {
         $hubCurrentEventName.textContent = unlockedEv.title || unlockedEv.code;
       }
@@ -685,10 +654,30 @@
       } catch (_) {}
 
       const activeStage = stages.find(s => s.code === selectedRoom) || stages[0];
-      const $bannerName = document.getElementById('hub-selected-name');
-      const $bannerCode = document.getElementById('hub-selected-code');
-      if ($bannerName) $bannerName.textContent = activeStage.name || activeStage.code;
-      if ($bannerCode) $bannerCode.textContent = activeStage.code;
+      if ($hubCurrentStageBadge) {
+        if (stages.length > 1) {
+          $hubCurrentStageBadge.textContent = activeStage.name || activeStage.code;
+          $hubCurrentStageBadge.style.display = 'inline-block';
+        } else {
+          $hubCurrentStageBadge.style.display = 'none';
+        }
+      }
+
+      if ($hubStagesBox && $hubStagesPills) {
+        if (stages.length > 1) {
+          $hubStagesBox.style.display = 'block';
+          $hubStagesPills.innerHTML = stages.map(st => {
+            const isSel = st.code === selectedRoom;
+            return `
+              <button type="button" class="btn btn-sm ${isSel ? 'btn-primary' : ''}" data-select-stage="${escapeHtml(st.code)}" style="padding: 7px 16px; font-weight: 700; border-radius: 8px; ${isSel ? 'background: #00b894; border-color: #00b894; color: #fff;' : 'background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: #cbd5e1;'}">
+                ${isSel ? '🟢' : '⚪'} ${escapeHtml(st.name || st.code)}
+              </button>
+            `;
+          }).join('');
+        } else {
+          $hubStagesBox.style.display = 'none';
+        }
+      }
 
       // Update card links
       const q = `?room=${encodeURIComponent(selectedRoom)}`;
@@ -701,30 +690,6 @@
         const fullUrl = `${baseUrl}/viewer.html${q}`;
         $qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(fullUrl)}`;
       }
-
-      // RENDER STAGES LIST WITHOUT OPERATOR BUTTON (CLEAN AND STREAMLINED)
-      $eventsList.innerHTML = stages.map(st => {
-        const isSelected = st.code === selectedRoom;
-        const countLabel = typeof st.timersCount === 'number'
-          ? `${st.timersCount} artista(s)`
-          : 'Sessão';
-        return `
-          <div class="event-row ${isSelected ? 'active' : ''}" data-select-stage="${escapeHtml(st.code)}">
-            <div class="event-row-left">
-              <div class="event-row-title">
-                <span>${isSelected ? '🟢' : '⚪'} ${escapeHtml(st.name || st.code)}</span>
-                <span class="event-code-pill">${escapeHtml(st.code)}</span>
-              </div>
-              <div class="event-row-meta">${countLabel} ${isSelected ? '• PALCO ATIVO' : '• Clique para selecionar'}</div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="btn btn-sm ${isSelected ? 'btn-primary' : ''}" style="pointer-events: none; font-size: 0.75rem; padding: 5px 12px; ${isSelected ? 'background: #00b894; border-color: #00b894; color: #fff; font-weight: 700;' : 'background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: #e2e8f0;'}">
-                ${isSelected ? '✓ Selecionado' : 'Selecionar'}
-              </span>
-            </div>
-          </div>
-        `;
-      }).join('');
     }
 
     function renderView() {
@@ -845,18 +810,36 @@
       });
     }
 
-    // Master Login Button
-    if ($portalBtnMasterLogin) {
-      $portalBtnMasterLogin.addEventListener('click', () => {
-        const pass = prompt('Introduza a Senha Master (Produção):', '');
+    // Secret Master Login on Clock Click
+    if ($portalSecretClockBtn) {
+      $portalSecretClockBtn.addEventListener('click', () => {
+        if (isMasterActive) {
+          if (confirm('O Modo Master já está ativo.\nDeseja sair do Modo Master?')) {
+            isMasterActive = false;
+            sessionStorage.removeItem('stagetimer_master_active');
+            renderView();
+          }
+          return;
+        }
+        const pass = prompt('Acesso Master Régie - Introduza a Senha:', '');
         if (pass === null) return;
         if (pass.trim() === '1379brito') {
           isMasterActive = true;
           sessionStorage.setItem('stagetimer_master_active', '1');
+          alert('👑 Modo Master ativado com sucesso!');
           renderView();
         } else {
           alert('❌ Senha Master incorreta.');
         }
+      });
+    }
+
+    // Master Logout Button
+    if ($portalBtnMasterLogout) {
+      $portalBtnMasterLogout.addEventListener('click', () => {
+        isMasterActive = false;
+        sessionStorage.removeItem('stagetimer_master_active');
+        renderView();
       });
     }
 
@@ -932,12 +915,12 @@
       });
     }
 
-    // Hub: Stage selection click
-    if ($eventsList) {
-      $eventsList.addEventListener('click', (e) => {
-        const row = e.target.closest('[data-select-stage]');
-        if (row) {
-          const stageCode = (row.dataset.selectStage || '').trim().toUpperCase();
+    // Hub: Stage selection pills click
+    if ($hubStagesPills) {
+      $hubStagesPills.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-select-stage]');
+        if (btn) {
+          const stageCode = (btn.dataset.selectStage || '').trim().toUpperCase();
           if (stageCode) {
             selectedRoom = stageCode;
             const allEvents = hubClient.getEventsList();

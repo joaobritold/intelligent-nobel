@@ -5,11 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StageTimer">
+  <meta name="theme-color" content="#0f0f1a">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Modo Lista (Lineup & Horários)</title>
-  <link rel="stylesheet" href="css/common.css?v=37">
-  <link rel="stylesheet" href="css/lineup.css?v=37">
+  <link rel="stylesheet" href="css/common.css?v=38">
+  <link rel="stylesheet" href="css/lineup.css?v=38">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
@@ -20,11 +23,10 @@
         <div>
           <div class="lineup-title">Lineup & Horários</div>
         </div>
-        <!-- Event Switcher Selector -->
-        <div style="display: flex; align-items: center; gap: 6px; background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.5); padding: 3px 8px; border-radius: 8px;">
+        <!-- Event / Stage Badge -->
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.5); padding: 4px 10px; border-radius: 8px;">
           <span style="font-size: 0.9rem;">🎪</span>
-          <select id="lineup-event-select" style="background: transparent; color: #fff; border: none; font-size: 0.85rem; font-weight: 700; outline: none; cursor: pointer; max-width: 190px;" title="Mudar de Palco/Evento">
-          </select>
+          <span id="lineup-stage-badge" style="color: #55efc4; font-size: 0.85rem; font-weight: 800; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Palco</span>
         </div>
         <span id="lineup-room-badge" class="lineup-room-badge" style="display: none;">PALCO1</span>
         <div id="lineup-day-tabs" style="display: flex; gap: 4px; align-items: center; margin-left: 4px;"></div>
@@ -71,8 +73,8 @@
 
   <!-- Cloud MQTT over WSS -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=37"></script>
-  <script src="js/local-sync.js?v=37"></script>
-  <script src="js/lineup.js?v=37"></script>
+  <script src="js/pwa.js?v=38"></script>
+  <script src="js/local-sync.js?v=38"></script>
+  <script src="js/lineup.js?v=38"></script>
 </body>
 </html>

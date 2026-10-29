@@ -34,6 +34,7 @@ const $connection = document.getElementById('viewer-connection');
 const $flashOverlay = document.getElementById('flash-overlay');
 const $emptyState = document.getElementById('viewer-empty');
 const $viewerTopBar = document.getElementById('viewer-top-bar');
+const $viewerStageBadge = document.getElementById('viewer-stage-badge');
 const $viewerEventSelect = document.getElementById('viewer-event-select');
 const $viewerLineupBtn = document.getElementById('viewer-lineup-btn');
 const $viewerNotes = document.getElementById('viewer-notes');
@@ -48,14 +49,33 @@ function escapeHtml(str) {
 }
 
 function renderViewerEventSelector() {
-  if (!$viewerEventSelect) return;
-  const list = client.getEventsList();
   const currentCode = (state?.id || roomId).toUpperCase();
-  $viewerEventSelect.innerHTML = list.map(ev => `
-    <option value="${escapeHtml(ev.code)}" ${ev.code === currentCode ? 'selected' : ''}>
-      ${escapeHtml(ev.title || ev.code)} (${escapeHtml(ev.code)})
-    </option>
-  `).join('');
+  if ($viewerStageBadge) {
+    const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+    let name = currentCode;
+    for (const ev of list) {
+      if (ev.code === currentCode) {
+        name = ev.title || ev.code;
+        break;
+      }
+      if (Array.isArray(ev.stages)) {
+        const st = ev.stages.find(s => s.code === currentCode);
+        if (st) {
+          name = `${ev.title || ev.code} • ${st.name || st.code}`;
+          break;
+        }
+      }
+    }
+    $viewerStageBadge.textContent = name;
+  }
+  if ($viewerEventSelect) {
+    const list = client.getEventsList();
+    $viewerEventSelect.innerHTML = list.map(ev => `
+      <option value="${escapeHtml(ev.code)}" ${ev.code === currentCode ? 'selected' : ''}>
+        ${escapeHtml(ev.title || ev.code)} (${escapeHtml(ev.code)})
+      </option>
+    `).join('');
+  }
   if ($viewerLineupBtn) {
     $viewerLineupBtn.href = `lineup.html?room=${encodeURIComponent(currentCode)}`;
   }

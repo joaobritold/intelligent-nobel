@@ -898,6 +898,7 @@ class UniversalSyncClient {
       timersCount: count,
       artistCount: count,
       currentDay: item?.currentDay || 1,
+      createdAt: item?.createdAt || item?.updatedAt || 0,
       updatedAt: item?.updatedAt || 0
     };
   }
@@ -935,6 +936,7 @@ class UniversalSyncClient {
                 code,
                 title,
                 timersCount: tCount,
+                createdAt: itemUpdatedAt,
                 updatedAt: itemUpdatedAt
               }));
             }
@@ -949,14 +951,16 @@ class UniversalSyncClient {
           title: 'Palco Principal',
           timersCount: 0,
           currentDay: 1,
+          createdAt: 0,
           updatedAt: 0
         }));
       }
 
-      // Stable deterministic sort: most recently updated first, secondary sort by title/code
+      // Sort: most recently created / updated first
       list.sort((a, b) => {
-        const diff = (b.updatedAt || 0) - (a.updatedAt || 0);
-        if (diff !== 0) return diff;
+        const timeA = (b.createdAt || b.updatedAt || 0);
+        const timeB = (a.createdAt || a.updatedAt || 0);
+        if (timeA !== timeB) return timeA - timeB;
         return (a.title || a.code || '').localeCompare(b.title || b.code || '');
       });
       return list;
@@ -1220,6 +1224,7 @@ class UniversalSyncClient {
       timersCount: 0,
       artistCount: 0,
       currentDay: 1,
+      createdAt: Date.now(),
       updatedAt: Date.now()
     });
 

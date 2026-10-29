@@ -3,8 +3,8 @@
   "name": "StageTimer PFP — Controlo de Palco",
   "short_name": "StageTimer",
   "description": "App leve de controlo de tempos de palco, alinhamento de artistas e mensagens em tempo real.",
-  "start_url": "/index.html",
-  "scope": "/",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#0f0f1a",
@@ -12,7 +12,7 @@
   "categories": ["productivity", "utilities", "music"],
   "icons": [
     {
-      "src": "icon.svg",
+      "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
@@ -20,32 +20,32 @@
   ],
   "shortcuts": [
     {
-      "name": "📱 Modo Operador (Controlo Rápido)",
+      "name": "📱 Modo Operador",
       "short_name": "Operador",
       "description": "Abrir controlo rápido para telemóvel",
-      "url": "/operator.html",
-      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+      "url": "./operator.html",
+      "icons": [{ "src": "./icon.svg", "sizes": "any" }]
     },
     {
-      "name": "🎛️ Modo Controlador (Régie)",
+      "name": "🎛️ Modo Controlador",
       "short_name": "Controlador",
       "description": "Abrir painel completo de controlo",
-      "url": "/controller.html",
-      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+      "url": "./controller.html",
+      "icons": [{ "src": "./icon.svg", "sizes": "any" }]
     },
     {
       "name": "📺 Modo de Palco",
       "short_name": "Palco",
       "description": "Abrir ecrã de palco",
-      "url": "/viewer.html",
-      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+      "url": "./viewer.html",
+      "icons": [{ "src": "./icon.svg", "sizes": "any" }]
     },
     {
-      "name": "📋 Modo Lista (Lineup)",
+      "name": "📋 Modo Lista",
       "short_name": "Lista",
       "description": "Abrir tabela de horários e alinhamento",
-      "url": "/lineup.html",
-      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+      "url": "./lineup.html",
+      "icons": [{ "src": "./icon.svg", "sizes": "any" }]
     }
   ]
 }

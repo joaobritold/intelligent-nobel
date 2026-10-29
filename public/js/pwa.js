@@ -8,7 +8,7 @@
   // 1. Register Service Worker for Instant Launch & Standalone Installability
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').then((reg) => {
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
         reg.update().catch(() => {});
       }).catch(() => {});
     });

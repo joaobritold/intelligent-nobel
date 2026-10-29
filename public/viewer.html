@@ -1,25 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StageTimer">
+  <meta name="theme-color" content="#0f0f1a">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
-  <title>StageTimer — Stage Screen</title>
-  <link rel="stylesheet" href="css/common.css?v=37">
-  <link rel="stylesheet" href="css/viewer.css?v=37">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>StageTimer — Modo Palco</title>
+  <link rel="stylesheet" href="css/common.css?v=38">
+  <link rel="stylesheet" href="css/viewer.css?v=38">
 </head>
 <body>
   <div class="viewer">
     <!-- Connection Status Indicator -->
     <div id="viewer-connection" class="viewer-connection disconnected" title="Connection status"></div>
 
-    <!-- Top Control Bar (Event Selector & Fast Navigation) -->
+    <!-- Top Control Bar (Stage Badge & Fast Navigation) -->
     <div id="viewer-top-bar" class="viewer-top-bar" style="position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: calc(16px + env(safe-area-inset-left, 0px)); display: flex; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(10px); padding: 6px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5); z-index: 50; transition: opacity 0.3s ease;">
       <div style="display: flex; align-items: center; gap: 6px;">
         <span style="font-size: 0.95rem;">🎪</span>
-        <select id="viewer-event-select" style="background: rgba(108, 92, 231, 0.25); color: #fff; border: 1px solid rgba(108, 92, 231, 0.5); border-radius: 6px; font-size: 0.82rem; font-weight: 700; outline: none; cursor: pointer; padding: 3px 8px; max-width: 190px;" title="Mudar de Palco/Evento">
-        </select>
+        <span id="viewer-stage-badge" style="color: #55efc4; font-size: 0.82rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: rgba(0, 184, 148, 0.15); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Palco</span>
       </div>
       <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.2);"></div>
       <a href="index.html" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.72rem; text-decoration: none; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; border-radius: 6px;">🏠 Início</a>
@@ -71,8 +75,8 @@
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=37"></script>
-  <script src="js/local-sync.js?v=37"></script>
-  <script src="js/viewer.js?v=37"></script>
+  <script src="js/pwa.js?v=38"></script>
+  <script src="js/local-sync.js?v=38"></script>
+  <script src="js/viewer.js?v=38"></script>
 </body>
 </html>
