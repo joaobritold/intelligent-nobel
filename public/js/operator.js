@@ -613,7 +613,19 @@ $queueList.addEventListener('click', (e) => {
   if (fireBtn) {
     e.stopPropagation();
     const id = fireBtn.dataset.fireId;
-    // Disparo direto: coloca como ativo e arranca logo o contador!
+    // Otimização visual imediata: coloca no ar sem qualquer atraso
+    if (state && Array.isArray(state.timers)) {
+      state.activeTimerId = id;
+      state.timers.forEach(t => {
+        if (t.id === id) {
+          t.state = 'running';
+        } else if (t.state === 'running') {
+          t.state = 'stopped';
+        }
+      });
+      render();
+    }
+    // Disparo direto atómico: coloca como ativo e arranca logo o contador!
     client.timerAction(id, 'start');
     return;
   }

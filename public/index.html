@@ -368,8 +368,8 @@
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=33"></script>
-  <script src="js/local-sync.js?v=33"></script>
+  <script src="js/pwa.js?v=35"></script>
+  <script src="js/local-sync.js?v=35"></script>
   <script>
     const $toggleQr = document.getElementById('toggle-qr-btn');
     const $qrContainer = document.getElementById('qr-container');
@@ -389,8 +389,11 @@
     const $newEventName = document.getElementById('hub-new-event-name');
     const $createEventBtn = document.getElementById('hub-create-event-btn');
 
+    const params = new URLSearchParams(location.search);
+    const paramRoom = (params.get('room') || '').trim();
+
     // Remove dangling '?room' with no value from browser address bar
-    if (location.search === '?room' || (location.search && !params.get('room') && params.has('room'))) {
+    if (location.search === '?room' || (params.has('room') && !paramRoom)) {
       try {
         window.history.replaceState({}, document.title, location.pathname);
       } catch (_) {}

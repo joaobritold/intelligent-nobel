@@ -893,6 +893,34 @@ class UniversalSyncClient {
         .map(e => this._normalizeRegistryItem(e))
         .filter(e => !deletedSet.has(e.code));
 
+      // Auto-discover rooms saved in localStorage
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith('stagetimer_live_state_')) {
+            const code = k.replace('stagetimer_live_state_', '').toUpperCase().trim();
+            if (code && !deletedSet.has(code) && !list.some(e => e.code === code)) {
+              let tCount = 0;
+              let title = code === 'PALCO1' ? 'Palco Principal' : code;
+              try {
+                const s = JSON.parse(localStorage.getItem(k));
+                if (s) {
+                  title = s.name || title;
+                  tCount = Array.isArray(s.timers) ? s.timers.length : 0;
+                }
+              } catch (_) {}
+              list.push(this._normalizeRegistryItem({
+                id: code,
+                code,
+                title,
+                timersCount: tCount,
+                updatedAt: Date.now()
+              }));
+            }
+          }
+        }
+      } catch (_) {}
+
       if (list.length === 0 && !deletedSet.has('PALCO1')) {
         list.push(this._normalizeRegistryItem({
           id: 'PALCO1',
@@ -1248,6 +1276,22 @@ class UniversalSyncClient {
   _applyIncomingState(incoming, fromCloud = false, sentAt = null) {
     if (!incoming || !Array.isArray(incoming.timers)) return;
 
+    const currentUpdatedAt = this._state?.updatedAt || 0;
+    const incomingUpdatedAt = incoming.updatedAt || 0;
+
+    // Discard stale incoming states (monotonic clock check)
+    // If incoming state has an older timestamp, ignore it to prevent jump-back glitches!
+    if (currentUpdatedAt > 0 && incomingUpdatedAt > 0 && incomingUpdatedAt < currentUpdatedAt) {
+      return;
+    }
+
+    // Protection against echo / race conditions if a local action occurred recently (< 2.5 seconds)
+    if (this._lastLocalActionAt && (this.getTrueTime() - this._lastLocalActionAt < 2500)) {
+      if (this._state?.activeTimerId && incoming.activeTimerId !== this._state.activeTimerId) {
+        incoming.activeTimerId = this._state.activeTimerId;
+      }
+    }
+
     const trueNow = this.getTrueTime();
 
     incoming.timers.forEach(incomingT => {
@@ -1484,6 +1528,17 @@ class UniversalSyncClient {
 
     switch (action) {
       case 'start':
+        this._lastLocalActionAt = trueNow;
+        // Stop any previously running timer so only the fired timer runs
+        for (const other of this._state.timers) {
+          if (other.id !== timer.id && other.state === 'running') {
+            const anchor = other.serverStartedAt || other.startedAt;
+            if (anchor) other.elapsed += Math.max(0, trueNow - anchor);
+            other.state = 'stopped';
+            other.startedAt = null;
+            other.serverStartedAt = null;
+          }
+        }
         this._state.activeTimerId = timer.id;
         if (timer.state !== 'running') {
           if (timer.state === 'finished') timer.elapsed = 0;
@@ -1545,6 +1600,7 @@ class UniversalSyncClient {
 
   setActiveTimer(id) {
     if (this._state.timers.some(t => t.id === id)) {
+      this._lastLocalActionAt = this.getTrueTime();
       this._state.activeTimerId = id;
       this._commitStateChange();
     }
