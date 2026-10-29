@@ -277,7 +277,7 @@
     <div id="view-portal">
       <!-- Portal Header -->
       <div class="hub-header">
-        <div class="hub-logo" id="portal-secret-clock-btn" style="cursor: pointer; user-select: none; display: inline-block; transition: transform 0.2s ease;" title="StageTimer">⏱️</div>
+        <button type="button" class="hub-logo-btn" id="portal-secret-clock-btn" style="background: none; border: none; font-size: 3rem; cursor: pointer; padding: 0; margin-bottom: 8px; line-height: 1; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation;" title="Acesso Master">⏱️</button>
         <h1 class="hub-title">StageTimer Portal</h1>
         <p class="hub-sub">Selecione o seu Evento para aceder aos palcos</p>
       </div>
@@ -374,6 +374,41 @@
       </div>
     </div>
 
+    <!-- MODAL 3: Palavra-passe Master (Super Régie) -->
+    <div id="portal-master-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 16px;">
+      <div style="background: #1a1a2e; border: 1.5px solid #fdcb6e; border-radius: 16px; max-width: 390px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center;">
+        <div style="font-size: 2.4rem; margin-bottom: 6px;">👑</div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #fdcb6e; margin-bottom: 4px;">Acesso Super Régie Master</h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 16px;">Introduza a palavra-passe Master:</p>
+
+        <input id="master-modal-input" type="password" placeholder="Palavra-passe..." autocomplete="current-password" style="width: 100%; max-width: 250px; text-align: center; font-size: 1.15rem; font-weight: 700; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 2px solid #fdcb6e; border-radius: 12px; color: #fff; margin-bottom: 12px; outline: none;">
+
+        <div id="master-modal-error" style="display: none; color: #ff7675; font-size: 0.82rem; font-weight: 700; margin-bottom: 14px;">❌ Senha Master incorreta.</div>
+
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 6px;">
+          <button id="master-modal-cancel" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff; padding: 10px 18px;">Cancelar</button>
+          <button id="master-modal-confirm" type="button" class="btn btn-sm btn-primary" style="padding: 10px 22px; font-weight: 800; background: #e17055; border-color: #e17055;">👑 Entrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 4: Ações Rápidas Master (Quando já está ativo) -->
+    <div id="portal-master-active-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 16px;">
+      <div style="background: #1a1a2e; border: 1.5px solid #fdcb6e; border-radius: 16px; max-width: 390px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center;">
+        <div style="font-size: 2.4rem; margin-bottom: 6px;">👑</div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #fdcb6e; margin-bottom: 4px;">Modo Master Ativo</h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 18px;">Acesso total de produção ativo:</p>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+          <a href="master.html" class="btn btn-primary" style="padding: 12px; font-weight: 800; background: #e17055; border-color: #e17055; text-decoration: none;">👑 Abrir Painel Super Régie</a>
+          <button id="master-active-create-btn" type="button" class="btn" style="padding: 12px; font-weight: 700; background: rgba(108, 92, 231, 0.2); border: 1px solid var(--accent); color: #c4b5fd;">✨ + Criar Novo Evento</button>
+          <button id="master-active-logout-btn" type="button" class="btn btn-danger" style="padding: 10px; font-weight: 700;">🚪 Sair do Modo Master</button>
+        </div>
+
+        <button id="master-active-close-btn" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff;">Fechar</button>
+      </div>
+    </div>
+
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- VIEW 2: MENU DO EVENTO                                          -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -387,12 +422,13 @@
           <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Evento:</span>
           <span id="hub-current-event-name" style="font-size: 0.95rem; font-weight: 800; color: #55efc4;"></span>
           <span id="hub-current-stage-badge" class="event-code-pill" style="display: none;"></span>
+          <a id="hub-master-link-top" href="master.html" class="btn btn-sm" style="display: none; background: rgba(253, 203, 110, 0.18); border: 1.5px solid #fdcb6e; color: #fdcb6e; font-weight: 800; text-decoration: none;">👑 Super Régie</a>
         </div>
       </div>
 
       <!-- Header Principal -->
       <div class="hub-header" style="margin-bottom: 16px;">
-        <div class="hub-logo">⏱️</div>
+        <button type="button" class="hub-logo-btn" id="hub-secret-clock-btn" style="background: none; border: none; font-size: 3rem; cursor: pointer; padding: 0; margin-bottom: 8px; line-height: 1; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation;" title="Acesso Master">⏱️</button>
         <h1 class="hub-title" id="hub-title-display">StageTimer</h1>
         <p class="hub-sub">Sincronização em Tempo Real para Eventos & Palcos</p>
       </div>
@@ -495,6 +531,18 @@
     const $portalLinkMasterPanel = document.getElementById('portal-link-master-panel');
     const $portalBtnMasterLogout = document.getElementById('portal-btn-master-logout');
 
+    // Master Modals
+    const $masterModal = document.getElementById('portal-master-modal');
+    const $masterModalInput = document.getElementById('master-modal-input');
+    const $masterModalError = document.getElementById('master-modal-error');
+    const $masterModalCancel = document.getElementById('master-modal-cancel');
+    const $masterModalConfirm = document.getElementById('master-modal-confirm');
+
+    const $masterActiveModal = document.getElementById('portal-master-active-modal');
+    const $masterActiveCreateBtn = document.getElementById('master-active-create-btn');
+    const $masterActiveLogoutBtn = document.getElementById('master-active-logout-btn');
+    const $masterActiveCloseBtn = document.getElementById('master-active-close-btn');
+
     // PIN Modal
     const $pinModal = document.getElementById('portal-pin-modal');
     const $pinModalTitle = document.getElementById('pin-modal-event-title');
@@ -515,6 +563,8 @@
     const $createConfirm = document.getElementById('create-modal-confirm');
 
     // Hub
+    const $hubSecretClockBtn = document.getElementById('hub-secret-clock-btn');
+    const $hubMasterLinkTop = document.getElementById('hub-master-link-top');
     const $hubBackBtn = document.getElementById('hub-back-to-portal-btn');
     const $hubCurrentEventName = document.getElementById('hub-current-event-name');
     const $hubCurrentStageBadge = document.getElementById('hub-current-stage-badge');
@@ -582,6 +632,9 @@
     function renderMasterBar() {
       if ($portalMasterBar) {
         $portalMasterBar.style.display = isMasterActive ? 'flex' : 'none';
+      }
+      if ($hubMasterLinkTop) {
+        $hubMasterLinkTop.style.display = isMasterActive ? 'inline-flex' : 'none';
       }
     }
 
@@ -811,35 +864,83 @@
     }
 
     // Secret Master Login on Clock Click
+    function openMasterClockAction() {
+      if (isMasterActive) {
+        if ($masterActiveModal) $masterActiveModal.style.display = 'flex';
+      } else {
+        if ($masterModalInput) $masterModalInput.value = '';
+        if ($masterModalError) $masterModalError.style.display = 'none';
+        if ($masterModal) $masterModal.style.display = 'flex';
+        setTimeout(() => { if ($masterModalInput) $masterModalInput.focus(); }, 100);
+      }
+    }
+
     if ($portalSecretClockBtn) {
-      $portalSecretClockBtn.addEventListener('click', () => {
-        if (isMasterActive) {
-          if (confirm('O Modo Master já está ativo.\nDeseja sair do Modo Master?')) {
-            isMasterActive = false;
-            sessionStorage.removeItem('stagetimer_master_active');
-            renderView();
-          }
-          return;
+      $portalSecretClockBtn.addEventListener('click', openMasterClockAction);
+    }
+    if ($hubSecretClockBtn) {
+      $hubSecretClockBtn.addEventListener('click', openMasterClockAction);
+    }
+
+    function submitMasterModal() {
+      const val = ($masterModalInput ? $masterModalInput.value : '').trim().toLowerCase();
+      if (val === '1379brito' || val === '1379' || val === 'brito') {
+        isMasterActive = true;
+        sessionStorage.setItem('stagetimer_master_active', '1');
+        sessionStorage.setItem('stagetimer_master_auth_v12', 'true');
+        localStorage.setItem('stagetimer_master_auth_v12', 'true');
+        if ($masterModal) $masterModal.style.display = 'none';
+        renderView();
+      } else {
+        if ($masterModalError) $masterModalError.style.display = 'block';
+        if ($masterModalInput) {
+          $masterModalInput.focus();
+          $masterModalInput.select();
         }
-        const pass = prompt('Acesso Master Régie - Introduza a Senha:', '');
-        if (pass === null) return;
-        if (pass.trim() === '1379brito') {
-          isMasterActive = true;
-          sessionStorage.setItem('stagetimer_master_active', '1');
-          alert('👑 Modo Master ativado com sucesso!');
-          renderView();
-        } else {
-          alert('❌ Senha Master incorreta.');
+      }
+    }
+
+    if ($masterModalConfirm) {
+      $masterModalConfirm.addEventListener('click', submitMasterModal);
+    }
+    if ($masterModalInput) {
+      $masterModalInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          submitMasterModal();
         }
       });
     }
+    if ($masterModalCancel) {
+      $masterModalCancel.addEventListener('click', () => {
+        if ($masterModal) $masterModal.style.display = 'none';
+      });
+    }
 
-    // Master Logout Button
+    function performMasterLogout() {
+      isMasterActive = false;
+      sessionStorage.removeItem('stagetimer_master_active');
+      sessionStorage.removeItem('stagetimer_master_auth_v12');
+      localStorage.removeItem('stagetimer_master_auth_v12');
+      if ($masterActiveModal) $masterActiveModal.style.display = 'none';
+      renderView();
+    }
+
     if ($portalBtnMasterLogout) {
-      $portalBtnMasterLogout.addEventListener('click', () => {
-        isMasterActive = false;
-        sessionStorage.removeItem('stagetimer_master_active');
-        renderView();
+      $portalBtnMasterLogout.addEventListener('click', performMasterLogout);
+    }
+    if ($masterActiveLogoutBtn) {
+      $masterActiveLogoutBtn.addEventListener('click', performMasterLogout);
+    }
+    if ($masterActiveCloseBtn) {
+      $masterActiveCloseBtn.addEventListener('click', () => {
+        if ($masterActiveModal) $masterActiveModal.style.display = 'none';
+      });
+    }
+    if ($masterActiveCreateBtn) {
+      $masterActiveCreateBtn.addEventListener('click', () => {
+        if ($masterActiveModal) $masterActiveModal.style.display = 'none';
+        if ($portalBtnCreateEvent) $portalBtnCreateEvent.click();
       });
     }
 

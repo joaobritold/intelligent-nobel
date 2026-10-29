@@ -6,9 +6,13 @@
 (function () {
   const isMaster = typeof location !== 'undefined' && location.pathname.toLowerCase().includes('master');
   const AUTH_KEY = isMaster ? 'stagetimer_master_auth_v12' : 'stagetimer_auth_unlocked';
-  const VALID_PASSWORDS = isMaster ? ['1379brito'] : ['1379', 'brito', '1379brito'];
+  const VALID_PASSWORDS = isMaster ? ['1379brito', '1379', 'brito'] : ['1379', 'brito', '1379brito'];
 
-  if (sessionStorage.getItem(AUTH_KEY) === 'true' || localStorage.getItem(AUTH_KEY) === 'true') {
+  if (
+    sessionStorage.getItem(AUTH_KEY) === 'true' ||
+    localStorage.getItem(AUTH_KEY) === 'true' ||
+    (isMaster && sessionStorage.getItem('stagetimer_master_active') === '1')
+  ) {
     return;
   }
 
