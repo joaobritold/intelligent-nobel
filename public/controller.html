@@ -11,8 +11,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=38">
-  <link rel="stylesheet" href="css/controller.css?v=38">
+  <link rel="stylesheet" href="css/common.css?v=39">
+  <link rel="stylesheet" href="css/controller.css?v=39">
 </head>
 <body>
   <div class="app">
@@ -157,103 +157,111 @@
   <!-- Edit Timer Modal -->
   <div id="edit-modal" class="modal-overlay">
     <div class="modal">
-      <h3 class="modal-title">Timer Alerts Configuration</h3>
+      <div class="modal-header">
+        <h3 class="modal-title">Configurar Alertas do Timer</h3>
+      </div>
       <input type="hidden" id="modal-timer-id">
       
-      <div class="modal-row">
-        <div class="modal-field">
-          <label class="modal-label" for="modal-warn-at">Warning (Yellow) At</label>
-          <input id="modal-warn-at" class="input input-mono" placeholder="1:00">
-        </div>
-        <div class="modal-field">
-          <label class="modal-label" for="modal-danger-at">Danger (Red) At</label>
-          <input id="modal-danger-at" class="input input-mono" placeholder="0:10">
+      <div class="modal-scroll-content">
+        <div class="modal-row">
+          <div class="modal-field">
+            <label class="modal-label" for="modal-warn-at">Aviso Amarelo (restante)</label>
+            <input id="modal-warn-at" class="input input-mono" placeholder="1:00">
+          </div>
+          <div class="modal-field">
+            <label class="modal-label" for="modal-danger-at">Perigo Vermelho (restante)</label>
+            <input id="modal-danger-at" class="input input-mono" placeholder="0:10">
+          </div>
         </div>
       </div>
 
-      <div class="modal-actions">
-        <button id="modal-cancel" class="btn">Cancel</button>
-        <button id="modal-save" class="btn btn-primary">Save Changes</button>
+      <div class="modal-actions modal-actions-sticky">
+        <button id="modal-cancel" type="button" class="btn">Cancelar</button>
+        <button id="modal-save" type="button" class="btn btn-primary">Guardar</button>
       </div>
     </div>
   </div>
 
   <!-- Import Schedule Modal (PDF / Excel / CSV / Paste) -->
   <div id="import-modal" class="modal-overlay">
-    <div class="modal" style="max-width: 580px; width: 94vw;">
-      <h3 class="modal-title">📂 Importar Mapa de Horários Inteligente</h3>
-      <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
-        Arraste ou carregue um ficheiro <strong>PDF, Excel (.xlsx/.xls/.csv) ou TXT</strong> (ou cole o texto da tabela abaixo). O sistema deteta automaticamente todos os artistas, horários, durações e <strong>todos os dias do festival (Dia 1, Dia 2...)</strong>!
-      </p>
-
-      <!-- Drag & Drop Zone -->
-      <div id="import-drop-zone" style="border: 2px dashed rgba(108, 92, 231, 0.6); border-radius: 12px; padding: 18px 12px; text-align: center; background: rgba(108, 92, 231, 0.08); cursor: pointer; transition: all 0.2s ease; margin-bottom: 12px;">
-        <div style="font-size: 2rem; line-height: 1; margin-bottom: 6px;">📄</div>
-        <div style="font-weight: 700; font-size: 0.88rem; color: #fff;">Arraste e solte o ficheiro aqui</div>
-        <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 3px;">PDF, Excel (.xlsx, .xls, .csv) ou TXT — ou clique para escolher</div>
-        <input type="file" id="import-file-input" accept=".pdf,.xlsx,.xls,.csv,.txt" style="display: none;">
+    <div class="modal modal-import">
+      <div class="modal-header">
+        <h3 class="modal-title">📂 Importar Mapa de Horários Inteligente</h3>
+        <p class="modal-subtitle">
+          Arraste ou carregue um ficheiro <strong>PDF, Excel ou TXT</strong> (ou cole o texto abaixo). O sistema deteta artistas, horários e todos os dias do festival!
+        </p>
       </div>
 
-      <!-- Soundcheck & Changeover Toggles -->
-      <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <input type="checkbox" id="import-include-soundchecks" checked style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent);">
-          <label for="import-include-soundchecks" style="font-size: 0.76rem; cursor: pointer; color: #e2e8f0; user-select: none;">
-            <strong>Incluir Soundchecks</strong> (passagens de som da tarde como timers separados)
+      <div class="modal-scroll-content">
+        <!-- Drag & Drop Zone -->
+        <div id="import-drop-zone" class="import-drop-zone">
+          <div class="import-drop-icon">📄</div>
+          <div class="import-drop-title">Toque para escolher ou arraste o ficheiro</div>
+          <div class="import-drop-sub">PDF, Excel (.xlsx, .xls, .csv) ou TXT</div>
+          <input type="file" id="import-file-input" accept=".pdf,.xlsx,.xls,.csv,.txt" style="display: none;">
+        </div>
+
+        <!-- Soundcheck & Changeover Toggles -->
+        <div class="import-toggles-card">
+          <label class="import-toggle-item">
+            <input type="checkbox" id="import-include-soundchecks" checked>
+            <span><strong>Incluir Soundchecks</strong> (passagens de som da tarde)</span>
           </label>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <input type="checkbox" id="import-include-changeovers" checked style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent);">
-          <label for="import-include-changeovers" style="font-size: 0.76rem; cursor: pointer; color: #e2e8f0; user-select: none;">
-            <strong>Incluir Changeovers</strong> (mudanças de palco e testes de linha entre atuações)
+          <label class="import-toggle-item">
+            <input type="checkbox" id="import-include-changeovers" checked>
+            <span><strong>Incluir Changeovers</strong> (mudanças de palco e testes)</span>
           </label>
+          <div class="import-toggle-tip">
+            ✓ A atuação principal (On Stage) tem sempre prioridade máxima.
+          </div>
         </div>
-        <div style="font-size: 0.7rem; color: #55efc4; margin-top: 2px;">
-          ✓ A atuação principal (On Stage) tem sempre prioridade máxima e nunca é confundida com soundchecks ou load-ins.
+
+        <div id="import-page-selector" class="modal-field" style="display: none;">
+          <label class="modal-label">Escolher Dias a Importar:</label>
+          <select id="import-page-select" class="input"></select>
         </div>
+
+        <div class="modal-field">
+          <label class="modal-label">Ou cole / ajuste aqui o texto da programação:</label>
+          <textarea id="import-text-area" class="input input-mono" placeholder="Exemplo:&#10;Dj Residente   23h00 - 00h15&#10;Tunas          23h30 - 01h30&#10;Minhotos       01:45 - 03h15"></textarea>
+        </div>
+
+        <div id="import-preview-box" class="import-preview-box" style="display: none;"></div>
       </div>
 
-      <div id="import-page-selector" class="modal-field" style="display: none;">
-        <label class="modal-label">Escolher Dias a Importar:</label>
-        <select id="import-page-select" class="input"></select>
-      </div>
-
-      <div class="modal-field">
-        <label class="modal-label">Ou cole / ajuste aqui o texto da programação:</label>
-        <textarea id="import-text-area" class="input input-mono" style="height: 110px; font-size: 0.78rem; resize: vertical;" placeholder="Exemplo:&#10;Dj Residente   23h00 - 00h15&#10;Tunas          23h30 - 01h30&#10;Minhotos       01:45 - 03h15"></textarea>
-      </div>
-
-      <div id="import-preview-box" style="max-height: 160px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; margin-bottom: 14px; display: none;"></div>
-
-      <div class="modal-actions">
-        <button id="import-cancel" class="btn">Cancelar</button>
-        <button id="import-confirm" class="btn btn-primary">⚡ Importar Horários e Artistas</button>
+      <div class="modal-actions modal-actions-sticky">
+        <button id="import-cancel" type="button" class="btn">Cancelar</button>
+        <button id="import-confirm" type="button" class="btn btn-primary">⚡ Importar Horários e Artistas</button>
       </div>
     </div>
   </div>
 
   <!-- Create / Manage Events Modal (Controller) -->
   <div id="new-event-modal" class="modal-overlay">
-    <div class="modal" style="max-width: 460px; width: 92vw;">
-      <h3 class="modal-title">🎪 Criar Novo Palco / Evento</h3>
-      <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 14px;">
-        Crie uma nova sessão limpa e independente (com Dia 1 a 0 artistas).
-      </p>
-
-      <div class="modal-field">
-        <label class="modal-label" for="new-event-title-input">Nome do Evento / Palco:</label>
-        <input id="new-event-title-input" class="input" placeholder="Ex: Palco 2, Palco Secundário, RC26" autocomplete="off">
+    <div class="modal modal-manage-events">
+      <div class="modal-header">
+        <h3 class="modal-title">🎪 Criar Novo Palco / Evento</h3>
+        <p class="modal-subtitle">
+          Crie uma nova sessão limpa e independente (com Dia 1 a 0 artistas).
+        </p>
       </div>
 
-      <div style="margin-top: 14px; margin-bottom: 14px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-          <div class="modal-label" style="margin-bottom: 0;">Palcos / Eventos Ativos:</div>
-          <button id="ctrl-delete-all-events-btn" type="button" class="btn btn-sm btn-danger" style="padding: 2px 7px; font-size: 0.7rem;">🗑️ Apagar Todos</button>
+      <div class="modal-scroll-content">
+        <div class="modal-field">
+          <label class="modal-label" for="new-event-title-input">Nome do Evento / Palco:</label>
+          <input id="new-event-title-input" class="input" placeholder="Ex: Palco 2, Palco Secundário, RC26" autocomplete="off">
         </div>
-        <div id="ctrl-events-manage-list" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
+
+        <div style="margin-top: 14px; margin-bottom: 6px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <div class="modal-label" style="margin-bottom: 0;">Palcos / Eventos Ativos:</div>
+            <button id="ctrl-delete-all-events-btn" type="button" class="btn btn-sm btn-danger" style="padding: 2px 7px; font-size: 0.7rem;">🗑️ Apagar Todos</button>
+          </div>
+          <div id="ctrl-events-manage-list" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
+        </div>
       </div>
 
-      <div class="modal-actions">
+      <div class="modal-actions modal-actions-sticky">
         <button id="new-event-cancel" type="button" class="btn">Fechar</button>
         <button id="new-event-confirm" type="button" class="btn btn-primary">✨ Criar Palco Limpo</button>
       </div>
@@ -266,15 +274,15 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=38"></script>
+  <script src="js/schedule-importer.js?v=39"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=38"></script>
+  <script src="js/auth.js?v=39"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=38"></script>
-  <script src="js/local-sync.js?v=38"></script>
-  <script src="js/controller.js?v=38"></script>
+  <script src="js/pwa.js?v=39"></script>
+  <script src="js/local-sync.js?v=39"></script>
+  <script src="js/controller.js?v=39"></script>
 </body>
 </html>
