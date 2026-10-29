@@ -1,6 +1,47 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
+  <script>
+    (function() {
+      try {
+        var EPOCH_KEY = 'stagetimer_epoch_clean_v10';
+        if (localStorage.getItem(EPOCH_KEY) !== 'true') {
+          var mActive = localStorage.getItem('stagetimer_master_active');
+          var mV12 = localStorage.getItem('stagetimer_master_auth_v12');
+          var devUuid = localStorage.getItem('stagetimer_device_uuid');
+
+          var keys = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && k.indexOf('stagetimer_') === 0) {
+              keys.push(k);
+            }
+          }
+          for (var j = 0; j < keys.length; j++) {
+            localStorage.removeItem(keys[j]);
+          }
+          try { sessionStorage.clear(); } catch (_) {}
+
+          if (mActive) localStorage.setItem('stagetimer_master_active', mActive);
+          if (mV12) localStorage.setItem('stagetimer_master_auth_v12', mV12);
+          if (devUuid) localStorage.setItem('stagetimer_device_uuid', devUuid);
+
+          localStorage.setItem(EPOCH_KEY, 'true');
+
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              for (var n of names) caches.delete(n);
+            }).catch(function() {});
+          }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              for (var r of regs) r.unregister();
+            }).catch(function() {});
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,8 +52,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=49">
-  <link rel="stylesheet" href="css/controller.css?v=49">
+  <link rel="stylesheet" href="css/common.css?v=60">
+  <link rel="stylesheet" href="css/controller.css?v=60">
 </head>
 <body>
   <div class="app">
@@ -282,15 +323,15 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=49"></script>
+  <script src="js/schedule-importer.js?v=60"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=49"></script>
+  <script src="js/auth.js?v=60"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=49"></script>
-  <script src="js/local-sync.js?v=49"></script>
-  <script src="js/controller.js?v=49"></script>
+  <script src="js/pwa.js?v=60"></script>
+  <script src="js/local-sync.js?v=60"></script>
+  <script src="js/controller.js?v=60"></script>
 </body>
 </html>

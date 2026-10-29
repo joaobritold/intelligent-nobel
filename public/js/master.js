@@ -782,7 +782,7 @@
       const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code }];
       stages.forEach(st => {
         try {
-          const saved = localStorage.getItem(`stagetimer_live_state_${st.code}`);
+          const saved = localStorage.getItem(`stagetimer_v10_state_${st.code}`) || localStorage.getItem(`stagetimer_live_state_${st.code}`);
           if (saved) {
             const parsed = JSON.parse(saved);
             if (parsed && Array.isArray(parsed.timers)) {
