@@ -389,8 +389,12 @@
     const $newEventName = document.getElementById('hub-new-event-name');
     const $createEventBtn = document.getElementById('hub-create-event-btn');
 
-    const params = new URLSearchParams(location.search);
-    const paramRoom = params.get('room');
+    // Remove dangling '?room' with no value from browser address bar
+    if (location.search === '?room' || (location.search && !params.get('room') && params.has('room'))) {
+      try {
+        window.history.replaceState({}, document.title, location.pathname);
+      } catch (_) {}
+    }
     const savedDeviceRoom = localStorage.getItem('stagetimer_device_room');
     const savedLastRoom = localStorage.getItem('stagetimer_last_room');
 

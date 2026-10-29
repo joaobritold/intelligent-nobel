@@ -85,7 +85,7 @@ if ($viewerEventSelect) {
 
 const $viewerMenuBtn = document.querySelector('a[href^="index.html"]');
 if ($viewerMenuBtn) {
-  $viewerMenuBtn.href = `index.html?room=${encodeURIComponent(roomId)}`;
+  $viewerMenuBtn.href = (roomId && roomId !== 'PALCO1') ? `index.html?room=${encodeURIComponent(roomId)}` : `index.html`;
 }
 
 client.on('events-list-update', (list) => {

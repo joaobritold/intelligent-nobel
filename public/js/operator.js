@@ -59,7 +59,7 @@ if ($opEventSelect) {
 
 const $navHub = document.getElementById('nav-hub');
 if ($navHub) {
-  $navHub.href = `index.html?room=${encodeURIComponent(roomId)}`;
+  $navHub.href = (roomId && roomId !== 'PALCO1') ? `index.html?room=${encodeURIComponent(roomId)}` : `index.html`;
 }
 
 function renderOpDayTabs() {
@@ -153,7 +153,7 @@ updateNavLinks();
 function updateNavLinks() {
   const code = encodeURIComponent(roomId);
   const $navHub = document.getElementById('nav-hub');
-  if ($navHub) $navHub.href = `index.html?room=${code}`;
+  if ($navHub) $navHub.href = (roomId && roomId !== 'PALCO1') ? `index.html?room=${code}` : `index.html`;
   $navController.href = `controller.html?room=${code}`;
   $navOperator.href = `operator.html?room=${code}`;
   $navViewer.href = `viewer.html?room=${code}`;

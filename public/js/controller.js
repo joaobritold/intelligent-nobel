@@ -65,7 +65,7 @@ const $ctrlDeleteAllEventsBtn = document.getElementById('ctrl-delete-all-events-
 const $ctrlDayTabs = document.getElementById('ctrl-day-tabs');
 const $topNavHub = document.getElementById('top-nav-hub');
 if ($topNavHub) {
-  $topNavHub.href = `index.html?room=${encodeURIComponent(roomId)}`;
+  $topNavHub.href = (roomId && roomId !== 'PALCO1') ? `index.html?room=${encodeURIComponent(roomId)}` : `index.html`;
 }
 
 function renderDayTabs() {
