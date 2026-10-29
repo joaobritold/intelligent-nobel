@@ -433,6 +433,21 @@
         <p class="hub-sub">Sincronização em Tempo Real para Eventos & Palcos</p>
       </div>
 
+      <!-- Caixa de Troca de Eventos (Visível Exclusivamente para o Master) -->
+      <div id="hub-master-events-card" class="room-card" style="display: none; margin-bottom: 20px; border: 1.5px solid rgba(253, 203, 110, 0.45); background: linear-gradient(180deg, rgba(253, 203, 110, 0.08) 0%, rgba(26, 26, 46, 0.85) 100%);">
+        <div class="room-label" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+          <span style="color: #fdcb6e; display: flex; align-items: center; gap: 6px; font-weight: 800;">
+            👑 Trocar de Evento (Acesso Master Régie)
+          </span>
+          <span style="font-size: 0.72rem; color: #ffeaa7; font-weight: 600; text-transform: none;">
+            Clique para mudar de evento ativo
+          </span>
+        </div>
+        <div id="hub-master-events-list" class="events-list-box" style="max-height: 260px; overflow-y: auto;">
+          <!-- Injetado por JS -->
+        </div>
+      </div>
+
       <!-- Seletor de Palcos (só é mostrado se o evento tiver mais de 1 palco) -->
       <div id="hub-stages-box" style="display: none; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 20px;">
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; margin-bottom: 10px;">
@@ -565,6 +580,8 @@
     // Hub
     const $hubSecretClockBtn = document.getElementById('hub-secret-clock-btn');
     const $hubMasterLinkTop = document.getElementById('hub-master-link-top');
+    const $hubMasterEventsCard = document.getElementById('hub-master-events-card');
+    const $hubMasterEventsList = document.getElementById('hub-master-events-list');
     const $hubBackBtn = document.getElementById('hub-back-to-portal-btn');
     const $hubCurrentEventName = document.getElementById('hub-current-event-name');
     const $hubCurrentStageBadge = document.getElementById('hub-current-stage-badge');
@@ -635,6 +652,9 @@
       }
       if ($hubMasterLinkTop) {
         $hubMasterLinkTop.style.display = isMasterActive ? 'inline-flex' : 'none';
+      }
+      if ($hubMasterEventsCard) {
+        $hubMasterEventsCard.style.display = (isMasterActive && $viewHub && $viewHub.style.display !== 'none') ? 'block' : 'none';
       }
     }
 
@@ -743,6 +763,50 @@
         const fullUrl = `${baseUrl}/viewer.html${q}`;
         $qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(fullUrl)}`;
       }
+
+      // Render Master Event Switcher Box in Hub
+      renderHubMasterEvents();
+    }
+
+    function renderHubMasterEvents() {
+      if (!$hubMasterEventsList || !$hubMasterEventsCard) return;
+      if (!isMasterActive) {
+        $hubMasterEventsCard.style.display = 'none';
+        return;
+      }
+      $hubMasterEventsCard.style.display = 'block';
+
+      const allEvents = hubClient.getEventsList();
+      $hubMasterEventsList.innerHTML = allEvents.map(ev => {
+        const isSelected = ev.code === currentUnlockedEventCode;
+        const count = ev.stagesCount || (ev.stages ? ev.stages.length : 1);
+        const stageLabel = count > 1 ? `${count} palcos` : '1 palco';
+        const timerCount = typeof ev.timersCount === 'number' ? `${ev.timersCount} artista(s)` : '0 artistas';
+
+        return `
+          <div class="event-row ${isSelected ? 'active' : ''}" data-hub-switch-event="${escapeHtml(ev.code)}" style="cursor: pointer; padding: 12px 14px; border-radius: 10px; background: ${isSelected ? 'rgba(0, 184, 148, 0.16)' : 'rgba(255,255,255,0.04)'}; border: 1.5px solid ${isSelected ? '#00b894' : 'rgba(255,255,255,0.12)'}; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: all 0.2s ease;">
+            <div class="event-row-left">
+              <div class="event-row-title" style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1rem; font-weight: 800; color: #fff;">${isSelected ? '🟢' : '⚪'} ${escapeHtml(ev.title || ev.code)}</span>
+                <span class="event-code-pill">${escapeHtml(ev.code)}</span>
+              </div>
+              <div class="event-row-meta" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; font-size: 0.75rem; color: var(--text-secondary);">
+                <span>${stageLabel}</span>
+                <span>•</span>
+                <span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 800; font-family: var(--font-mono); padding: 1px 7px; border-radius: 5px; border: 1px solid rgba(253, 203, 110, 0.4); font-size: 0.72rem;">🔑 PIN: ${escapeHtml(ev.pin)}</span>
+                <span>•</span>
+                <span>${timerCount}</span>
+                ${isSelected ? '<strong style="color: #55efc4; margin-left: 4px;">• EVENTO ATIVO</strong>' : ''}
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button type="button" class="btn btn-sm ${isSelected ? 'btn-primary' : ''}" style="pointer-events: none; padding: 5px 12px; font-size: 0.75rem; ${isSelected ? 'background: #00b894; border-color: #00b894; color: #fff; font-weight: 700;' : 'background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #cbd5e1;'}">
+                ${isSelected ? '✓ Selecionado' : 'Mudar para Este'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     function renderView() {
@@ -1013,6 +1077,32 @@
         currentUnlockedEventCode = '';
         sessionStorage.removeItem('stagetimer_unlocked_event');
         renderView();
+      });
+    }
+
+    // Hub: Master event switcher click delegation
+    if ($hubMasterEventsList) {
+      $hubMasterEventsList.addEventListener('click', (e) => {
+        const row = e.target.closest('[data-hub-switch-event]');
+        if (row) {
+          const targetCode = (row.dataset.hubSwitchEvent || '').trim().toUpperCase();
+          if (targetCode && targetCode !== currentUnlockedEventCode) {
+            const allEvents = hubClient.getEventsList();
+            const targetEv = allEvents.find(ev => ev.code === targetCode);
+            if (targetEv) {
+              currentUnlockedEventCode = targetCode;
+              sessionStorage.setItem('stagetimer_unlocked_event', targetCode);
+              const targetStages = Array.isArray(targetEv.stages) && targetEv.stages.length > 0 ? targetEv.stages : [{ code: targetEv.code }];
+              selectedRoom = targetStages[0].code;
+              $room.value = selectedRoom;
+              try {
+                localStorage.setItem('stagetimer_device_room', selectedRoom);
+                localStorage.setItem('stagetimer_last_room', selectedRoom);
+              } catch (_) {}
+              renderEventHub(targetEv);
+            }
+          }
+        }
       });
     }
 
