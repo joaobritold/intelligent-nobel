@@ -39,18 +39,22 @@ class UniversalSyncClient {
     this.storageKey = `stagetimer_live_state_${this.cleanRoom}`;
     this.mqttTopicState = `stagetimer_live/${this.cleanRoom}/state`;
     this.mqttTopicPresence = `stagetimer_live/${this.cleanRoom}/presence`;
-    this.mqttTopicRegistry = 'stagetimer_live/_events_list_v7';
-    this.legacyMqttTopicRegistry = 'stagetimer_live/_events_list_v6';
+    this.mqttTopicRegistry = 'stagetimer_live/_events_list_v8';
     this.mqttTopicGlobalPresence = 'stagetimer_live/_global_presence';
     this.mqttTopicCommands = 'stagetimer_live/_commands';
     this.mqttTopicAllCmd = 'stagetimer_live/_cmd_all';
-    this.registryStorageKey = 'stagetimer_events_registry_v7';
-    this.deletedStorageKey = 'stagetimer_deleted_events_v7';
+    this.registryStorageKey = 'stagetimer_events_registry_v8';
+    this.deletedStorageKey = 'stagetimer_deleted_events_v8';
 
-    // ── Clean Slate Epoch v7 Reset ──
-    const CLEAN_SLATE_EPOCH = 'stagetimer_clean_slate_epoch_v7';
+    // ── Clean Slate Epoch v8 Reset (Permanent Zero Wipe) ──
+    const CLEAN_SLATE_EPOCH = 'stagetimer_clean_slate_epoch_v8';
     if (localStorage.getItem(CLEAN_SLATE_EPOCH) !== 'true') {
       try {
+        const preserveAuthMaster = localStorage.getItem('stagetimer_master_active');
+        const preserveAuthV12 = localStorage.getItem('stagetimer_master_auth_v12');
+        const preserveAuthUnlocked = localStorage.getItem('stagetimer_auth_unlocked');
+        const devUuid = localStorage.getItem('stagetimer_device_uuid');
+
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
@@ -61,7 +65,8 @@ class UniversalSyncClient {
               k.startsWith('stagetimer_live_state_') ||
               k.startsWith('stagetimer_device_room') ||
               k.startsWith('stagetimer_last_room') ||
-              k.startsWith('stagetimer_unlocked_event')
+              k.startsWith('stagetimer_unlocked_event') ||
+              k.startsWith('stagetimer_clean_slate_epoch_')
             )
           ) {
             keysToRemove.push(k);
@@ -70,7 +75,15 @@ class UniversalSyncClient {
         keysToRemove.forEach(k => {
           try { localStorage.removeItem(k); } catch (_) {}
         });
+
         try { sessionStorage.removeItem('stagetimer_active_room'); } catch (_) {}
+        try { sessionStorage.removeItem('stagetimer_unlocked_event'); } catch (_) {}
+
+        if (devUuid) localStorage.setItem('stagetimer_device_uuid', devUuid);
+        if (preserveAuthMaster) localStorage.setItem('stagetimer_master_active', preserveAuthMaster);
+        if (preserveAuthV12) localStorage.setItem('stagetimer_master_auth_v12', preserveAuthV12);
+        if (preserveAuthUnlocked) localStorage.setItem('stagetimer_auth_unlocked', preserveAuthUnlocked);
+
         localStorage.setItem(CLEAN_SLATE_EPOCH, 'true');
         localStorage.setItem('stagetimer_device_room', 'PALCO1');
         localStorage.setItem('stagetimer_last_room', 'PALCO1');
@@ -78,7 +91,7 @@ class UniversalSyncClient {
     }
 
     // Prune obsolete registry versions to eliminate ghost events
-    ['stagetimer_events_registry_v1', 'stagetimer_events_registry_v2', 'stagetimer_events_registry_v3', 'stagetimer_events_registry_v4', 'stagetimer_events_registry_v5', 'stagetimer_events_registry_v6'].forEach(k => {
+    ['stagetimer_events_registry_v1', 'stagetimer_events_registry_v2', 'stagetimer_events_registry_v3', 'stagetimer_events_registry_v4', 'stagetimer_events_registry_v5', 'stagetimer_events_registry_v6', 'stagetimer_events_registry_v7'].forEach(k => {
       try { localStorage.removeItem(k); } catch (e) {}
     });
 
@@ -537,7 +550,7 @@ class UniversalSyncClient {
       return;
     }
 
-    if (msg.action === 'purge_clean_slate_v7') {
+    if (msg.action === 'purge_clean_slate_v8' || msg.action === 'purge_clean_slate_v7') {
       try {
         const preserveAuthMaster = localStorage.getItem('stagetimer_master_active');
         const preserveAuthV12 = localStorage.getItem('stagetimer_master_auth_v12');
@@ -551,11 +564,11 @@ class UniversalSyncClient {
         if (preserveAuthMaster) localStorage.setItem('stagetimer_master_active', preserveAuthMaster);
         if (preserveAuthV12) localStorage.setItem('stagetimer_master_auth_v12', preserveAuthV12);
         if (preserveAuthUnlocked) localStorage.setItem('stagetimer_auth_unlocked', preserveAuthUnlocked);
-        localStorage.setItem('stagetimer_clean_slate_epoch_v7', 'true');
+        localStorage.setItem('stagetimer_clean_slate_epoch_v8', 'true');
         localStorage.setItem('stagetimer_device_room', 'PALCO1');
         localStorage.setItem('stagetimer_last_room', 'PALCO1');
       } catch (_) {}
-      window.location.replace(`index.html?clean_slate=v7&_ts=${Date.now()}`);
+      window.location.replace(`index.html?clean_slate=v8&_ts=${Date.now()}`);
       return;
     }
 
@@ -565,7 +578,6 @@ class UniversalSyncClient {
         try {
           const payload = JSON.stringify({ sender: this.clientId, forceReplace: false, events: list });
           this.mqttClient.publish(this.mqttTopicRegistry, payload, { qos: 0, retain: true });
-          this.mqttClient.publish(this.legacyMqttTopicRegistry, payload, { qos: 0, retain: true });
         } catch (e) {}
       }
       return;
@@ -606,11 +618,17 @@ class UniversalSyncClient {
         this._commitStateChange(true);
       }
 
+      // Erase legacy retained registry topics on MQTT broker
+      ['stagetimer_live/_events_list', 'stagetimer_live/_events_list_v6', 'stagetimer_live/_events_list_v7'].forEach(top => {
+        try {
+          this.mqttClient.publish(top, JSON.stringify({ sender: this.clientId, forceReplace: true, events: [] }), { qos: 0, retain: true });
+        } catch (_) {}
+      });
+
       const topicsToSubscribe = [
         this.mqttTopicState,
         this.mqttTopicPresence,
         this.mqttTopicRegistry,
-        this.legacyMqttTopicRegistry,
         this.mqttTopicGlobalPresence,
         this.mqttTopicCommands,
         this.mqttTopicAllCmd,
@@ -678,7 +696,7 @@ class UniversalSyncClient {
               this._emit('multi-room-state', { room: roomCode, data: msg.data });
             }
           }
-        } else if (topic === this.mqttTopicRegistry || topic === this.legacyMqttTopicRegistry) {
+        } else if (topic === this.mqttTopicRegistry) {
           if (msg && Array.isArray(msg.events)) {
             this._mergeIncomingRegistry(msg.events, Boolean(msg.forceReplace));
           }
@@ -1084,38 +1102,6 @@ class UniversalSyncClient {
         .map(e => this._normalizeRegistryItem(e))
         .filter(e => !deletedSet.has(e.code));
 
-      // Auto-discover rooms saved in localStorage
-      try {
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (k && k.startsWith('stagetimer_live_state_')) {
-            const code = k.replace('stagetimer_live_state_', '').toUpperCase().trim();
-            const isKnown = list.some(e => e.code === code || (e.stages && e.stages.some(st => st.code === code)));
-            if (code && !deletedSet.has(code) && !isKnown) {
-              let tCount = 0;
-              let title = code === 'PALCO1' ? 'Palco Principal' : code;
-              let itemUpdatedAt = 0;
-              try {
-                const s = JSON.parse(localStorage.getItem(k));
-                if (s) {
-                  title = s.name || title;
-                  tCount = Array.isArray(s.timers) ? s.timers.length : 0;
-                  itemUpdatedAt = Number(s.updatedAt) || 0;
-                }
-              } catch (_) {}
-              list.push(this._normalizeRegistryItem({
-                id: code,
-                code,
-                title,
-                timersCount: tCount,
-                createdAt: itemUpdatedAt,
-                updatedAt: itemUpdatedAt
-              }));
-            }
-          }
-        }
-      } catch (_) {}
-
       if (list.length === 0 && !deletedSet.has('PALCO1')) {
         list.push(this._normalizeRegistryItem({
           id: 'PALCO1',
@@ -1124,7 +1110,7 @@ class UniversalSyncClient {
           timersCount: 0,
           currentDay: 1,
           createdAt: 1000000000000,
-          updatedAt: 1000000000000
+          updatedAt: 0
         }));
       }
 
@@ -1138,7 +1124,7 @@ class UniversalSyncClient {
       });
       return list;
     } catch (e) {
-      return [this._normalizeRegistryItem({ id: 'PALCO1', code: 'PALCO1', title: 'Palco Principal', timersCount: 0, currentDay: 1, createdAt: 1000000000000 })];
+      return [this._normalizeRegistryItem({ id: 'PALCO1', code: 'PALCO1', title: 'Palco Principal', timersCount: 0, currentDay: 1, createdAt: 1000000000000, updatedAt: 0 })];
     }
   }
 
@@ -1552,10 +1538,11 @@ class UniversalSyncClient {
 
     // Clear legacy registry topics on MQTT broker
     if (this.mqttClient && this.mqttClient.connected) {
-      try {
-        this.mqttClient.publish('stagetimer_live/_events_list_v6', JSON.stringify({ sender: this.clientId, forceReplace: true, events: [] }), { qos: 0, retain: true });
-        this.mqttClient.publish('stagetimer_live/_events_list', JSON.stringify({ sender: this.clientId, forceReplace: true, events: [] }), { qos: 0, retain: true });
-      } catch (_) {}
+      ['stagetimer_live/_events_list', 'stagetimer_live/_events_list_v6', 'stagetimer_live/_events_list_v7'].forEach(top => {
+        try {
+          this.mqttClient.publish(top, JSON.stringify({ sender: this.clientId, forceReplace: true, events: [] }), { qos: 0, retain: true });
+        } catch (_) {}
+      });
     }
 
     try {
@@ -1566,7 +1553,8 @@ class UniversalSyncClient {
           k.startsWith('stagetimer_deleted_events_') ||
           k.startsWith('stagetimer_device_room') ||
           k.startsWith('stagetimer_last_room') ||
-          k.startsWith('stagetimer_unlocked_event')
+          k.startsWith('stagetimer_unlocked_event') ||
+          k.startsWith('stagetimer_clean_slate_epoch_')
         ) {
           if (k !== 'stagetimer_auth_unlocked' && k !== 'stagetimer_master_auth_v12' && k !== 'stagetimer_device_uuid') {
             localStorage.removeItem(k);
@@ -1574,7 +1562,8 @@ class UniversalSyncClient {
         }
       });
       sessionStorage.removeItem('stagetimer_active_room');
-      localStorage.setItem('stagetimer_clean_slate_epoch_v7', 'true');
+      sessionStorage.removeItem('stagetimer_unlocked_event');
+      localStorage.setItem('stagetimer_clean_slate_epoch_v8', 'true');
     } catch (e) {}
 
     const freshCode = 'PALCO1';
@@ -1588,7 +1577,7 @@ class UniversalSyncClient {
       updatedAt: 0
     })];
 
-    this.sendDeviceCommand('ALL', { action: 'purge_clean_slate_v7' });
+    this.sendDeviceCommand('ALL', { action: 'purge_clean_slate_v8' });
     setTimeout(() => {
       try { this.sendDeviceCommand('ALL', { action: 'reload' }); } catch (_) {}
     }, 400);
