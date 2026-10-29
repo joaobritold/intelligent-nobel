@@ -168,6 +168,17 @@ function renderEventSelector() {
       });
 
       $ctrlEventSelect.innerHTML = optionsHtml;
+    } else if (currentEvent && Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
+      // Event has multiple stages: show stages dropdown even for non-master devices of this event!
+      $ctrlEventSelect.style.display = 'inline-block';
+      if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'none';
+      let optionsHtml = `<optgroup label="🎪 ${escapeHtml(currentEvent.title || currentEvent.code)}">`;
+      currentEvent.stages.forEach(st => {
+        const isSel = st.code === currentCode;
+        optionsHtml += `<option value="${escapeHtml(st.code)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(st.name || st.code)}</option>`;
+      });
+      optionsHtml += `</optgroup>`;
+      $ctrlEventSelect.innerHTML = optionsHtml;
     } else {
       $ctrlEventSelect.style.display = 'none';
       if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'inline-block';

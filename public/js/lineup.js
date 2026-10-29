@@ -41,17 +41,20 @@ if ($roomBadge) $roomBadge.textContent = roomId;
 function renderLineupEventSelector() {
   const currentCode = (state?.id || roomId).toUpperCase();
   const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+  let currentEvent = null;
   if ($lineupStageBadge) {
     let name = currentCode;
     for (const ev of list) {
       if (ev.code === currentCode) {
         name = ev.title || ev.code;
+        currentEvent = ev;
         break;
       }
       if (Array.isArray(ev.stages)) {
         const st = ev.stages.find(s => s.code === currentCode);
         if (st) {
           name = `${ev.title || ev.code} • ${st.name || st.code}`;
+          currentEvent = ev;
           break;
         }
       }
@@ -89,6 +92,17 @@ function renderLineupEventSelector() {
         }
       });
 
+      $lineupEventSelect.innerHTML = optionsHtml;
+    } else if (currentEvent && Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
+      // Event has multiple stages: allow switching between stages of this unlocked event!
+      $lineupEventSelect.style.display = 'inline-block';
+      if ($lineupStageBadge) $lineupStageBadge.style.display = 'none';
+      let optionsHtml = `<optgroup label="🎪 ${escapeHtml(currentEvent.title || currentEvent.code)}">`;
+      currentEvent.stages.forEach(st => {
+        const isSel = st.code === currentCode;
+        optionsHtml += `<option value="${escapeHtml(st.code)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(st.name || st.code)}</option>`;
+      });
+      optionsHtml += `</optgroup>`;
       $lineupEventSelect.innerHTML = optionsHtml;
     } else {
       $lineupEventSelect.style.display = 'none';

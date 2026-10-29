@@ -159,6 +159,29 @@
     return 'Dispositivo';
   }
 
+  function buildDeviceRoomOptions(eventsList, currentRoom) {
+    const cleanCurrent = String(currentRoom || '').toUpperCase().trim();
+    let optionsHtml = '';
+    eventsList.forEach(e => {
+      const evTitle = e.title || e.code;
+      const stages = Array.isArray(e.stages) && e.stages.length > 0 ? e.stages : [{ code: e.code, name: 'Palco Principal' }];
+      if (stages.length > 1) {
+        optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+        stages.forEach(st => {
+          const stCode = (st.code || st.id || '').toUpperCase();
+          const isSel = stCode === cleanCurrent;
+          optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)} (${escapeHtml(stCode)})</option>`;
+        });
+        optionsHtml += `</optgroup>`;
+      } else {
+        const stCode = (stages[0].code || e.code).toUpperCase();
+        const isSel = stCode === cleanCurrent;
+        optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)} (${escapeHtml(stCode)})</option>`;
+      }
+    });
+    return optionsHtml;
+  }
+
   function renderDevicesList(devices = masterClient.getOnlineDevices()) {
     if (!$devicesList) return;
     if ($kpiDevices) $kpiDevices.textContent = devices.length;
@@ -211,11 +234,7 @@
         card.dataset.deviceUuid = dev.deviceUuid;
         card.dataset.deviceRoom = dev.room || 'PALCO1';
 
-        const roomOptions = eventsList.map(e => `
-          <option value="${escapeHtml(e.code)}" ${e.code === dev.room ? 'selected' : ''}>
-            ${escapeHtml(e.title || e.code)} (${escapeHtml(e.code)})
-          </option>
-        `).join('');
+        const roomOptions = buildDeviceRoomOptions(eventsList, dev.room);
 
         card.innerHTML = `
           <div class="device-header">
@@ -330,8 +349,14 @@
         card.dataset.deviceRoom = dev.room || 'PALCO1';
 
         const select = card.querySelector('.device-room-select');
-        if (select && document.activeElement !== select && select.value !== dev.room) {
-          select.value = dev.room;
+        if (select && document.activeElement !== select) {
+          const freshOptions = buildDeviceRoomOptions(eventsList, dev.room);
+          if (select.innerHTML.length !== freshOptions.length) {
+            select.innerHTML = freshOptions;
+          }
+          if (select.value !== dev.room) {
+            select.value = dev.room;
+          }
         }
       }
     });
@@ -568,6 +593,19 @@
               🗑️ Apagar
             </button>
           </div>
+          ${Array.isArray(ev.stages) && ev.stages.length > 1 ? `
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); align-items: center;">
+              <span style="font-size: 0.72rem; color: var(--text-muted);">Sub-Palcos deste evento:</span>
+              ${ev.stages.map(st => `
+                <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 2px 6px;">
+                  <strong style="font-size: 0.75rem; color: #55efc4;">🎪 ${escapeHtml(st.name || st.code)}</strong>
+                  <a href="controller.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" title="Abrir Configurador">🎛️</a>
+                  <a href="viewer.html?room=${encodeURIComponent(st.code)}" target="_blank" class="btn btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" title="Abrir Palco">📺</a>
+                  <a href="lineup.html?room=${encodeURIComponent(st.code)}" target="_blank" class="btn btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" title="Abrir Lista">📋</a>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
         </div>
       `;
     }).join('');
@@ -672,19 +710,22 @@
 
   // ─── Section 3: Multiview Simultâneo dos Palcos ────────────────────
 
-  // Pre-load states from localStorage for all registered events
+  // Pre-load states from localStorage for all registered stages and events
   function preloadLocalStagesState() {
     const events = masterClient.getEventsList();
     events.forEach(ev => {
-      try {
-        const saved = localStorage.getItem(`stagetimer_live_state_${ev.code}`);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed && Array.isArray(parsed.timers)) {
-            stagesStateMap.set(ev.code, parsed);
+      const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code }];
+      stages.forEach(st => {
+        try {
+          const saved = localStorage.getItem(`stagetimer_live_state_${st.code}`);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed && Array.isArray(parsed.timers)) {
+              stagesStateMap.set(st.code, parsed);
+            }
           }
-        }
-      } catch (e) {}
+        } catch (e) {}
+      });
     });
   }
 
@@ -707,7 +748,22 @@
     const events = masterClient.getEventsList();
     let runningCount = 0;
 
-    if (events.length === 0) {
+    // Collect all individual stages across all events
+    const allStages = [];
+    events.forEach(ev => {
+      const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: ev.title || ev.code }];
+      stages.forEach(st => {
+        allStages.push({
+          parentEvent: ev,
+          code: (st.code || st.id || ev.code).toUpperCase(),
+          name: stages.length > 1 ? `${ev.title || ev.code} • ${st.name || st.code}` : (ev.title || st.name || ev.code)
+        });
+      });
+    });
+
+    if ($kpiEvents) $kpiEvents.textContent = allStages.length;
+
+    if (allStages.length === 0) {
       $multiviewGrid.innerHTML = `
         <div class="empty-state-box" style="grid-column: 1 / -1;">
           Nenhum palco registado. Crie um novo palco acima.
@@ -720,9 +776,9 @@
     const emptyBox = $multiviewGrid.querySelector('.empty-state-box');
     if (emptyBox) emptyBox.remove();
 
-    const currentCodes = new Set(events.map(e => e.code));
+    const currentCodes = new Set(allStages.map(s => s.code));
 
-    // Remove any card whose event was deleted
+    // Remove any card whose stage was deleted
     const currentCards = Array.from($multiviewGrid.querySelectorAll('[data-mv-room]'));
     currentCards.forEach(card => {
       const code = card.dataset.mvRoom;
@@ -731,10 +787,12 @@
       }
     });
 
-    events.forEach(ev => {
-      const stageState = stagesStateMap.get(ev.code) || {
-        id: ev.code,
-        name: ev.title || ev.code,
+    allStages.forEach(stageItem => {
+      const stageCode = stageItem.code;
+      const stageName = stageItem.name;
+      const stageState = stagesStateMap.get(stageCode) || {
+        id: stageCode,
+        name: stageName,
         timers: [],
         activeTimerId: null
       };
@@ -769,18 +827,18 @@
 
       const eventEndTime = StageTimerClient.computeEventEndTime(stageState);
 
-      let card = $multiviewGrid.querySelector(`[data-mv-room="${CSS.escape(ev.code)}"]`);
+      let card = $multiviewGrid.querySelector(`[data-mv-room="${CSS.escape(stageCode)}"]`);
 
       if (!card) {
         // Create new card
         card = document.createElement('div');
-        card.dataset.mvRoom = ev.code;
+        card.dataset.mvRoom = stageCode;
         card.className = `multiview-card status-${statusClass}`;
         card.innerHTML = `
           <div class="multiview-header">
             <div>
-              <div class="multiview-stage-name">${escapeHtml(ev.title || stageState.name || ev.code)}</div>
-              <span class="event-code-pill">${escapeHtml(ev.code)}</span>
+              <div class="multiview-stage-name">${escapeHtml(stageName)}</div>
+              <span class="event-code-pill">${escapeHtml(stageCode)}</span>
             </div>
             <span class="multiview-status-badge ${statusClass}">${statusLabel}</span>
           </div>
@@ -802,7 +860,7 @@
             <div>
               🏁 Fim: <span class="multiview-end-badge">${eventEndTime}</span>
             </div>
-            <a href="controller.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm btn-primary" style="padding: 4px 10px; font-size: 0.75rem;">
+            <a href="controller.html?room=${encodeURIComponent(stageCode)}" class="btn btn-sm btn-primary" style="padding: 4px 10px; font-size: 0.75rem;">
               🎛️ Abrir Configurador
             </a>
           </div>
@@ -813,9 +871,8 @@
         card.className = `multiview-card status-${statusClass}`;
 
         const stageNameEl = card.querySelector('.multiview-stage-name');
-        const expectedStageName = ev.title || stageState.name || ev.code;
-        if (stageNameEl && stageNameEl.textContent !== expectedStageName) {
-          stageNameEl.textContent = expectedStageName;
+        if (stageNameEl && stageNameEl.textContent !== stageName) {
+          stageNameEl.textContent = stageName;
         }
 
         const badgeEl = card.querySelector('.multiview-status-badge');
@@ -849,10 +906,11 @@
       }
     });
 
-    // Ensure multiview cards are ordered identically to the deterministic events array without DOM thrashing
+    // Ensure multiview cards are ordered identically to the deterministic stages array without DOM thrashing
     const currentDomChildren = Array.from($multiviewGrid.children);
-    const targetOrder = events
-      .map(ev => $multiviewGrid.querySelector(`[data-mv-room="${CSS.escape(ev.code)}"]`))
+    const targetOrder = allStages
+      .map(s => $multiviewGrid.querySelector(`[data-mv-room="${CSS.escape(s.code)}"]`))
+      .filter(Boolean);
       .filter(Boolean);
 
     let needsReorder = false;

@@ -83,6 +83,17 @@ function renderOpStageBadge() {
       });
 
       $opEventSelect.innerHTML = optionsHtml;
+    } else if (currentEvent && Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
+      // Event has multiple stages: show stages dropdown even for non-master devices of this event!
+      $opEventSelect.style.display = 'inline-block';
+      if ($opStageBadge) $opStageBadge.style.display = 'none';
+      let optionsHtml = `<optgroup label="🎪 ${escapeHtml(currentEvent.title || currentEvent.code)}">`;
+      currentEvent.stages.forEach(st => {
+        const isSel = st.code === currentCode;
+        optionsHtml += `<option value="${escapeHtml(st.code)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(st.name || st.code)}</option>`;
+      });
+      optionsHtml += `</optgroup>`;
+      $opEventSelect.innerHTML = optionsHtml;
     } else {
       $opEventSelect.style.display = 'none';
       if ($opStageBadge) $opStageBadge.style.display = 'inline-block';

@@ -503,6 +503,18 @@ class UniversalSyncClient {
       this._emit('events-list-update', filtered);
       return;
     }
+
+    if (msg.action === 'request_registry') {
+      const list = this.getEventsList();
+      if (list && list.length > 0 && this.mqttClient && this.mqttClient.connected) {
+        try {
+          const payload = JSON.stringify({ sender: this.clientId, forceReplace: false, events: list });
+          this.mqttClient.publish(this.mqttTopicRegistry, payload, { qos: 0, retain: true });
+          this.mqttClient.publish(this.legacyMqttTopicRegistry, payload, { qos: 0, retain: true });
+        } catch (e) {}
+      }
+      return;
+    }
   }
 
   _initCloudSync() {
@@ -555,6 +567,11 @@ class UniversalSyncClient {
         if (!err) {
           this._emit('p2p-ready', { id: this.cleanRoom, count: this.connectedPeersCount });
           this._announcePresence();
+          setTimeout(() => {
+            try {
+              this.sendDeviceCommand('ALL', { action: 'request_registry' });
+            } catch (_) {}
+          }, 350);
         }
       });
     });
@@ -941,21 +958,37 @@ class UniversalSyncClient {
       pin = code === 'PALCO1' ? '1001' : String(1000 + (hash % 9000));
     }
 
-    let stages = Array.isArray(item?.stages) && item.stages.length > 0 ? item.stages.map((st, idx) => ({
-      id: (st?.id || st?.code || (item.stagesCount > 1 ? `${code}-P${idx + 1}` : code)).toUpperCase(),
-      code: (st?.code || st?.id || (item.stagesCount > 1 ? `${code}-P${idx + 1}` : code)).toUpperCase(),
-      name: (st?.name || st?.title || (item.stagesCount > 1 ? `Palco ${idx + 1}` : (isDefault ? 'Palco Principal' : title))).trim(),
-      timersCount: typeof st?.timersCount === 'number' ? st.timersCount : count
-    })) : [
-      {
-        id: code,
-        code: code,
-        name: isDefault ? 'Palco Principal' : title,
-        timersCount: count
-      }
-    ];
+    const targetStagesCount = Math.max(
+      1,
+      typeof item?.stagesCount === 'number'
+        ? item.stagesCount
+        : (Array.isArray(item?.stages) && item.stages.length > 0 ? item.stages.length : 1)
+    );
 
-    const stagesCount = Math.max(1, typeof item?.stagesCount === 'number' ? item.stagesCount : stages.length);
+    let stages = [];
+    if (Array.isArray(item?.stages) && item.stages.length >= targetStagesCount && item.stages.length > 0) {
+      stages = item.stages.map((st, idx) => ({
+        id: (st?.id || st?.code || (targetStagesCount > 1 ? `${code}-P${idx + 1}` : code)).toUpperCase(),
+        code: (st?.code || st?.id || (targetStagesCount > 1 ? `${code}-P${idx + 1}` : code)).toUpperCase(),
+        name: (st?.name || st?.title || (targetStagesCount > 1 ? `Palco ${idx + 1}` : (isDefault ? 'Palco Principal' : title))).trim(),
+        timersCount: typeof st?.timersCount === 'number' ? st.timersCount : (idx === 0 ? count : 0)
+      }));
+    } else {
+      // Always guarantee full generation of all stages up to targetStagesCount
+      for (let i = 1; i <= targetStagesCount; i++) {
+        const sCode = targetStagesCount === 1 ? code : `${code}-P${i}`;
+        const sName = targetStagesCount === 1 ? (isDefault ? 'Palco Principal' : title) : `Palco ${i}`;
+        const existingSt = Array.isArray(item?.stages) ? item.stages.find(s => s && ((s.code || s.id || '').toUpperCase() === sCode)) : null;
+        stages.push({
+          id: sCode,
+          code: sCode,
+          name: (existingSt?.name || existingSt?.title || sName).trim(),
+          timersCount: typeof existingSt?.timersCount === 'number' ? existingSt.timersCount : (i === 1 ? count : 0)
+        });
+      }
+    }
+
+    const stagesCount = Math.max(1, targetStagesCount);
 
     // Guaranteed permanent, immutable creation timestamp
     const createdTime = this._getPersistentCreatedAt(code, item?.createdAt);
