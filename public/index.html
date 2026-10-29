@@ -270,142 +270,295 @@
 </head>
 <body>
   <div class="hub">
-    <!-- Header -->
-    <div class="hub-header">
-      <div class="hub-logo">⏱️</div>
-      <h1 class="hub-title">StageTimer</h1>
-      <p class="hub-sub">Sincronização em Tempo Real para Eventos & Palcos</p>
-    </div>
-
-    <!-- Event / Stage Selection Box -->
-    <div class="room-card">
-      <div class="room-label">
-        <span>🎪 Escolher Palco / Evento</span>
-        <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; text-transform: none;">Selecione o palco ativo ou crie um novo</span>
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- VIEW 1: PORTAL DE EVENTOS (Antes do Menu Inicial)              -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div id="view-portal">
+      <!-- Portal Header -->
+      <div class="hub-header">
+        <div class="hub-logo">⏱️</div>
+        <h1 class="hub-title">StageTimer Portal</h1>
+        <p class="hub-sub">Selecione o seu Evento para aceder à produção e aos palcos</p>
       </div>
 
-      <!-- List of active/saved events -->
-      <div id="hub-events-list" class="events-list-box"></div>
+      <!-- Master Action Bar -->
+      <div id="portal-master-bar" style="background: rgba(253, 203, 110, 0.08); border: 1px solid rgba(253, 203, 110, 0.3); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.25rem;">👑</span>
+          <div>
+            <div id="portal-master-status-title" style="font-size: 0.85rem; font-weight: 700; color: #fdcb6e;">Produção & Gestão Master</div>
+            <div id="portal-master-status-sub" style="font-size: 0.72rem; color: var(--text-secondary);">Apenas o Master pode criar novos eventos e consultar PINs de acesso</div>
+          </div>
+        </div>
+        <div id="portal-master-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <button id="portal-btn-master-login" type="button" class="btn btn-sm" style="background: rgba(253, 203, 110, 0.15); border: 1px solid #fdcb6e; color: #fdcb6e; font-weight: 700;">
+            👑 Acesso Master
+          </button>
+          <button id="portal-btn-create-event" type="button" class="btn btn-sm btn-primary" style="display: none; font-weight: 700; background: #6c5ce7; border-color: #6c5ce7;">
+            ✨ + Criar Novo Evento
+          </button>
+          <a id="portal-link-master-panel" href="master.html" class="btn btn-sm" style="display: none; background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff;">
+            👑 Painel Super Régie
+          </a>
+        </div>
+      </div>
 
-      <!-- Create New Clean Event / Stage -->
-      <div class="new-event-bar">
-        <input id="hub-new-event-name" class="input" style="flex: 1; min-width: 180px; font-size: 0.9rem;" placeholder="Nome do Palco / Evento (ex: Palco 2, RC26)..." autocomplete="off">
-        <button id="hub-create-event-btn" type="button" class="btn btn-primary" style="font-weight: 700; white-space: nowrap;">
-          ✨ + Criar Palco Limpo
+      <!-- Events List Container -->
+      <div class="room-card" style="margin-bottom: 20px;">
+        <div class="room-label">
+          <span>🎪 Eventos Ativos</span>
+          <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; text-transform: none;">Escolha o evento para introduzir o PIN</span>
+        </div>
+        <div id="portal-events-list" class="events-list-box" style="max-height: 380px;"></div>
+      </div>
+    </div>
+
+    <!-- MODAL 1: Digitar PIN do Evento -->
+    <div id="portal-pin-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
+      <div style="background: #1a1a2e; border: 1.5px solid var(--accent); border-radius: 16px; max-width: 380px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center;">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">🔒</div>
+        <h3 id="pin-modal-event-title" style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 4px;">Nome do Evento</h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 18px;">Introduza o PIN de 4 dígitos atribuído pela Régie:</p>
+        
+        <input id="pin-modal-input" type="tel" maxlength="4" pattern="[0-9]*" placeholder="••••" autocomplete="off" style="width: 180px; text-align: center; font-size: 2rem; font-weight: 800; letter-spacing: 0.35em; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 2px solid var(--accent); border-radius: 12px; color: #fff; margin-bottom: 12px; outline: none;">
+        
+        <div id="pin-modal-error" style="display: none; color: #ff7675; font-size: 0.8rem; font-weight: 700; margin-bottom: 14px;">❌ PIN de 4 dígitos incorreto. Tente novamente.</div>
+        
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 6px;">
+          <button id="pin-modal-cancel" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff; padding: 10px 18px;">Cancelar</button>
+          <button id="pin-modal-confirm" type="button" class="btn btn-sm btn-primary" style="padding: 10px 22px; font-weight: 700; background: #00b894; border-color: #00b894;">🔑 Entrar no Evento</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 2: Criar Novo Evento (Exclusivo Master) -->
+    <div id="portal-create-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
+      <div style="background: #1a1a2e; border: 1.5px solid #fdcb6e; border-radius: 16px; max-width: 440px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+          <span style="font-size: 1.6rem;">✨</span>
+          <div>
+            <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0;">Criar Novo Evento</h3>
+            <span style="font-size: 0.72rem; color: #fdcb6e; font-weight: 600;">Exclusivo Master Régie</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px; text-align: left;">
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Nome do Evento / Festival:</label>
+          <input id="create-modal-title" class="input" placeholder="ex: Festival de Verão 2026, Gala IPCA..." style="width: 100%; font-size: 0.95rem;" autocomplete="off">
+        </div>
+
+        <div style="margin-bottom: 16px; text-align: left;">
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Número de Palcos no Evento:</label>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button id="create-modal-stages-minus" type="button" class="btn btn-sm" style="padding: 8px 16px; font-size: 1.2rem; font-weight: 800;">−</button>
+            <input id="create-modal-stages-count" type="number" min="1" max="20" value="1" style="width: 70px; text-align: center; font-size: 1.2rem; font-weight: 800; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 8px; color: #fff; padding: 6px;">
+            <button id="create-modal-stages-plus" type="button" class="btn btn-sm" style="padding: 8px 16px; font-size: 1.2rem; font-weight: 800;">+</button>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">(1 por defeito)</span>
+          </div>
+        </div>
+
+        <div style="background: rgba(253, 203, 110, 0.1); border: 1px dashed #fdcb6e; border-radius: 10px; padding: 12px; margin-bottom: 18px; text-align: center;">
+          <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">PIN Aleatório Gerado de 4 Dígitos:</div>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 4px;">
+            <span id="create-modal-generated-pin" style="font-size: 1.8rem; font-weight: 900; color: #fdcb6e; letter-spacing: 0.25em;">----</span>
+            <button id="create-modal-regen-pin" type="button" class="btn btn-sm" title="Gerar outro PIN" style="padding: 4px 8px; font-size: 0.8rem; background: rgba(255,255,255,0.08);">🔄</button>
+          </div>
+          <div style="font-size: 0.7rem; color: #fdcb6e; margin-top: 4px;">Este PIN é único e exclusivo deste evento para a sua equipa.</div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button id="create-modal-cancel" type="button" class="btn btn-sm" style="padding: 10px 18px;">Cancelar</button>
+          <button id="create-modal-confirm" type="button" class="btn btn-sm btn-primary" style="padding: 10px 22px; font-weight: 800; background: #6c5ce7; border-color: #6c5ce7;">✨ Criar e Abrir Evento</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- VIEW 2: MENU DO EVENTO (Exatamente os menus que já temos!)    -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div id="view-hub" style="display: none;">
+      <!-- Header do Evento com botão de voltar ao portal -->
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+        <button id="hub-back-to-portal-btn" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: #c4b5fd; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <span>←</span> Escolher Outro Evento
         </button>
-      </div>
-
-      <input id="hub-room" type="hidden" value="PALCO1">
-      <div class="room-hint">Cada palco/evento corre de forma 100% independente em simultâneo.</div>
-    </div>
-
-    <!-- Active Stage Banner -->
-    <div id="hub-active-banner" style="background: rgba(108, 92, 231, 0.12); border: 1.5px solid rgba(108, 92, 231, 0.4); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-      <div>
-        <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Palco Pronto para Entrar:</div>
-        <div style="font-size: 1.15rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; margin-top: 3px;">
-          <span style="color: #00b894;">🟢</span>
-          <span id="hub-selected-name">Palco Principal</span>
-          <span id="hub-selected-code" class="event-code-pill">PALCO1</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Evento Atual:</span>
+          <span id="hub-current-event-name" style="font-size: 0.95rem; font-weight: 800; color: #55efc4;"></span>
         </div>
       </div>
-      <div style="font-size: 0.8rem; color: #fdcb6e; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-        <span>👇 Escolha o modo abaixo:</span>
+
+      <!-- Header Principal -->
+      <div class="hub-header" style="margin-bottom: 16px;">
+        <div class="hub-logo">⏱️</div>
+        <h1 class="hub-title" id="hub-title-display">StageTimer</h1>
+        <p class="hub-sub">Sincronização em Tempo Real para Eventos & Palcos</p>
       </div>
-    </div>
 
-    <!-- 3 Mode Cards -->
-    <div class="modes-grid">
-      <!-- Modo Configurador -->
-      <a id="card-controller" href="controller.html" class="mode-card">
-        <div class="mode-icon">🎛️</div>
-        <div class="mode-info">
-          <div class="mode-name">Configurador</div>
-          <div class="mode-desc">Painel completo para PC. Criar timers, durações, cores e alertas.</div>
+      <!-- Event / Stage Selection Box -->
+      <div class="room-card">
+        <div class="room-label">
+          <span>🎪 Escolher Palco</span>
+          <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; text-transform: none;">Selecione o palco ativo para operar ou monitorizar</span>
         </div>
-        <span class="mode-badge">PC / Configurador</span>
-      </a>
 
-      <!-- Modo Operador (Mobile Safari) -->
-      <a id="card-operator" href="operator.html" class="mode-card">
-        <div class="mode-icon">📱</div>
-        <div class="mode-info">
-          <div class="mode-name">Modo Operador</div>
-          <div class="mode-desc">Otimizado para telemóvel/Safari. Botões grandes, +1m/-1m e mensagens rápidas.</div>
+        <!-- List of stages belonging to this event -->
+        <div id="hub-events-list" class="events-list-box"></div>
+
+        <input id="hub-room" type="hidden" value="PALCO1">
+        <div class="room-hint">Cada palco corre de forma 100% independente em simultâneo.</div>
+      </div>
+
+      <!-- Active Stage Banner -->
+      <div id="hub-active-banner" style="background: rgba(108, 92, 231, 0.12); border: 1.5px solid rgba(108, 92, 231, 0.4); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Palco Pronto para Entrar:</div>
+          <div style="font-size: 1.15rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; margin-top: 3px;">
+            <span style="color: #00b894;">🟢</span>
+            <span id="hub-selected-name">Palco Principal</span>
+            <span id="hub-selected-code" class="event-code-pill">PALCO1</span>
+          </div>
         </div>
-        <span class="mode-badge">iPhone / Mobile</span>
-      </a>
-
-      <!-- Modo Palco -->
-      <a id="card-viewer" href="viewer.html" class="mode-card">
-        <div class="mode-icon">📺</div>
-        <div class="mode-info">
-          <div class="mode-name">Modo de Palco</div>
-          <div class="mode-desc">Ecrã inteiro limpo com números gigantes e alertas para o apresentador.</div>
+        <div style="font-size: 0.8rem; color: #fdcb6e; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <span>👇 Escolha o modo abaixo:</span>
         </div>
-        <span class="mode-badge">Ecrã de Palco / Monitor</span>
-      </a>
+      </div>
 
-      <!-- Modo Lista (Lineup & Horários) -->
-      <a id="card-lineup" href="lineup.html" class="mode-card">
-        <div class="mode-icon">📋</div>
-        <div class="mode-info">
-          <div class="mode-name">Modo Lista</div>
-          <div class="mode-desc">Apresentação com a lista completa de artistas, horários e quem está em palco.</div>
+      <!-- 3 Mode Cards -->
+      <div class="modes-grid">
+        <!-- Modo Configurador -->
+        <a id="card-controller" href="controller.html" class="mode-card">
+          <div class="mode-icon">🎛️</div>
+          <div class="mode-info">
+            <div class="mode-name">Configurador</div>
+            <div class="mode-desc">Painel completo para PC. Criar timers, durações, cores e alertas.</div>
+          </div>
+          <span class="mode-badge">PC / Configurador</span>
+        </a>
+
+        <!-- Modo Operador (Mobile Safari) -->
+        <a id="card-operator" href="operator.html" class="mode-card">
+          <div class="mode-icon">📱</div>
+          <div class="mode-info">
+            <div class="mode-name">Modo Operador</div>
+            <div class="mode-desc">Otimizado para telemóvel/Safari. Botões grandes, +1m/-1m e mensagens rápidas.</div>
+          </div>
+          <span class="mode-badge">iPhone / Mobile</span>
+        </a>
+
+        <!-- Modo Palco -->
+        <a id="card-viewer" href="viewer.html" class="mode-card">
+          <div class="mode-icon">📺</div>
+          <div class="mode-info">
+            <div class="mode-name">Modo de Palco</div>
+            <div class="mode-desc">Ecrã inteiro limpo com números gigantes e alertas para o apresentador.</div>
+          </div>
+          <span class="mode-badge">Ecrã de Palco / Monitor</span>
+        </a>
+
+        <!-- Modo Lista (Lineup & Horários) -->
+        <a id="card-lineup" href="lineup.html" class="mode-card">
+          <div class="mode-icon">📋</div>
+          <div class="mode-info">
+            <div class="mode-name">Modo Lista</div>
+            <div class="mode-desc">Apresentação com a lista completa de artistas, horários e quem está em palco.</div>
+          </div>
+          <span class="mode-badge">Backstage / Camarim</span>
+        </a>
+
+        <!-- Modo Master / Super Régie -->
+        <a id="card-master" href="master.html" class="mode-card" style="border: 1px solid rgba(253, 203, 110, 0.45); background: linear-gradient(135deg, rgba(253, 203, 110, 0.08) 0%, rgba(108, 92, 231, 0.12) 100%);">
+          <div class="mode-icon">👑</div>
+          <div class="mode-info">
+            <div class="mode-name" style="color: #fdcb6e;">Painel Master (Super Régie)</div>
+            <div class="mode-desc">Exclusivo: ver dispositivos online, mudar ecrãs remotamente, apagar palcos e multiview. (Senha: 1379brito)</div>
+          </div>
+          <span class="mode-badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border-color: #fdcb6e;">Senha: 1379brito</span>
+        </a>
+      </div>
+
+      <!-- Share / QR Code + Install App Box -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 4px;">
+        <button type="button" class="btn btn-primary st-install-app-btn" style="padding: 12px 22px; font-weight: 700; border-radius: 12px; box-shadow: 0 8px 20px rgba(108, 92, 231, 0.35);">
+          📲 Instalar App Leve (Telemóvel / PC)
+        </button>
+
+        <button id="toggle-qr-btn" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-secondary);">
+          📱 Mostrar QR Code para abrir noutro dispositivo
+        </button>
+        <div id="qr-container" style="display: none; margin-top: 8px; padding: 16px; background: #fff; border-radius: 12px; width: fit-content; margin-left: auto; margin-right: auto; text-align: center;">
+          <img id="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://stagetimer-pfp.netlify.app/" alt="QR Code" style="width: 180px; height: 180px; display: block;">
+          <div style="color: #111; font-size: 0.75rem; font-weight: 700; margin-top: 6px;">Aponte a câmara do telemóvel</div>
         </div>
-        <span class="mode-badge">Backstage / Camarim</span>
-      </a>
-
-      <!-- Modo Master / Super Régie -->
-      <a id="card-master" href="master.html" class="mode-card" style="border: 1px solid rgba(253, 203, 110, 0.45); background: linear-gradient(135deg, rgba(253, 203, 110, 0.08) 0%, rgba(108, 92, 231, 0.12) 100%);">
-        <div class="mode-icon">👑</div>
-        <div class="mode-info">
-          <div class="mode-name" style="color: #fdcb6e;">Painel Master (Super Régie)</div>
-          <div class="mode-desc">Exclusivo: ver dispositivos online, mudar ecrãs remotamente, apagar palcos e multiview. (Senha: 1379brito)</div>
-        </div>
-        <span class="mode-badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border-color: #fdcb6e;">Senha: 1379brito</span>
-      </a>
-    </div>
-    <!-- Share / QR Code + Install App Box -->
-    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 4px;">
-      <button type="button" class="btn btn-primary st-install-app-btn" style="padding: 12px 22px; font-weight: 700; border-radius: 12px; box-shadow: 0 8px 20px rgba(108, 92, 231, 0.35);">
-        📲 Instalar App Leve (Telemóvel / PC)
-      </button>
-
-      <button id="toggle-qr-btn" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-secondary);">
-        📱 Mostrar QR Code para abrir noutro dispositivo
-      </button>
-      <div id="qr-container" style="display: none; margin-top: 8px; padding: 16px; background: #fff; border-radius: 12px; width: fit-content; margin-left: auto; margin-right: auto; text-align: center;">
-        <img id="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://stagetimer-pfp.netlify.app/" alt="QR Code" style="width: 180px; height: 180px; display: block;">
-        <div style="color: #111; font-size: 0.75rem; font-weight: 700; margin-top: 6px;">Aponte a câmara do telemóvel</div>
       </div>
     </div>
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=36"></script>
-  <script src="js/local-sync.js?v=36"></script>
+  <script src="js/pwa.js?v=37"></script>
+  <script src="js/local-sync.js?v=37"></script>
   <script>
-    const $toggleQr = document.getElementById('toggle-qr-btn');
-    const $qrContainer = document.getElementById('qr-container');
-    const $qrImg = document.getElementById('qr-img');
-    if ($toggleQr && $qrContainer) {
-      $toggleQr.addEventListener('click', () => {
-        const isHidden = $qrContainer.style.display === 'none';
-        $qrContainer.style.display = isHidden ? 'block' : 'none';
-      });
-    }
+    const hubClient = new StageTimerClient({
+      role: 'viewer',
+      room: 'PALCO1',
+    });
+    hubClient.connect();
+
+    // DOM References
+    const $viewPortal = document.getElementById('view-portal');
+    const $viewHub = document.getElementById('view-hub');
+
+    // Portal
+    const $portalEventsList = document.getElementById('portal-events-list');
+    const $portalBtnMasterLogin = document.getElementById('portal-btn-master-login');
+    const $portalBtnCreateEvent = document.getElementById('portal-btn-create-event');
+    const $portalLinkMasterPanel = document.getElementById('portal-link-master-panel');
+    const $portalMasterStatusTitle = document.getElementById('portal-master-status-title');
+    const $portalMasterStatusSub = document.getElementById('portal-master-status-sub');
+
+    // PIN Modal
+    const $pinModal = document.getElementById('portal-pin-modal');
+    const $pinModalTitle = document.getElementById('pin-modal-event-title');
+    const $pinModalInput = document.getElementById('pin-modal-input');
+    const $pinModalError = document.getElementById('pin-modal-error');
+    const $pinModalCancel = document.getElementById('pin-modal-cancel');
+    const $pinModalConfirm = document.getElementById('pin-modal-confirm');
+
+    // Create Modal
+    const $createModal = document.getElementById('portal-create-modal');
+    const $createTitle = document.getElementById('create-modal-title');
+    const $createStagesCount = document.getElementById('create-modal-stages-count');
+    const $createStagesMinus = document.getElementById('create-modal-stages-minus');
+    const $createStagesPlus = document.getElementById('create-modal-stages-plus');
+    const $createGeneratedPin = document.getElementById('create-modal-generated-pin');
+    const $createRegenPin = document.getElementById('create-modal-regen-pin');
+    const $createCancel = document.getElementById('create-modal-cancel');
+    const $createConfirm = document.getElementById('create-modal-confirm');
+
+    // Hub
+    const $hubBackBtn = document.getElementById('hub-back-to-portal-btn');
+    const $hubCurrentEventName = document.getElementById('hub-current-event-name');
     const $room = document.getElementById('hub-room');
     const $controller = document.getElementById('card-controller');
     const $operator = document.getElementById('card-operator');
     const $viewer = document.getElementById('card-viewer');
     const $lineup = document.getElementById('card-lineup');
     const $eventsList = document.getElementById('hub-events-list');
-    const $newEventName = document.getElementById('hub-new-event-name');
-    const $createEventBtn = document.getElementById('hub-create-event-btn');
+    const $toggleQr = document.getElementById('toggle-qr-btn');
+    const $qrContainer = document.getElementById('qr-container');
+    const $qrImg = document.getElementById('qr-img');
+
+    if ($toggleQr && $qrContainer) {
+      $toggleQr.addEventListener('click', () => {
+        const isHidden = $qrContainer.style.display === 'none';
+        $qrContainer.style.display = isHidden ? 'block' : 'none';
+      });
+    }
 
     const params = new URLSearchParams(location.search);
-    const paramRoom = (params.get('room') || '').trim();
+    const paramEvent = (params.get('event') || '').trim().toUpperCase();
+    const paramPin = (params.get('pin') || '').trim();
+    const paramRoom = (params.get('room') || '').trim().toUpperCase();
 
     // Clean address bar if dangling ?room
     if (location.search === '?room' || (params.has('room') && !paramRoom)) {
@@ -414,27 +567,28 @@
       } catch (_) {}
     }
 
-    const savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim();
-    const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim();
+    let isMasterActive = sessionStorage.getItem('stagetimer_master_active') === '1';
+    let currentUnlockedEventCode = (sessionStorage.getItem('stagetimer_unlocked_event') || '').trim().toUpperCase();
+    let selectedRoom = '';
+    let pendingPinEventCode = '';
 
-    let initialRoom = (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
-    $room.value = initialRoom;
+    // Direct link with ?event=...&pin=...
+    if (paramEvent && paramPin) {
+      const verifyRes = hubClient.verifyEventPin(paramEvent, paramPin);
+      if (verifyRes.valid) {
+        currentUnlockedEventCode = paramEvent;
+        sessionStorage.setItem('stagetimer_unlocked_event', paramEvent);
+      }
+    }
 
-    let userHasManuallySelected = Boolean(paramRoom);
-
-    const hubClient = new StageTimerClient({
-      role: 'viewer',
-      room: initialRoom,
-    });
-    hubClient.connect();
-
-    // If initial room was default 'PALCO1' without param or saved room, pick first active event if present
-    if (!paramRoom && (!savedDeviceRoom || savedDeviceRoom === 'PALCO1')) {
-      const regList = hubClient.getEventsList();
-      const activeEv = regList.find(e => (e.timersCount > 0 || e.artistCount > 0)) || regList.find(e => e.code !== 'PALCO1');
-      if (activeEv && activeEv.code) {
-        initialRoom = activeEv.code;
-        $room.value = initialRoom;
+    // Direct room navigation (e.g. returning from ?room=PALCO1)
+    if (paramRoom) {
+      const allEvents = hubClient.getEventsList();
+      const parentEvent = allEvents.find(ev => ev.code === paramRoom || (ev.stages && ev.stages.some(s => s.code === paramRoom)));
+      if (parentEvent) {
+        currentUnlockedEventCode = parentEvent.code;
+        sessionStorage.setItem('stagetimer_unlocked_event', parentEvent.code);
+        selectedRoom = paramRoom;
       }
     }
 
@@ -444,75 +598,100 @@
       }[m]));
     }
 
-    function renderEventsList() {
-      if (!$eventsList) return;
-      const list = hubClient.getEventsList();
-      let currentCode = ($room.value.trim() || localStorage.getItem('stagetimer_device_room') || 'PALCO1').toUpperCase();
+    function renderMasterBar() {
+      if (isMasterActive) {
+        if ($portalMasterStatusTitle) $portalMasterStatusTitle.textContent = '👑 Modo Master Ativo';
+        if ($portalMasterStatusSub) $portalMasterStatusSub.textContent = 'Acesso total a todos os eventos, palcos e PINs de segurança';
+        if ($portalBtnMasterLogin) $portalBtnMasterLogin.style.display = 'none';
+        if ($portalBtnCreateEvent) $portalBtnCreateEvent.style.display = 'inline-flex';
+        if ($portalLinkMasterPanel) $portalLinkMasterPanel.style.display = 'inline-flex';
+      } else {
+        if ($portalMasterStatusTitle) $portalMasterStatusTitle.textContent = 'Produção & Gestão Master';
+        if ($portalMasterStatusSub) $portalMasterStatusSub.textContent = 'Apenas o Master pode criar novos eventos e consultar PINs de acesso';
+        if ($portalBtnMasterLogin) $portalBtnMasterLogin.style.display = 'inline-flex';
+        if ($portalBtnCreateEvent) $portalBtnCreateEvent.style.display = 'none';
+        if ($portalLinkMasterPanel) $portalLinkMasterPanel.style.display = 'none';
+      }
+    }
 
-      const matched = list.find(e => e.code === currentCode);
-      if (!matched && list.length > 0) {
-        currentCode = list[0].code;
-        $room.value = currentCode;
+    function renderPortalEvents() {
+      if (!$portalEventsList) return;
+      const allEvents = hubClient.getEventsList();
+
+      if (allEvents.length === 0) {
+        $portalEventsList.innerHTML = `
+          <div style="text-align: center; padding: 28px 16px; color: var(--text-secondary);">
+            <div style="font-size: 2.2rem; margin-bottom: 8px;">🎪</div>
+            <div style="font-size: 1rem; font-weight: 700; color: #fff;">Nenhum evento ativo no momento.</div>
+            <div style="font-size: 0.8rem; margin-top: 4px;">Inicie sessão como Master acima para criar o primeiro evento.</div>
+          </div>
+        `;
+        return;
       }
 
-      const activeItem = list.find(e => e.code === currentCode) || { title: currentCode, code: currentCode };
-      const $bannerName = document.getElementById('hub-selected-name');
-      const $bannerCode = document.getElementById('hub-selected-code');
-      if ($bannerName) $bannerName.textContent = activeItem.title || activeItem.code;
-      if ($bannerCode) $bannerCode.textContent = activeItem.code;
+      $portalEventsList.innerHTML = allEvents.map(ev => {
+        const count = ev.stagesCount || (ev.stages ? ev.stages.length : 1);
+        const stageLabel = count > 1 ? `${count} palcos` : '1 palco';
+        const pinBadge = isMasterActive
+          ? `<span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 800; font-family: var(--font-mono); padding: 4px 10px; border-radius: 8px; border: 1px solid #fdcb6e; font-size: 0.82rem;">🔑 PIN: ${escapeHtml(ev.pin)}</span>`
+          : `<span style="background: rgba(255,255,255,0.06); color: var(--text-secondary); font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;">🔒 Protegido com PIN</span>`;
 
-      $eventsList.innerHTML = list.map((ev) => {
-        const isSelected = ev.code === currentCode;
-        const countLabel = typeof ev.timersCount === 'number'
-          ? `${ev.timersCount} artista(s)`
-          : 'Sessão';
+        const copyButtons = isMasterActive ? `
+          <button type="button" class="btn btn-sm btn-copy-pin" data-copy-pin="${escapeHtml(ev.pin)}" style="padding: 4px 8px; font-size: 0.72rem; background: rgba(255,255,255,0.08); border: 1px solid var(--border);" title="Copiar PIN">📋 Copiar PIN</button>
+          <button type="button" class="btn btn-sm btn-copy-link" data-event-code="${escapeHtml(ev.code)}" data-event-pin="${escapeHtml(ev.pin)}" style="padding: 4px 8px; font-size: 0.72rem; background: rgba(108, 92, 231, 0.2); border: 1px solid var(--accent); color: #c4b5fd;" title="Copiar Link para WhatsApp">📲 Link WhatsApp</button>
+        ` : '';
+
         return `
-          <div class="event-row ${isSelected ? 'active' : ''}" data-select-code="${escapeHtml(ev.code)}">
+          <div class="event-row" data-portal-code="${escapeHtml(ev.code)}" style="padding: 14px 16px; cursor: pointer;">
             <div class="event-row-left">
-              <div class="event-row-title">
-                <span>${isSelected ? '🟢' : '⚪'} ${escapeHtml(ev.title || ev.code)}</span>
-                <span class="event-code-pill">${escapeHtml(ev.code)}</span>
+              <div class="event-row-title" style="font-size: 1.05rem;">
+                <span>🎪 ${escapeHtml(ev.title || ev.code)}</span>
               </div>
-              <div class="event-row-meta">${countLabel} ${isSelected ? '• PALCO ATIVO' : '• Clique para selecionar'}</div>
+              <div class="event-row-meta" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+                <span>${stageLabel}</span>
+                <span>•</span>
+                ${pinBadge}
+                ${copyButtons}
+              </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-              ${isSelected ? `
-                <span class="btn btn-sm" style="pointer-events: none; font-size: 0.75rem; padding: 5px 10px; background: #00b894; border-color: #00b894; color: #fff; font-weight: 700;">
-                  ✓ Selecionado
-                </span>
-                <button type="button" class="btn btn-sm" data-mode-page="operator.html" data-for-code="${escapeHtml(ev.code)}" style="font-size: 0.75rem; padding: 5px 10px; background: rgba(108, 92, 231, 0.25); border: 1px solid var(--accent); color: #fff; font-weight: 700;">
-                  📱 Operador
-                </button>
-              ` : `
-                <button type="button" class="btn btn-sm" data-select-trigger="${escapeHtml(ev.code)}" style="font-size: 0.75rem; padding: 5px 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: #e2e8f0; font-weight: 600;">
-                  Selecionar
-                </button>
-              `}
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button type="button" class="btn btn-sm btn-primary" data-portal-enter="${escapeHtml(ev.code)}" style="font-weight: 700; padding: 8px 16px; background: #6c5ce7; border-color: #6c5ce7;">
+                ${isMasterActive ? 'Abrir Evento' : '🔑 Entrar no Evento'}
+              </button>
             </div>
           </div>
         `;
       }).join('');
     }
 
-    function selectRoom(code) {
-      if (!code) return;
-      const clean = String(code).trim().toUpperCase();
-      userHasManuallySelected = true;
-      $room.value = clean;
-      try {
-        localStorage.setItem('stagetimer_device_room', clean);
-        localStorage.setItem('stagetimer_last_room', clean);
-      } catch (_) {}
-      updateLinks(clean);
-    }
+    function renderEventHub(unlockedEv) {
+      if (!$eventsList) return;
+      if ($hubCurrentEventName) {
+        $hubCurrentEventName.textContent = unlockedEv.title || unlockedEv.code;
+      }
 
-    function updateLinks(overrideCode) {
-      const code = (overrideCode || $room.value.trim() || localStorage.getItem('stagetimer_device_room') || 'PALCO1').toUpperCase();
+      const stages = Array.isArray(unlockedEv.stages) && unlockedEv.stages.length > 0
+        ? unlockedEv.stages
+        : [{ code: unlockedEv.code, name: unlockedEv.title || 'Palco Principal', timersCount: 0 }];
+
+      if (!selectedRoom || !stages.some(s => s.code === selectedRoom)) {
+        selectedRoom = stages[0].code;
+      }
+      $room.value = selectedRoom;
+
       try {
-        localStorage.setItem('stagetimer_device_room', code);
-        localStorage.setItem('stagetimer_last_room', code);
+        localStorage.setItem('stagetimer_device_room', selectedRoom);
+        localStorage.setItem('stagetimer_last_room', selectedRoom);
       } catch (_) {}
-      const q = `?room=${encodeURIComponent(code)}`;
+
+      const activeStage = stages.find(s => s.code === selectedRoom) || stages[0];
+      const $bannerName = document.getElementById('hub-selected-name');
+      const $bannerCode = document.getElementById('hub-selected-code');
+      if ($bannerName) $bannerName.textContent = activeStage.name || activeStage.code;
+      if ($bannerCode) $bannerCode.textContent = activeStage.code;
+
+      // Update card links
+      const q = `?room=${encodeURIComponent(selectedRoom)}`;
       if ($controller) $controller.href = `controller.html${q}`;
       if ($operator) $operator.href = `operator.html${q}`;
       if ($viewer) $viewer.href = `viewer.html${q}`;
@@ -522,10 +701,256 @@
         const fullUrl = `${baseUrl}/viewer.html${q}`;
         $qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(fullUrl)}`;
       }
-      renderEventsList();
+
+      // RENDER STAGES LIST WITHOUT OPERATOR BUTTON (CLEAN AND STREAMLINED)
+      $eventsList.innerHTML = stages.map(st => {
+        const isSelected = st.code === selectedRoom;
+        const countLabel = typeof st.timersCount === 'number'
+          ? `${st.timersCount} artista(s)`
+          : 'Sessão';
+        return `
+          <div class="event-row ${isSelected ? 'active' : ''}" data-select-stage="${escapeHtml(st.code)}">
+            <div class="event-row-left">
+              <div class="event-row-title">
+                <span>${isSelected ? '🟢' : '⚪'} ${escapeHtml(st.name || st.code)}</span>
+                <span class="event-code-pill">${escapeHtml(st.code)}</span>
+              </div>
+              <div class="event-row-meta">${countLabel} ${isSelected ? '• PALCO ATIVO' : '• Clique para selecionar'}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="btn btn-sm ${isSelected ? 'btn-primary' : ''}" style="pointer-events: none; font-size: 0.75rem; padding: 5px 12px; ${isSelected ? 'background: #00b894; border-color: #00b894; color: #fff; font-weight: 700;' : 'background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: #e2e8f0;'}">
+                ${isSelected ? '✓ Selecionado' : 'Selecionar'}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
-    // Intercept clicks on mode cards to guarantee the latest selected event is always opened cleanly
+    function renderView() {
+      const allEvents = hubClient.getEventsList();
+      const unlockedEv = allEvents.find(e => e.code === currentUnlockedEventCode);
+
+      if (!unlockedEv) {
+        currentUnlockedEventCode = '';
+        sessionStorage.removeItem('stagetimer_unlocked_event');
+        $viewPortal.style.display = 'block';
+        $viewHub.style.display = 'none';
+        renderPortalEvents();
+      } else {
+        $viewPortal.style.display = 'none';
+        $viewHub.style.display = 'block';
+        renderEventHub(unlockedEv);
+      }
+      renderMasterBar();
+    }
+
+    // Portal Events List Click Delegation
+    if ($portalEventsList) {
+      $portalEventsList.addEventListener('click', (e) => {
+        // Copy PIN button
+        const copyPinBtn = e.target.closest('[data-copy-pin]');
+        if (copyPinBtn) {
+          e.stopPropagation();
+          const pin = copyPinBtn.dataset.copyPin;
+          navigator.clipboard.writeText(pin).then(() => {
+            const old = copyPinBtn.textContent;
+            copyPinBtn.textContent = '✓ Copiado!';
+            setTimeout(() => { copyPinBtn.textContent = old; }, 1500);
+          }).catch(() => {});
+          return;
+        }
+
+        // Copy Link button
+        const copyLinkBtn = e.target.closest('[data-copy-link]');
+        if (copyLinkBtn) {
+          e.stopPropagation();
+          const code = copyLinkBtn.dataset.eventCode;
+          const pin = copyLinkBtn.dataset.eventPin;
+          const baseUrl = location.href.split('?')[0].replace(/\/index\.html$/i, '').replace(/\/+$/, '');
+          const shareUrl = `${baseUrl}/index.html?event=${encodeURIComponent(code)}&pin=${encodeURIComponent(pin)}`;
+          navigator.clipboard.writeText(shareUrl).then(() => {
+            const old = copyLinkBtn.textContent;
+            copyLinkBtn.textContent = '✓ Link Copiado!';
+            setTimeout(() => { copyLinkBtn.textContent = old; }, 1500);
+          }).catch(() => {});
+          return;
+        }
+
+        const row = e.target.closest('[data-portal-code]');
+        if (!row) return;
+        const code = row.dataset.portalCode;
+        if (!code) return;
+
+        if (isMasterActive) {
+          // Master can enter immediately without PIN
+          currentUnlockedEventCode = code;
+          sessionStorage.setItem('stagetimer_unlocked_event', code);
+          renderView();
+          return;
+        }
+
+        // Normal user: open PIN modal
+        const allEvents = hubClient.getEventsList();
+        const ev = allEvents.find(item => item.code === code);
+        if (!ev) return;
+        pendingPinEventCode = code;
+        if ($pinModalTitle) $pinModalTitle.textContent = ev.title || ev.code;
+        if ($pinModalInput) $pinModalInput.value = '';
+        if ($pinModalError) $pinModalError.style.display = 'none';
+        if ($pinModal) $pinModal.style.display = 'flex';
+        setTimeout(() => { if ($pinModalInput) $pinModalInput.focus(); }, 100);
+      });
+    }
+
+    // PIN Modal Actions
+    if ($pinModalCancel) {
+      $pinModalCancel.addEventListener('click', () => {
+        if ($pinModal) $pinModal.style.display = 'none';
+        pendingPinEventCode = '';
+      });
+    }
+
+    function submitPinModal() {
+      if (!pendingPinEventCode) return;
+      const inputVal = ($pinModalInput ? $pinModalInput.value : '').trim();
+      const res = hubClient.verifyEventPin(pendingPinEventCode, inputVal);
+      if (res.valid) {
+        currentUnlockedEventCode = pendingPinEventCode;
+        sessionStorage.setItem('stagetimer_unlocked_event', pendingPinEventCode);
+        if ($pinModal) $pinModal.style.display = 'none';
+        pendingPinEventCode = '';
+        renderView();
+      } else {
+        if ($pinModalError) {
+          $pinModalError.style.display = 'block';
+          $pinModalError.textContent = res.error || '❌ PIN de 4 dígitos incorreto.';
+        }
+        if ($pinModalInput) {
+          $pinModalInput.focus();
+          $pinModalInput.select();
+        }
+      }
+    }
+
+    if ($pinModalConfirm) {
+      $pinModalConfirm.addEventListener('click', submitPinModal);
+    }
+    if ($pinModalInput) {
+      $pinModalInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          submitPinModal();
+        }
+      });
+    }
+
+    // Master Login Button
+    if ($portalBtnMasterLogin) {
+      $portalBtnMasterLogin.addEventListener('click', () => {
+        const pass = prompt('Introduza a Senha Master (Produção):', '');
+        if (pass === null) return;
+        if (pass.trim() === '1379brito') {
+          isMasterActive = true;
+          sessionStorage.setItem('stagetimer_master_active', '1');
+          renderView();
+        } else {
+          alert('❌ Senha Master incorreta.');
+        }
+      });
+    }
+
+    // Create Event Modal (Master Only)
+    if ($portalBtnCreateEvent) {
+      $portalBtnCreateEvent.addEventListener('click', () => {
+        if (!isMasterActive) return;
+        if ($createTitle) $createTitle.value = '';
+        if ($createStagesCount) $createStagesCount.value = '1';
+        if ($createGeneratedPin) $createGeneratedPin.textContent = hubClient.generateUniquePin();
+        if ($createModal) $createModal.style.display = 'flex';
+        setTimeout(() => { if ($createTitle) $createTitle.focus(); }, 100);
+      });
+    }
+
+    if ($createStagesMinus && $createStagesCount) {
+      $createStagesMinus.addEventListener('click', () => {
+        const val = parseInt($createStagesCount.value, 10) || 1;
+        $createStagesCount.value = Math.max(1, val - 1);
+      });
+    }
+
+    if ($createStagesPlus && $createStagesCount) {
+      $createStagesPlus.addEventListener('click', () => {
+        const val = parseInt($createStagesCount.value, 10) || 1;
+        $createStagesCount.value = Math.min(20, val + 1);
+      });
+    }
+
+    if ($createRegenPin && $createGeneratedPin) {
+      $createRegenPin.addEventListener('click', () => {
+        $createGeneratedPin.textContent = hubClient.generateUniquePin();
+      });
+    }
+
+    if ($createCancel) {
+      $createCancel.addEventListener('click', () => {
+        if ($createModal) $createModal.style.display = 'none';
+      });
+    }
+
+    if ($createConfirm) {
+      $createConfirm.addEventListener('click', () => {
+        const title = ($createTitle ? $createTitle.value : '').trim();
+        if (!title) {
+          alert('Por favor introduza o nome do evento.');
+          if ($createTitle) $createTitle.focus();
+          return;
+        }
+        const stagesCount = parseInt($createStagesCount ? $createStagesCount.value : '1', 10) || 1;
+        try {
+          const newEvent = hubClient.createEventWithStages({
+            title,
+            stagesCount,
+            masterPass: '1379brito'
+          });
+          if ($createModal) $createModal.style.display = 'none';
+          currentUnlockedEventCode = newEvent.code;
+          sessionStorage.setItem('stagetimer_unlocked_event', newEvent.code);
+          renderView();
+        } catch (err) {
+          alert(err.message || 'Erro ao criar evento.');
+        }
+      });
+    }
+
+    // Hub: Back to Portal button
+    if ($hubBackBtn) {
+      $hubBackBtn.addEventListener('click', () => {
+        currentUnlockedEventCode = '';
+        sessionStorage.removeItem('stagetimer_unlocked_event');
+        renderView();
+      });
+    }
+
+    // Hub: Stage selection click
+    if ($eventsList) {
+      $eventsList.addEventListener('click', (e) => {
+        const row = e.target.closest('[data-select-stage]');
+        if (row) {
+          const stageCode = (row.dataset.selectStage || '').trim().toUpperCase();
+          if (stageCode) {
+            selectedRoom = stageCode;
+            const allEvents = hubClient.getEventsList();
+            const unlockedEv = allEvents.find(item => item.code === currentUnlockedEventCode);
+            if (unlockedEv) {
+              renderEventHub(unlockedEv);
+            }
+          }
+        }
+      });
+    }
+
+    // Mode Cards navigation (clean redirect with selectedRoom)
     document.querySelectorAll('.mode-card').forEach(card => {
       card.addEventListener('click', (e) => {
         const rawHref = card.getAttribute('href') || '';
@@ -533,7 +958,7 @@
           return;
         }
         e.preventDefault();
-        const code = ($room.value.trim() || localStorage.getItem('stagetimer_device_room') || 'PALCO1').toUpperCase();
+        const code = (selectedRoom || $room.value || localStorage.getItem('stagetimer_device_room') || 'PALCO1').toUpperCase();
         try {
           localStorage.setItem('stagetimer_device_room', code);
           localStorage.setItem('stagetimer_last_room', code);
@@ -543,71 +968,11 @@
       });
     });
 
-    if ($eventsList) {
-      $eventsList.addEventListener('click', (e) => {
-        const actionBtn = e.target.closest('[data-mode-page]');
-        if (actionBtn) {
-          e.preventDefault();
-          e.stopPropagation();
-          const targetCode = (actionBtn.dataset.forCode || $room.value).trim().toUpperCase();
-          const page = actionBtn.dataset.modePage;
-          selectRoom(targetCode);
-          window.location.href = `${page}?room=${encodeURIComponent(targetCode)}`;
-          return;
-        }
-
-        const row = e.target.closest('[data-select-code]');
-        if (row) {
-          const code = (row.dataset.selectCode || '').trim().toUpperCase();
-          if (code) {
-            selectRoom(code);
-          }
-        }
-      });
-    }
-
-    if ($createEventBtn) {
-      $createEventBtn.addEventListener('click', () => {
-        let name = $newEventName ? $newEventName.value.trim() : '';
-        if (!name) {
-          const prompted = prompt('Qual o nome do novo palco / evento? (ex: Palco 2, RC26, Tenda)', '');
-          if (prompted === null) return;
-          name = prompted.trim() || `Palco ${hubClient.getEventsList().length + 1}`;
-        }
-        const newCode = hubClient.createNewCleanEvent(name);
-        if ($newEventName) $newEventName.value = '';
-        selectRoom(newCode);
-      });
-    }
-
-    if ($newEventName) {
-      $newEventName.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && $createEventBtn) {
-          e.preventDefault();
-          $createEventBtn.click();
-        }
-      });
-    }
-
-    hubClient.on('events-list-update', (list) => {
-      if (!Array.isArray(list) || list.length === 0) return;
-      const current = ($room.value.trim() || '').toUpperCase();
-      if (list.some(e => e.code === current)) {
-        renderEventsList();
-        return;
-      }
-      if (!userHasManuallySelected) {
-        const activeEv = list.find(e => (e.timersCount > 0 || e.artistCount > 0)) || list[0];
-        if (activeEv && activeEv.code) {
-          $room.value = activeEv.code;
-          updateLinks(activeEv.code);
-          return;
-        }
-      }
-      renderEventsList();
+    hubClient.on('events-list-update', () => {
+      renderView();
     });
 
-    updateLinks();
+    renderView();
   </script>
 </body>
 </html>

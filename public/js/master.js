@@ -535,8 +535,12 @@
           <div class="event-manage-top">
             <div>
               <div class="event-manage-title">${escapeHtml(ev.title || ev.code)}</div>
-              <div class="event-manage-stats">
-                ${count} artista(s) programado(s) • Dia ${day}
+              <div class="event-manage-stats" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+                <span>${ev.stagesCount || 1} palco(s)</span>
+                <span>•</span>
+                <span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 800; font-family: var(--font-mono); padding: 2px 8px; border-radius: 6px; border: 1px solid #fdcb6e; font-size: 0.78rem;">🔑 PIN: ${escapeHtml(ev.pin || '----')}</span>
+                <span>•</span>
+                <span>${count} artista(s) programado(s) • Dia ${day}</span>
               </div>
             </div>
             <span class="event-manage-code">${escapeHtml(ev.code)}</span>
@@ -602,11 +606,23 @@
     $createStageBtn.addEventListener('click', () => {
       let name = $newStageInput ? $newStageInput.value.trim() : '';
       if (!name) {
-        const prompted = prompt('Nome do novo palco / evento (ex: Palco Sunset, Tenda Eletrónica):', '');
+        const prompted = prompt('Nome do novo evento (ex: Festival Rock 2026, Gala IPCA):', '');
         if (prompted === null) return;
-        name = prompted.trim() || `Palco ${masterClient.getEventsList().length + 1}`;
+        name = prompted.trim() || `Evento ${masterClient.getEventsList().length + 1}`;
       }
-      masterClient.createNewCleanEvent(name);
+      const stagesPrompt = prompt('Quantos palcos tem este evento? (1 por defeito):', '1');
+      if (stagesPrompt === null) return;
+      const stagesCount = Math.max(1, Math.min(20, parseInt(stagesPrompt, 10) || 1));
+      try {
+        const created = masterClient.createEventWithStages({
+          title: name,
+          stagesCount,
+          masterPass: '1379brito'
+        });
+        alert(`✅ Evento "${created.title}" criado com sucesso!\n🔑 PIN atribuído à equipa: ${created.pin}\n🎪 Palcos: ${created.stagesCount}`);
+      } catch (err) {
+        alert(err.message || 'Erro ao criar evento.');
+      }
       if ($newStageInput) $newStageInput.value = '';
       renderEventsManager();
       renderMultiview();

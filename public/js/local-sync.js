@@ -864,14 +864,41 @@ class UniversalSyncClient {
     const count = typeof item?.timersCount === 'number'
       ? item.timersCount
       : (typeof item?.artistCount === 'number' ? item.artistCount : 0);
+
+    let pin = String(item?.pin || '').trim();
+    if (!/^\d{4}$/.test(pin)) {
+      // Deterministic 4-digit fallback PIN for existing/legacy events
+      const hash = Math.abs(code.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0));
+      pin = code === 'PALCO1' ? '1001' : String(1000 + (hash % 9000));
+    }
+
+    let stages = Array.isArray(item?.stages) && item.stages.length > 0 ? item.stages.map((st, idx) => ({
+      id: (st?.id || st?.code || (item.stagesCount > 1 ? `${code}-P${idx + 1}` : code)).toUpperCase(),
+      code: (st?.code || st?.id || (item.stagesCount > 1 ? `${code}-P${idx + 1}` : code)).toUpperCase(),
+      name: (st?.name || st?.title || (item.stagesCount > 1 ? `Palco ${idx + 1}` : (isDefault ? 'Palco Principal' : title))).trim(),
+      timersCount: typeof st?.timersCount === 'number' ? st.timersCount : count
+    })) : [
+      {
+        id: code,
+        code: code,
+        name: isDefault ? 'Palco Principal' : title,
+        timersCount: count
+      }
+    ];
+
+    const stagesCount = Math.max(1, typeof item?.stagesCount === 'number' ? item.stagesCount : stages.length);
+
     return {
       id: code,
       code,
       title,
+      pin,
+      stagesCount,
+      stages,
       timersCount: count,
       artistCount: count,
       currentDay: item?.currentDay || 1,
-      updatedAt: item?.updatedAt || Date.now()
+      updatedAt: item?.updatedAt || 0
     };
   }
 
@@ -1094,6 +1121,125 @@ class UniversalSyncClient {
     }
     this._saveEventsList(list, true, true);
     return code;
+  }
+
+  generateUniquePin(excludeCode = null) {
+    let existing = [];
+    try {
+      const raw = localStorage.getItem(this.registryStorageKey);
+      existing = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(existing)) existing = [];
+    } catch (_) {}
+    const usedPins = new Set(
+      existing
+        .filter(e => e && (!excludeCode || e.code !== excludeCode))
+        .map(e => String(e.pin || '').trim())
+        .filter(p => /^\d{4}$/.test(p))
+    );
+
+    let pin = '';
+    let attempts = 0;
+    while (attempts < 10000) {
+      const candidate = String(Math.floor(1000 + Math.random() * 9000));
+      if (!usedPins.has(candidate)) {
+        pin = candidate;
+        break;
+      }
+      attempts++;
+    }
+    return pin || String(Math.floor(1000 + Math.random() * 9000));
+  }
+
+  createEventWithStages({ title, stagesCount = 1, masterPass = '' }) {
+    if (masterPass !== '1379brito') {
+      throw new Error('Apenas o Master com a senha 1379brito pode criar eventos.');
+    }
+    const cleanTitle = (title || '').trim() || `Evento ${this.getEventsList().length + 1}`;
+    let baseCode = cleanTitle
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .substring(0, 14);
+    if (!baseCode) baseCode = 'EVT-' + Math.floor(100 + Math.random() * 900);
+
+    const pin = this.generateUniquePin(baseCode);
+    const count = Math.max(1, Math.min(20, parseInt(stagesCount, 10) || 1));
+    const stages = [];
+
+    for (let i = 1; i <= count; i++) {
+      const stageCode = count === 1 ? baseCode : `${baseCode}-P${i}`;
+      const stageName = count === 1 ? (cleanTitle || 'Palco Principal') : `Palco ${i}`;
+      this._unmarkDeletedEvent(stageCode);
+
+      const stageState = {
+        id: stageCode,
+        name: stageName,
+        currentDay: 1,
+        days: { '1': [] },
+        timers: [],
+        activeTimerId: null,
+        message: { text: '', visible: false, level: 'info' },
+        theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
+        updatedAt: Date.now()
+      };
+
+      try {
+        localStorage.setItem(`stagetimer_live_state_${stageCode}`, JSON.stringify(stageState));
+        if (i === 1) {
+          localStorage.setItem('stagetimer_device_room', stageCode);
+          localStorage.setItem('stagetimer_last_room', stageCode);
+        }
+      } catch (e) {}
+
+      if (this.mqttClient && this.mqttClient.connected) {
+        try {
+          this.mqttClient.publish(
+            `stagetimer_live/${stageCode}/state`,
+            JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: stageState }),
+            { qos: 0, retain: true }
+          );
+        } catch (e) {}
+      }
+
+      stages.push({
+        id: stageCode,
+        code: stageCode,
+        name: stageName,
+        timersCount: 0
+      });
+    }
+
+    const eventItem = this._normalizeRegistryItem({
+      id: baseCode,
+      code: baseCode,
+      title: cleanTitle,
+      pin,
+      stagesCount: count,
+      stages,
+      timersCount: 0,
+      artistCount: 0,
+      currentDay: 1,
+      updatedAt: Date.now()
+    });
+
+    const list = this.getEventsList().filter(e => e.code !== baseCode);
+    list.unshift(eventItem);
+    this._saveEventsList(list, true, true);
+
+    return eventItem;
+  }
+
+  verifyEventPin(eventCode, inputPin) {
+    const list = this.getEventsList();
+    const cleanCode = (eventCode || '').trim().toUpperCase();
+    const ev = list.find(e => e.code === cleanCode || e.id === cleanCode);
+    if (!ev) return { valid: false, error: 'Evento não encontrado' };
+    const cleanPin = String(inputPin || '').trim();
+    if (cleanPin === '1379brito' || cleanPin === String(ev.pin || '').trim()) {
+      return { valid: true, event: ev };
+    }
+    return { valid: false, error: 'PIN de 4 dígitos incorreto' };
   }
 
   renameEvent(code, newTitle) {
