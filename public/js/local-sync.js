@@ -39,16 +39,46 @@ class UniversalSyncClient {
     this.storageKey = `stagetimer_live_state_${this.cleanRoom}`;
     this.mqttTopicState = `stagetimer_live/${this.cleanRoom}/state`;
     this.mqttTopicPresence = `stagetimer_live/${this.cleanRoom}/presence`;
-    this.mqttTopicRegistry = 'stagetimer_live/_events_list_v6';
-    this.legacyMqttTopicRegistry = 'stagetimer_live/_events_list';
+    this.mqttTopicRegistry = 'stagetimer_live/_events_list_v7';
+    this.legacyMqttTopicRegistry = 'stagetimer_live/_events_list_v6';
     this.mqttTopicGlobalPresence = 'stagetimer_live/_global_presence';
     this.mqttTopicCommands = 'stagetimer_live/_commands';
     this.mqttTopicAllCmd = 'stagetimer_live/_cmd_all';
-    this.registryStorageKey = 'stagetimer_events_registry_v6';
-    this.deletedStorageKey = 'stagetimer_deleted_events_v2';
+    this.registryStorageKey = 'stagetimer_events_registry_v7';
+    this.deletedStorageKey = 'stagetimer_deleted_events_v7';
+
+    // ── Clean Slate Epoch v7 Reset ──
+    const CLEAN_SLATE_EPOCH = 'stagetimer_clean_slate_epoch_v7';
+    if (localStorage.getItem(CLEAN_SLATE_EPOCH) !== 'true') {
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (
+            k && (
+              k.startsWith('stagetimer_events_registry_') ||
+              k.startsWith('stagetimer_deleted_events_') ||
+              k.startsWith('stagetimer_live_state_') ||
+              k.startsWith('stagetimer_device_room') ||
+              k.startsWith('stagetimer_last_room') ||
+              k.startsWith('stagetimer_unlocked_event')
+            )
+          ) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach(k => {
+          try { localStorage.removeItem(k); } catch (_) {}
+        });
+        try { sessionStorage.removeItem('stagetimer_active_room'); } catch (_) {}
+        localStorage.setItem(CLEAN_SLATE_EPOCH, 'true');
+        localStorage.setItem('stagetimer_device_room', 'PALCO1');
+        localStorage.setItem('stagetimer_last_room', 'PALCO1');
+      } catch (e) {}
+    }
 
     // Prune obsolete registry versions to eliminate ghost events
-    ['stagetimer_events_registry_v1', 'stagetimer_events_registry_v2', 'stagetimer_events_registry_v3', 'stagetimer_events_registry_v4', 'stagetimer_events_registry_v5'].forEach(k => {
+    ['stagetimer_events_registry_v1', 'stagetimer_events_registry_v2', 'stagetimer_events_registry_v3', 'stagetimer_events_registry_v4', 'stagetimer_events_registry_v5', 'stagetimer_events_registry_v6'].forEach(k => {
       try { localStorage.removeItem(k); } catch (e) {}
     });
 
@@ -504,6 +534,28 @@ class UniversalSyncClient {
       const filtered = this.getEventsList().filter(e => activeSet.has(e.code));
       this._saveEventsList(filtered, false);
       this._emit('events-list-update', filtered);
+      return;
+    }
+
+    if (msg.action === 'purge_clean_slate_v7') {
+      try {
+        const preserveAuthMaster = localStorage.getItem('stagetimer_master_active');
+        const preserveAuthV12 = localStorage.getItem('stagetimer_master_auth_v12');
+        const preserveAuthUnlocked = localStorage.getItem('stagetimer_auth_unlocked');
+        const devUuid = localStorage.getItem('stagetimer_device_uuid');
+
+        localStorage.clear();
+        sessionStorage.clear();
+
+        if (devUuid) localStorage.setItem('stagetimer_device_uuid', devUuid);
+        if (preserveAuthMaster) localStorage.setItem('stagetimer_master_active', preserveAuthMaster);
+        if (preserveAuthV12) localStorage.setItem('stagetimer_master_auth_v12', preserveAuthV12);
+        if (preserveAuthUnlocked) localStorage.setItem('stagetimer_auth_unlocked', preserveAuthUnlocked);
+        localStorage.setItem('stagetimer_clean_slate_epoch_v7', 'true');
+        localStorage.setItem('stagetimer_device_room', 'PALCO1');
+        localStorage.setItem('stagetimer_last_room', 'PALCO1');
+      } catch (_) {}
+      window.location.replace(`index.html?clean_slate=v7&_ts=${Date.now()}`);
       return;
     }
 
@@ -1498,12 +1550,31 @@ class UniversalSyncClient {
       }
     });
 
+    // Clear legacy registry topics on MQTT broker
+    if (this.mqttClient && this.mqttClient.connected) {
+      try {
+        this.mqttClient.publish('stagetimer_live/_events_list_v6', JSON.stringify({ sender: this.clientId, forceReplace: true, events: [] }), { qos: 0, retain: true });
+        this.mqttClient.publish('stagetimer_live/_events_list', JSON.stringify({ sender: this.clientId, forceReplace: true, events: [] }), { qos: 0, retain: true });
+      } catch (_) {}
+    }
+
     try {
       Object.keys(localStorage).forEach((k) => {
-        if (k.startsWith('stagetimer_live_') && k !== 'stagetimer_auth_unlocked' && k !== 'stagetimer_master_auth_v12' && k !== 'stagetimer_screen_uuid') {
-          localStorage.removeItem(k);
+        if (
+          k.startsWith('stagetimer_live_') ||
+          k.startsWith('stagetimer_events_registry_') ||
+          k.startsWith('stagetimer_deleted_events_') ||
+          k.startsWith('stagetimer_device_room') ||
+          k.startsWith('stagetimer_last_room') ||
+          k.startsWith('stagetimer_unlocked_event')
+        ) {
+          if (k !== 'stagetimer_auth_unlocked' && k !== 'stagetimer_master_auth_v12' && k !== 'stagetimer_device_uuid') {
+            localStorage.removeItem(k);
+          }
         }
       });
+      sessionStorage.removeItem('stagetimer_active_room');
+      localStorage.setItem('stagetimer_clean_slate_epoch_v7', 'true');
     } catch (e) {}
 
     const freshCode = 'PALCO1';
@@ -1514,10 +1585,10 @@ class UniversalSyncClient {
       title: 'Palco Principal',
       timersCount: 0,
       currentDay: 1,
-      updatedAt: Date.now()
+      updatedAt: 0
     })];
 
-    this.sendDeviceCommand('ALL', { action: 'purge_all_ghosts', activeCodes: [freshCode] });
+    this.sendDeviceCommand('ALL', { action: 'purge_clean_slate_v7' });
 
     this._saveEventsList(defaultList, true, true);
     this._state = this._createDefaultRoom(freshCode);
