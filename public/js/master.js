@@ -849,13 +849,22 @@
       }
     });
 
-    // Ensure multiview cards are ordered identically to the deterministic events array
-    events.forEach(ev => {
-      const c = $multiviewGrid.querySelector(`[data-mv-room="${CSS.escape(ev.code)}"]`);
-      if (c) {
-        $multiviewGrid.appendChild(c);
+    // Ensure multiview cards are ordered identically to the deterministic events array without DOM thrashing
+    const currentDomChildren = Array.from($multiviewGrid.children);
+    const targetOrder = events
+      .map(ev => $multiviewGrid.querySelector(`[data-mv-room="${CSS.escape(ev.code)}"]`))
+      .filter(Boolean);
+
+    let needsReorder = false;
+    for (let i = 0; i < targetOrder.length; i++) {
+      if (currentDomChildren[i] !== targetOrder[i]) {
+        needsReorder = true;
+        break;
       }
-    });
+    }
+    if (needsReorder) {
+      targetOrder.forEach(node => $multiviewGrid.appendChild(node));
+    }
 
     if ($kpiRunning) $kpiRunning.textContent = runningCount;
     const tabRunBadge = document.getElementById('tab-running-badge');

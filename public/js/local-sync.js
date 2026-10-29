@@ -854,6 +854,29 @@ class UniversalSyncClient {
 
   // ─── Multi-Event / Stage Registry ──────────────────────────────────
 
+  _getPersistentCreatedAt(code, candidateTime = 0) {
+    const cleanCode = (code || '').toUpperCase().trim();
+    if (!cleanCode) return Date.now();
+    if (cleanCode === 'PALCO1') return 1000000000000; // Fixed historic timestamp so PALCO1 is always oldest/last
+    try {
+      const stored = localStorage.getItem(`stagetimer_created_${cleanCode}`);
+      const storedNum = Number(stored);
+      if (!isNaN(storedNum) && storedNum > 0) {
+        return storedNum;
+      }
+      const candidateNum = Number(candidateTime);
+      if (!isNaN(candidateNum) && candidateNum > 1000000000000) {
+        localStorage.setItem(`stagetimer_created_${cleanCode}`, String(candidateNum));
+        return candidateNum;
+      }
+      const now = Date.now();
+      localStorage.setItem(`stagetimer_created_${cleanCode}`, String(now));
+      return now;
+    } catch (_) {
+      return candidateTime || Date.now();
+    }
+  }
+
   _normalizeRegistryItem(item) {
     const code = (item?.code || item?.id || 'PALCO1').toUpperCase();
     const isDefault = code === 'PALCO1';
@@ -888,20 +911,9 @@ class UniversalSyncClient {
 
     const stagesCount = Math.max(1, typeof item?.stagesCount === 'number' ? item.stagesCount : stages.length);
 
-    function toFixedTimestamp(v) {
-      if (!v) return 0;
-      if (typeof v === 'number') return v;
-      const num = Number(v);
-      if (!isNaN(num) && num > 0) return num;
-      const parsed = Date.parse(v);
-      return isNaN(parsed) ? 0 : parsed;
-    }
-
-    let createdTime = toFixedTimestamp(item?.createdAt);
-    if (!createdTime || createdTime <= 0) {
-      createdTime = toFixedTimestamp(item?.updatedAt) || 1600000000000;
-    }
-    const updatedTime = toFixedTimestamp(item?.updatedAt) || createdTime;
+    // Guaranteed permanent, immutable creation timestamp
+    const createdTime = this._getPersistentCreatedAt(code, item?.createdAt);
+    const updatedTime = Number(item?.updatedAt) || createdTime;
 
     return {
       id: code,
@@ -934,7 +946,8 @@ class UniversalSyncClient {
           const k = localStorage.key(i);
           if (k && k.startsWith('stagetimer_live_state_')) {
             const code = k.replace('stagetimer_live_state_', '').toUpperCase().trim();
-            if (code && !deletedSet.has(code) && !list.some(e => e.code === code)) {
+            const isKnown = list.some(e => e.code === code || (e.stages && e.stages.some(st => st.code === code)));
+            if (code && !deletedSet.has(code) && !isKnown) {
               let tCount = 0;
               let title = code === 'PALCO1' ? 'Palco Principal' : code;
               let itemUpdatedAt = 0;
@@ -966,8 +979,8 @@ class UniversalSyncClient {
           title: 'Palco Principal',
           timersCount: 0,
           currentDay: 1,
-          createdAt: 0,
-          updatedAt: 0
+          createdAt: 1000000000000,
+          updatedAt: 1000000000000
         }));
       }
 
@@ -981,7 +994,7 @@ class UniversalSyncClient {
       });
       return list;
     } catch (e) {
-      return [this._normalizeRegistryItem({ id: 'PALCO1', code: 'PALCO1', title: 'Palco Principal', timersCount: 0, currentDay: 1 })];
+      return [this._normalizeRegistryItem({ id: 'PALCO1', code: 'PALCO1', title: 'Palco Principal', timersCount: 0, currentDay: 1, createdAt: 1000000000000 })];
     }
   }
 
@@ -990,6 +1003,14 @@ class UniversalSyncClient {
     const normalized = (list || [])
       .map(e => this._normalizeRegistryItem(e))
       .filter(e => !deletedSet.has(e.code));
+
+    // Sort strictly before saving to localStorage and publishing
+    normalized.sort((a, b) => {
+      const timeA = Number(a.createdAt) || 0;
+      const timeB = Number(b.createdAt) || 0;
+      if (timeB !== timeA) return timeB - timeA;
+      return (a.code || '').localeCompare(b.code || '');
+    });
 
     try {
       localStorage.setItem(this.registryStorageKey, JSON.stringify(normalized));
@@ -1014,7 +1035,13 @@ class UniversalSyncClient {
 
     // Cloud registry is authoritative: do NOT resurrect obsolete local events
     if (validIncoming.length > 0) {
-      const incomingCodes = new Set(validIncoming.map(e => e.code));
+      const incomingCodes = new Set();
+      validIncoming.forEach(e => {
+        incomingCodes.add(e.code);
+        if (Array.isArray(e.stages)) {
+          e.stages.forEach(st => incomingCodes.add(st.code));
+        }
+      });
 
       try {
         Object.keys(localStorage).forEach(key => {
@@ -1041,7 +1068,8 @@ class UniversalSyncClient {
         title: 'Palco Principal',
         timersCount: 0,
         currentDay: 1,
-        updatedAt: Date.now()
+        createdAt: 1000000000000,
+        updatedAt: 1000000000000
       })];
       this._saveEventsList(defaultList, false);
     }
@@ -1053,7 +1081,7 @@ class UniversalSyncClient {
     if (deletedSet.has(this.cleanRoom)) return;
 
     const list = this.getEventsList();
-    const idx = list.findIndex(e => e.code === this.cleanRoom);
+    const idx = list.findIndex(e => e.code === this.cleanRoom || (e.stages && e.stages.some(st => st.code === this.cleanRoom)));
     if (idx < 0) {
       // NEVER resurrect deleted events!
       return;
@@ -1069,13 +1097,28 @@ class UniversalSyncClient {
     if (count === 0 && Array.isArray(this._state.timers)) {
       count = this._state.timers.length;
     }
+
+    let updatedStages = existing.stages || [];
+    if (Array.isArray(updatedStages) && updatedStages.length > 0) {
+      updatedStages = updatedStages.map(st => {
+        if (st.code === this.cleanRoom || st.id === this.cleanRoom) {
+          return { ...st, timersCount: count };
+        }
+        return st;
+      });
+    }
+
+    const totalCount = updatedStages.length > 0
+      ? updatedStages.reduce((sum, s) => sum + (s.timersCount || 0), 0)
+      : count;
+
     const entry = this._normalizeRegistryItem({
-      id: this.cleanRoom,
-      code: this.cleanRoom,
-      title: existing?.title || this._state.name || this.cleanRoom,
-      timersCount: count,
-      artistCount: count,
-      currentDay: this._state.currentDay || 1,
+      ...existing,
+      timersCount: totalCount,
+      artistCount: totalCount,
+      stages: updatedStages,
+      currentDay: this._state.currentDay || existing.currentDay || 1,
+      createdAt: existing.createdAt,
       updatedAt: Date.now()
     });
     list[idx] = entry;
@@ -1132,6 +1175,7 @@ class UniversalSyncClient {
       timersCount: 0,
       artistCount: 0,
       currentDay: 1,
+      createdAt: Date.now(),
       updatedAt: Date.now()
     });
     if (existingIdx >= 0) {
