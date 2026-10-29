@@ -28,6 +28,7 @@
         <div style="display: flex; align-items: center; gap: 6px; background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.5); padding: 4px 10px; border-radius: 8px;">
           <span style="font-size: 0.9rem;">🎪</span>
           <span id="lineup-stage-badge" style="color: #55efc4; font-size: 0.85rem; font-weight: 800; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Palco</span>
+          <select id="lineup-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco (Modo Master)"></select>
         </div>
         <span id="lineup-room-badge" class="lineup-room-badge" style="display: none;">PALCO1</span>
         <div id="lineup-day-tabs" style="display: flex; gap: 4px; align-items: center; margin-left: 4px;"></div>
@@ -50,7 +51,6 @@
       <a id="ln-nav-hub" href="index.html" class="lineup-nav-pill">🏠 Início</a>
       <a id="ln-nav-viewer" href="viewer.html" class="lineup-nav-pill">📺 Modo Palco</a>
       <a id="ln-nav-lineup" href="lineup.html" class="lineup-nav-pill active">📋 Modo Lista</a>
-      <button id="lineup-fs-btn" type="button" class="lineup-nav-pill" style="margin-left: auto; background: rgba(108, 92, 231, 0.3); border: 1px solid var(--accent); color: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Alternar Ecrã Inteiro (F)">⛶ <span id="lineup-fs-text">Ecrã Inteiro</span></button>
     </nav>
 
     <!-- Main Content: Active Stage + Full Artist List -->

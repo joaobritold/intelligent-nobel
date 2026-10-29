@@ -15,6 +15,19 @@
     sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
     localStorage.getItem('stagetimer_master_auth_v12') === 'true';
 
+  window.isStageTimerMaster = function() {
+    try {
+      return (
+        sessionStorage.getItem('stagetimer_master_active') === '1' ||
+        localStorage.getItem('stagetimer_master_active') === '1' ||
+        sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
+        localStorage.getItem('stagetimer_master_auth_v12') === 'true'
+      );
+    } catch (_) {
+      return false;
+    }
+  };
+
   // If Master is active, unlock ALL pages immediately without ever asking for passwords!
   if (
     isMasterSession ||

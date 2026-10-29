@@ -249,3 +249,37 @@ select.input {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--border-light);
 }
+
+/* ─── Master Quick Stage Switcher ───────────────────────────────── */
+.master-stage-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(253, 203, 110, 0.18) url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fdcb6e'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e") no-repeat right 8px center/14px;
+  color: #fdcb6e;
+  border: 1px solid rgba(253, 203, 110, 0.55);
+  font-weight: 800;
+  font-size: 0.82rem;
+  padding: 4px 26px 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  max-width: 200px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.master-stage-select:hover,
+.master-stage-select:focus {
+  background-color: rgba(253, 203, 110, 0.28);
+  border-color: #fdcb6e;
+  box-shadow: 0 0 10px rgba(253, 203, 110, 0.4);
+}
+
+.master-stage-select option {
+  background: #111424;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 8px;
+}

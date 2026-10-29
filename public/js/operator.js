@@ -28,27 +28,63 @@ const $joinBtn = document.getElementById('op-join-btn');
 const $connBadge = document.getElementById('op-conn-badge');
 const $bgColor = document.getElementById('op-bg-color');
 const $opStageBadge = document.getElementById('op-stage-badge');
+const $opEventSelect = document.getElementById('op-event-select');
 const $opDayTabs = document.getElementById('op-day-tabs');
 
 function renderOpStageBadge() {
-  if (!$opStageBadge) return;
   const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
   const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
-  let name = currentCode;
-  for (const ev of list) {
-    if (ev.code === currentCode) {
-      name = ev.title || ev.code;
-      break;
-    }
-    if (Array.isArray(ev.stages)) {
-      const st = ev.stages.find(s => s.code === currentCode);
-      if (st) {
-        name = `${ev.title || ev.code} • ${st.name || st.code}`;
+  if ($opStageBadge) {
+    let name = currentCode;
+    for (const ev of list) {
+      if (ev.code === currentCode) {
+        name = ev.title || ev.code;
         break;
       }
+      if (Array.isArray(ev.stages)) {
+        const st = ev.stages.find(s => s.code === currentCode);
+        if (st) {
+          name = `${ev.title || ev.code} • ${st.name || st.code}`;
+          break;
+        }
+      }
+    }
+    $opStageBadge.textContent = name;
+  }
+
+  const isMaster = typeof window.isStageTimerMaster === 'function' ? window.isStageTimerMaster() : (
+    sessionStorage.getItem('stagetimer_master_active') === '1' ||
+    localStorage.getItem('stagetimer_master_active') === '1' ||
+    sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
+    localStorage.getItem('stagetimer_master_auth_v12') === 'true'
+  );
+
+  if ($opEventSelect) {
+    if (isMaster && list.length > 0) {
+      $opEventSelect.style.display = 'inline-block';
+      if ($opStageBadge) $opStageBadge.style.display = 'none';
+      $opEventSelect.innerHTML = list.map(ev => {
+        const title = ev.title || ev.code;
+        return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>👑 ${escapeHtml(title)}</option>`;
+      }).join('');
+    } else {
+      $opEventSelect.style.display = 'none';
+      if ($opStageBadge) $opStageBadge.style.display = 'inline-block';
     }
   }
-  $opStageBadge.textContent = name;
+}
+
+if ($opEventSelect) {
+  $opEventSelect.addEventListener('change', () => {
+    const val = $opEventSelect.value;
+    if (val && val !== (state?.id || roomId)) {
+      try {
+        localStorage.setItem('stagetimer_device_room', val.toUpperCase());
+        localStorage.setItem('stagetimer_last_room', val.toUpperCase());
+      } catch (e) {}
+      location.search = `?room=${encodeURIComponent(val)}`;
+    }
+  });
 }
 
 const $navHub = document.getElementById('nav-hub');

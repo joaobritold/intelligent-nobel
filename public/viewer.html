@@ -25,15 +25,12 @@
       <div style="display: flex; align-items: center; gap: 6px;">
         <span style="font-size: 0.95rem;">🎪</span>
         <span id="viewer-stage-badge" style="color: #55efc4; font-size: 0.82rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: rgba(0, 184, 148, 0.15); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Palco</span>
+        <select id="viewer-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco (Modo Master)"></select>
       </div>
       <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.2);"></div>
       <a href="index.html" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.72rem; text-decoration: none; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; border-radius: 6px;">🏠 Início</a>
       <a id="viewer-lineup-btn" href="lineup.html" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.72rem; text-decoration: none; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; border-radius: 6px;">📋 Lista</a>
-      <button id="viewer-fs-btn" type="button" class="btn btn-sm" style="padding: 3px 9px; font-size: 0.72rem; background: rgba(108, 92, 231, 0.35); border: 1px solid var(--accent); color: #fff; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Alternar Ecrã Inteiro (F)">⛶ <span id="viewer-fs-text">Ecrã Inteiro</span></button>
     </div>
-
-    <!-- Interactive screen hint / quick toggle for fullscreen -->
-    <div id="viewer-fs-hint" class="viewer-hint" style="cursor: pointer;" title="Toque ou clique para Ecrã Inteiro">⛶ Toque para Ecrã Inteiro (F)</div>
 
     <!-- Active Timer Name -->
     <div id="viewer-timer-name" class="viewer-timer-name"></div>

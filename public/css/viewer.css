@@ -283,39 +283,7 @@ html, body {
   animation: pulse 1s ease-in-out infinite;
 }
 
-/* ─── Fullscreen Hint & Button ──────────────────────────────────── */
-
-.viewer-hint {
-  position: absolute;
-  top: calc(12px + env(safe-area-inset-top, 0px));
-  right: calc(16px + env(safe-area-inset-right, 0px));
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #fff;
-  background: rgba(108, 92, 231, 0.45);
-  border: 1px solid rgba(108, 92, 231, 0.75);
-  padding: 6px 14px;
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
-  z-index: 55;
-  transition: opacity 0.3s ease, transform 0.2s ease;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  cursor: pointer;
-  opacity: 0.95;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.viewer-hint:hover {
-  background: rgba(108, 92, 231, 0.8);
-  transform: scale(1.04);
-}
-
-.viewer-hint.is-fullscreen {
-  display: none !important;
-}
+/* ─── Cursor & Hover ────────────────────────────────────────────── */
 
 .viewer:hover {
   cursor: default;

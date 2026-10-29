@@ -131,10 +131,25 @@ function renderEventSelector() {
     $ctrlStageBadge.textContent = name;
   }
 
+  const isMaster = typeof window.isStageTimerMaster === 'function' ? window.isStageTimerMaster() : (
+    sessionStorage.getItem('stagetimer_master_active') === '1' ||
+    localStorage.getItem('stagetimer_master_active') === '1' ||
+    sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
+    localStorage.getItem('stagetimer_master_auth_v12') === 'true'
+  );
+
   if ($ctrlEventSelect) {
-    $ctrlEventSelect.innerHTML = list.map(ev => {
-      return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>${ev.title || ev.code}</option>`;
-    }).join('');
+    if (isMaster && list.length > 0) {
+      $ctrlEventSelect.style.display = 'inline-block';
+      if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'none';
+      $ctrlEventSelect.innerHTML = list.map(ev => {
+        const title = ev.title || ev.code;
+        return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>👑 ${escapeHtml(title)}</option>`;
+      }).join('');
+    } else {
+      $ctrlEventSelect.style.display = 'none';
+      if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'inline-block';
+    }
   }
 
   if ($ctrlEventsManageList) {

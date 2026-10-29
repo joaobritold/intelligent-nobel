@@ -40,8 +40,8 @@ if ($roomBadge) $roomBadge.textContent = roomId;
 
 function renderLineupEventSelector() {
   const currentCode = (state?.id || roomId).toUpperCase();
+  const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
   if ($lineupStageBadge) {
-    const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
     let name = currentCode;
     for (const ev of list) {
       if (ev.code === currentCode) {
@@ -58,13 +58,26 @@ function renderLineupEventSelector() {
     }
     $lineupStageBadge.textContent = name;
   }
+
+  const isMaster = typeof window.isStageTimerMaster === 'function' ? window.isStageTimerMaster() : (
+    sessionStorage.getItem('stagetimer_master_active') === '1' ||
+    localStorage.getItem('stagetimer_master_active') === '1' ||
+    sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
+    localStorage.getItem('stagetimer_master_auth_v12') === 'true'
+  );
+
   if ($lineupEventSelect) {
-    const list = client.getEventsList();
-    $lineupEventSelect.innerHTML = list.map(ev => `
-      <option value="${escapeHtml(ev.code)}" ${ev.code === currentCode ? 'selected' : ''}>
-        ${escapeHtml(ev.title || ev.code)} (${escapeHtml(ev.code)})
-      </option>
-    `).join('');
+    if (isMaster && list.length > 0) {
+      $lineupEventSelect.style.display = 'inline-block';
+      if ($lineupStageBadge) $lineupStageBadge.style.display = 'none';
+      $lineupEventSelect.innerHTML = list.map(ev => {
+        const title = ev.title || ev.code;
+        return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>👑 ${escapeHtml(title)}</option>`;
+      }).join('');
+    } else {
+      $lineupEventSelect.style.display = 'none';
+      if ($lineupStageBadge) $lineupStageBadge.style.display = 'inline-block';
+    }
   }
 }
 
@@ -385,10 +398,7 @@ client.on('connected', () => {
 renderLineupEventSelector();
 client.connect();
 
-// ─── Universal Fullscreen System ───────────────────────────────────
-
-const $lineupFsBtn = document.getElementById('lineup-fs-btn');
-const $lineupFsText = document.getElementById('lineup-fs-text');
+// ─── Automatic Fullscreen System ───────────────────────────────────
 
 function isFullscreen() {
   return !!(
@@ -434,20 +444,6 @@ function toggleFullscreen() {
   }
 }
 
-function updateFullscreenUI() {
-  const active = isFullscreen();
-  if ($lineupFsText) {
-    $lineupFsText.textContent = active ? 'Janela' : 'Ecrã Inteiro';
-  }
-  if ($lineupFsBtn) {
-    $lineupFsBtn.title = active ? 'Sair do Ecrã Inteiro (Esc)' : 'Entrar em Ecrã Inteiro (F)';
-  }
-}
-
-['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
-  document.addEventListener(evt, updateFullscreenUI);
-});
-
 // Auto-enter fullscreen attempt on load
 try {
   enterFullscreen();
@@ -462,14 +458,6 @@ window.addEventListener('pointerdown', (e) => {
     enterFullscreen();
   }
 }, { capture: true });
-
-// Button click
-if ($lineupFsBtn) {
-  $lineupFsBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleFullscreen();
-  });
-}
 
 // Double click shortcut
 document.addEventListener('dblclick', (e) => {

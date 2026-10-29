@@ -50,8 +50,8 @@ function escapeHtml(str) {
 
 function renderViewerEventSelector() {
   const currentCode = (state?.id || roomId).toUpperCase();
+  const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
   if ($viewerStageBadge) {
-    const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
     let name = currentCode;
     for (const ev of list) {
       if (ev.code === currentCode) {
@@ -68,16 +68,32 @@ function renderViewerEventSelector() {
     }
     $viewerStageBadge.textContent = name;
   }
+
+  const isMaster = typeof window.isStageTimerMaster === 'function' ? window.isStageTimerMaster() : (
+    sessionStorage.getItem('stagetimer_master_active') === '1' ||
+    localStorage.getItem('stagetimer_master_active') === '1' ||
+    sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
+    localStorage.getItem('stagetimer_master_auth_v12') === 'true'
+  );
+
   if ($viewerEventSelect) {
-    const list = client.getEventsList();
-    $viewerEventSelect.innerHTML = list.map(ev => `
-      <option value="${escapeHtml(ev.code)}" ${ev.code === currentCode ? 'selected' : ''}>
-        ${escapeHtml(ev.title || ev.code)} (${escapeHtml(ev.code)})
-      </option>
-    `).join('');
+    if (isMaster && list.length > 0) {
+      $viewerEventSelect.style.display = 'inline-block';
+      if ($viewerStageBadge) $viewerStageBadge.style.display = 'none';
+      $viewerEventSelect.innerHTML = list.map(ev => {
+        const title = ev.title || ev.code;
+        return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>👑 ${escapeHtml(title)}</option>`;
+      }).join('');
+    } else {
+      $viewerEventSelect.style.display = 'none';
+      if ($viewerStageBadge) $viewerStageBadge.style.display = 'inline-block';
+    }
   }
+
   if ($viewerLineupBtn) {
     $viewerLineupBtn.href = `lineup.html?room=${encodeURIComponent(currentCode)}`;
+  }
+}
   }
 }
 
@@ -312,11 +328,7 @@ function render() {
   }
 }
 
-// ─── Universal Fullscreen System ───────────────────────────────────
-
-const $viewerFsBtn = document.getElementById('viewer-fs-btn');
-const $viewerFsText = document.getElementById('viewer-fs-text');
-const $viewerFsHint = document.getElementById('viewer-fs-hint');
+// ─── Automatic Fullscreen System ───────────────────────────────────
 
 function isFullscreen() {
   return !!(
@@ -362,27 +374,6 @@ function toggleFullscreen() {
   }
 }
 
-function updateFullscreenUI() {
-  const active = isFullscreen();
-  if ($viewerFsText) {
-    $viewerFsText.textContent = active ? 'Janela' : 'Ecrã Inteiro';
-  }
-  if ($viewerFsBtn) {
-    $viewerFsBtn.title = active ? 'Sair do Ecrã Inteiro (Esc)' : 'Entrar em Ecrã Inteiro (F)';
-  }
-  if ($viewerFsHint) {
-    if (active) {
-      $viewerFsHint.classList.add('is-fullscreen');
-    } else {
-      $viewerFsHint.classList.remove('is-fullscreen');
-    }
-  }
-}
-
-['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
-  document.addEventListener(evt, updateFullscreenUI);
-});
-
 // Auto-enter fullscreen attempt on load
 try {
   enterFullscreen();
@@ -398,25 +389,9 @@ window.addEventListener('pointerdown', (e) => {
   }
 }, { capture: true });
 
-// Button click
-if ($viewerFsBtn) {
-  $viewerFsBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleFullscreen();
-  });
-}
-
-// Hint pill click
-if ($viewerFsHint) {
-  $viewerFsHint.addEventListener('click', (e) => {
-    e.stopPropagation();
-    enterFullscreen();
-  });
-}
-
 // Click anywhere on viewer background toggles fullscreen
 document.addEventListener('click', (e) => {
-  if (e.target.closest('a, button, select, input, #viewer-top-bar, .viewer-hint')) return;
+  if (e.target.closest('a, button, select, input, #viewer-top-bar')) return;
   toggleFullscreen();
 });
 
