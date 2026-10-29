@@ -33,7 +33,13 @@
           </div>
         </div>
 
-        <div id="master-live-clock" class="master-clock-box">--:--:--</div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 0.95rem;">🎪</span>
+            <select id="master-event-select" class="master-stage-select" style="min-width: 170px; font-weight: 700; color: #55efc4; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #00b894; border-radius: 8px; padding: 6px 10px; font-size: 0.85rem;" title="👑 Escolher Palco / Sessão Ativa"></select>
+          </div>
+          <div id="master-live-clock" class="master-clock-box">--:--:--</div>
+        </div>
       </div>
 
       <nav class="master-nav-links">

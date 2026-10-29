@@ -6,14 +6,16 @@
 
 const params = new URLSearchParams(location.search);
 const paramRoom = (params.get('room') || '').trim();
+const savedActiveRoom = (sessionStorage.getItem('stagetimer_active_room') || '').trim();
 const savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim();
 const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim();
 
-let roomId = (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
+let roomId = (paramRoom || savedActiveRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
 
 try {
   localStorage.setItem('stagetimer_device_room', roomId);
   localStorage.setItem('stagetimer_last_room', roomId);
+  sessionStorage.setItem('stagetimer_active_room', roomId);
 } catch (e) {}
 
 const client = new StageTimerClient({
@@ -125,22 +127,39 @@ function renderViewerEventSelector() {
   }
 }
 
+function updateViewerNavLinks(code) {
+  const current = (code || roomId || 'PALCO1').toUpperCase();
+  const q = `?room=${encodeURIComponent(current)}`;
+  const $hub = document.getElementById('viewer-nav-hub');
+  const $op = document.getElementById('viewer-nav-operator');
+  const $ln = document.getElementById('viewer-lineup-btn');
+  const $master = document.getElementById('viewer-nav-master');
+  if ($hub) $hub.href = `index.html${q}`;
+  if ($op) $op.href = `operator.html${q}`;
+  if ($ln) $ln.href = `lineup.html${q}`;
+  if ($master) {
+    $master.href = `master.html${q}`;
+    const isMaster = typeof window.isStageTimerMaster === 'function' ? window.isStageTimerMaster() : (
+      sessionStorage.getItem('stagetimer_master_active') === '1' ||
+      localStorage.getItem('stagetimer_master_active') === '1'
+    );
+    $master.style.display = isMaster ? 'inline-block' : 'none';
+  }
+}
+updateViewerNavLinks(roomId);
+
 if ($viewerEventSelect) {
   $viewerEventSelect.addEventListener('change', () => {
     const chosen = $viewerEventSelect.value;
-    if (chosen) {
+    if (chosen && chosen !== (state?.id || roomId)) {
       try {
         localStorage.setItem('stagetimer_device_room', chosen.toUpperCase());
         localStorage.setItem('stagetimer_last_room', chosen.toUpperCase());
+        sessionStorage.setItem('stagetimer_active_room', chosen.toUpperCase());
       } catch (e) {}
-      location.search = `?room=${encodeURIComponent(chosen)}`;
+      window.location.replace(`viewer.html?room=${encodeURIComponent(chosen)}`);
     }
   });
-}
-
-const $viewerMenuBtn = document.querySelector('a[href^="index.html"]');
-if ($viewerMenuBtn) {
-  $viewerMenuBtn.href = `index.html?room=${encodeURIComponent(roomId)}`;
 }
 
 client.on('events-list-update', (list) => {
@@ -182,6 +201,10 @@ client.on('disconnected', () => {
 
 client.on('room-state', (data) => {
   state = data;
+  if (state?.id && state.id !== roomId) {
+    roomId = state.id;
+  }
+  updateViewerNavLinks(roomId);
   renderViewerEventSelector();
   render();
 });

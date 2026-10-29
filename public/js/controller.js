@@ -6,14 +6,16 @@
 
 const params = new URLSearchParams(location.search);
 const paramRoom = (params.get('room') || '').trim();
+const savedActiveRoom = (sessionStorage.getItem('stagetimer_active_room') || '').trim();
 const savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim();
 const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim();
 
-let roomId = (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
+let roomId = (paramRoom || savedActiveRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
 
 try {
   localStorage.setItem('stagetimer_device_room', roomId);
   localStorage.setItem('stagetimer_last_room', roomId);
+  sessionStorage.setItem('stagetimer_active_room', roomId);
 } catch (e) {}
 
 const client = new StageTimerClient({
@@ -60,10 +62,23 @@ const $ctrlEventsManageList = document.getElementById('ctrl-events-manage-list')
 const $ctrlDeleteAllEventsBtn = document.getElementById('ctrl-delete-all-events-btn');
 const $ctrlStagePills = document.getElementById('ctrl-stage-pills');
 const $ctrlDayTabs = document.getElementById('ctrl-day-tabs');
-const $topNavHub = document.getElementById('top-nav-hub');
-if ($topNavHub) {
-  $topNavHub.href = `index.html?room=${encodeURIComponent(roomId)}`;
+function updateTopNavLinks(code) {
+  const current = (code || roomId || 'PALCO1').toUpperCase();
+  const q = `?room=${encodeURIComponent(current)}`;
+  const topHub = document.getElementById('top-nav-hub');
+  const topController = document.getElementById('top-nav-controller');
+  const topOperator = document.getElementById('top-nav-operator');
+  const topViewer = document.getElementById('top-nav-viewer');
+  const topLineup = document.getElementById('top-nav-lineup');
+  const topMaster = document.getElementById('top-nav-master');
+  if (topHub) topHub.href = `index.html${q}`;
+  if (topController) topController.href = `controller.html${q}`;
+  if (topOperator) topOperator.href = `operator.html${q}`;
+  if (topViewer) topViewer.href = `viewer.html${q}`;
+  if (topLineup) topLineup.href = `lineup.html${q}`;
+  if (topMaster) topMaster.href = `master.html${q}`;
 }
+updateTopNavLinks(roomId);
 
 function renderDayTabs() {
   if (!$ctrlDayTabs || !state) return;
@@ -245,8 +260,9 @@ if ($ctrlEventSelect) {
       try {
         localStorage.setItem('stagetimer_device_room', val.toUpperCase());
         localStorage.setItem('stagetimer_last_room', val.toUpperCase());
+        sessionStorage.setItem('stagetimer_active_room', val.toUpperCase());
       } catch (e) {}
-      location.search = `?room=${encodeURIComponent(val)}`;
+      window.location.replace(`controller.html?room=${encodeURIComponent(val)}`);
     }
   });
 }
@@ -260,8 +276,9 @@ if ($ctrlStagePills) {
         try {
           localStorage.setItem('stagetimer_device_room', targetStage.toUpperCase());
           localStorage.setItem('stagetimer_last_room', targetStage.toUpperCase());
+          sessionStorage.setItem('stagetimer_active_room', targetStage.toUpperCase());
         } catch (_) {}
-        location.search = `?room=${encodeURIComponent(targetStage)}`;
+        window.location.replace(`controller.html?room=${encodeURIComponent(targetStage)}`);
       }
     }
   });
@@ -561,17 +578,7 @@ function updateRoomInfo() {
   $controllerLink.href = operatorUrl;
   $controllerLink.textContent = `operator.html?room=${code}`;
 
-  const topHub = document.getElementById('top-nav-hub');
-  const topController = document.getElementById('top-nav-controller');
-  const topOperator = document.getElementById('top-nav-operator');
-  const topViewer = document.getElementById('top-nav-viewer');
-  const topLineup = document.getElementById('top-nav-lineup');
-  const q = `?room=${encodeURIComponent(code)}`;
-  if (topHub) topHub.href = `index.html${q}`;
-  if (topController) topController.href = `controller.html${q}`;
-  if (topOperator) topOperator.href = `operator.html${q}`;
-  if (topViewer) topViewer.href = `viewer.html${q}`;
-  if (topLineup) topLineup.href = `lineup.html${q}`;
+  updateTopNavLinks(code);
   renderEventSelector();
   renderDayTabs();
 }

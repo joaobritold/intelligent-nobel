@@ -1179,6 +1179,11 @@
           const stageCode = (btn.dataset.selectStage || '').trim().toUpperCase();
           if (stageCode) {
             selectedRoom = stageCode;
+            try {
+              localStorage.setItem('stagetimer_device_room', stageCode);
+              localStorage.setItem('stagetimer_last_room', stageCode);
+              sessionStorage.setItem('stagetimer_active_room', stageCode);
+            } catch (_) {}
             const allEvents = hubClient.getEventsList();
             const unlockedEv = allEvents.find(item => item.code === currentUnlockedEventCode);
             if (unlockedEv) {
@@ -1193,14 +1198,12 @@
     document.querySelectorAll('.mode-card').forEach(card => {
       card.addEventListener('click', (e) => {
         const rawHref = card.getAttribute('href') || '';
-        if (rawHref.includes('master.html')) {
-          return;
-        }
         e.preventDefault();
-        const code = (selectedRoom || $room.value || localStorage.getItem('stagetimer_device_room') || 'PALCO1').toUpperCase();
+        const code = (selectedRoom || $room.value || sessionStorage.getItem('stagetimer_active_room') || localStorage.getItem('stagetimer_device_room') || 'PALCO1').toUpperCase();
         try {
           localStorage.setItem('stagetimer_device_room', code);
           localStorage.setItem('stagetimer_last_room', code);
+          sessionStorage.setItem('stagetimer_active_room', code);
         } catch (_) {}
         const page = rawHref.split('?')[0];
         window.location.href = `${page}?room=${encodeURIComponent(code)}`;

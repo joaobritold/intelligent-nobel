@@ -15,13 +15,15 @@ class UniversalSyncClient {
 
     // Check saved device room in localStorage if no room was explicitly provided
     if (!initialRoom) {
+      let savedActiveRoom = '';
       let savedDeviceRoom = '';
       let savedLastRoom = '';
       try {
+        savedActiveRoom = (sessionStorage.getItem('stagetimer_active_room') || '').trim().toUpperCase();
         savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim().toUpperCase();
         savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim().toUpperCase();
       } catch (e) {}
-      initialRoom = savedDeviceRoom || savedLastRoom || 'PALCO1';
+      initialRoom = savedActiveRoom || savedDeviceRoom || savedLastRoom || 'PALCO1';
     }
 
     this.room = initialRoom;
@@ -29,6 +31,7 @@ class UniversalSyncClient {
     try {
       localStorage.setItem('stagetimer_device_room', this.cleanRoom);
       localStorage.setItem('stagetimer_last_room', this.cleanRoom);
+      sessionStorage.setItem('stagetimer_active_room', this.cleanRoom);
     } catch (e) {}
 
     this.channelName = `stagetimer_live_${this.cleanRoom}`;
@@ -515,6 +518,14 @@ class UniversalSyncClient {
       }
       return;
     }
+
+    if (msg.action === 'request_room_state' && msg.room === this.cleanRoom) {
+      const isControllerRole = this.role === 'controller' || this.role === 'operator' || this.role === 'master';
+      if (isControllerRole && this._state && Array.isArray(this._state.timers) && this._state.timers.length > 0) {
+        this._commitStateChange(true);
+      }
+      return;
+    }
   }
 
   _initCloudSync() {
@@ -570,6 +581,7 @@ class UniversalSyncClient {
           setTimeout(() => {
             try {
               this.sendDeviceCommand('ALL', { action: 'request_registry' });
+              this.sendDeviceCommand('ALL', { action: 'request_room_state', room: this.cleanRoom });
             } catch (_) {}
           }, 350);
         }
@@ -841,7 +853,8 @@ class UniversalSyncClient {
       activeTimerId: null,
       message: { text: '', visible: false, level: 'info' },
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
-      updatedAt: Date.now()
+      updatedAt: 0,
+      isEmptyDefault: true
     };
   }
 
@@ -1577,10 +1590,17 @@ class UniversalSyncClient {
 
     const currentUpdatedAt = this._state?.updatedAt || 0;
     const incomingUpdatedAt = incoming.updatedAt || 0;
+    const isCurrentEmpty = Boolean(
+      this._state?.isEmptyDefault ||
+      !Array.isArray(this._state?.timers) ||
+      this._state.timers.length === 0 ||
+      currentUpdatedAt === 0
+    );
 
     // Discard stale incoming states (monotonic clock check)
     // If incoming state has an older timestamp, ignore it to prevent jump-back glitches!
-    if (currentUpdatedAt > 0 && incomingUpdatedAt > 0 && incomingUpdatedAt < currentUpdatedAt) {
+    // But NEVER discard incoming state if our local state is an empty default or has 0 timers!
+    if (!isCurrentEmpty && currentUpdatedAt > 0 && incomingUpdatedAt > 0 && incomingUpdatedAt < currentUpdatedAt) {
       return;
     }
 
@@ -1609,6 +1629,7 @@ class UniversalSyncClient {
       }
     });
 
+    try { delete incoming.isEmptyDefault; } catch (_) {}
     this._state = incoming;
     this._ensureDaysStructure();
     this._enforceInactiveReset();

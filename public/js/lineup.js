@@ -4,14 +4,16 @@
 
 const params = new URLSearchParams(location.search);
 const paramRoom = (params.get('room') || '').trim();
+const savedActiveRoom = (sessionStorage.getItem('stagetimer_active_room') || '').trim();
 const savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim();
 const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim();
 
-let roomId = (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
+let roomId = (paramRoom || savedActiveRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
 
 try {
   localStorage.setItem('stagetimer_device_room', roomId);
   localStorage.setItem('stagetimer_last_room', roomId);
+  sessionStorage.setItem('stagetimer_active_room', roomId);
 } catch (e) {}
 
 const client = new StageTimerClient({
@@ -114,28 +116,42 @@ function renderLineupEventSelector() {
 if ($lineupEventSelect) {
   $lineupEventSelect.addEventListener('change', () => {
     const chosen = $lineupEventSelect.value;
-    if (chosen) {
+    if (chosen && chosen !== (state?.id || roomId)) {
       try {
         localStorage.setItem('stagetimer_device_room', chosen.toUpperCase());
         localStorage.setItem('stagetimer_last_room', chosen.toUpperCase());
+        sessionStorage.setItem('stagetimer_active_room', chosen.toUpperCase());
       } catch (e) {}
-      location.search = `?room=${encodeURIComponent(chosen)}`;
+      window.location.replace(`lineup.html?room=${encodeURIComponent(chosen)}`);
     }
   });
 }
 
-client.on('events-list-update', (list) => {
-  renderLineupEventSelector();
-});
-
-// Update navigation links with current room
-const q = `?room=${encodeURIComponent(roomId)}`;
-['hub', 'viewer', 'lineup'].forEach(key => {
-  const el = document.getElementById(`ln-nav-${key}`);
-  if (el) {
-    el.href = `${key === 'hub' ? 'index' : key}.html${q}`;
+function updateLineupNavLinks(code) {
+  const current = (code || roomId || 'PALCO1').toUpperCase();
+  const q = `?room=${encodeURIComponent(current)}`;
+  const keys = [
+    { id: 'ln-nav-hub', page: 'index.html' },
+    { id: 'ln-nav-controller', page: 'controller.html' },
+    { id: 'ln-nav-operator', page: 'operator.html' },
+    { id: 'ln-nav-viewer', page: 'viewer.html' },
+    { id: 'ln-nav-lineup', page: 'lineup.html' },
+    { id: 'ln-nav-master', page: 'master.html' }
+  ];
+  keys.forEach(k => {
+    const el = document.getElementById(k.id);
+    if (el) el.href = `${k.page}${q}`;
+  });
+  const $masterPill = document.getElementById('ln-nav-master');
+  if ($masterPill) {
+    const isMaster = typeof window.isStageTimerMaster === 'function' ? window.isStageTimerMaster() : (
+      sessionStorage.getItem('stagetimer_master_active') === '1' ||
+      localStorage.getItem('stagetimer_master_active') === '1'
+    );
+    $masterPill.style.display = isMaster ? 'inline-flex' : 'none';
   }
-});
+}
+updateLineupNavLinks(roomId);
 
 function updateClock() {
   if ($localClock) {
@@ -403,8 +419,17 @@ function render() {
   }
 }
 
+client.on('events-list-update', (list) => {
+  renderLineupEventSelector();
+  updateLineupNavLinks(roomId);
+});
+
 client.on('room-state', (data) => {
   state = data;
+  if (state?.id && state.id !== roomId) {
+    roomId = state.id;
+  }
+  updateLineupNavLinks(roomId);
   renderLineupEventSelector();
   render();
 });

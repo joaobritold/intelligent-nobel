@@ -4,14 +4,16 @@
 
 const params = new URLSearchParams(location.search);
 const paramRoom = (params.get('room') || '').trim();
+const savedActiveRoom = (sessionStorage.getItem('stagetimer_active_room') || '').trim();
 const savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim();
 const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim();
 
-let roomId = (paramRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
+let roomId = (paramRoom || savedActiveRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
 
 try {
   localStorage.setItem('stagetimer_device_room', roomId);
   localStorage.setItem('stagetimer_last_room', roomId);
+  sessionStorage.setItem('stagetimer_active_room', roomId);
 } catch (e) {}
 
 const client = new StageTimerClient({
@@ -108,8 +110,9 @@ if ($opEventSelect) {
       try {
         localStorage.setItem('stagetimer_device_room', val.toUpperCase());
         localStorage.setItem('stagetimer_last_room', val.toUpperCase());
+        sessionStorage.setItem('stagetimer_active_room', val.toUpperCase());
       } catch (e) {}
-      location.search = `?room=${encodeURIComponent(val)}`;
+      window.location.replace(`operator.html?room=${encodeURIComponent(val)}`);
     }
   });
 }
@@ -196,14 +199,17 @@ $roomInput.value = roomId;
 updateNavLinks();
 
 function updateNavLinks() {
-  const code = encodeURIComponent(roomId);
+  const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
+  const code = encodeURIComponent(currentCode);
   const $navHub = document.getElementById('nav-hub');
   if ($navHub) $navHub.href = `index.html?room=${code}`;
-  $navController.href = `controller.html?room=${code}`;
-  $navOperator.href = `operator.html?room=${code}`;
-  $navViewer.href = `viewer.html?room=${code}`;
+  if ($navController) $navController.href = `controller.html?room=${code}`;
+  if ($navOperator) $navOperator.href = `operator.html?room=${code}`;
+  if ($navViewer) $navViewer.href = `viewer.html?room=${code}`;
   const $navLineup = document.getElementById('nav-lineup');
   if ($navLineup) $navLineup.href = `lineup.html?room=${code}`;
+  const $navMaster = document.getElementById('nav-master');
+  if ($navMaster) $navMaster.href = `master.html?room=${code}`;
   renderOpStageBadge();
 }
 
@@ -337,6 +343,10 @@ let opDraggedId = null;
 
 function render() {
   if (!state) return;
+  if (state.id && state.id !== roomId) {
+    roomId = state.id;
+    updateNavLinks();
+  }
   renderOpStageBadge();
   renderOpDayTabs();
 

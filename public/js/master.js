@@ -362,9 +362,54 @@
     });
   }
 
+  const $masterEventSelect = document.getElementById('master-event-select');
+
+  function renderMasterEventSelector() {
+    if (!$masterEventSelect) return;
+    const events = masterClient.getEventsList();
+    const activeCode = (sessionStorage.getItem('stagetimer_active_room') || localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || events[0]?.code || 'PALCO1').toUpperCase();
+
+    let optionsHtml = '';
+    events.forEach(ev => {
+      const evTitle = ev.title || ev.code;
+      const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
+      if (stages.length > 1) {
+        optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+        stages.forEach(st => {
+          const isSel = st.code === activeCode;
+          optionsHtml += `<option value="${escapeHtml(st.code)}" ${isSel ? 'selected' : ''}>👑 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || st.code)}</option>`;
+        });
+        optionsHtml += `</optgroup>`;
+      } else {
+        const stCode = stages[0].code || ev.code;
+        const isSel = stCode === activeCode;
+        optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>👑 ${escapeHtml(evTitle)}</option>`;
+      }
+    });
+
+    $masterEventSelect.innerHTML = optionsHtml;
+    if (activeCode && $masterEventSelect.value !== activeCode) {
+      $masterEventSelect.value = activeCode;
+    }
+  }
+
+  if ($masterEventSelect) {
+    $masterEventSelect.addEventListener('change', () => {
+      const chosen = ($masterEventSelect.value || '').trim().toUpperCase();
+      if (chosen) {
+        try {
+          localStorage.setItem('stagetimer_device_room', chosen);
+          localStorage.setItem('stagetimer_last_room', chosen);
+          sessionStorage.setItem('stagetimer_active_room', chosen);
+        } catch (e) {}
+        updateMasterNavLinks();
+      }
+    });
+  }
+
   function updateMasterNavLinks() {
     const events = masterClient.getEventsList();
-    const activeCode = (localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || events[0]?.code || 'PALCO1').toUpperCase();
+    const activeCode = (sessionStorage.getItem('stagetimer_active_room') || localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || events[0]?.code || 'PALCO1').toUpperCase();
     const q = `?room=${encodeURIComponent(activeCode)}`;
     document.querySelectorAll('.master-nav-btn').forEach(btn => {
       const href = btn.getAttribute('href');
@@ -373,8 +418,24 @@
         btn.href = `${page}${q}`;
       }
     });
+    renderMasterEventSelector();
   }
   updateMasterNavLinks();
+
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a[href*="?room="]');
+    if (link) {
+      try {
+        const u = new URL(link.href, location.href);
+        const r = u.searchParams.get('room');
+        if (r) {
+          localStorage.setItem('stagetimer_device_room', r.toUpperCase());
+          localStorage.setItem('stagetimer_last_room', r.toUpperCase());
+          sessionStorage.setItem('stagetimer_active_room', r.toUpperCase());
+        }
+      } catch (_) {}
+    }
+  });
 
   masterClient.on('events-list-update', () => {
     updateMasterNavLinks();
@@ -580,10 +641,13 @@
             <a href="controller.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm btn-primary" title="Abrir configurador para este palco">
               🎛️ Configurador
             </a>
-            <a href="viewer.html?room=${encodeURIComponent(ev.code)}" target="_blank" class="btn btn-sm" title="Abrir ecrã de palco noutro separador">
+            <a href="operator.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm" title="Abrir operador mobile para este palco">
+              📱 Operador
+            </a>
+            <a href="viewer.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm" title="Abrir ecrã de palco">
               📺 Palco
             </a>
-            <a href="lineup.html?room=${encodeURIComponent(ev.code)}" target="_blank" class="btn btn-sm" title="Abrir lista noutro separador">
+            <a href="lineup.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm" title="Abrir lista de horários">
               📋 Lista
             </a>
             <button type="button" class="btn btn-sm" data-rename-stage="${escapeHtml(ev.code)}" title="Renomear este palco">
@@ -600,8 +664,9 @@
                 <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 2px 6px;">
                   <strong style="font-size: 0.75rem; color: #55efc4;">🎪 ${escapeHtml(st.name || st.code)}</strong>
                   <a href="controller.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" title="Abrir Configurador">🎛️</a>
-                  <a href="viewer.html?room=${encodeURIComponent(st.code)}" target="_blank" class="btn btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" title="Abrir Palco">📺</a>
-                  <a href="lineup.html?room=${encodeURIComponent(st.code)}" target="_blank" class="btn btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" title="Abrir Lista">📋</a>
+                  <a href="operator.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" title="Abrir Operador">📱</a>
+                  <a href="viewer.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" title="Abrir Palco">📺</a>
+                  <a href="lineup.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" title="Abrir Lista">📋</a>
                 </div>
               `).join('')}
             </div>
