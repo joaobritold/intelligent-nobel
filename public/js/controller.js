@@ -58,6 +58,7 @@ const $newEventConfirm = document.getElementById('new-event-confirm');
 const $newEventCancel = document.getElementById('new-event-cancel');
 const $ctrlEventsManageList = document.getElementById('ctrl-events-manage-list');
 const $ctrlDeleteAllEventsBtn = document.getElementById('ctrl-delete-all-events-btn');
+const $ctrlStagePills = document.getElementById('ctrl-stage-pills');
 const $ctrlDayTabs = document.getElementById('ctrl-day-tabs');
 const $topNavHub = document.getElementById('top-nav-hub');
 if ($topNavHub) {
@@ -113,21 +114,26 @@ if ($ctrlDayTabs) {
 function renderEventSelector() {
   const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
   const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
-  if ($ctrlStageBadge) {
-    let name = currentCode;
-    for (const ev of list) {
-      if (ev.code === currentCode) {
-        name = ev.title || ev.code;
+  
+  let name = currentCode;
+  let currentEvent = null;
+  for (const ev of list) {
+    if (ev.code === currentCode) {
+      name = ev.title || ev.code;
+      currentEvent = ev;
+      break;
+    }
+    if (Array.isArray(ev.stages)) {
+      const st = ev.stages.find(s => s.code === currentCode);
+      if (st) {
+        name = `${ev.title || ev.code} • ${st.name || st.code}`;
+        currentEvent = ev;
         break;
       }
-      if (Array.isArray(ev.stages)) {
-        const st = ev.stages.find(s => s.code === currentCode);
-        if (st) {
-          name = `${ev.title || ev.code} • ${st.name || st.code}`;
-          break;
-        }
-      }
     }
+  }
+
+  if ($ctrlStageBadge) {
     $ctrlStageBadge.textContent = name;
   }
 
@@ -142,13 +148,47 @@ function renderEventSelector() {
     if (isMaster && list.length > 0) {
       $ctrlEventSelect.style.display = 'inline-block';
       if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'none';
-      $ctrlEventSelect.innerHTML = list.map(ev => {
-        const title = ev.title || ev.code;
-        return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>👑 ${escapeHtml(title)}</option>`;
-      }).join('');
+
+      let optionsHtml = '';
+      list.forEach(ev => {
+        const evTitle = ev.title || ev.code;
+        const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
+        if (stages.length > 1) {
+          optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+          stages.forEach(st => {
+            const isSel = st.code === currentCode;
+            optionsHtml += `<option value="${escapeHtml(st.code)}" ${isSel ? 'selected' : ''}>👑 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || st.code)}</option>`;
+          });
+          optionsHtml += `</optgroup>`;
+        } else {
+          const stCode = stages[0].code || ev.code;
+          const isSel = stCode === currentCode;
+          optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>👑 ${escapeHtml(evTitle)}</option>`;
+        }
+      });
+
+      $ctrlEventSelect.innerHTML = optionsHtml;
     } else {
       $ctrlEventSelect.style.display = 'none';
       if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'inline-block';
+    }
+  }
+
+  // Quick stages pills (rendered next to Day tabs when event has multiple stages)
+  if ($ctrlStagePills) {
+    if (currentEvent && Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
+      $ctrlStagePills.style.display = 'inline-flex';
+      $ctrlStagePills.innerHTML = currentEvent.stages.map(st => {
+        const isAct = st.code === currentCode;
+        return `
+          <button type="button" class="btn btn-sm ${isAct ? 'btn-primary' : ''}" data-ctrl-switch-stage="${escapeHtml(st.code)}" style="padding: 3px 8px; font-size: 0.75rem; font-weight: 700; border-radius: 6px; ${isAct ? 'background: #00b894; border-color: #00b894; color: #fff;' : 'background: rgba(255,255,255,0.06); border-color: var(--border); color: #cbd5e1;'}">
+            🎪 ${escapeHtml(st.name || st.code)}
+          </button>
+        `;
+      }).join('');
+    } else {
+      $ctrlStagePills.style.display = 'none';
+      $ctrlStagePills.innerHTML = '';
     }
   }
 
@@ -196,6 +236,22 @@ if ($ctrlEventSelect) {
         localStorage.setItem('stagetimer_last_room', val.toUpperCase());
       } catch (e) {}
       location.search = `?room=${encodeURIComponent(val)}`;
+    }
+  });
+}
+
+if ($ctrlStagePills) {
+  $ctrlStagePills.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-ctrl-switch-stage]');
+    if (btn) {
+      const targetStage = btn.dataset.ctrlSwitchStage;
+      if (targetStage && targetStage !== (state?.id || roomId)) {
+        try {
+          localStorage.setItem('stagetimer_device_room', targetStage.toUpperCase());
+          localStorage.setItem('stagetimer_last_room', targetStage.toUpperCase());
+        } catch (_) {}
+        location.search = `?room=${encodeURIComponent(targetStage)}`;
+      }
     }
   });
 }
@@ -295,6 +351,7 @@ if ($viewerBgColor) {
 client.on('connected', () => {
   $connectionBadge.className = 'connection-badge connected';
   $connectionBadge.innerHTML = '<span class="connection-dot"></span> Connected';
+  renderEventSelector();
 });
 
 client.on('disconnected', () => {
@@ -335,8 +392,10 @@ client.on('room-state', (data) => {
   renderTimers();
   renderPreview();
   renderMessageState();
+  renderEventSelector();
 });
 
+renderEventSelector();
 client.connect();
 
 // ─── Helpers ───────────────────────────────────────────────────────

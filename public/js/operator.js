@@ -63,10 +63,26 @@ function renderOpStageBadge() {
     if (isMaster && list.length > 0) {
       $opEventSelect.style.display = 'inline-block';
       if ($opStageBadge) $opStageBadge.style.display = 'none';
-      $opEventSelect.innerHTML = list.map(ev => {
-        const title = ev.title || ev.code;
-        return `<option value="${ev.code}" ${ev.code === currentCode ? 'selected' : ''}>👑 ${escapeHtml(title)}</option>`;
-      }).join('');
+
+      let optionsHtml = '';
+      list.forEach(ev => {
+        const evTitle = ev.title || ev.code;
+        const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
+        if (stages.length > 1) {
+          optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+          stages.forEach(st => {
+            const isSel = st.code === currentCode;
+            optionsHtml += `<option value="${escapeHtml(st.code)}" ${isSel ? 'selected' : ''}>👑 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || st.code)}</option>`;
+          });
+          optionsHtml += `</optgroup>`;
+        } else {
+          const stCode = stages[0].code || ev.code;
+          const isSel = stCode === currentCode;
+          optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>👑 ${escapeHtml(evTitle)}</option>`;
+        }
+      });
+
+      $opEventSelect.innerHTML = optionsHtml;
     } else {
       $opEventSelect.style.display = 'none';
       if ($opStageBadge) $opStageBadge.style.display = 'inline-block';
