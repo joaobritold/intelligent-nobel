@@ -888,6 +888,21 @@ class UniversalSyncClient {
 
     const stagesCount = Math.max(1, typeof item?.stagesCount === 'number' ? item.stagesCount : stages.length);
 
+    function toFixedTimestamp(v) {
+      if (!v) return 0;
+      if (typeof v === 'number') return v;
+      const num = Number(v);
+      if (!isNaN(num) && num > 0) return num;
+      const parsed = Date.parse(v);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+
+    let createdTime = toFixedTimestamp(item?.createdAt);
+    if (!createdTime || createdTime <= 0) {
+      createdTime = toFixedTimestamp(item?.updatedAt) || 1600000000000;
+    }
+    const updatedTime = toFixedTimestamp(item?.updatedAt) || createdTime;
+
     return {
       id: code,
       code,
@@ -898,8 +913,8 @@ class UniversalSyncClient {
       timersCount: count,
       artistCount: count,
       currentDay: item?.currentDay || 1,
-      createdAt: item?.createdAt || item?.updatedAt || 0,
-      updatedAt: item?.updatedAt || 0
+      createdAt: createdTime,
+      updatedAt: updatedTime
     };
   }
 
@@ -956,12 +971,13 @@ class UniversalSyncClient {
         }));
       }
 
-      // Sort: most recently created / updated first
+      // Sort STRICTLY by creation order descending (newest event first).
+      // We NEVER compare updatedAt because timers running continuously mutate updatedAt!
       list.sort((a, b) => {
-        const timeA = (b.createdAt || b.updatedAt || 0);
-        const timeB = (a.createdAt || a.updatedAt || 0);
-        if (timeA !== timeB) return timeA - timeB;
-        return (a.title || a.code || '').localeCompare(b.title || b.code || '');
+        const timeA = Number(a.createdAt) || 0;
+        const timeB = Number(b.createdAt) || 0;
+        if (timeB !== timeA) return timeB - timeA;
+        return (a.code || '').localeCompare(b.code || '');
       });
       return list;
     } catch (e) {

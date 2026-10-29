@@ -519,12 +519,17 @@
 
   // ─── Section 2: Gestão Central de Palcos & Eventos ──────────────────
 
+  let lastEventsManagerSig = '';
   function renderEventsManager() {
     if (!$eventsList) return;
     const events = masterClient.getEventsList();
     if ($kpiEvents) $kpiEvents.textContent = events.length;
     const tabEvBadge = document.getElementById('tab-events-badge');
     if (tabEvBadge) tabEvBadge.textContent = events.length;
+
+    const sig = events.map(ev => `${ev.code}:${ev.title}:${ev.timersCount}:${ev.currentDay}:${ev.pin}:${ev.stagesCount}`).join('||');
+    if (sig === lastEventsManagerSig) return;
+    lastEventsManagerSig = sig;
 
     $eventsList.innerHTML = events.map(ev => {
       const count = typeof ev.timersCount === 'number' ? ev.timersCount : 0;
@@ -841,6 +846,14 @@
         if (endBadgeEl && endBadgeEl.textContent !== eventEndTime) {
           endBadgeEl.textContent = eventEndTime;
         }
+      }
+    });
+
+    // Ensure multiview cards are ordered identically to the deterministic events array
+    events.forEach(ev => {
+      const c = $multiviewGrid.querySelector(`[data-mv-room="${CSS.escape(ev.code)}"]`);
+      if (c) {
+        $multiviewGrid.appendChild(c);
       }
     });
 
