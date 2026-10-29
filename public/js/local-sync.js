@@ -578,6 +578,9 @@ class UniversalSyncClient {
     }
 
     if (msg.action === 'request_registry') {
+      const isMasterUser = this.role === 'master' || (typeof localStorage !== 'undefined' && localStorage.getItem('stagetimer_master_active') === '1');
+      if (!isMasterUser) return;
+
       const list = this.getEventsList();
       if (list && list.length > 0 && this.mqttClient && this.mqttClient.connected) {
         try {
@@ -702,6 +705,7 @@ class UniversalSyncClient {
             }
           }
         } else if (topic === this.mqttTopicRegistry) {
+          if (msg && msg.sender === this.clientId) return; // Prevent echo feedback loops
           if (msg && Array.isArray(msg.events)) {
             this._mergeIncomingRegistry(msg.events, Boolean(msg.forceReplace));
           }
@@ -1172,46 +1176,87 @@ class UniversalSyncClient {
       .map(rawItem => this._normalizeRegistryItem(rawItem))
       .filter(Boolean);
 
-    // Cloud registry is authoritative: do NOT resurrect obsolete local events
-    if (validIncoming.length > 0) {
-      const incomingCodes = new Set();
-      validIncoming.forEach(e => {
-        incomingCodes.add(e.code);
-        if (Array.isArray(e.stages)) {
-          e.stages.forEach(st => incomingCodes.add(st.code));
-        }
-      });
-
-      try {
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('stagetimer_live_state_')) {
-            const roomCode = key.replace('stagetimer_live_state_', '').toUpperCase();
-            if (roomCode && !incomingCodes.has(roomCode) && roomCode !== 'PALCO1') {
-              localStorage.removeItem(key);
-              this._recordDeletedEvent(roomCode);
-            }
+    if (forceReplace) {
+      if (validIncoming.length === 0) {
+        const freshCode = 'PALCO1';
+        this._unmarkDeletedEvent(freshCode);
+        const defaultList = [this._normalizeRegistryItem({
+          id: freshCode,
+          code: freshCode,
+          title: 'Palco Principal',
+          timersCount: 0,
+          currentDay: 1,
+          createdAt: 1000000000000,
+          updatedAt: 1000000000000
+        })];
+        this._saveEventsList(defaultList, false);
+      } else {
+        const incomingCodes = new Set();
+        validIncoming.forEach(e => {
+          incomingCodes.add(e.code);
+          if (Array.isArray(e.stages)) {
+            e.stages.forEach(st => incomingCodes.add(st.code));
           }
         });
-      } catch (e) {}
 
-      this._saveEventsList(validIncoming, false);
+        try {
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('stagetimer_live_state_')) {
+              const roomCode = key.replace('stagetimer_live_state_', '').toUpperCase();
+              if (roomCode && !incomingCodes.has(roomCode) && roomCode !== 'PALCO1') {
+                localStorage.removeItem(key);
+                this._recordDeletedEvent(roomCode);
+              }
+            }
+          });
+        } catch (e) {}
+
+        this._saveEventsList(validIncoming, false);
+      }
       return;
     }
 
-    if (forceReplace && validIncoming.length === 0) {
-      const freshCode = 'PALCO1';
-      this._unmarkDeletedEvent(freshCode);
-      const defaultList = [this._normalizeRegistryItem({
-        id: freshCode,
-        code: freshCode,
-        title: 'Palco Principal',
-        timersCount: 0,
-        currentDay: 1,
-        createdAt: 1000000000000,
-        updatedAt: 1000000000000
-      })];
-      this._saveEventsList(defaultList, false);
-    }
+    // Incremental merge (forceReplace === false): Never discard local events
+    const currentList = this.getEventsList();
+    const map = new Map();
+    currentList.forEach(e => {
+      if (e && e.code && !deletedSet.has(e.code)) {
+        map.set(e.code, e);
+      }
+    });
+
+    validIncoming.forEach(inc => {
+      if (!inc || !inc.code || deletedSet.has(inc.code)) return;
+      if (!map.has(inc.code)) {
+        map.set(inc.code, inc);
+      } else {
+        const existing = map.get(inc.code);
+        const incUpdated = Number(inc.updatedAt) || 0;
+        const existUpdated = Number(existing.updatedAt) || 0;
+
+        let mergedStages = existing.stages || [];
+        if (Array.isArray(inc.stages) && inc.stages.length > 0) {
+          if (!mergedStages || mergedStages.length === 0 || inc.stages.length >= mergedStages.length) {
+            mergedStages = inc.stages;
+          }
+        }
+
+        const mergedItem = this._normalizeRegistryItem({
+          ...existing,
+          ...inc,
+          title: incUpdated >= existUpdated ? (inc.title || existing.title) : (existing.title || inc.title),
+          stagesCount: Math.max(existing.stagesCount || 1, inc.stagesCount || 1, mergedStages.length),
+          stages: mergedStages,
+          timersCount: Math.max(existing.timersCount || 0, inc.timersCount || 0),
+          createdAt: Math.min(Number(existing.createdAt) || Date.now(), Number(inc.createdAt) || Date.now()),
+          updatedAt: Math.max(existUpdated, incUpdated)
+        });
+        map.set(inc.code, mergedItem);
+      }
+    });
+
+    const mergedList = Array.from(map.values());
+    this._saveEventsList(mergedList, false);
   }
 
   _syncEventInRegistry(publish = true) {
@@ -1491,6 +1536,67 @@ class UniversalSyncClient {
         this._commitStateChange(true);
       }
     }
+  }
+
+  deleteEvent(code) {
+    return this.deleteEventFromRegistry(code);
+  }
+
+  addStageToEvent(eventCode, stageNameInput = '') {
+    const cleanCode = (eventCode || '').toUpperCase().trim();
+    const list = this.getEventsList();
+    const ev = list.find(e => e.code === cleanCode);
+    if (!ev) throw new Error('Evento não encontrado');
+
+    const currentStages = Array.isArray(ev.stages) && ev.stages.length > 0
+      ? [...ev.stages]
+      : [{ code: ev.code, name: ev.title || 'Palco Principal', timersCount: 0 }];
+
+    const nextIndex = currentStages.length + 1;
+    const stageName = (stageNameInput || '').trim() || `Palco ${nextIndex}`;
+    const stageCode = `${cleanCode}-P${nextIndex}`;
+
+    this._unmarkDeletedEvent(stageCode);
+
+    const stageState = {
+      id: stageCode,
+      name: stageName,
+      currentDay: 1,
+      days: { '1': [] },
+      timers: [],
+      activeTimerId: null,
+      message: { text: '', visible: false, level: 'info' },
+      theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
+      updatedAt: Date.now()
+    };
+
+    try {
+      localStorage.setItem(`stagetimer_v10_state_${stageCode}`, JSON.stringify(stageState));
+    } catch (e) {}
+
+    if (this.mqttClient && this.mqttClient.connected) {
+      try {
+        this.mqttClient.publish(
+          `stagetimer_v10/${stageCode}/state`,
+          JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: stageState }),
+          { qos: 0, retain: true }
+        );
+      } catch (e) {}
+    }
+
+    currentStages.push({
+      id: stageCode,
+      code: stageCode,
+      name: stageName,
+      timersCount: 0
+    });
+
+    ev.stages = currentStages;
+    ev.stagesCount = currentStages.length;
+    ev.updatedAt = Date.now();
+
+    this._saveEventsList(list, true, true);
+    return ev;
   }
 
   deleteEventFromRegistry(codeToDelete) {

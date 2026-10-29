@@ -56,7 +56,7 @@
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://stagetimer-pfp.netlify.app/">
   <title>StageTimer PFP — Timer de Palco & Lineup</title>
-  <link rel="stylesheet" href="css/common.css?v=61">
+  <link rel="stylesheet" href="css/common.css?v=62">
   <style>
     body {
       display: flex;
@@ -351,8 +351,13 @@
       <!-- Events List Container -->
       <div class="room-card" style="margin-bottom: 20px;">
         <div class="room-label">
-          <span>🎪 Eventos Ativos</span>
-          <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; text-transform: none;">Escolha o evento</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span>🎪 Eventos Ativos</span>
+            <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; text-transform: none;">Escolha o evento</span>
+          </div>
+          <button id="portal-btn-quick-create" type="button" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 5px 12px; font-weight: 700; background: #6c5ce7; border-color: #6c5ce7;">
+            ✨ + Criar Evento
+          </button>
         </div>
         <div id="portal-events-list" class="events-list-box" style="max-height: 380px;"></div>
       </div>
@@ -569,8 +574,8 @@
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=61"></script>
-  <script src="js/local-sync.js?v=61"></script>
+  <script src="js/pwa.js?v=62"></script>
+  <script src="js/local-sync.js?v=62"></script>
   <script>
     const hubClient = new StageTimerClient({
       role: 'viewer',
@@ -587,6 +592,7 @@
     const $portalMasterBar = document.getElementById('portal-master-bar');
     const $portalEventsList = document.getElementById('portal-events-list');
     const $portalBtnCreateEvent = document.getElementById('portal-btn-create-event');
+    const $portalBtnQuickCreate = document.getElementById('portal-btn-quick-create');
     const $portalBtnClearAll = document.getElementById('portal-btn-clear-all');
     const $portalLinkMasterPanel = document.getElementById('portal-link-master-panel');
     const $portalBtnMasterLogout = document.getElementById('portal-btn-master-logout');
@@ -1077,6 +1083,10 @@
         localStorage.setItem('stagetimer_auth_unlocked', 'true');
         if ($masterModal) $masterModal.style.display = 'none';
         renderView();
+        if (window._openCreateAfterMaster) {
+          window._openCreateAfterMaster = false;
+          if ($portalBtnCreateEvent) $portalBtnCreateEvent.click();
+        }
       } else {
         if ($masterModalError) $masterModalError.style.display = 'block';
         if ($masterModalInput) {
@@ -1159,6 +1169,17 @@
         if ($createGeneratedPin) $createGeneratedPin.textContent = hubClient.generateUniquePin();
         if ($createModal) $createModal.style.display = 'flex';
         setTimeout(() => { if ($createTitle) $createTitle.focus(); }, 100);
+      });
+    }
+
+    if ($portalBtnQuickCreate) {
+      $portalBtnQuickCreate.addEventListener('click', () => {
+        if (isMasterActive) {
+          if ($portalBtnCreateEvent) $portalBtnCreateEvent.click();
+        } else {
+          window._openCreateAfterMaster = true;
+          openMasterClockAction();
+        }
       });
     }
 

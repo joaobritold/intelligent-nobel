@@ -650,6 +650,9 @@
             <a href="lineup.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm" title="Abrir lista de horários">
               📋 Lista
             </a>
+            <button type="button" class="btn btn-sm" data-add-substage="${escapeHtml(ev.code)}" style="background: rgba(0, 184, 148, 0.18); border-color: #00b894; color: #55efc4; font-weight: 700;" title="Adicionar um novo palco a este evento">
+              ➕ + Palco
+            </button>
             <button type="button" class="btn btn-sm" data-rename-stage="${escapeHtml(ev.code)}" title="Renomear este palco">
               ✏️
             </button>
@@ -657,9 +660,9 @@
               🗑️ Apagar
             </button>
           </div>
-          ${Array.isArray(ev.stages) && ev.stages.length > 1 ? `
+          ${Array.isArray(ev.stages) && ev.stages.length > 0 ? `
             <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); align-items: center;">
-              <span style="font-size: 0.72rem; color: var(--text-muted);">Sub-Palcos deste evento:</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted);">Palcos deste evento:</span>
               ${ev.stages.map(st => `
                 <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 2px 6px;">
                   <strong style="font-size: 0.75rem; color: #55efc4;">🎪 ${escapeHtml(st.name || st.code)}</strong>
@@ -680,6 +683,8 @@
     renderEventsManager();
     renderDevicesList();
     renderMultiview();
+    renderMasterEventSelector();
+    updateMasterNavLinks();
   });
 
   if ($eventsList) {
@@ -692,6 +697,8 @@
           stagesStateMap.delete(code);
           renderEventsManager();
           renderMultiview();
+          renderMasterEventSelector();
+          updateMasterNavLinks();
         }
         return;
       }
@@ -705,36 +712,58 @@
           masterClient.renameEvent(code, newTitle.trim());
           renderEventsManager();
           renderMultiview();
+          renderMasterEventSelector();
+          updateMasterNavLinks();
         }
+        return;
+      }
+
+      const addStageBtn = e.target.closest('[data-add-substage]');
+      if (addStageBtn) {
+        const code = addStageBtn.dataset.addSubstage;
+        const currentEv = masterClient.getEventsList().find(item => item.code === code);
+        const nextIdx = (currentEv?.stages?.length || 1) + 1;
+        const stageName = prompt(`Nome do novo palco para "${currentEv?.title || code}" (ex: Sunset, VIP, Palco ${nextIdx}):`, `Palco ${nextIdx}`);
+        if (stageName === null) return;
+        try {
+          masterClient.addStageToEvent(code, stageName);
+          renderEventsManager();
+          renderMultiview();
+          renderMasterEventSelector();
+          updateMasterNavLinks();
+        } catch (err) {
+          alert(err.message || 'Erro ao adicionar palco.');
+        }
+        return;
       }
     });
   }
 
   if ($createStageBtn) {
     $createStageBtn.addEventListener('click', () => {
-      let name = $newStageInput ? $newStageInput.value.trim() : '';
+      const name = ($newStageInput ? $newStageInput.value : '').trim();
       if (!name) {
-        const prompted = prompt('Nome do novo evento (ex: Festival Rock 2026, Gala IPCA):', '');
-        if (prompted === null) return;
-        name = prompted.trim() || `Evento ${masterClient.getEventsList().length + 1}`;
+        alert('Por favor introduza o nome do evento (ex: Festival Rock, Gala IPCA...).');
+        if ($newStageInput) $newStageInput.focus();
+        return;
       }
-      const stagesPrompt = prompt('Quantos palcos tem este evento? (1 por defeito):', '1');
-      if (stagesPrompt === null) return;
-      const stagesCount = Math.max(1, Math.min(20, parseInt(stagesPrompt, 10) || 1));
+      const stagesSelect = document.getElementById('master-new-stages-count');
+      const stagesCount = Math.max(1, Math.min(20, parseInt(stagesSelect ? stagesSelect.value : '1', 10) || 1));
       try {
         const created = masterClient.createEventWithStages({
           title: name,
           stagesCount,
           masterPass: '1379brito'
         });
-        alert(`✅ Evento "${created.title}" criado com sucesso!\n🔑 PIN atribuído à equipa: ${created.pin}\n🎪 Palcos: ${created.stagesCount}`);
+        if ($newStageInput) $newStageInput.value = '';
+        renderEventsManager();
+        renderMultiview();
+        renderMasterEventSelector();
         updateMasterNavLinks();
+        alert(`✅ Evento "${created.title}" criado com sucesso!\n🎪 Palcos: ${created.stagesCount}\n🔑 PIN atribuído à equipa: ${created.pin}`);
       } catch (err) {
         alert(err.message || 'Erro ao criar evento.');
       }
-      if ($newStageInput) $newStageInput.value = '';
-      renderEventsManager();
-      renderMultiview();
     });
   }
 
