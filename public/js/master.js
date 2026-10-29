@@ -728,6 +728,7 @@
           masterPass: '1379brito'
         });
         alert(`✅ Evento "${created.title}" criado com sucesso!\n🔑 PIN atribuído à equipa: ${created.pin}\n🎪 Palcos: ${created.stagesCount}`);
+        updateMasterNavLinks();
       } catch (err) {
         alert(err.message || 'Erro ao criar evento.');
       }

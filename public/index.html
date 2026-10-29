@@ -56,7 +56,7 @@
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://stagetimer-pfp.netlify.app/">
   <title>StageTimer PFP — Timer de Palco & Lineup</title>
-  <link rel="stylesheet" href="css/common.css?v=60">
+  <link rel="stylesheet" href="css/common.css?v=61">
   <style>
     body {
       display: flex;
@@ -569,8 +569,8 @@
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=60"></script>
-  <script src="js/local-sync.js?v=60"></script>
+  <script src="js/pwa.js?v=61"></script>
+  <script src="js/local-sync.js?v=61"></script>
   <script>
     const hubClient = new StageTimerClient({
       role: 'viewer',
@@ -1206,6 +1206,13 @@
           if ($createModal) $createModal.style.display = 'none';
           currentUnlockedEventCode = newEvent.code;
           sessionStorage.setItem('stagetimer_unlocked_event', newEvent.code);
+          const targetStages = Array.isArray(newEvent.stages) && newEvent.stages.length > 0 ? newEvent.stages : [{ code: newEvent.code }];
+          selectedRoom = targetStages[0].code;
+          try {
+            localStorage.setItem('stagetimer_device_room', selectedRoom);
+            localStorage.setItem('stagetimer_last_room', selectedRoom);
+            sessionStorage.setItem('stagetimer_active_room', selectedRoom);
+          } catch (_) {}
           renderView();
         } catch (err) {
           alert(err.message || 'Erro ao criar evento.');

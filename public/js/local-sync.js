@@ -1032,8 +1032,6 @@ class UniversalSyncClient {
     if (!item) return null;
     const code = (item?.code || item?.id || 'PALCO1').toUpperCase().trim();
     if (!code) return null;
-    const BANNED_GHOSTS = new Set(['TESTE', 'RC26_PALCO1', 'RC26']);
-    if (BANNED_GHOSTS.has(code)) return null;
 
     const isDefault = code === 'PALCO1';
     let title = (item?.title || '').trim();
@@ -1105,13 +1103,12 @@ class UniversalSyncClient {
   getEventsList() {
     try {
       const deletedSet = this._getDeletedEvents();
-      const BANNED_GHOSTS = new Set(['TESTE', 'RC26_PALCO1', 'RC26']);
       const raw = localStorage.getItem(this.registryStorageKey);
       let list = raw ? JSON.parse(raw) : [];
       if (!Array.isArray(list)) list = [];
       list = list
         .map(e => this._normalizeRegistryItem(e))
-        .filter(e => e && !deletedSet.has(e.code) && !BANNED_GHOSTS.has(e.code));
+        .filter(e => e && !deletedSet.has(e.code));
 
       if (list.length === 0 && !deletedSet.has('PALCO1')) {
         const defaultItem = this._normalizeRegistryItem({
@@ -1142,10 +1139,9 @@ class UniversalSyncClient {
 
   _saveEventsList(list, publish = true, forceReplace = false) {
     const deletedSet = this._getDeletedEvents();
-    const BANNED_GHOSTS = new Set(['TESTE', 'RC26_PALCO1', 'RC26']);
     const normalized = (list || [])
       .map(e => this._normalizeRegistryItem(e))
-      .filter(e => e && !deletedSet.has(e.code) && !BANNED_GHOSTS.has(e.code));
+      .filter(e => e && !deletedSet.has(e.code));
 
     // Sort strictly before saving to localStorage and publishing
     normalized.sort((a, b) => {
@@ -1170,10 +1166,9 @@ class UniversalSyncClient {
   _mergeIncomingRegistry(incomingList, forceReplace = false) {
     if (!Array.isArray(incomingList)) return;
     const deletedSet = this._getDeletedEvents();
-    const BANNED_GHOSTS = new Set(['TESTE', 'RC26_PALCO1', 'RC26']);
 
     const validIncoming = incomingList
-      .filter(item => item && !deletedSet.has((item.code || item.id || '').toUpperCase()) && !BANNED_GHOSTS.has((item.code || item.id || '').toUpperCase()))
+      .filter(item => item && !deletedSet.has((item.code || item.id || '').toUpperCase()))
       .map(rawItem => this._normalizeRegistryItem(rawItem))
       .filter(Boolean);
 
@@ -1382,6 +1377,9 @@ class UniversalSyncClient {
       .substring(0, 14);
     if (!baseCode) baseCode = 'EVT-' + Math.floor(100 + Math.random() * 900);
 
+    // Unmark baseCode from deleted list if it was previously deleted
+    this._unmarkDeletedEvent(baseCode);
+
     const pin = this.generateUniquePin(baseCode);
     const count = Math.max(1, Math.min(20, parseInt(stagesCount, 10) || 1));
     const stages = [];
@@ -1429,7 +1427,7 @@ class UniversalSyncClient {
       });
     }
 
-    const eventItem = this._normalizeRegistryItem({
+    let eventItem = this._normalizeRegistryItem({
       id: baseCode,
       code: baseCode,
       title: cleanTitle,
@@ -1442,6 +1440,22 @@ class UniversalSyncClient {
       createdAt: Date.now(),
       updatedAt: Date.now()
     });
+
+    if (!eventItem) {
+      eventItem = {
+        id: baseCode,
+        code: baseCode,
+        title: cleanTitle,
+        pin,
+        stagesCount: count,
+        stages,
+        timersCount: 0,
+        artistCount: 0,
+        currentDay: 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+    }
 
     const list = this.getEventsList().filter(e => e.code !== baseCode);
     list.unshift(eventItem);
