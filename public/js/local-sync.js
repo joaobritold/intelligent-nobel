@@ -1589,6 +1589,9 @@ class UniversalSyncClient {
     })];
 
     this.sendDeviceCommand('ALL', { action: 'purge_clean_slate_v7' });
+    setTimeout(() => {
+      try { this.sendDeviceCommand('ALL', { action: 'reload' }); } catch (_) {}
+    }, 400);
 
     this._saveEventsList(defaultList, true, true);
     this._state = this._createDefaultRoom(freshCode);
