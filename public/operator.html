@@ -10,8 +10,8 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <title>StageTimer — Modo Operador (Mobile)</title>
-  <link rel="stylesheet" href="css/common.css?v=33">
-  <link rel="stylesheet" href="css/operator.css?v=33">
+  <link rel="stylesheet" href="css/common.css?v=34">
+  <link rel="stylesheet" href="css/operator.css?v=34">
 </head>
 <body>
   <div class="op-app">
@@ -133,7 +133,7 @@
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
         <input id="op-artist-starttime" class="input input-mono" style="width: 100%; font-size: 16px !important; text-align: center; border-radius: 10px;" placeholder="🕒 Entrada (23:00)" title="Horário de Entrada">
-        <input id="op-artist-duration" class="input input-mono" style="width: 100%; font-size: 16px !important; text-align: center; border-radius: 10px;" value="30:00" placeholder="⏱ Duração (30:00)" title="Duração">
+        <input id="op-artist-duration" class="input input-mono" style="width: 100%; font-size: 16px !important; text-align: center; border-radius: 10px;" value="30:00" placeholder="⏱️ Duração (ex: 60, 1.3)" title="Duração (ex: 60 = 60m, 1.3 = 1h30m, 45, 1:30)">
       </div>
       <div class="op-msg-row">
         <input id="op-artist-notes" class="input op-msg-input" placeholder="📝 Notas para este artista (opcional)...">
@@ -172,14 +172,14 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=33"></script>
+  <script src="js/schedule-importer.js?v=34"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=33"></script>
+  <script src="js/auth.js?v=34"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=33"></script>
-  <script src="js/local-sync.js?v=33"></script>
-  <script src="js/operator.js?v=33"></script>
+  <script src="js/pwa.js?v=34"></script>
+  <script src="js/local-sync.js?v=34"></script>
+  <script src="js/operator.js?v=34"></script>
 </body>
 </html>

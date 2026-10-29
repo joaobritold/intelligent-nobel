@@ -194,24 +194,53 @@ function getTimerElapsed(timer) {
 }
 
 function parseTimeInput(str) {
-  str = (str || '').trim();
+  str = (str || '').trim().toLowerCase();
+  if (!str) return 1800000;
+
+  // 1. Colon format: HH:MM:SS or MM:SS or H:MM (e.g. 1:30 = 1h30m, 45:00 = 45m)
   const colonMatch = str.match(/^(\d+):(\d{1,2})(?::(\d{1,2}))?$/);
   if (colonMatch) {
     if (colonMatch[3] !== undefined) {
-      return (parseInt(colonMatch[1]) * 3600 + parseInt(colonMatch[2]) * 60 + parseInt(colonMatch[3])) * 1000;
+      // H:MM:SS
+      return (parseInt(colonMatch[1], 10) * 3600 + parseInt(colonMatch[2], 10) * 60 + parseInt(colonMatch[3], 10)) * 1000;
     }
-    return (parseInt(colonMatch[1]) * 60 + parseInt(colonMatch[2])) * 1000;
+    const part1 = parseInt(colonMatch[1], 10);
+    const part2 = parseInt(colonMatch[2], 10);
+    if (part1 <= 12) {
+      return (part1 * 3600 + part2 * 60) * 1000;
+    }
+    return (part1 * 60 + part2) * 1000;
   }
+
+  // 2. Shorthand with dot or comma: "1.3" or "1,3" -> 1h30m, "1.45" -> 1h45m, "0.3" -> 30m, "2.0" -> 2h
+  const dotMatch = str.match(/^(\d+)[.,](\d{1,2})$/);
+  if (dotMatch) {
+    const hours = parseInt(dotMatch[1], 10);
+    const minRaw = dotMatch[2];
+    const mins = minRaw.length === 1 ? parseInt(minRaw, 10) * 10 : parseInt(minRaw, 10);
+    return (hours * 3600 + mins * 60) * 1000;
+  }
+
+  // 3. Plain integer: ALWAYS minutes in stage/festival environment (e.g. 60 = 60m, 45 = 45m, 90 = 90m, 5 = 5m)
   if (/^\d+$/.test(str)) {
-    return parseInt(str) * 60000; // Plain number in mobile operator = minutes
+    return parseInt(str, 10) * 60000;
   }
+
+  // 4. "1h30", "1h30m", "1h", "45m", "30s"
+  const hmMatch = str.match(/^(\d+)\s*h\s*(\d{1,2})?(?:\s*m)?$/i);
+  if (hmMatch) {
+    const hours = parseInt(hmMatch[1], 10);
+    const mins = hmMatch[2] ? parseInt(hmMatch[2], 10) : 0;
+    return (hours * 3600 + mins * 60) * 1000;
+  }
+
   let total = 0;
-  const hMatch = str.match(/(\d+)\s*h/i);
-  const mMatch = str.match(/(\d+)\s*m/i);
-  const sMatch = str.match(/(\d+)\s*s/i);
-  if (hMatch) total += parseInt(hMatch[1]) * 3600000;
-  if (mMatch) total += parseInt(mMatch[1]) * 60000;
-  if (sMatch) total += parseInt(sMatch[1]) * 1000;
+  const hMatch = str.match(/(\d+)\s*h/);
+  const mMatch = str.match(/(\d+)\s*m/);
+  const sMatch = str.match(/(\d+)\s*s/);
+  if (hMatch) total += parseInt(hMatch[1], 10) * 3600000;
+  if (mMatch) total += parseInt(mMatch[1], 10) * 60000;
+  if (sMatch) total += parseInt(sMatch[1], 10) * 1000;
   return total || 1800000;
 }
 
