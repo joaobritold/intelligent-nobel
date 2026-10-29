@@ -1075,8 +1075,9 @@ class UniversalSyncClient {
     }
   }
 
-  _syncEventInRegistry() {
+  _syncEventInRegistry(publish = true) {
     if (!this._state) return;
+    if (this.role === 'viewer') return; // Viewers never publish or alter the registry
     const deletedSet = this._getDeletedEvents();
     if (deletedSet.has(this.cleanRoom)) return;
 
@@ -1112,8 +1113,18 @@ class UniversalSyncClient {
       ? updatedStages.reduce((sum, s) => sum + (s.timersCount || 0), 0)
       : count;
 
+    const titleChanged = this._state.name && existing.title !== this._state.name;
+    const countChanged = existing.timersCount !== totalCount;
+    const dayChanged = (this._state.currentDay || 1) !== (existing.currentDay || 1);
+
+    // If nothing structural changed, do NOT touch or re-publish registry to avoid event swapping feedback loops
+    if (!titleChanged && !countChanged && !dayChanged) {
+      return;
+    }
+
     const entry = this._normalizeRegistryItem({
       ...existing,
+      title: titleChanged ? this._state.name : existing.title,
       timersCount: totalCount,
       artistCount: totalCount,
       stages: updatedStages,
@@ -1122,7 +1133,7 @@ class UniversalSyncClient {
       updatedAt: Date.now()
     });
     list[idx] = entry;
-    this._saveEventsList(list, true);
+    this._saveEventsList(list, publish);
   }
 
   createNewCleanEvent(titleInput) {
@@ -1526,8 +1537,9 @@ class UniversalSyncClient {
     // Prevent storage circular feedback ping-pong between local tabs
     if (fromCloud) {
       this._saveLocal();
+    } else {
+      this._syncEventInRegistry(false);
     }
-    this._syncEventInRegistry();
 
     this._emit('room-state', this._state);
   }

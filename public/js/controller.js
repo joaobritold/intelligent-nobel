@@ -917,10 +917,10 @@ if ($clearEventBtn) {
   });
 }
 
-// Global controls
-$globalStart.addEventListener('click', () => client.globalAction('start'));
-$globalPause.addEventListener('click', () => client.globalAction('pause'));
-$globalReset.addEventListener('click', () => client.globalAction('reset'));
+// Global controls (removed from UI, guarded for backwards safety)
+if ($globalStart) $globalStart.addEventListener('click', () => client.globalAction('start'));
+if ($globalPause) $globalPause.addEventListener('click', () => client.globalAction('pause'));
+if ($globalReset) $globalReset.addEventListener('click', () => client.globalAction('reset'));
 
 // Message controls (Info vs Urgent)
 if ($sendInfoBtn) {

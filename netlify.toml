@@ -1,2 +1,8 @@
 [build]
   publish = "public"
+
+[[redirects]]
+  from = "/public/*"
+  to = "/:splat"
+  status = 301
+  force = true
