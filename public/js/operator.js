@@ -166,7 +166,7 @@ const $btnPlus5m = document.getElementById('op-btn-plus5m');
 const $msgInput = document.getElementById('op-msg-input');
 const $msgInfo = document.getElementById('op-msg-info');
 const $msgUrgent = document.getElementById('op-msg-urgent');
-const $msgClear = document.getElementById('op-msg-clear');
+const $msgToggle = document.getElementById('op-msg-toggle') || document.getElementById('op-msg-clear');
 const $msgStatus = document.getElementById('op-msg-status');
 const $queueList = document.getElementById('op-queue-list');
 
@@ -394,12 +394,31 @@ function render() {
     }
   }
 
-  // Message status
-  if (state.message?.visible && state.message?.text) {
+  // Message status & toggle visibility
+  const isMsgVisible = !!(state.message?.visible && state.message?.text);
+  if (isMsgVisible) {
     const label = state.message.level === 'urgent' ? '🔴 URGENTE' : '💬 INFO';
     $msgStatus.textContent = `${label}: "${state.message.text}"`;
+    if ($msgToggle) {
+      $msgToggle.innerHTML = '🙈 Ocultar';
+      $msgToggle.style.background = '#d63031';
+      $msgToggle.style.borderColor = '#d63031';
+      $msgToggle.style.color = '#fff';
+      $msgToggle.title = 'A mensagem está visível no palco. Toque para ocultar.';
+    }
   } else {
     $msgStatus.textContent = '';
+    if ($msgToggle) {
+      $msgToggle.innerHTML = '👁️ Mostrar';
+      $msgToggle.style.background = 'rgba(0, 184, 148, 0.2)';
+      $msgToggle.style.borderColor = '#00b894';
+      $msgToggle.style.color = '#55efc4';
+      $msgToggle.title = 'A mensagem está oculta. Toque para mostrar no palco.';
+    }
+  }
+
+  if ($msgInput && !$msgInput.value && state.message?.text && document.activeElement !== $msgInput) {
+    $msgInput.value = state.message.text;
   }
 
   // Render queue only when structure changes to keep touch targets stable
@@ -521,10 +540,25 @@ if ($msgUrgent) {
   });
 }
 
-$msgClear.addEventListener('click', () => {
-  $msgInput.value = '';
-  client.clearMessage();
-});
+if ($msgToggle) {
+  $msgToggle.addEventListener('click', () => {
+    const isCurrentlyVisible = !!(state?.message?.visible && state?.message?.text);
+    const inputTxt = $msgInput ? $msgInput.value.trim() : '';
+    const currentText = inputTxt || (state?.message?.text || '').trim();
+
+    if (isCurrentlyVisible) {
+      // Ocultar mensagem do palco mantendo o texto guardado
+      client.sendMessage(currentText, false, state?.message?.level || 'info');
+    } else {
+      // Mostrar mensagem no palco
+      if (!currentText) {
+        if ($msgInput) $msgInput.focus();
+        return;
+      }
+      client.sendMessage(currentText, true, state?.message?.level || 'info');
+    }
+  });
+}
 
 document.querySelectorAll('.op-preset-chip').forEach(btn => {
   btn.addEventListener('click', () => {

@@ -352,12 +352,28 @@ class UniversalSyncClient {
 
     if (msg.action === 'delete_device') {
       try {
-        // Clear all auth tokens to force immediate LOGOUT if in controller, operator, or master
+        // Revoke all credentials completely: forced logout, clear tokens, events, rooms
         try {
-          localStorage.removeItem('stagetimer_auth_unlocked');
-          sessionStorage.removeItem('stagetimer_auth_unlocked');
+          sessionStorage.clear();
+          localStorage.removeItem('stagetimer_master_active');
           localStorage.removeItem('stagetimer_master_auth_v12');
-          sessionStorage.removeItem('stagetimer_master_auth_v12');
+          localStorage.removeItem('stagetimer_auth_unlocked');
+          localStorage.removeItem('stagetimer_unlocked_event');
+          localStorage.removeItem('stagetimer_device_room');
+          localStorage.removeItem('stagetimer_last_room');
+          localStorage.removeItem('stagetimer_auth_admin');
+          localStorage.removeItem('stagetimer_auth_operator');
+          const allKeys = Object.keys(localStorage);
+          for (let i = 0; i < allKeys.length; i++) {
+            const k = allKeys[i];
+            if (
+              k.startsWith('stagetimer_auth') ||
+              k.startsWith('stagetimer_master') ||
+              k.startsWith('stagetimer_unlocked')
+            ) {
+              localStorage.removeItem(k);
+            }
+          }
         } catch (e) {}
 
         // Broadcast removal notice to peers
@@ -371,10 +387,10 @@ class UniversalSyncClient {
           } catch (e) {}
         }
 
-        // Navigate immediately to initial menu (desautenticado)
-        window.location.replace(`index.html?disconnected=1&_ts=${Date.now()}`);
+        // Navigate immediately to initial portal menu (all credentials completely revoked)
+        window.location.replace(`index.html?revoked=1&_ts=${Date.now()}`);
       } catch (e) {
-        window.location.replace('index.html');
+        window.location.replace('index.html?revoked=1');
       }
       return;
     }
@@ -652,8 +668,36 @@ class UniversalSyncClient {
     this.purgedDevicesSet.add(deviceUuid);
     this.globalDevicesMap.delete(deviceUuid);
 
-    // Send remote command to tell device to log out and go to index
-    this.sendDeviceCommand(deviceUuid, { action: 'delete_device', logout: true });
+    // If deleting this own device screen locally
+    if (deviceUuid === this.deviceUuid) {
+      try {
+        sessionStorage.clear();
+        localStorage.removeItem('stagetimer_master_active');
+        localStorage.removeItem('stagetimer_master_auth_v12');
+        localStorage.removeItem('stagetimer_auth_unlocked');
+        localStorage.removeItem('stagetimer_unlocked_event');
+        localStorage.removeItem('stagetimer_device_room');
+        localStorage.removeItem('stagetimer_last_room');
+        localStorage.removeItem('stagetimer_auth_admin');
+        localStorage.removeItem('stagetimer_auth_operator');
+        const allKeys = Object.keys(localStorage);
+        for (let i = 0; i < allKeys.length; i++) {
+          const k = allKeys[i];
+          if (
+            k.startsWith('stagetimer_auth') ||
+            k.startsWith('stagetimer_master') ||
+            k.startsWith('stagetimer_unlocked')
+          ) {
+            localStorage.removeItem(k);
+          }
+        }
+      } catch (e) {}
+      window.location.replace(`index.html?revoked=1&_ts=${Date.now()}`);
+      return;
+    }
+
+    // Send remote command to tell device to revoke all credentials and return to portal
+    this.sendDeviceCommand(deviceUuid, { action: 'delete_device', logout: true, revoke: true });
 
     if (this.mqttClient && this.mqttClient.connected) {
       try {
@@ -672,9 +716,11 @@ class UniversalSyncClient {
     const now = Date.now();
     for (const [uuid, dev] of this.globalDevicesMap.entries()) {
       if (uuid !== this.deviceUuid && (now - (dev.lastSeen || 0) > maxIdleMs)) {
-        this.deleteDevice(uuid);
+        this.purgedDevicesSet.add(uuid);
+        this.globalDevicesMap.delete(uuid);
       }
     }
+    this._emit('devices-update', this.getOnlineDevices());
   }
 
   sendDeviceCommand(targetDeviceUuid, command) {

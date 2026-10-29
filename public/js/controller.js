@@ -36,7 +36,7 @@ const $previewMessage = document.getElementById('preview-message');
 const $messageInput = document.getElementById('message-input');
 const $sendInfoBtn = document.getElementById('send-info-btn');
 const $sendUrgentBtn = document.getElementById('send-urgent-btn');
-const $clearMsgBtn = document.getElementById('clear-msg-btn');
+const $toggleMsgBtn = document.getElementById('toggle-msg-btn') || document.getElementById('clear-msg-btn');
 const $viewerLink = document.getElementById('viewer-link');
 const $controllerLink = document.getElementById('controller-link');
 const $globalStart = document.getElementById('global-start');
@@ -839,12 +839,34 @@ function renderPreview() {
 function renderMessageState() {
   if (!state) return;
 
-  if (state.message.visible && state.message.text) {
+  const isVisible = !!(state.message?.visible && state.message?.text);
+
+  if (isVisible) {
     $previewMessage.textContent = state.message.text;
     $previewMessage.style.background = state.message.level === 'urgent' ? 'rgba(145, 20, 28, 0.95)' : 'rgba(15, 23, 42, 0.9)';
     $previewMessage.classList.add('visible');
   } else {
     $previewMessage.classList.remove('visible');
+  }
+
+  if ($toggleMsgBtn) {
+    if (isVisible) {
+      $toggleMsgBtn.innerHTML = '🙈 Ocultar';
+      $toggleMsgBtn.style.background = '#d63031';
+      $toggleMsgBtn.style.borderColor = '#d63031';
+      $toggleMsgBtn.style.color = '#fff';
+      $toggleMsgBtn.title = 'A mensagem está visível no palco. Clique para ocultar.';
+    } else {
+      $toggleMsgBtn.innerHTML = '👁️ Mostrar';
+      $toggleMsgBtn.style.background = 'rgba(0, 184, 148, 0.2)';
+      $toggleMsgBtn.style.borderColor = '#00b894';
+      $toggleMsgBtn.style.color = '#55efc4';
+      $toggleMsgBtn.title = 'A mensagem está oculta. Clique para mostrar no palco.';
+    }
+  }
+
+  if ($messageInput && !$messageInput.value && state.message?.text && document.activeElement !== $messageInput) {
+    $messageInput.value = state.message.text;
   }
 }
 
@@ -996,25 +1018,51 @@ if ($globalStart) $globalStart.addEventListener('click', () => client.globalActi
 if ($globalPause) $globalPause.addEventListener('click', () => client.globalAction('pause'));
 if ($globalReset) $globalReset.addEventListener('click', () => client.globalAction('reset'));
 
-// Message controls (Info vs Urgent)
+// Message controls (Info vs Urgent vs Toggle Visibility)
 if ($sendInfoBtn) {
   $sendInfoBtn.addEventListener('click', () => {
-    const text = $messageInput.value.trim();
-    if (text) client.sendMessage(text, true, 'info');
+    const text = $messageInput ? $messageInput.value.trim() : '';
+    if (text) {
+      client.sendMessage(text, true, 'info');
+    } else if ($messageInput) {
+      $messageInput.focus();
+    }
   });
 }
 
 if ($sendUrgentBtn) {
   $sendUrgentBtn.addEventListener('click', () => {
-    const text = $messageInput.value.trim();
-    if (text) client.sendMessage(text, true, 'urgent');
+    const text = $messageInput ? $messageInput.value.trim() : '';
+    if (text) {
+      client.sendMessage(text, true, 'urgent');
+    } else if ($messageInput) {
+      $messageInput.focus();
+    }
   });
 }
 
-$clearMsgBtn.addEventListener('click', () => {
-  $messageInput.value = '';
-  client.clearMessage();
-});
+if ($toggleMsgBtn) {
+  $toggleMsgBtn.addEventListener('click', () => {
+    const isCurrentlyVisible = !!(state?.message?.visible && state?.message?.text);
+    const inputTxt = $messageInput ? $messageInput.value.trim() : '';
+    const currentText = inputTxt || (state?.message?.text || '').trim();
+
+    if (isCurrentlyVisible) {
+      // Ocultar mensagem do palco sem apagar o texto guardado
+      client.sendMessage(currentText, false, state?.message?.level || 'info');
+      showToast('Mensagem ocultada do palco');
+    } else {
+      // Mostrar mensagem no palco
+      if (!currentText) {
+        if ($messageInput) $messageInput.focus();
+        showToast('Escreva uma mensagem primeiro');
+        return;
+      }
+      client.sendMessage(currentText, true, state?.message?.level || 'info');
+      showToast('Mensagem enviada para o palco');
+    }
+  });
+}
 
 // Send message on Ctrl+Enter (defaults to Info)
 $messageInput.addEventListener('keydown', (e) => {

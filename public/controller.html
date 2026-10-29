@@ -11,26 +11,28 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=39">
-  <link rel="stylesheet" href="css/controller.css?v=39">
+  <link rel="stylesheet" href="css/common.css?v=49">
+  <link rel="stylesheet" href="css/controller.css?v=49">
 </head>
 <body>
   <div class="app">
     <!-- Header -->
     <header class="header">
       <div class="header-left">
-        <div class="logo">
-          <span class="logo-icon">⏱️</span>
-          <span>StageTimer</span>
-        </div>
-        <div class="room-info" style="display: flex; align-items: center; gap: 8px;">
-          <span>🎪</span>
-          <span id="ctrl-stage-badge" style="font-size: 0.85rem; font-weight: 800; color: #55efc4; background: rgba(0, 184, 148, 0.15); border: 1px solid rgba(0, 184, 148, 0.35); padding: 4px 10px; border-radius: 8px;">Palco</span>
-          <select id="ctrl-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco (Modo Master)"></select>
-          <span id="room-id" class="room-id" title="Código desta sessão (clique para copiar)" style="display: none;">------</span>
+        <div class="header-brand-row">
+          <div class="logo">
+            <span class="logo-icon">⏱️</span>
+            <span>StageTimer</span>
+          </div>
+          <div class="room-info" style="display: flex; align-items: center; gap: 8px;">
+            <span>🎪</span>
+            <span id="ctrl-stage-badge" style="font-size: 0.85rem; font-weight: 800; color: #55efc4; background: rgba(0, 184, 148, 0.15); border: 1px solid rgba(0, 184, 148, 0.35); padding: 4px 10px; border-radius: 8px;">Palco</span>
+            <select id="ctrl-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco (Modo Master)"></select>
+            <span id="room-id" class="room-id" title="Código desta sessão (clique para copiar)" style="display: none;">------</span>
+          </div>
         </div>
         <!-- Modes Navigation -->
-        <div style="display: flex; gap: 6px; margin-left: 8px; flex-wrap: wrap;">
+        <div class="top-nav-modes">
           <a id="top-nav-hub" href="index.html" class="btn btn-sm" style="text-decoration: none;">🏠 Início</a>
           <a id="top-nav-controller" href="controller.html" class="btn btn-primary btn-sm" style="text-decoration: none;">🎛️ Configurador</a>
           <a id="top-nav-operator" href="operator.html" class="btn btn-sm" style="text-decoration: none;">📱 Modo Operador</a>
@@ -59,24 +61,28 @@
     <div class="main">
       <!-- Left Panel: Timers -->
       <section class="timer-panel">
-        <div class="panel-header" style="flex-wrap: wrap; gap: 10px;">
-          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+        <div class="panel-header">
+          <div class="panel-header-title-row">
             <div class="panel-title">Timers Rundown</div>
-            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(0, 184, 148, 0.14); border: 1.5px solid rgba(0, 184, 148, 0.5); padding: 5px 14px; border-radius: 10px;">
-              <span style="font-size: 0.75rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.06em;">🏁 Fim do Evento:</span>
-              <strong id="ctrl-event-end" style="font-family: var(--font-mono); font-size: 1.15rem; color: #55efc4;">--:--</strong>
+            <div class="event-end-badge">
+              <span class="end-label">🏁 Fim do Evento:</span>
+              <strong id="ctrl-event-end">--:--</strong>
             </div>
           </div>
-          <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-            <div id="ctrl-stage-pills" style="display: none; gap: 4px; align-items: center; flex-wrap: wrap;"></div>
-            <div id="ctrl-day-tabs" style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;"></div>
-            <div style="display: inline-flex; gap: 4px; align-items: center;">
-              <button id="ctrl-nav-prev" type="button" class="btn btn-sm" title="Passar para o Artista Anterior" style="font-weight: 600;">⏮ Anterior</button>
-              <button id="ctrl-nav-next" type="button" class="btn btn-sm" title="Passar para o Próximo Artista" style="font-weight: 600;">Próximo ⏭</button>
+          <div class="panel-header-nav-row">
+            <div id="ctrl-stage-pills" class="stage-pills-bar"></div>
+            <div id="ctrl-day-tabs" class="day-tabs-bar"></div>
+          </div>
+          <div class="panel-header-actions-row">
+            <div class="panel-header-btn-group nav-group">
+              <button id="ctrl-nav-prev" type="button" class="btn btn-sm" title="Passar para o Artista Anterior">⏮ Anterior</button>
+              <button id="ctrl-nav-next" type="button" class="btn btn-sm" title="Passar para o Próximo Artista">Próximo ⏭</button>
             </div>
-            <button id="open-import-btn" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff;">📂 Importar</button>
-            <button id="clear-event-btn" class="btn btn-sm btn-danger" title="Apagar todos os artistas do dia atual">🧹 Limpar Dia</button>
-            <button id="add-timer-btn" class="btn btn-primary btn-sm">+ Add Timer</button>
+            <div class="panel-header-btn-group util-group">
+              <button id="open-import-btn" class="btn btn-sm btn-import-outline">📂 Importar</button>
+              <button id="clear-event-btn" class="btn btn-sm btn-danger" title="Apagar todos os artistas do dia atual">🧹 Limpar</button>
+            </div>
+            <button id="add-timer-btn" class="btn btn-primary btn-sm btn-add-main">+ Add Timer</button>
           </div>
         </div>
 
@@ -119,9 +125,9 @@
               placeholder="Escreva uma mensagem para o palco..."
             ></textarea>
             <div class="message-actions" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px;">
-              <button id="send-info-btn" class="btn btn-primary" title="Mensagem Informativa (Leve)">💬 Informativo</button>
+              <button id="send-info-btn" class="btn btn-primary" title="Mensagem Informativa (Leve)">💬 Info</button>
               <button id="send-urgent-btn" class="btn" style="background: #d63031; border-color: #d63031; color: #fff;" title="Mensagem Urgente (Destaque)">🔴 Urgente</button>
-              <button id="clear-msg-btn" class="btn" title="Limpar mensagem">✕</button>
+              <button id="toggle-msg-btn" class="btn" style="min-width: 96px; font-weight: 700; white-space: nowrap;" title="Mostrar ou ocultar mensagem no ecrã de palco">👁️ Mostrar</button>
             </div>
           </div>
         </div>
@@ -276,15 +282,15 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=39"></script>
+  <script src="js/schedule-importer.js?v=49"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=39"></script>
+  <script src="js/auth.js?v=49"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=39"></script>
-  <script src="js/local-sync.js?v=39"></script>
-  <script src="js/controller.js?v=39"></script>
+  <script src="js/pwa.js?v=49"></script>
+  <script src="js/local-sync.js?v=49"></script>
+  <script src="js/controller.js?v=49"></script>
 </body>
 </html>

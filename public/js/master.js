@@ -394,8 +394,8 @@
       if (cmd === 'delete_device') {
         const isCurrentSelf = uuid === masterClient.deviceUuid;
         const confirmMsg = isCurrentSelf
-          ? 'Tem a certeza que deseja eliminar o seu próprio ecrã? A sua sessão do Painel Master será terminada e voltará ao menu inicial.'
-          : 'Eliminar este dispositivo da rede?\nSe estiver no Modo Controlador ou Operador, a sua sessão será terminada imediatamente (logout forçado).';
+          ? 'Tem a certeza que deseja eliminar o seu próprio ecrã? A sua sessão do Painel Master será terminada e perderá todas as credenciais de acesso.'
+          : 'Eliminar este dispositivo da rede?\nO dispositivo perderá todas as credenciais de acesso (tokens, eventos e palcos) e terá de preencher tudo de novo na página inicial.';
 
         if (confirm(confirmMsg)) {
           if (navigator.vibrate) { try { navigator.vibrate(50); } catch (e) {} }
