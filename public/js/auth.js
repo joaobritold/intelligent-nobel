@@ -8,11 +8,31 @@
   const AUTH_KEY = isMaster ? 'stagetimer_master_auth_v12' : 'stagetimer_auth_unlocked';
   const VALID_PASSWORDS = isMaster ? ['1379brito', '1379', 'brito'] : ['1379', 'brito', '1379brito'];
 
+  // Master mode session check (persists across tabs and navigation until explicit logout)
+  const isMasterSession =
+    sessionStorage.getItem('stagetimer_master_active') === '1' ||
+    localStorage.getItem('stagetimer_master_active') === '1' ||
+    sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
+    localStorage.getItem('stagetimer_master_auth_v12') === 'true';
+
+  // If Master is active, unlock ALL pages immediately without ever asking for passwords!
   if (
+    isMasterSession ||
     sessionStorage.getItem(AUTH_KEY) === 'true' ||
     localStorage.getItem(AUTH_KEY) === 'true' ||
-    (isMaster && sessionStorage.getItem('stagetimer_master_active') === '1')
+    sessionStorage.getItem('stagetimer_auth_unlocked') === 'true' ||
+    localStorage.getItem('stagetimer_auth_unlocked') === 'true'
   ) {
+    if (isMasterSession) {
+      try {
+        sessionStorage.setItem('stagetimer_master_active', '1');
+        localStorage.setItem('stagetimer_master_active', '1');
+        sessionStorage.setItem('stagetimer_master_auth_v12', 'true');
+        localStorage.setItem('stagetimer_master_auth_v12', 'true');
+        sessionStorage.setItem('stagetimer_auth_unlocked', 'true');
+        localStorage.setItem('stagetimer_auth_unlocked', 'true');
+      } catch (_) {}
+    }
     return;
   }
 
@@ -153,6 +173,14 @@
       if (VALID_PASSWORDS.includes(val)) {
         sessionStorage.setItem(AUTH_KEY, 'true');
         localStorage.setItem(AUTH_KEY, 'true');
+        sessionStorage.setItem('stagetimer_auth_unlocked', 'true');
+        localStorage.setItem('stagetimer_auth_unlocked', 'true');
+        if (val === '1379brito' || isMaster) {
+          sessionStorage.setItem('stagetimer_master_active', '1');
+          localStorage.setItem('stagetimer_master_active', '1');
+          sessionStorage.setItem('stagetimer_master_auth_v12', 'true');
+          localStorage.setItem('stagetimer_master_auth_v12', 'true');
+        }
         overlay.remove();
       } else {
         err.textContent = isMaster ? 'Password Master incorreta!' : 'Password incorreta!';

@@ -615,8 +615,24 @@
       } catch (_) {}
     }
 
-    let isMasterActive = sessionStorage.getItem('stagetimer_master_active') === '1';
-    let currentUnlockedEventCode = (sessionStorage.getItem('stagetimer_unlocked_event') || '').trim().toUpperCase();
+    let isMasterActive =
+      sessionStorage.getItem('stagetimer_master_active') === '1' ||
+      localStorage.getItem('stagetimer_master_active') === '1' ||
+      sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
+      localStorage.getItem('stagetimer_master_auth_v12') === 'true';
+
+    if (isMasterActive) {
+      try {
+        sessionStorage.setItem('stagetimer_master_active', '1');
+        localStorage.setItem('stagetimer_master_active', '1');
+        sessionStorage.setItem('stagetimer_master_auth_v12', 'true');
+        localStorage.setItem('stagetimer_master_auth_v12', 'true');
+        sessionStorage.setItem('stagetimer_auth_unlocked', 'true');
+        localStorage.setItem('stagetimer_auth_unlocked', 'true');
+      } catch (_) {}
+    }
+
+    let currentUnlockedEventCode = (sessionStorage.getItem('stagetimer_unlocked_event') || localStorage.getItem('stagetimer_unlocked_event') || '').trim().toUpperCase();
     let selectedRoom = '';
     let pendingPinEventCode = '';
 
@@ -951,8 +967,11 @@
       if (val === '1379brito' || val === '1379' || val === 'brito') {
         isMasterActive = true;
         sessionStorage.setItem('stagetimer_master_active', '1');
+        localStorage.setItem('stagetimer_master_active', '1');
         sessionStorage.setItem('stagetimer_master_auth_v12', 'true');
         localStorage.setItem('stagetimer_master_auth_v12', 'true');
+        sessionStorage.setItem('stagetimer_auth_unlocked', 'true');
+        localStorage.setItem('stagetimer_auth_unlocked', 'true');
         if ($masterModal) $masterModal.style.display = 'none';
         renderView();
       } else {
@@ -984,8 +1003,14 @@
     function performMasterLogout() {
       isMasterActive = false;
       sessionStorage.removeItem('stagetimer_master_active');
+      localStorage.removeItem('stagetimer_master_active');
       sessionStorage.removeItem('stagetimer_master_auth_v12');
       localStorage.removeItem('stagetimer_master_auth_v12');
+      sessionStorage.removeItem('stagetimer_auth_unlocked');
+      localStorage.removeItem('stagetimer_auth_unlocked');
+      currentUnlockedEventCode = '';
+      sessionStorage.removeItem('stagetimer_unlocked_event');
+      localStorage.removeItem('stagetimer_unlocked_event');
       if ($masterActiveModal) $masterActiveModal.style.display = 'none';
       renderView();
     }
