@@ -88,12 +88,12 @@
       };
     }
 
-    // 0.1 Teatro: Mesa DC (Diretora de Cena)
-    if (viewKey === 'dc' || path.includes('dc.html') || label.includes('diretora') || label.includes('mesa dc')) {
+    // 0.1 Teatro: Modo Jess (Diretora de Cena)
+    if (viewKey === 'dc' || path.includes('dc.html') || label.includes('jess') || label.includes('diretora') || label.includes('mesa dc')) {
       return {
         key: 'dc',
-        name: '📖 Mesa Diretora de Cena (DC)',
-        shortName: 'Mesa DC',
+        name: '📖 Modo Jess (DC)',
+        shortName: 'Modo Jess',
         badgeClass: 'view-dc'
       };
     }
@@ -729,8 +729,8 @@
 
           <div class="event-manage-btns">
             ${isTheatre ? `
-              <a href="dc.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" style="background: rgba(253, 203, 110, 0.2); border-color: #fdcb6e; color: #ffeaa7; font-weight: 700;" title="Abrir Mesa da Diretora de Cena (DC)">
-                📖 Mesa DC
+              <a href="dc.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" style="background: rgba(253, 203, 110, 0.2); border-color: #fdcb6e; color: #ffeaa7; font-weight: 700;" title="Abrir Modo Jess (Diretora de Cena)">
+                📖 Modo Jess
               </a>
               <a href="cue-station.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" style="background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4; font-weight: 700;" title="Abrir Posto Técnico (Cue Station)">
                 🚦 Posto Cues
@@ -770,7 +770,7 @@
                     ✏️ Renomear Palco
                   </button>
                   ${isTheatre ? `
-                    <a href="dc.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem; background: rgba(253, 203, 110, 0.2); border-color: #fdcb6e; color: #ffeaa7;" title="Abrir Mesa DC">📖</a>
+                    <a href="dc.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem; background: rgba(253, 203, 110, 0.2); border-color: #fdcb6e; color: #ffeaa7;" title="Abrir Modo Jess">📖</a>
                     <a href="cue-station.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem; background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4;" title="Abrir Posto Cues">🚦</a>
                   ` : `
                     <a href="controller.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Configurador">🎛️</a>

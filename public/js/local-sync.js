@@ -204,9 +204,9 @@ class UniversalSyncClient {
     else if (viewKey === 'lineup') roleLabel = 'Modo Lista';
     else if (viewKey === 'regies') {
       const st = typeof localStorage !== 'undefined' ? (localStorage.getItem('stagetimer_regie_station') || 'foh') : 'foh';
-      roleLabel = st === 'stage' ? 'Modo Régies (Palco)' : 'Modo Régies (FOH)';
+      roleLabel = st === 'tech' ? 'Modo Régies (Técnico)' : (st === 'stage' ? 'Modo Régies (Palco)' : 'Modo Régies (FOH)');
     }
-    else if (viewKey === 'dc') roleLabel = 'Mesa Diretora de Cena';
+    else if (viewKey === 'dc') roleLabel = 'Modo Jess (Diretora de Cena)';
     else if (viewKey === 'cue-station') {
       const dept = typeof localStorage !== 'undefined' ? (localStorage.getItem('stagetimer_cue_dept') || 'Geral') : 'Geral';
       roleLabel = `Posto Técnico (${dept})`;
@@ -1187,7 +1187,7 @@ class UniversalSyncClient {
         { id: 'chk_s_1', label: 'Baterias novas nos microfones emissores (Atores 1 e 2)', done: true, isOneOff: false },
         { id: 'chk_s_2', label: 'Teste de ganho e equalização nas caixas de boca de cena', done: true, isOneOff: false },
         { id: 'chk_s_3', label: 'Carregar e testar trilhas no software de playback', done: false, isOneOff: false },
-        { id: 'chk_s_4', label: 'Comunicação Intercom verificada com Mesa DC', done: false, isOneOff: false }
+        { id: 'chk_s_4', label: 'Comunicação Intercom verificada com Modo Jess', done: false, isOneOff: false }
       ],
       'Maquinaria': [
         { id: 'chk_m_1', label: 'Inspecionar cabos de aço e contrapesos das varas', done: true, isOneOff: false },

@@ -1,4 +1,4 @@
-// ─── StageTimer DC (Mesa da Diretora de Cena) ─────────────────────────
+// ─── StageTimer — Modo Jess (Diretora de Cena) ─────────────────────────
 
 const params = new URLSearchParams(window.location.search);
 const urlRoom = (params.get('room') || '').toUpperCase().trim();
@@ -1124,7 +1124,7 @@ function buildReportText() {
   const firedCount = th?.telemetry?.length || 0;
 
   let text = `======================================================\n`;
-  text += `🎭 RELATÓRIO DE RÉGIE — MESA DIRETORA DE CENA\n`;
+  text += `🎭 RELATÓRIO DE RÉGIE — MODO JESS\n`;
   text += `Sala / Palco: ${state?.name || roomId}  •  Data: ${showDate}\n`;
   text += `Duração de Espetáculo: ${duration}  •  Deixas Executadas: ${firedCount}\n`;
   text += `======================================================\n\n`;
@@ -1147,7 +1147,7 @@ function buildReportText() {
     text += `${d}: ${done}/${items.length} concluídas\n`;
   });
 
-  text += `\nGerado automaticamente via StageTimer PFP (Mesa DC).\n`;
+  text += `\nGerado automaticamente via StageTimer PFP (Modo Jess).\n`;
   return text;
 }
 
@@ -1170,7 +1170,7 @@ if ($btnDownloadReport) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Relatorio_Regie_DC_${roomId}_${Date.now()}.txt`;
+    a.download = `Relatorio_Regie_Jess_${roomId}_${Date.now()}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   });
