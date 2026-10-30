@@ -958,17 +958,27 @@ class UniversalSyncClient {
     const curDayKey = String(this._state.currentDay || 1);
     const targetKey = String(targetDay);
 
-    // Save current active day lineup
+    if (this._state.currentDay === targetDay) return;
+
+    // 1. Save current active day lineup in days map
     this._state.days[curDayKey] = [...(this._state.timers || [])];
 
-    // Initialize target day if needed
+    // 2. Initialize target day if needed
     if (!Array.isArray(this._state.days[targetKey])) {
       this._state.days[targetKey] = [];
     }
 
+    // 3. Switch viewed day
     this._state.currentDay = targetDay;
     this._state.timers = [...this._state.days[targetKey]];
-    this._state.activeTimerId = this._state.timers.length > 0 ? this._state.timers[0].id : null;
+
+    // 4. CRITICAL FIX: NEVER hijack, stop, or change the active clock on stage!
+    // The active / running timer stays untouched!
+    // Only if there is NO activeTimerId at all anywhere, set it to the first timer of this day
+    const currentActive = UniversalSyncClient.getActiveTimer(this._state);
+    if (!currentActive && this._state.timers.length > 0) {
+      this._state.activeTimerId = this._state.timers[0].id;
+    }
 
     this._commitStateChange(true);
   }
@@ -1829,6 +1839,22 @@ class UniversalSyncClient {
       }
     });
 
+    // Also bake liveElapsed for any running timer in other days!
+    if (this._state.days && typeof this._state.days === 'object') {
+      Object.values(this._state.days).forEach(dayList => {
+        if (Array.isArray(dayList)) {
+          dayList.forEach(t => {
+            if (t.state === 'running') {
+              const anchor = t.serverStartedAt || t.startedAt || trueNow;
+              t.serverStartedAt = anchor;
+              t.startedAt = anchor;
+              t.liveElapsed = (t.elapsed || 0) + Math.max(0, trueNow - anchor);
+            }
+          });
+        }
+      });
+    }
+
     this._saveLocal();
     this._syncEventInRegistry();
 
@@ -1865,7 +1891,7 @@ class UniversalSyncClient {
       if (!this._state) return;
       let shouldTick = false;
 
-      const activeTimer = this._state.timers.find(t => t.id === this._state.activeTimerId);
+      const activeTimer = UniversalSyncClient.getActiveTimer(this._state);
       if (activeTimer && activeTimer.mode === 'clock') {
         shouldTick = true;
       }
@@ -1873,6 +1899,18 @@ class UniversalSyncClient {
       for (const timer of this._state.timers) {
         if (timer.state === 'running' && timer.startedAt) {
           shouldTick = true;
+        }
+      }
+
+      if (this._state.days && typeof this._state.days === 'object') {
+        for (const dayList of Object.values(this._state.days)) {
+          if (Array.isArray(dayList)) {
+            for (const t of dayList) {
+              if (t.state === 'running' && t.startedAt) {
+                shouldTick = true;
+              }
+            }
+          }
         }
       }
 
@@ -1994,14 +2032,37 @@ class UniversalSyncClient {
   }
 
   timerAction(id, action) {
-    const timer = this._state.timers.find(t => t.id === id);
+    let timer = this._state.timers.find(t => t.id === id);
+    if (!timer && this._state.days) {
+      for (const dayList of Object.values(this._state.days)) {
+        if (Array.isArray(dayList)) {
+          const found = dayList.find(t => t.id === id);
+          if (found) { timer = found; break; }
+        }
+      }
+    }
     if (!timer) return;
     const trueNow = this.getTrueTime();
 
     switch (action) {
       case 'start':
         this._lastLocalActionAt = trueNow;
-        // Stop any previously running timer so only the fired timer runs
+        // Stop any previously running timer across ALL days and timers so only the fired timer runs
+        if (this._state.days && typeof this._state.days === 'object') {
+          for (const dayList of Object.values(this._state.days)) {
+            if (Array.isArray(dayList)) {
+              for (const other of dayList) {
+                if (other.id !== timer.id && other.state === 'running') {
+                  const anchor = other.serverStartedAt || other.startedAt;
+                  if (anchor) other.elapsed += Math.max(0, trueNow - anchor);
+                  other.state = 'stopped';
+                  other.startedAt = null;
+                  other.serverStartedAt = null;
+                }
+              }
+            }
+          }
+        }
         for (const other of this._state.timers) {
           if (other.id !== timer.id && other.state === 'running') {
             const anchor = other.serverStartedAt || other.startedAt;
@@ -2011,6 +2072,7 @@ class UniversalSyncClient {
             other.serverStartedAt = null;
           }
         }
+        // ONLY ON FIRE / START: this timer becomes the active on-air timer!
         this._state.activeTimerId = timer.id;
         if (timer.state !== 'running') {
           if (timer.state === 'finished') timer.elapsed = 0;
@@ -2047,9 +2109,16 @@ class UniversalSyncClient {
   }
 
   adjustTime(id, deltaMs) {
-    const idx = this._state.timers.findIndex(t => t.id === id);
-    if (idx < 0) return;
-    const timer = this._state.timers[idx];
+    let timer = this._state.timers.find(t => t.id === id);
+    if (!timer && this._state.days) {
+      for (const dayList of Object.values(this._state.days)) {
+        if (Array.isArray(dayList)) {
+          const found = dayList.find(t => t.id === id);
+          if (found) { timer = found; break; }
+        }
+      }
+    }
+    if (!timer) return;
 
     const oldDuration = timer.duration;
     timer.duration = Math.max(60000, timer.duration + deltaMs);
@@ -2059,7 +2128,8 @@ class UniversalSyncClient {
       timer.state = 'stopped';
     }
 
-    if (actualDeltaMins !== 0) {
+    const idx = this._state.timers.findIndex(t => t.id === id);
+    if (actualDeltaMins !== 0 && idx >= 0) {
       const sMins = this._parseStartMins(timer.startTime);
       if (sMins !== null) {
         timer.startTime = this._formatSlotRange(sMins, timer.duration);
@@ -2071,7 +2141,16 @@ class UniversalSyncClient {
   }
 
   setActiveTimer(id) {
-    if (this._state.timers.some(t => t.id === id)) {
+    let timer = this._state.timers.find(t => t.id === id);
+    if (!timer && this._state.days) {
+      for (const dayList of Object.values(this._state.days)) {
+        if (Array.isArray(dayList)) {
+          const found = dayList.find(t => t.id === id);
+          if (found) { timer = found; break; }
+        }
+      }
+    }
+    if (timer) {
       this._lastLocalActionAt = this.getTrueTime();
       this._state.activeTimerId = id;
       this._commitStateChange();
@@ -2246,6 +2325,42 @@ class UniversalSyncClient {
     }
 
     return '--:--';
+  }
+
+  static getActiveTimer(state) {
+    if (!state) return null;
+    const targetId = state.activeTimerId;
+    if (targetId) {
+      // 1. Check in currently active/viewed timers array
+      if (Array.isArray(state.timers)) {
+        const found = state.timers.find(t => t.id === targetId);
+        if (found) return found;
+      }
+      // 2. Check across all days!
+      if (state.days && typeof state.days === 'object') {
+        for (const dayList of Object.values(state.days)) {
+          if (Array.isArray(dayList)) {
+            const found = dayList.find(t => t.id === targetId);
+            if (found) return found;
+          }
+        }
+      }
+    }
+    // 3. Priority fallback: check if ANY timer across any day is currently running!
+    if (state.days && typeof state.days === 'object') {
+      for (const dayList of Object.values(state.days)) {
+        if (Array.isArray(dayList)) {
+          const running = dayList.find(t => t.state === 'running');
+          if (running) return running;
+        }
+      }
+    }
+    if (Array.isArray(state.timers)) {
+      const running = state.timers.find(t => t.state === 'running');
+      if (running) return running;
+    }
+    // 4. Default fallback: first timer of current day
+    return state.timers?.[0] || null;
   }
 
   static computeEventEndTime(state) {

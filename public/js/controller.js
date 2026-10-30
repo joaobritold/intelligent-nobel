@@ -799,7 +799,7 @@ function escapeHtml(str) {
 function renderPreview() {
   if (!state) return;
 
-  const activeTimer = state.timers.find(t => t.id === state.activeTimerId);
+  const activeTimer = StageTimerClient.getActiveTimer(state);
   const previewFrame = document.querySelector('.preview-frame');
   if (previewFrame && state.theme?.viewerBg) {
     previewFrame.style.backgroundColor = state.theme.viewerBg;
@@ -833,8 +833,18 @@ function renderPreview() {
 
   const $previewNext = document.getElementById('preview-next');
   if ($previewNext) {
-    const idx = state.timers.findIndex(t => t.id === state.activeTimerId);
-    const nextTimer = idx >= 0 ? state.timers[idx + 1] : null;
+    let nextTimer = null;
+    let containingList = state.timers;
+    if (!containingList.some(t => t.id === activeTimer.id) && state.days) {
+      for (const dayList of Object.values(state.days)) {
+        if (Array.isArray(dayList) && dayList.some(t => t.id === activeTimer.id)) {
+          containingList = dayList;
+          break;
+        }
+      }
+    }
+    const idx = containingList.findIndex(t => t.id === activeTimer.id);
+    nextTimer = idx >= 0 ? containingList[idx + 1] : null;
     $previewNext.textContent = nextTimer ? `NEXT: ${nextTimer.name}` : '';
   }
 

@@ -909,7 +909,7 @@
         activeTimerId: null
       };
 
-      const activeTimer = stageState.timers?.find(t => t.id === stageState.activeTimerId) || stageState.timers?.[0] || null;
+      const activeTimer = StageTimerClient.getActiveTimer(stageState);
       let displayTime = '--:--';
       let isRunning = false;
       let isOvertime = false;

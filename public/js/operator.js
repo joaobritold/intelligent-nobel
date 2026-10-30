@@ -360,7 +360,7 @@ function render() {
     $hero.style.backgroundColor = state.theme.viewerBg;
   }
 
-  const active = state.timers.find(t => t.id === state.activeTimerId);
+  const active = StageTimerClient.getActiveTimer(state);
   const $heroEndTime = document.getElementById('op-hero-endtime');
 
   if (!active) {
@@ -391,8 +391,18 @@ function render() {
     }
 
     if ($heroNext) {
-      const idx = state.timers.findIndex(t => t.id === state.activeTimerId);
-      const nextT = idx >= 0 ? state.timers[idx + 1] : null;
+      let nextT = null;
+      let containingList = state.timers;
+      if (!containingList.some(t => t.id === active.id) && state.days) {
+        for (const dayList of Object.values(state.days)) {
+          if (Array.isArray(dayList) && dayList.some(t => t.id === active.id)) {
+            containingList = dayList;
+            break;
+          }
+        }
+      }
+      const idx = containingList.findIndex(t => t.id === active.id);
+      nextT = idx >= 0 ? containingList[idx + 1] : null;
       $heroNext.textContent = nextT ? `NEXT: ${nextT.name}` : '';
     }
 
@@ -502,7 +512,7 @@ client.on('room-state', (data) => {
 
 setInterval(() => {
   if (state?.timers) {
-    const active = state.timers.find(t => t.id === state.activeTimerId);
+    const active = StageTimerClient.getActiveTimer(state);
     if (active && active.mode === 'clock') {
       const $heroTime = document.getElementById('op-hero-time');
       if ($heroTime) $heroTime.textContent = getTimerDisplayValue(active);

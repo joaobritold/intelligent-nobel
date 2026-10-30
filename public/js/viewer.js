@@ -266,7 +266,7 @@ function render() {
     document.body.style.backgroundColor = state.theme.viewerBg;
   }
 
-  const activeTimer = state.timers.find(t => t.id === state.activeTimerId);
+  const activeTimer = StageTimerClient.getActiveTimer(state);
 
   // Message (Full-screen Info or Urgent while keeping clock visible at top)
   const $viewerRoot = document.querySelector('.viewer');
@@ -316,10 +316,22 @@ function render() {
     }
   }
 
-  // Next Artist Indicator
+  // Next Artist Indicator (searches in the day list containing the active timer)
   if ($viewerNext && $viewerNextName) {
-    const activeIdx = state.timers.findIndex(t => t.id === state.activeTimerId);
-    const nextTimer = activeIdx >= 0 ? state.timers[activeIdx + 1] : null;
+    let nextTimer = null;
+    if (activeTimer) {
+      let containingList = state.timers;
+      if (!containingList.some(t => t.id === activeTimer.id) && state.days) {
+        for (const dayList of Object.values(state.days)) {
+          if (Array.isArray(dayList) && dayList.some(t => t.id === activeTimer.id)) {
+            containingList = dayList;
+            break;
+          }
+        }
+      }
+      const activeIdx = containingList.findIndex(t => t.id === activeTimer.id);
+      nextTimer = activeIdx >= 0 ? containingList[activeIdx + 1] : null;
+    }
     if (nextTimer) {
       $viewerNextName.textContent = nextTimer.name;
       $viewerNext.style.display = 'flex';

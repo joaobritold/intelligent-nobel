@@ -317,8 +317,8 @@ function render() {
     $eventEnd.textContent = getEventEndTime(state);
   }
 
-  const activeIdx = state.timers.findIndex(t => t.id === state.activeTimerId);
-  const activeTimer = activeIdx >= 0 ? state.timers[activeIdx] : null;
+  const activeTimer = StageTimerClient.getActiveTimer(state);
+  const activeIdx = state.timers.findIndex(t => t.id === (activeTimer?.id || state.activeTimerId));
   const slots = computeScheduleSlots(state.timers, activeIdx);
 
   // Left card: Active Artist
@@ -436,7 +436,7 @@ client.on('room-state', (data) => {
 
 setInterval(() => {
   if (state?.timers) {
-    const active = state.timers.find(t => t.id === state.activeTimerId);
+    const active = StageTimerClient.getActiveTimer(state);
     if (active && active.mode === 'clock') {
       const $nowTimer = document.getElementById('lineup-now-timer');
       if ($nowTimer) {
