@@ -181,7 +181,6 @@ function renderViewerEventSelector(force = false) {
       lastViewerSelectSig = '';
     }
   }
-}
 
   if ($viewerLineupBtn) {
     $viewerLineupBtn.href = `lineup.html?room=${encodeURIComponent(currentCode)}`;

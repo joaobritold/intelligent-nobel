@@ -171,7 +171,6 @@ function renderLineupEventSelector(force = false) {
     }
   }
 }
-}
 
 // Stage badge click focuses/opens select
 if ($lineupStageBadge && $lineupEventSelect) {
@@ -219,8 +218,6 @@ function updateLineupNavLinks(code) {
   const q = `?room=${encodeURIComponent(current)}`;
   const keys = [
     { id: 'ln-nav-hub', page: 'index.html' },
-    { id: 'ln-nav-controller', page: 'controller.html' },
-    { id: 'ln-nav-operator', page: 'operator.html' },
     { id: 'ln-nav-viewer', page: 'viewer.html' },
     { id: 'ln-nav-lineup', page: 'lineup.html' },
     { id: 'ln-nav-master', page: 'master.html' }
