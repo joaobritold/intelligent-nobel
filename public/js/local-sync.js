@@ -39,15 +39,15 @@ class UniversalSyncClient {
     this.storageKey = `stagetimer_v10_state_${this.cleanRoom}`;
     this.mqttTopicState = `stagetimer_v10/${this.cleanRoom}/state`;
     this.mqttTopicPresence = `stagetimer_v10/${this.cleanRoom}/presence`;
-    this.mqttTopicRegistry = 'stagetimer_v10/_events_list';
+    this.mqttTopicRegistry = 'stagetimer_v63_events_registry';
     this.mqttTopicGlobalPresence = 'stagetimer_v10/_global_presence';
     this.mqttTopicCommands = 'stagetimer_v10/_commands';
     this.mqttTopicAllCmd = 'stagetimer_v10/_cmd_all';
-    this.registryStorageKey = 'stagetimer_v10_registry';
-    this.deletedStorageKey = 'stagetimer_v10_deleted';
+    this.registryStorageKey = 'stagetimer_v63_registry';
+    this.deletedStorageKey = 'stagetimer_v63_deleted';
 
-    // ── Clean Slate Epoch v10 Reset (Permanent Zero Wipe) ──
-    const CLEAN_SLATE_EPOCH = 'stagetimer_clean_slate_epoch_v10';
+    // ── Clean Slate Epoch v63 Reset (Permanent Zero Wipe) ──
+    const CLEAN_SLATE_EPOCH = 'stagetimer_clean_slate_epoch_v63';
     if (localStorage.getItem(CLEAN_SLATE_EPOCH) !== 'true') {
       try {
         const preserveAuthMaster = localStorage.getItem('stagetimer_master_active');
@@ -64,6 +64,8 @@ class UniversalSyncClient {
               k.startsWith('stagetimer_deleted_events_') ||
               k.startsWith('stagetimer_live_state_') ||
               k.startsWith('stagetimer_v8_') ||
+              k.startsWith('stagetimer_v10_') ||
+              k.startsWith('stagetimer_v63_') ||
               k.startsWith('stagetimer_device_room') ||
               k.startsWith('stagetimer_last_room') ||
               k.startsWith('stagetimer_unlocked_event') ||
@@ -86,8 +88,6 @@ class UniversalSyncClient {
         if (preserveAuthUnlocked) localStorage.setItem('stagetimer_auth_unlocked', preserveAuthUnlocked);
 
         localStorage.setItem(CLEAN_SLATE_EPOCH, 'true');
-        localStorage.setItem('stagetimer_device_room', 'PALCO1');
-        localStorage.setItem('stagetimer_last_room', 'PALCO1');
       } catch (e) {}
     }
 
@@ -555,7 +555,7 @@ class UniversalSyncClient {
       return;
     }
 
-    if (msg.action === 'purge_clean_slate_v10' || msg.action === 'purge_clean_slate_v8' || msg.action === 'purge_clean_slate_v7') {
+    if (msg.action === 'purge_clean_slate_v63' || msg.action === 'purge_clean_slate_v10' || msg.action === 'purge_clean_slate_v8' || msg.action === 'purge_clean_slate_v7') {
       try {
         const preserveAuthMaster = localStorage.getItem('stagetimer_master_active');
         const preserveAuthV12 = localStorage.getItem('stagetimer_master_auth_v12');
@@ -569,11 +569,9 @@ class UniversalSyncClient {
         if (preserveAuthMaster) localStorage.setItem('stagetimer_master_active', preserveAuthMaster);
         if (preserveAuthV12) localStorage.setItem('stagetimer_master_auth_v12', preserveAuthV12);
         if (preserveAuthUnlocked) localStorage.setItem('stagetimer_auth_unlocked', preserveAuthUnlocked);
-        localStorage.setItem('stagetimer_clean_slate_epoch_v10', 'true');
-        localStorage.setItem('stagetimer_device_room', 'PALCO1');
-        localStorage.setItem('stagetimer_last_room', 'PALCO1');
+        localStorage.setItem('stagetimer_clean_slate_epoch_v63', 'true');
       } catch (_) {}
-      window.location.replace(`index.html?clean_slate=v10&_ts=${Date.now()}`);
+      window.location.replace(`index.html?clean_slate=v63&_ts=${Date.now()}`);
       return;
     }
 
@@ -1114,19 +1112,6 @@ class UniversalSyncClient {
         .map(e => this._normalizeRegistryItem(e))
         .filter(e => e && !deletedSet.has(e.code));
 
-      if (list.length === 0 && !deletedSet.has('PALCO1')) {
-        const defaultItem = this._normalizeRegistryItem({
-          id: 'PALCO1',
-          code: 'PALCO1',
-          title: 'Palco Principal',
-          timersCount: 0,
-          currentDay: 1,
-          createdAt: 1000000000000,
-          updatedAt: 0
-        });
-        if (defaultItem) list.push(defaultItem);
-      }
-
       // Sort STRICTLY by creation order descending (newest event first).
       // We NEVER compare updatedAt because timers running continuously mutate updatedAt!
       list.sort((a, b) => {
@@ -1137,7 +1122,7 @@ class UniversalSyncClient {
       });
       return list;
     } catch (e) {
-      return [this._normalizeRegistryItem({ id: 'PALCO1', code: 'PALCO1', title: 'Palco Principal', timersCount: 0, currentDay: 1, createdAt: 1000000000000, updatedAt: 0 })].filter(Boolean);
+      return [];
     }
   }
 
@@ -1178,18 +1163,7 @@ class UniversalSyncClient {
 
     if (forceReplace) {
       if (validIncoming.length === 0) {
-        const freshCode = 'PALCO1';
-        this._unmarkDeletedEvent(freshCode);
-        const defaultList = [this._normalizeRegistryItem({
-          id: freshCode,
-          code: freshCode,
-          title: 'Palco Principal',
-          timersCount: 0,
-          currentDay: 1,
-          createdAt: 1000000000000,
-          updatedAt: 1000000000000
-        })];
-        this._saveEventsList(defaultList, false);
+        this._saveEventsList([], false);
       } else {
         const incomingCodes = new Set();
         validIncoming.forEach(e => {
@@ -1631,20 +1605,6 @@ class UniversalSyncClient {
       } catch (e) {}
     }
 
-    // If list is completely empty, provide a clean default room
-    if (list.length === 0) {
-      const freshCode = 'PALCO1';
-      this._unmarkDeletedEvent(freshCode);
-      list = [this._normalizeRegistryItem({
-        id: freshCode,
-        code: freshCode,
-        title: 'Palco Principal',
-        timersCount: 0,
-        currentDay: 1,
-        updatedAt: Date.now()
-      })];
-    }
-
     this._saveEventsList(list, true, true);
     return list;
   }
@@ -1674,7 +1634,7 @@ class UniversalSyncClient {
 
     // Clear legacy registry topics on MQTT broker
     if (this.mqttClient && this.mqttClient.connected) {
-      ['stagetimer_live/_events_list', 'stagetimer_live/_events_list_v6', 'stagetimer_live/_events_list_v7', 'stagetimer_live/_events_list_v8', 'stagetimer_v8/_events_list'].forEach(top => {
+      ['stagetimer_live/_events_list', 'stagetimer_live/_events_list_v6', 'stagetimer_live/_events_list_v7', 'stagetimer_live/_events_list_v8', 'stagetimer_v8/_events_list', 'stagetimer_v10/_events_list', this.mqttTopicRegistry].forEach(top => {
         try {
           this.mqttClient.publish(top, JSON.stringify({ sender: this.clientId, forceReplace: true, events: [] }), { qos: 0, retain: true });
         } catch (_) {}
@@ -1688,42 +1648,33 @@ class UniversalSyncClient {
           k.startsWith('stagetimer_events_registry_') ||
           k.startsWith('stagetimer_deleted_events_') ||
           k.startsWith('stagetimer_v8_') ||
+          k.startsWith('stagetimer_v10_') ||
+          k.startsWith('stagetimer_v63_') ||
           k.startsWith('stagetimer_device_room') ||
           k.startsWith('stagetimer_last_room') ||
           k.startsWith('stagetimer_unlocked_event') ||
           k.startsWith('stagetimer_clean_slate_epoch_')
         ) {
-          if (k !== 'stagetimer_auth_unlocked' && k !== 'stagetimer_master_auth_v12' && k !== 'stagetimer_device_uuid') {
+          if (k !== 'stagetimer_auth_unlocked' && k !== 'stagetimer_master_auth_v12' && k !== 'stagetimer_device_uuid' && k !== 'stagetimer_master_active') {
             localStorage.removeItem(k);
           }
         }
       });
       sessionStorage.removeItem('stagetimer_active_room');
       sessionStorage.removeItem('stagetimer_unlocked_event');
-      localStorage.setItem('stagetimer_clean_slate_epoch_v10', 'true');
+      localStorage.setItem('stagetimer_clean_slate_epoch_v63', 'true');
     } catch (e) {}
 
-    const freshCode = 'PALCO1';
-    this._unmarkDeletedEvent(freshCode);
-    const defaultList = [this._normalizeRegistryItem({
-      id: freshCode,
-      code: freshCode,
-      title: 'Palco Principal',
-      timersCount: 0,
-      currentDay: 1,
-      updatedAt: 0
-    })].filter(Boolean);
+    this._recordDeletedEvent('PALCO1');
 
-    this.sendDeviceCommand('ALL', { action: 'purge_clean_slate_v10' });
+    this.sendDeviceCommand('ALL', { action: 'purge_clean_slate_v63' });
     setTimeout(() => {
       try { this.sendDeviceCommand('ALL', { action: 'reload' }); } catch (_) {}
     }, 400);
 
-    this._saveEventsList(defaultList, true, true);
-    this._state = this._createDefaultRoom(freshCode);
-    this._saveLocal();
-    this._commitStateChange(true);
-    return defaultList;
+    this._saveEventsList([], true, true);
+    this._state = null;
+    return [];
   }
 
   replaceAllTimers(timers, roomName = null) {

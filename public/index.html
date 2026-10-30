@@ -56,7 +56,7 @@
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://stagetimer-pfp.netlify.app/">
   <title>StageTimer PFP — Timer de Palco & Lineup</title>
-  <link rel="stylesheet" href="css/common.css?v=62">
+  <link rel="stylesheet" href="css/common.css?v=63">
   <style>
     body {
       display: flex;
@@ -361,6 +361,11 @@
         </div>
         <div id="portal-events-list" class="events-list-box" style="max-height: 380px;"></div>
       </div>
+
+      <!-- Version Footer -->
+      <footer style="text-align: center; margin-top: 10px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v63</span>
+      </footer>
     </div>
 
     <!-- MODAL 1: Digitar PIN do Evento -->
@@ -570,16 +575,21 @@
           <div style="color: #111; font-size: 0.75rem; font-weight: 700; margin-top: 6px;">Aponte a câmara do telemóvel</div>
         </div>
       </div>
+
+      <!-- Version Footer -->
+      <footer style="text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v63</span>
+      </footer>
     </div>
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=62"></script>
-  <script src="js/local-sync.js?v=62"></script>
+  <script src="js/pwa.js?v=63"></script>
+  <script src="js/local-sync.js?v=63"></script>
   <script>
     const hubClient = new StageTimerClient({
       role: 'viewer',
-      room: 'PALCO1',
+      room: 'PORTAL',
     });
     hubClient.connect();
 
@@ -723,27 +733,16 @@
       } catch (_) {}
     }
 
-    let currentUnlockedEventCode = isRevoked ? '' : (sessionStorage.getItem('stagetimer_unlocked_event') || localStorage.getItem('stagetimer_unlocked_event') || '').trim().toUpperCase();
+    let currentUnlockedEventCode = '';
     let selectedRoom = '';
     let pendingPinEventCode = '';
 
-    // Direct link with ?event=...&pin=...
-    if (paramEvent && paramPin) {
+    // Direct link with ?event=...&pin=... (WhatsApp / QR code invitation)
+    if (!isRevoked && paramEvent && paramPin) {
       const verifyRes = hubClient.verifyEventPin(paramEvent, paramPin);
       if (verifyRes.valid) {
         currentUnlockedEventCode = paramEvent;
         sessionStorage.setItem('stagetimer_unlocked_event', paramEvent);
-      }
-    }
-
-    // Direct room navigation (e.g. returning from ?room=PALCO1)
-    if (paramRoom) {
-      const allEvents = hubClient.getEventsList();
-      const parentEvent = allEvents.find(ev => ev.code === paramRoom || (ev.stages && ev.stages.some(s => s.code === paramRoom)));
-      if (parentEvent) {
-        currentUnlockedEventCode = parentEvent.code;
-        sessionStorage.setItem('stagetimer_unlocked_event', parentEvent.code);
-        selectedRoom = paramRoom;
       }
     }
 
@@ -771,12 +770,23 @@
 
       if (allEvents.length === 0) {
         $portalEventsList.innerHTML = `
-          <div style="text-align: center; padding: 28px 16px; color: var(--text-secondary);">
-            <div style="font-size: 2.2rem; margin-bottom: 8px;">🎪</div>
-            <div style="font-size: 1rem; font-weight: 700; color: #fff;">Nenhum evento ativo no momento.</div>
-            <div style="font-size: 0.8rem; margin-top: 4px;">Clique no ícone ⏱️ acima com a senha Master para criar o primeiro evento.</div>
+          <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary);">
+            <div style="font-size: 2.4rem; margin-bottom: 8px;">🎪</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #fff;">Nenhum evento ativo no momento.</div>
+            <div style="font-size: 0.82rem; margin-top: 6px; color: var(--text-muted);">
+              ${isMasterActive ? 'Carregue no botão abaixo para criar o seu primeiro evento com os palcos desejados.' : 'Aguarde que a Régie Master crie um evento ou clique em ⏱️ com a senha Master.'}
+            </div>
+            ${isMasterActive ? `
+              <button type="button" id="portal-btn-create-first" class="btn btn-primary" style="margin-top: 14px; padding: 10px 20px; font-weight: 800; background: #6c5ce7; border-color: #6c5ce7;">
+                ✨ + Criar o Primeiro Evento
+              </button>
+            ` : ''}
           </div>
         `;
+        const firstBtn = document.getElementById('portal-btn-create-first');
+        if (firstBtn && $portalBtnCreateEvent) {
+          firstBtn.addEventListener('click', () => $portalBtnCreateEvent.click());
+        }
         return;
       }
 
@@ -1138,10 +1148,13 @@
         if (conf) {
           hubClient.clearAllEvents();
           currentUnlockedEventCode = '';
-          selectedRoom = 'PALCO1';
+          selectedRoom = '';
           sessionStorage.removeItem('stagetimer_unlocked_event');
+          sessionStorage.removeItem('stagetimer_active_room');
+          localStorage.removeItem('stagetimer_device_room');
+          localStorage.removeItem('stagetimer_last_room');
           renderView();
-          alert('✓ Todos os eventos foram eliminados com sucesso!');
+          alert('✅ Todos os eventos foram eliminados com sucesso!');
         }
       });
     }
@@ -1246,6 +1259,10 @@
       $hubBackBtn.addEventListener('click', () => {
         currentUnlockedEventCode = '';
         sessionStorage.removeItem('stagetimer_unlocked_event');
+        localStorage.removeItem('stagetimer_unlocked_event');
+        try {
+          window.history.replaceState({}, document.title, location.pathname);
+        } catch (_) {}
         renderView();
       });
     }

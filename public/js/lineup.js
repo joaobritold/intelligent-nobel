@@ -140,7 +140,7 @@ function updateLineupNavLinks(code) {
   ];
   keys.forEach(k => {
     const el = document.getElementById(k.id);
-    if (el) el.href = `${k.page}${q}`;
+    if (el) el.href = k.page === 'index.html' ? 'index.html' : `${k.page}${q}`;
   });
   const $masterPill = document.getElementById('ln-nav-master');
   if ($masterPill) {

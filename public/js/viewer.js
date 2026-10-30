@@ -134,7 +134,7 @@ function updateViewerNavLinks(code) {
   const $op = document.getElementById('viewer-nav-operator');
   const $ln = document.getElementById('viewer-lineup-btn');
   const $master = document.getElementById('viewer-nav-master');
-  if ($hub) $hub.href = `index.html${q}`;
+  if ($hub) $hub.href = 'index.html';
   if ($op) $op.href = `operator.html${q}`;
   if ($ln) $ln.href = `lineup.html${q}`;
   if ($master) {

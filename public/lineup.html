@@ -53,8 +53,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Modo Lista (Lineup & Horários)</title>
-  <link rel="stylesheet" href="css/common.css?v=62">
-  <link rel="stylesheet" href="css/lineup.css?v=62">
+  <link rel="stylesheet" href="css/common.css?v=63">
+  <link rel="stylesheet" href="css/lineup.css?v=63">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
@@ -63,7 +63,10 @@
       <div class="lineup-title-box" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
         <span style="font-size: 1.7rem;">📋</span>
         <div>
-          <div class="lineup-title">Lineup & Horários</div>
+          <div class="lineup-title">
+            Lineup & Horários
+            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 6px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v63</span>
+          </div>
         </div>
         <!-- Event / Stage Badge -->
         <div style="display: flex; align-items: center; gap: 6px; background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.5); padding: 4px 10px; border-radius: 8px;">
@@ -119,8 +122,8 @@
 
   <!-- Cloud MQTT over WSS -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=62"></script>
-  <script src="js/local-sync.js?v=62"></script>
-  <script src="js/lineup.js?v=62"></script>
+  <script src="js/pwa.js?v=63"></script>
+  <script src="js/local-sync.js?v=63"></script>
+  <script src="js/lineup.js?v=63"></script>
 </body>
 </html>

@@ -367,7 +367,11 @@
   function renderMasterEventSelector() {
     if (!$masterEventSelect) return;
     const events = masterClient.getEventsList();
-    const activeCode = (sessionStorage.getItem('stagetimer_active_room') || localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || events[0]?.code || 'PALCO1').toUpperCase();
+    if (events.length === 0) {
+      $masterEventSelect.innerHTML = '<option value="">(Nenhum palco criado)</option>';
+      return;
+    }
+    const activeCode = (sessionStorage.getItem('stagetimer_active_room') || localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || events[0]?.code || '').toUpperCase();
 
     let optionsHtml = '';
     events.forEach(ev => {
@@ -614,8 +618,21 @@
     if (tabEvBadge) tabEvBadge.textContent = events.length;
 
     const sig = events.map(ev => `${ev.code}:${ev.title}:${ev.timersCount}:${ev.currentDay}:${ev.pin}:${ev.stagesCount}`).join('||');
-    if (sig === lastEventsManagerSig) return;
+    if (sig === lastEventsManagerSig && events.length > 0) return;
     lastEventsManagerSig = sig;
+
+    if (events.length === 0) {
+      $eventsList.innerHTML = `
+        <div class="empty-state-box" style="grid-column: 1 / -1; padding: 32px 16px; text-align: center;">
+          <div style="font-size: 2.2rem; margin-bottom: 6px;">🎪</div>
+          <div style="font-weight: 700; color: #fff; font-size: 1rem;">Nenhum evento ativo no momento.</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+            Utilize a barra acima para criar o seu primeiro evento com os palcos desejados.
+          </div>
+        </div>
+      `;
+      return;
+    }
 
     $eventsList.innerHTML = events.map(ev => {
       const count = typeof ev.timersCount === 'number' ? ev.timersCount : 0;
