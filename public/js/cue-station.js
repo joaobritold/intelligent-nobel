@@ -354,36 +354,135 @@ function renderHeroLight() {
   }
 }
 
-function renderCuesList() {
-  const cues = state?.theatre?.cues || [];
-  const relevantCues = cues.filter(isCueRelevant);
+let currentCueFilter = 'all';
+let currentChkFilter = 'my';
 
-  if ($myCuesCount) $myCuesCount.textContent = relevantCues.length;
-
-  const sig = `${currentDept}:${relevantCues.map(c => `${c.id}:${c.status}:${c.firedTimecode}`).join('|')}`;
-  if (sig === lastMyCuesSig) return;
-  lastMyCuesSig = sig;
-
-  if (relevantCues.length === 0) {
-    $cuesList.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--cs-muted);">Nenhuma deixa atribuída ao departamento ${currentDept}.</div>`;
+// ─── Filter Bar Delegation ──────────────────────────────────────────
+document.addEventListener('click', (e) => {
+  // Cue filter buttons
+  const cueFilterBtn = e.target.closest('.cs-cue-filter-btn');
+  if (cueFilterBtn) {
+    document.querySelectorAll('.cs-cue-filter-btn').forEach(b => b.classList.remove('active'));
+    cueFilterBtn.classList.add('active');
+    currentCueFilter = cueFilterBtn.dataset.filter || 'all';
+    lastMyCuesSig = ''; // Force re-render
+    renderCuesList();
     return;
   }
 
-  $cuesList.innerHTML = relevantCues.map(c => {
+  // Checklist filter buttons
+  const chkFilterBtn = e.target.closest('.cs-chk-filter-btn');
+  if (chkFilterBtn) {
+    document.querySelectorAll('.cs-chk-filter-btn').forEach(b => b.classList.remove('active'));
+    chkFilterBtn.classList.add('active');
+    currentChkFilter = chkFilterBtn.dataset.chkFilter || 'my';
+    lastMyChecklistSig = ''; // Force re-render
+    renderChecklist();
+    return;
+  }
+
+  // Click row to toggle checklist
+  const chkRow = e.target.closest('[data-cs-chk-row]');
+  if (chkRow && e.target.type !== 'checkbox') {
+    const chkBox = chkRow.querySelector('input[type="checkbox"]');
+    if (chkBox) {
+      chkBox.checked = !chkBox.checked;
+      const itemId = chkBox.dataset.csChk;
+      const dept = chkBox.dataset.csDept || currentDept;
+      client.toggleChecklistItem(dept, itemId, chkBox.checked);
+    }
+  }
+});
+
+// Quick Add Task Button for Technician Post
+const $newTaskInput = document.getElementById('cs-new-task-input');
+const $newTaskBtn = document.getElementById('cs-new-task-btn');
+
+function handleAddNewTask() {
+  const label = ($newTaskInput?.value || '').trim();
+  if (!label) return;
+  const dept = currentDept === 'Geral' ? 'Luz' : currentDept;
+  client.addChecklistItem(dept, label, false);
+  if ($newTaskInput) $newTaskInput.value = '';
+}
+
+if ($newTaskBtn) {
+  $newTaskBtn.addEventListener('click', handleAddNewTask);
+}
+if ($newTaskInput) {
+  $newTaskInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddNewTask();
+    }
+  });
+}
+
+function renderCuesList() {
+  const cues = state?.theatre?.cues || [];
+  const myCues = cues.filter(isCueRelevant);
+
+  if ($myCuesCount) $myCuesCount.textContent = cues.length;
+  const countMyEl = document.getElementById('cs-count-filter-my');
+  if (countMyEl) countMyEl.textContent = myCues.length;
+
+  // Filter based on selected tab filter
+  let displayedCues = cues;
+  if (currentCueFilter === 'my') {
+    displayedCues = myCues;
+  } else if (currentCueFilter !== 'all') {
+    displayedCues = cues.filter(c => {
+      const depts = Array.isArray(c.departments) ? c.departments.map(d => String(d).toLowerCase()) : [];
+      return depts.some(d => d.includes(currentCueFilter.toLowerCase()));
+    });
+  }
+
+  const sig = `${currentDept}:${currentCueFilter}:${displayedCues.map(c => `${c.id}:${c.status}:${c.firedTimecode}`).join('|')}`;
+  if (sig === lastMyCuesSig) return;
+  lastMyCuesSig = sig;
+
+  if (displayedCues.length === 0) {
+    $cuesList.innerHTML = `<div style="text-align: center; padding: 28px; color: var(--cs-muted);">Nenhuma deixa encontrada para o filtro selecionado.</div>`;
+    return;
+  }
+
+  $cuesList.innerHTML = displayedCues.map(c => {
+    const isMine = isCueRelevant(c);
     let cardClass = 'cs-cue-card';
     if (c.status === 'standby') cardClass += ' is-active-standby';
     else if (c.status === 'fired') cardClass += ' is-active-go';
+    if (isMine) cardClass += ' is-my-dept-cue';
+
+    const depts = Array.isArray(c.departments) ? c.departments : [];
+    const deptPills = depts.map(d => {
+      const dClean = String(d || '').toLowerCase();
+      let color = '#a29bfe';
+      let border = 'rgba(108, 92, 231, 0.4)';
+      let bg = 'rgba(108, 92, 231, 0.18)';
+      if (dClean.includes('luz')) { color = '#ffeaa7'; border = '#fdcb6e'; bg = 'rgba(253, 203, 110, 0.18)'; }
+      else if (dClean.includes('som')) { color = '#74b9ff'; border = '#0984e3'; bg = 'rgba(9, 132, 227, 0.18)'; }
+      else if (dClean.includes('maq')) { color = '#fab1a0'; border = '#e17055'; bg = 'rgba(225, 112, 85, 0.18)'; }
+      else if (dClean.includes('vid')) { color = '#55efc4'; border = '#00b894'; bg = 'rgba(0, 184, 148, 0.18)'; }
+      else if (dClean.includes('cox')) { color = '#fd79a8'; border = '#e84393'; bg = 'rgba(232, 67, 147, 0.18)'; }
+      return `<span style="background: ${bg}; color: ${color}; border: 1px solid ${border}; font-size: 0.68rem; font-weight: 800; padding: 2px 7px; border-radius: 6px;">${escapeHtml(d)}</span>`;
+    }).join(' ');
 
     return `
-      <div class="${cardClass}">
-        <div class="cs-cue-num">${escapeHtml(c.num)}</div>
-        <div>
-          <div class="cs-cue-title">${escapeHtml(c.name)}</div>
-          <div class="cs-cue-desc">${escapeHtml(c.targetText || c.notes || '')}</div>
+      <div class="${cardClass}" style="${isMine ? 'border: 1.5px solid #00b894; background: linear-gradient(135deg, rgba(0, 184, 148, 0.12) 0%, rgba(20, 24, 38, 0.95) 100%);' : 'background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);'} margin-bottom: 8px; padding: 12px 14px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="cs-cue-num" style="font-size: 1.3rem; font-weight: 900; color: ${isMine ? '#55efc4' : '#fff'}; font-family: var(--font-mono);">${escapeHtml(c.num)}</div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span class="cs-cue-title" style="font-weight: 800; font-size: 1rem; color: #fff;">${escapeHtml(c.name)}</span>
+              ${isMine ? `<span style="background: #00b894; color: #000; font-weight: 900; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; letter-spacing: 0.04em;">⭐ TUA DEIXA</span>` : ''}
+              ${deptPills}
+            </div>
+            <div class="cs-cue-desc" style="font-size: 0.82rem; color: #cbd5e1; margin-top: 4px;">${escapeHtml(c.targetText || c.notes || '')}</div>
+          </div>
         </div>
-        <div>
-          ${c.firedTimecode ? `<span style="font-family: var(--font-mono); font-size: 0.82rem; color: #00ffb3; font-weight: 800; margin-right: 6px;">${escapeHtml(c.firedTimecode)}</span>` : ''}
-          <span class="badge" style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase;">${escapeHtml(c.status)}</span>
+        <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+          ${c.firedTimecode ? `<span style="font-family: var(--font-mono); font-size: 0.82rem; color: #00ffb3; font-weight: 800; margin-right: 4px;">${escapeHtml(c.firedTimecode)}</span>` : ''}
+          <span class="badge" style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; ${c.status === 'standby' ? 'background: #fdcb6e; color: #000;' : (c.status === 'fired' ? 'background: #00b894; color: #000;' : '')}">${escapeHtml(c.status)}</span>
         </div>
       </div>
     `;
@@ -392,7 +491,9 @@ function renderCuesList() {
 
 function renderChecklist() {
   const checklists = state?.theatre?.checklists || {};
-  const items = currentDept === 'Geral'
+  const isAllFilter = currentChkFilter === 'all';
+
+  const items = isAllFilter
     ? Object.keys(checklists).flatMap(d => (checklists[d] || []).map(item => ({ ...item, dept: d })))
     : (checklists[currentDept] || []);
 
@@ -403,24 +504,24 @@ function renderChecklist() {
   if ($myChecklistCount) $myChecklistCount.textContent = `${pct}%`;
   if ($checklistProgressPill) $checklistProgressPill.textContent = `${pct}% Concluído (${done}/${total})`;
 
-  const sig = `${currentDept}:${items.map(i => `${i.id}:${i.done}:${i.label}`).join(';')}`;
+  const sig = `${currentDept}:${currentChkFilter}:${items.map(i => `${i.id}:${i.done}:${i.label}`).join(';')}`;
   if (sig === lastMyChecklistSig) return;
   lastMyChecklistSig = sig;
 
   if (items.length === 0) {
-    $myChecklistItems.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--cs-muted);">Sem tarefas de checklist para ${currentDept}. A Mesa da DC pode adicionar tarefas a qualquer momento.</div>`;
+    $myChecklistItems.innerHTML = `<div style="text-align: center; padding: 28px; color: var(--cs-muted);">Sem tarefas de checklist para ${isAllFilter ? 'qualquer departamento' : currentDept}. Pode adicionar uma tarefa rápida no botão abaixo.</div>`;
     return;
   }
 
   $myChecklistItems.innerHTML = items.map(item => {
     const itemDept = item.dept || currentDept;
     return `
-      <label class="cs-chk-row ${item.done ? 'done' : ''}">
+      <div class="cs-chk-row ${item.done ? 'done' : ''}" data-cs-chk-row="${escapeHtml(item.id)}" data-cs-dept="${escapeHtml(itemDept)}" style="user-select: none;">
         <input type="checkbox" class="cs-chk-box" data-cs-chk="${escapeHtml(item.id)}" data-cs-dept="${escapeHtml(itemDept)}" ${item.done ? 'checked' : ''}>
-        <span style="flex: 1; font-weight: 600; font-size: 0.88rem;">${escapeHtml(item.label)}</span>
-        ${item.dept ? `<span class="badge" style="font-size: 0.65rem;">${escapeHtml(item.dept)}</span>` : ''}
+        <span style="flex: 1; font-weight: 600; font-size: 0.9rem; color: ${item.done ? '#94a3b8' : '#fff'};">${escapeHtml(item.label)}</span>
+        ${item.dept ? `<span class="badge" style="font-size: 0.68rem; font-weight: 700;">${escapeHtml(item.dept)}</span>` : ''}
         ${item.isOneOff ? `<span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-size: 0.65rem;">Só Hoje</span>` : ''}
-      </label>
+      </div>
     `;
   }).join('');
 }

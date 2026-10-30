@@ -507,12 +507,91 @@ body {
   display: flex;
 }
 
+/* Filter Bars (Cues & Checklist) */
+.cs-cue-filter-bar,
+.cs-chk-filter-bar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cs-cue-filter-btn,
+.cs-chk-filter-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--cs-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.cs-cue-filter-btn:hover,
+.cs-chk-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.cs-cue-filter-btn.active,
+.cs-chk-filter-btn.active {
+  background: var(--cs-accent);
+  border-color: var(--cs-accent);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.4);
+}
+
+/* Quick Add Task Bar */
+.cs-quick-task-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.cs-quick-task-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 0.82rem;
+}
+
+.cs-quick-task-bar input::placeholder {
+  color: var(--cs-muted);
+}
+
+.cs-quick-task-bar button {
+  background: var(--cs-accent);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.cs-quick-task-bar button:hover {
+  filter: brightness(1.15);
+}
+
 /* Cues List */
 .cs-cues-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: calc(100dvh - 460px);
+  max-height: 520px;
+  min-height: 240px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -527,6 +606,21 @@ body {
   border-radius: 10px;
   padding: 10px 14px;
   transition: all 0.2s ease;
+}
+
+.cs-cue-card.is-my-dept-cue {
+  border-left: 4px solid var(--cs-amber);
+  background: linear-gradient(90deg, rgba(253, 203, 110, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+}
+
+.cs-my-cue-badge {
+  font-size: 0.65rem;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(253, 203, 110, 0.25);
+  color: #ffeaa7;
+  border: 1px solid rgba(253, 203, 110, 0.4);
 }
 
 .cs-cue-card.is-active-standby {
@@ -582,7 +676,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: calc(100dvh - 460px);
+  max-height: 520px;
+  min-height: 240px;
   overflow-y: auto;
   padding-right: 4px;
 }

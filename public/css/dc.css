@@ -352,6 +352,13 @@ body {
   color: #fff;
 }
 
+.dc-tool-btn.active {
+  background: var(--dc-accent);
+  border-color: var(--dc-accent);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(108, 92, 231, 0.4);
+}
+
 .dc-toggle-label {
   display: flex;
   align-items: center;
@@ -415,6 +422,23 @@ body {
   background: rgba(253, 203, 110, 0.15);
   padding: 2px 8px;
   border-radius: 6px;
+}
+
+.dc-direction-tag {
+  font-size: 0.65rem;
+  color: #a29bfe;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dc-script-item.direction {
+  border-left: 3px solid rgba(162, 155, 254, 0.45);
+  background: rgba(162, 155, 254, 0.035);
+}
+
+.dc-script-item.dialogue {
+  border-left: 3px solid rgba(255, 255, 255, 0.08);
 }
 
 .dc-cue-anchor-pill {

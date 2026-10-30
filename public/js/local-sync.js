@@ -405,6 +405,7 @@ class UniversalSyncClient {
 
     // Ensure days structure is initialized
     this._ensureDaysStructure();
+    this._ensureTheatreStructure();
     this._syncEventInRegistry();
 
     // 4. Local High-FPS UI Render Loop
@@ -1023,8 +1024,16 @@ class UniversalSyncClient {
     } else {
       if (!Array.isArray(this._state.theatre.cues)) this._state.theatre.cues = this._createDefaultCues();
       if (!Array.isArray(this._state.theatre.script)) this._state.theatre.script = this._createDefaultScript();
+      const defaultDepts = ['Luz', 'Som', 'Maquinaria', 'Vídeo', 'Coxias'];
       if (!this._state.theatre.checklists || typeof this._state.theatre.checklists !== 'object') {
         this._state.theatre.checklists = this._createDefaultChecklists();
+      } else {
+        const defaults = this._createDefaultChecklists();
+        defaultDepts.forEach(d => {
+          if (!Array.isArray(this._state.theatre.checklists[d])) {
+            this._state.theatre.checklists[d] = defaults[d] || [];
+          }
+        });
       }
       if (!Array.isArray(this._state.theatre.telemetry)) this._state.theatre.telemetry = [];
       if (!this._state.theatre.urgentNotice || typeof this._state.theatre.urgentNotice !== 'object') {
@@ -2227,6 +2236,7 @@ class UniversalSyncClient {
     try { delete incoming.isEmptyDefault; } catch (_) {}
     this._state = incoming;
     this._ensureDaysStructure();
+    this._ensureTheatreStructure();
     this._enforceInactiveReset();
 
     // Prevent storage circular feedback ping-pong between local tabs
@@ -2999,6 +3009,41 @@ class UniversalSyncClient {
       }
     }
 
+    this._commitStateChange();
+  }
+
+  deleteCue(cueId) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    if (!Array.isArray(th.cues)) return;
+    th.cues = th.cues.filter(c => c.id !== cueId);
+    if (th.standbyCueId === cueId) th.standbyCueId = null;
+    if (th.activeCueId === cueId) th.activeCueId = null;
+    this._commitStateChange();
+  }
+
+  editCue(cueId, cueData = {}) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    if (!Array.isArray(th.cues)) return;
+    const target = th.cues.find(c => c.id === cueId);
+    if (!target) return;
+    if (cueData.num !== undefined) target.num = String(cueData.num).trim();
+    if (cueData.name !== undefined) target.name = String(cueData.name).trim();
+    if (cueData.targetText !== undefined) target.targetText = String(cueData.targetText).trim();
+    if (cueData.notes !== undefined) target.notes = String(cueData.notes).trim();
+    if (Array.isArray(cueData.departments)) target.departments = [...cueData.departments];
+    this._commitStateChange();
+  }
+
+  clearAllCues() {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    this._state.theatre.cues = [];
+    this._state.theatre.standbyCueId = null;
+    this._state.theatre.activeCueId = null;
     this._commitStateChange();
   }
 

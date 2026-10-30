@@ -58,6 +58,11 @@ const $scriptFeed = document.getElementById('dc-script-feed');
 const $btnImportScript = document.getElementById('dc-btn-import-script');
 const $btnAddLine = document.getElementById('dc-btn-add-line');
 const $toggleAutoscroll = document.getElementById('dc-toggle-autoscroll');
+const $scriptFontMinus = document.getElementById('dc-script-font-minus');
+const $scriptFontPlus = document.getElementById('dc-script-font-plus');
+const $scriptScrollToggle = document.getElementById('dc-script-scroll-toggle');
+const $scriptScrollSpeed = document.getElementById('dc-script-scroll-speed');
+const $btnEditScriptText = document.getElementById('dc-btn-edit-script-text');
 
 // Cues Tab
 const $cuesCountBadge = document.getElementById('dc-cues-count-badge');
@@ -68,6 +73,7 @@ const $cuesList = document.getElementById('dc-cues-list');
 const $btnAddCue = document.getElementById('dc-btn-add-cue');
 const $btnImportCues = document.getElementById('dc-btn-import-cues');
 const $btnResetCues = document.getElementById('dc-btn-reset-cues');
+const $btnClearCues = document.getElementById('dc-btn-clear-cues');
 
 // Checklists Tab
 const $checklistsProgressBadge = document.getElementById('dc-checklists-progress-badge');
@@ -103,6 +109,19 @@ const $newCueName = document.getElementById('dc-new-cue-name');
 const $newCueTarget = document.getElementById('dc-new-cue-target');
 const $newCueNotes = document.getElementById('dc-new-cue-notes');
 const $newCueConfirm = document.getElementById('dc-new-cue-confirm');
+
+const $modalEditCue = document.getElementById('dc-modal-edit-cue');
+const $editCueId = document.getElementById('dc-edit-cue-id');
+const $editCueNum = document.getElementById('dc-edit-cue-num');
+const $editCueName = document.getElementById('dc-edit-cue-name');
+const $editCueTarget = document.getElementById('dc-edit-cue-target');
+const $editCueNotes = document.getElementById('dc-edit-cue-notes');
+const $editCueConfirm = document.getElementById('dc-edit-cue-confirm');
+const $editCueDeleteBtn = document.getElementById('dc-edit-cue-delete-btn');
+
+const $modalEditScriptText = document.getElementById('dc-modal-edit-script-text');
+const $fullScriptTextarea = document.getElementById('dc-full-script-textarea');
+const $fullScriptSave = document.getElementById('dc-full-script-save');
 
 // ─── Helpers ────────────────────────────────────────────────────────
 function escapeHtml(str) {
@@ -306,6 +325,92 @@ if ($btnGo) {
   $btnGo.addEventListener('click', triggerGoAction);
 }
 
+// ─── Script Font Size & Continuous Teleprompter Scroll ───────────────
+let scriptFontSize = 16;
+try {
+  const savedSize = parseInt(localStorage.getItem('stagetimer_dc_script_font'), 10);
+  if (!isNaN(savedSize) && savedSize >= 12 && savedSize <= 36) {
+    scriptFontSize = savedSize;
+  }
+} catch (_) {}
+
+function applyScriptFontSize() {
+  if ($scriptFeed) {
+    $scriptFeed.style.fontSize = `${scriptFontSize}px`;
+  }
+}
+applyScriptFontSize();
+
+if ($scriptFontMinus) {
+  $scriptFontMinus.addEventListener('click', () => {
+    if (scriptFontSize > 12) {
+      scriptFontSize -= 2;
+      applyScriptFontSize();
+      try { localStorage.setItem('stagetimer_dc_script_font', String(scriptFontSize)); } catch (_) {}
+    }
+  });
+}
+
+if ($scriptFontPlus) {
+  $scriptFontPlus.addEventListener('click', () => {
+    if (scriptFontSize < 36) {
+      scriptFontSize += 2;
+      applyScriptFontSize();
+      try { localStorage.setItem('stagetimer_dc_script_font', String(scriptFontSize)); } catch (_) {}
+    }
+  });
+}
+
+// Teleprompter Continuous Scroll Loop
+let isTeleprompterScrolling = false;
+let teleprompterAnimationId = null;
+
+function stepTeleprompter() {
+  if (!isTeleprompterScrolling || !$scriptFeed) return;
+  const speedVal = parseFloat($scriptScrollSpeed?.value || '2');
+  const scrollIncrement = speedVal === 1 ? 0.4 : speedVal === 3 ? 1.4 : 0.8;
+
+  $scriptFeed.scrollTop += scrollIncrement;
+
+  if ($scriptFeed.scrollTop + $scriptFeed.clientHeight >= $scriptFeed.scrollHeight - 2) {
+    stopTeleprompter();
+    return;
+  }
+  teleprompterAnimationId = requestAnimationFrame(stepTeleprompter);
+}
+
+function startTeleprompter() {
+  if (isTeleprompterScrolling) return;
+  isTeleprompterScrolling = true;
+  if ($scriptScrollToggle) {
+    $scriptScrollToggle.textContent = '⏸ Pausar';
+    $scriptScrollToggle.classList.add('active');
+  }
+  teleprompterAnimationId = requestAnimationFrame(stepTeleprompter);
+}
+
+function stopTeleprompter() {
+  isTeleprompterScrolling = false;
+  if (teleprompterAnimationId) {
+    cancelAnimationFrame(teleprompterAnimationId);
+    teleprompterAnimationId = null;
+  }
+  if ($scriptScrollToggle) {
+    $scriptScrollToggle.textContent = '▶ Rolar Texto';
+    $scriptScrollToggle.classList.remove('active');
+  }
+}
+
+if ($scriptScrollToggle) {
+  $scriptScrollToggle.addEventListener('click', () => {
+    if (isTeleprompterScrolling) {
+      stopTeleprompter();
+    } else {
+      startTeleprompter();
+    }
+  });
+}
+
 // ─── Script Auto-Scroll & Highlighting ──────────────────────────────
 function highlightScriptForCue(cueId) {
   if (!$scriptFeed) return;
@@ -336,7 +441,7 @@ function renderScript() {
   if (script.length === 0) {
     $scriptFeed.innerHTML = `
       <div style="text-align: center; padding: 32px 16px; color: var(--dc-muted);">
-        Nenhum texto carregado no guião.<br>
+        Nenhum texto carregado no guião da peça.<br>
         <button id="dc-btn-script-empty-import" class="dc-tool-btn" style="margin-top: 10px;">📥 Importar Texto</button>
       </div>
     `;
@@ -355,13 +460,13 @@ function renderScript() {
       const cueObj = state?.theatre?.cues?.find(c => c.id === item.cueAnchor);
       const cueNum = cueObj ? cueObj.num : 'CUE';
       const cueName = cueObj ? cueObj.name : '';
-      cueBadgeHtml = `<button type="button" class="dc-cue-anchor-pill" data-jump-cue="${escapeHtml(item.cueAnchor)}" title="Focar Deixa">⚡ ${escapeHtml(cueNum)} ${escapeHtml(cueName)}</button>`;
+      cueBadgeHtml = `<button type="button" class="dc-cue-anchor-pill" data-jump-cue="${escapeHtml(item.cueAnchor)}" title="Focar Deixa">⚡ ${escapeHtml(cueNum)}: ${escapeHtml(cueName)}</button>`;
     }
 
     return `
-      <div class="dc-script-item ${hasCue ? 'has-cue' : ''}" data-script-id="${escapeHtml(item.id)}" data-cue-anchor="${escapeHtml(item.cueAnchor || '')}">
+      <div class="dc-script-item ${isDirection ? 'direction' : 'dialogue'} ${hasCue ? 'has-cue' : ''}" data-script-id="${escapeHtml(item.id)}" data-cue-anchor="${escapeHtml(item.cueAnchor || '')}">
         <div class="dc-script-meta">
-          ${item.speaker ? `<span class="dc-speaker-pill">${escapeHtml(item.speaker)}</span>` : '<span style="font-size: 0.65rem; color: #a29bfe; font-weight: 700; text-transform: uppercase;">[AÇÃO / CENA]</span>'}
+          ${item.speaker ? `<span class="dc-speaker-pill">${escapeHtml(item.speaker)}</span>` : (isDirection ? '<span class="dc-direction-tag">[CENA / RUBRICA]</span>' : '')}
           ${cueBadgeHtml}
         </div>
         <div class="${isDirection ? 'dc-script-direction' : 'dc-script-text'}">
@@ -441,6 +546,8 @@ function renderCues() {
           <button type="button" class="dc-cue-btn" data-cue-action="standby" data-id="${escapeHtml(cue.id)}" title="Standby">🟡</button>
           <button type="button" class="dc-cue-btn" data-cue-action="go" data-id="${escapeHtml(cue.id)}" title="Disparar GO">🟢</button>
           <button type="button" class="dc-cue-btn" data-cue-action="reset" data-id="${escapeHtml(cue.id)}" title="Voltar a pendente">↩️</button>
+          <button type="button" class="dc-cue-btn" data-cue-action="edit" data-id="${escapeHtml(cue.id)}" title="Editar Deixa">✏️</button>
+          <button type="button" class="dc-cue-btn" data-cue-action="delete" data-id="${escapeHtml(cue.id)}" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4);" title="Eliminar Deixa">🗑️</button>
         </div>
       </div>
     `;
@@ -625,6 +732,14 @@ document.addEventListener('click', (e) => {
     if (action === 'standby') client.standbyCue(id);
     else if (action === 'go') client.fireCue(id);
     else if (action === 'reset') client.resetCue(id);
+    else if (action === 'edit') openEditCueModal(id);
+    else if (action === 'delete') {
+      const cue = state?.theatre?.cues?.find(c => c.id === id);
+      const cueLabel = cue ? `${cue.num} (${cue.name})` : 'esta deixa';
+      if (confirm(`Tem a certeza de que deseja eliminar ${cueLabel}?`)) {
+        client.deleteCue(id);
+      }
+    }
   }
 
   // Remove checklist item
@@ -841,6 +956,163 @@ if ($newCueConfirm) {
 
     client.updateTheatreCues(cues);
     $modalNewCue.style.display = 'none';
+  });
+}
+
+// ─── Modal Edit Cue ──────────────────────────────────────────────────
+function openEditCueModal(cueId) {
+  const cue = state?.theatre?.cues?.find(c => c.id === cueId);
+  if (!cue || !$modalEditCue) return;
+
+  if ($editCueId) $editCueId.value = cue.id;
+  if ($editCueNum) $editCueNum.value = cue.num || '';
+  if ($editCueName) $editCueName.value = cue.name || '';
+  if ($editCueTarget) $editCueTarget.value = cue.targetText || '';
+  if ($editCueNotes) $editCueNotes.value = cue.notes || '';
+
+  const depts = Array.isArray(cue.departments) ? cue.departments.map(d => String(d).toLowerCase()) : ['luz'];
+  document.querySelectorAll('input[name="dc-edit-dept"]').forEach(chk => {
+    chk.checked = depts.some(d => d.includes(chk.value.toLowerCase()));
+  });
+
+  $modalEditCue.style.display = 'flex';
+  if ($editCueName) $editCueName.focus();
+}
+
+if ($editCueConfirm) {
+  $editCueConfirm.addEventListener('click', () => {
+    const cueId = $editCueId?.value;
+    if (!cueId) return;
+
+    const num = ($editCueNum?.value || '').trim();
+    const name = ($editCueName?.value || '').trim();
+    const target = ($editCueTarget?.value || '').trim();
+    const notes = ($editCueNotes?.value || '').trim();
+
+    const depts = [];
+    document.querySelectorAll('input[name="dc-edit-dept"]:checked').forEach(chk => {
+      depts.push(chk.value);
+    });
+
+    if (!num || !name) {
+      alert('Por favor introduza o número e o nome da deixa.');
+      return;
+    }
+
+    client.editCue(cueId, {
+      num: num,
+      name: name,
+      targetText: target,
+      departments: depts.length > 0 ? depts : ['Luz'],
+      notes: notes
+    });
+
+    $modalEditCue.style.display = 'none';
+  });
+}
+
+if ($editCueDeleteBtn) {
+  $editCueDeleteBtn.addEventListener('click', () => {
+    const cueId = $editCueId?.value;
+    if (!cueId) return;
+    const cue = state?.theatre?.cues?.find(c => c.id === cueId);
+    const cueLabel = cue ? `${cue.num} (${cue.name})` : 'esta deixa';
+    if (confirm(`Eliminar permanentemente ${cueLabel}?`)) {
+      client.deleteCue(cueId);
+      $modalEditCue.style.display = 'none';
+    }
+  });
+}
+
+// ─── Clear All Cues ──────────────────────────────────────────────────
+if ($btnClearCues) {
+  $btnClearCues.addEventListener('click', () => {
+    const total = state?.theatre?.cues?.length || 0;
+    if (total === 0) {
+      alert('Não existem deixas para eliminar.');
+      return;
+    }
+    if (confirm(`Atenção: Deseja eliminar TODAS as ${total} deixas registadas?\nEsta ação limpará permanentemente a lista de deixas desta sala.`)) {
+      client.clearAllCues();
+    }
+  });
+}
+
+// ─── Modal Edit Full Script Text ─────────────────────────────────────
+if ($btnEditScriptText && $modalEditScriptText) {
+  $btnEditScriptText.addEventListener('click', () => {
+    const th = state?.theatre;
+    const script = Array.isArray(th?.script) ? th.script : [];
+    let textLines = '';
+    if (script.length > 0) {
+      textLines = script.map(item => {
+        if (item.type === 'direction') {
+          return item.text.startsWith('[') && item.text.endsWith(']') ? item.text : `[${item.text}]`;
+        }
+        if (item.speaker) {
+          return `${item.speaker}: ${item.text}`;
+        }
+        return item.text;
+      }).join('\n\n');
+    }
+    if ($fullScriptTextarea) $fullScriptTextarea.value = textLines;
+    $modalEditScriptText.style.display = 'flex';
+    if ($fullScriptTextarea) $fullScriptTextarea.focus();
+  });
+}
+
+if ($fullScriptSave) {
+  $fullScriptSave.addEventListener('click', () => {
+    const raw = ($fullScriptTextarea?.value || '').trim();
+    if (!raw) {
+      if (confirm('Deseja limpar todo o texto do guião?')) {
+        client.updateTheatreScript([]);
+        $modalEditScriptText.style.display = 'none';
+      }
+      return;
+    }
+
+    const lines = raw.split('\n');
+    const newScript = [];
+    lines.forEach((line, idx) => {
+      const clean = line.trim();
+      if (!clean) return;
+
+      if (clean.startsWith('[') && clean.endsWith(']')) {
+        newScript.push({
+          id: 'sc_' + Date.now() + '_' + idx,
+          type: 'direction',
+          text: clean,
+          cueAnchor: null
+        });
+      } else {
+        const colonIdx = clean.indexOf(':');
+        if (colonIdx > 0 && colonIdx < 30) {
+          const speaker = clean.substring(0, colonIdx).trim().toUpperCase();
+          const text = clean.substring(colonIdx + 1).trim();
+          newScript.push({
+            id: 'sc_' + Date.now() + '_' + idx,
+            type: 'dialogue',
+            speaker: speaker,
+            text: text,
+            cueAnchor: null
+          });
+        } else {
+          newScript.push({
+            id: 'sc_' + Date.now() + '_' + idx,
+            type: 'dialogue',
+            speaker: '',
+            text: clean,
+            cueAnchor: null
+          });
+        }
+      }
+    });
+
+    if (newScript.length > 0) {
+      client.updateTheatreScript(newScript);
+      $modalEditScriptText.style.display = 'none';
+    }
   });
 }
 

@@ -53,8 +53,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Posto Técnico (Cue Station)</title>
-  <link rel="stylesheet" href="css/common.css?v=77">
-  <link rel="stylesheet" href="css/cue-station.css?v=77">
+  <link rel="stylesheet" href="css/common.css?v=78">
+  <link rel="stylesheet" href="css/cue-station.css?v=78">
 </head>
 <body>
   <div id="cue-screen" class="cs-screen">
@@ -151,18 +151,29 @@
       <nav class="cs-tab-bar" aria-label="Navegação do Técnico">
         <button type="button" class="cs-tab-btn active" data-tab="tab-my-cues">
           <span>⚡</span>
-          <span>Deixas do meu Departamento</span>
+          <span>Deixas do Espetáculo</span>
           <span id="cs-my-cues-count" class="cs-badge">0</span>
         </button>
         <button type="button" class="cs-tab-btn" data-tab="tab-my-checklist">
           <span>📋</span>
-          <span>Checklist de Montagem & Preset</span>
+          <span>Checklist do Posto & Preset</span>
           <span id="cs-my-checklist-count" class="cs-badge">0%</span>
         </button>
       </nav>
 
-      <!-- TAB 1: LISTA FILTRADA DE DEIXAS -->
+      <!-- TAB 1: LISTA DE DEIXAS COM FILTRO POR TÉCNICO -->
       <div id="tab-my-cues" class="cs-tab-content active">
+        <!-- Filter bar for cues -->
+        <div class="cs-cues-filter-bar" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+          <button type="button" class="btn btn-sm cs-cue-filter-btn active" data-filter="all" style="padding: 5px 12px; font-weight: 700; font-size: 0.78rem;">🌟 Todas as Deixas</button>
+          <button type="button" class="btn btn-sm cs-cue-filter-btn" data-filter="my" style="padding: 5px 12px; font-weight: 700; font-size: 0.78rem;">⭐ Só Minhas (<span id="cs-count-filter-my">0</span>)</button>
+          <button type="button" class="btn btn-sm cs-cue-filter-btn" data-filter="Luz" style="padding: 5px 10px; font-size: 0.78rem;">💡 Luz</button>
+          <button type="button" class="btn btn-sm cs-cue-filter-btn" data-filter="Som" style="padding: 5px 10px; font-size: 0.78rem;">🔊 Som</button>
+          <button type="button" class="btn btn-sm cs-cue-filter-btn" data-filter="Maquinaria" style="padding: 5px 10px; font-size: 0.78rem;">⚙️ Maq</button>
+          <button type="button" class="btn btn-sm cs-cue-filter-btn" data-filter="Vídeo" style="padding: 5px 10px; font-size: 0.78rem;">🎥 Vídeo</button>
+          <button type="button" class="btn btn-sm cs-cue-filter-btn" data-filter="Coxias" style="padding: 5px 10px; font-size: 0.78rem;">🎭 Coxias</button>
+        </div>
+
         <div id="cs-cues-list" class="cs-cues-list">
           <!-- Injected dynamically by cue-station.js -->
         </div>
@@ -178,8 +189,20 @@
           <div id="cs-checklist-progress-pill" class="cs-readiness-pill">0% Concluído</div>
         </div>
 
+        <!-- Filter bar for checklist -->
+        <div class="cs-chk-filter-bar" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; margin-bottom: 10px;">
+          <button type="button" class="btn btn-sm cs-chk-filter-btn active" data-chk-filter="my" style="padding: 4px 10px; font-size: 0.75rem; font-weight: 700;">⭐ Tarefas do Meu Posto</button>
+          <button type="button" class="btn btn-sm cs-chk-filter-btn" data-chk-filter="all" style="padding: 4px 10px; font-size: 0.75rem;">🌟 Todas as Equipas</button>
+        </div>
+
         <div id="cs-my-checklist-items" class="cs-checklist-items">
           <!-- Injected by cue-station.js -->
+        </div>
+
+        <!-- Add Task Bar -->
+        <div style="display: flex; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); align-items: center;">
+          <input id="cs-new-task-input" class="cs-input" placeholder="+ Adicionar verificação / tarefa no meu posto..." style="flex: 1; padding: 9px 12px; font-size: 0.85rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; color: #fff; outline: none;">
+          <button id="cs-new-task-btn" type="button" class="btn btn-sm btn-primary" style="padding: 9px 16px; font-weight: 800; background: #00b894; border-color: #00b894; white-space: nowrap;">➕ Adicionar</button>
         </div>
       </div>
     </div>
@@ -187,8 +210,8 @@
 
   <!-- Scripts -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=77"></script>
-  <script src="js/local-sync.js?v=77"></script>
-  <script src="js/cue-station.js?v=77"></script>
+  <script src="js/pwa.js?v=78"></script>
+  <script src="js/local-sync.js?v=78"></script>
+  <script src="js/cue-station.js?v=78"></script>
 </body>
 </html>

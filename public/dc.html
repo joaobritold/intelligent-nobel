@@ -53,8 +53,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Mesa da Diretora de Cena (DC)</title>
-  <link rel="stylesheet" href="css/common.css?v=77">
-  <link rel="stylesheet" href="css/dc.css?v=77">
+  <link rel="stylesheet" href="css/common.css?v=78">
+  <link rel="stylesheet" href="css/dc.css?v=78">
 </head>
 <body>
   <div id="dc-screen" class="dc-screen">
@@ -151,16 +151,24 @@
           </div>
 
           <div class="dc-pane-tools">
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <button id="dc-script-font-minus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Diminuir tamanho de letra">A−</button>
+              <button id="dc-script-font-plus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Aumentar tamanho de letra">A+</button>
+            </div>
+            <button id="dc-script-scroll-toggle" type="button" class="dc-tool-btn" title="Iniciar ou pausar rolagem contínua de leitura (Teleprompter)">
+              ▶ Rolar Texto
+            </button>
+            <select id="dc-script-scroll-speed" class="dc-tool-btn" style="padding: 4px 6px; font-size: 0.72rem; outline: none; background: rgba(255,255,255,0.06); color: #fff;" title="Velocidade de rolagem">
+              <option value="1">Lento</option>
+              <option value="2" selected>Médio</option>
+              <option value="3">Rápido</option>
+            </select>
+            <button id="dc-btn-edit-script-text" type="button" class="dc-tool-btn" title="Editar ou colar o texto completo da peça">
+              ✏️ Editar Texto
+            </button>
             <button id="dc-btn-import-script" type="button" class="dc-tool-btn" title="Carregar guião via ficheiro ou texto">
-              📥 Importar Guião
+              📥 Importar
             </button>
-            <button id="dc-btn-add-line" type="button" class="dc-tool-btn" title="Adicionar nova fala ou didascália">
-              ➕ Fala
-            </button>
-            <label class="dc-toggle-label" title="Rolar o guião automaticamente para acompanhar as falas">
-              <input type="checkbox" id="dc-toggle-autoscroll" checked>
-              <span>Auto-Scroll</span>
-            </label>
           </div>
         </div>
 
@@ -218,6 +226,9 @@
               </button>
               <button id="dc-btn-reset-cues" type="button" class="dc-mini-btn" title="Voltar todas as deixas a pendente">
                 ↩️ Reset Deixas
+              </button>
+              <button id="dc-btn-clear-cues" type="button" class="dc-mini-btn" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4);" title="Eliminar todas as deixas da lista">
+                🗑️ Limpar Deixas
               </button>
             </div>
           </div>
@@ -388,10 +399,76 @@
     </div>
   </div>
 
+  <!-- Modal Editar Deixa -->
+  <div id="dc-modal-edit-cue" class="dc-modal" style="display: none;">
+    <div class="dc-modal-content">
+      <div class="dc-modal-header">
+        <h3>✏️ Editar Deixa / Cue</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-cue">✕</button>
+      </div>
+      <div class="dc-modal-body">
+        <input type="hidden" id="dc-edit-cue-id">
+        <div class="dc-form-row" style="display: flex; gap: 10px;">
+          <div class="dc-form-group" style="flex: 1;">
+            <label>Identificador (ex: Q1, Q1.5):</label>
+            <input id="dc-edit-cue-num" class="dc-input" placeholder="ex: Q1">
+          </div>
+          <div class="dc-form-group" style="flex: 2;">
+            <label>Nome / Ação da Deixa:</label>
+            <input id="dc-edit-cue-name" class="dc-input" placeholder="ex: Abertura de Sala">
+          </div>
+        </div>
+        <div class="dc-form-group">
+          <label>Ponto do Guião / Fala Desencadeadora:</label>
+          <input id="dc-edit-cue-target" class="dc-input" placeholder="ex: Na fala 'quando a tempestade...'">
+        </div>
+        <div class="dc-form-group">
+          <label>Departamentos Destinatários:</label>
+          <div class="dc-dept-checkbox-row">
+            <label><input type="checkbox" name="dc-edit-dept" value="Luz"> 💡 Luz</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="Som"> 🔊 Som</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="Maquinaria"> ⚙️ Maquinaria</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="Vídeo"> 🎥 Vídeo</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="Coxias"> 🎭 Coxias</label>
+          </div>
+        </div>
+        <div class="dc-form-group">
+          <label>Notas Técnicas / Advertências:</label>
+          <input id="dc-edit-cue-notes" class="dc-input" placeholder="ex: Fade suave de 3s; Sala a 80%">
+        </div>
+      </div>
+      <div class="dc-modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <button id="dc-edit-cue-delete-btn" type="button" class="dc-btn-secondary" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4); font-weight: 700;">🗑️ Eliminar Deixa</button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-edit-cue">Cancelar</button>
+          <button id="dc-edit-cue-confirm" type="button" class="dc-btn-primary">Guardar Alterações</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Editar Texto Completo do Guião -->
+  <div id="dc-modal-edit-script-text" class="dc-modal" style="display: none;">
+    <div class="dc-modal-content" style="max-width: 700px;">
+      <div class="dc-modal-header">
+        <h3>✏️ Texto Completo do Guião da Peça</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-script-text">✕</button>
+      </div>
+      <div class="dc-modal-body">
+        <p class="dc-modal-desc">Edite ou cole aqui o texto da peça. Pode escrever falas no formato <code>NOME: Fala</code> e indicações/rubricas cénicas entre parênteses retos <code>[A cortina abre...]</code>:</p>
+        <textarea id="dc-full-script-textarea" class="dc-textarea" style="min-height: 280px; font-family: inherit; font-size: 0.95rem; line-height: 1.6;" placeholder="DIRETOR: Tudo pronto nas coxias?&#10;ATOR 1: Estamos a postos.&#10;[Ouve-se o terceiro sinal.]"></textarea>
+      </div>
+      <div class="dc-modal-footer">
+        <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-edit-script-text">Cancelar</button>
+        <button id="dc-full-script-save" type="button" class="dc-btn-primary">💾 Guardar Texto no Guião</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=77"></script>
-  <script src="js/local-sync.js?v=77"></script>
-  <script src="js/dc.js?v=77"></script>
+  <script src="js/pwa.js?v=78"></script>
+  <script src="js/local-sync.js?v=78"></script>
+  <script src="js/dc.js?v=78"></script>
 </body>
 </html>
