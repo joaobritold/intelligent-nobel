@@ -22,7 +22,7 @@ try {
 } catch (e) {}
 
 const client = new StageTimerClient({
-  role: 'viewer',
+  role: 'regies',
   room: roomId
 });
 
@@ -361,6 +361,62 @@ function updateRegieControls() {
   }
 }
 
+// ─── Communications History Log ─────────────────────────────────────
+
+const $regieHistoryCard = document.getElementById('regie-history-card');
+const $regieHistoryList = document.getElementById('regie-history-list');
+const $regieHistoryCount = document.getElementById('regie-history-count');
+
+let lastHistorySig = '';
+
+function renderRegieHistory() {
+  if (!$regieHistoryList) return;
+  const history = Array.isArray(state?.regieHistory) ? state.regieHistory : [];
+
+  if ($regieHistoryCount) {
+    $regieHistoryCount.textContent = history.length;
+  }
+
+  const sig = history.map(h => `${h.id}:${h.timeStr}:${h.type}:${h.ackFoh || ''}:${h.ackStage || ''}`).join('|');
+  if (sig === lastHistorySig) return;
+  lastHistorySig = sig;
+
+  if (history.length === 0) {
+    $regieHistoryList.innerHTML = `<div class="regie-history-empty">Sem avisos ou chamadas registados nesta sessão.</div>`;
+    return;
+  }
+
+  $regieHistoryList.innerHTML = history.map(item => {
+    const isCall = item.type === 'call';
+    const isMsg = item.type === 'msg';
+    const icon = isCall ? '🚨' : '📢';
+    const sender = isCall ? `CHAMADA: ${escapeHtml(item.from || 'RÉGIE')}` : `STAGE MANAGER`;
+
+    let receiptsHtml = '';
+    if (isMsg) {
+      const fohRead = Boolean(item.ackFoh);
+      const stageRead = Boolean(item.ackStage);
+      receiptsHtml = `
+        <div class="regie-history-receipts">
+          <span class="regie-history-receipt-tag ${fohRead ? 'read' : ''}">🎚️ FOH: ${fohRead ? `✓ Lido (${escapeHtml(item.ackFoh)})` : '⏳ Aguarda'}</span>
+          <span class="regie-history-receipt-tag ${stageRead ? 'read' : ''}">🎛️ Palco: ${stageRead ? `✓ Lido (${escapeHtml(item.ackStage)})` : '⏳ Aguarda'}</span>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="regie-history-item ${isCall ? 'is-call' : 'is-msg'}">
+        <div class="regie-history-meta">
+          <span class="regie-history-sender">${icon} ${sender}</span>
+          <span class="regie-history-time">${escapeHtml(item.timeStr || '')}</span>
+        </div>
+        <div class="regie-history-body">${escapeHtml(item.text || '')}</div>
+        ${receiptsHtml}
+      </div>
+    `;
+  }).join('');
+}
+
 // ─── Stage Navigation and Multi-Stage Logic ─────────────────────────
 
 let lastLineupStagePillsSig = '';
@@ -670,6 +726,7 @@ function render() {
 
   // Update Call & Intercom status
   updateRegieControls();
+  renderRegieHistory();
 
   const activeTimer = StageTimerClient.getActiveTimer(state);
   const activeIdx = state.timers.findIndex(t => t.id === (activeTimer?.id || state.activeTimerId));

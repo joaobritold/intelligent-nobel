@@ -53,8 +53,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Modo Régies (FOH & Palco)</title>
-  <link rel="stylesheet" href="css/common.css?v=74">
-  <link rel="stylesheet" href="css/regies.css?v=74">
+  <link rel="stylesheet" href="css/common.css?v=75">
+  <link rel="stylesheet" href="css/regies.css?v=75">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
@@ -65,7 +65,7 @@
         <a href="index.html" class="regie-home-link" title="Voltar ao Início">
           <span style="font-size: 1.4rem;">📟</span>
           <span class="regie-header-title">RÉGIES</span>
-          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v74</span>
+          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v75</span>
         </a>
 
         <!-- Stage Selector Pill -->
@@ -142,30 +142,49 @@
       </button>
     </section>
 
-    <!-- Main Content: Active Stage + Full Artist List -->
+    <!-- Main Content: 50% Left (Active Stage + Communications History) & 50% Right (Full Lineup) -->
     <div class="lineup-body">
-      <!-- Left / Top: Currently on Stage -->
-      <aside id="lineup-now-card" class="lineup-now-card">
-        <div id="lineup-now-badge" class="lineup-now-badge">● EM PALCO AGORA</div>
-        <div id="lineup-now-name" class="lineup-now-name">--</div>
-        <div id="lineup-now-slot" class="lineup-now-slot"></div>
-        <div id="lineup-now-timer" class="lineup-now-timer">--:--</div>
-        <div id="lineup-now-notes" class="lineup-now-notes" style="display: none;"></div>
-      </aside>
+      <!-- Left Column: Active Stage + History -->
+      <div class="regie-left-col">
+        <!-- Card 1: Currently on Stage -->
+        <aside id="lineup-now-card" class="lineup-now-card">
+          <div id="lineup-now-badge" class="lineup-now-badge">● EM PALCO AGORA</div>
+          <div id="lineup-now-name" class="lineup-now-name">--</div>
+          <div id="lineup-now-slot" class="lineup-now-slot"></div>
+          <div id="lineup-now-timer" class="lineup-now-timer">--:--</div>
+          <div id="lineup-now-notes" class="lineup-now-notes" style="display: none;"></div>
+        </aside>
 
-      <!-- Right / Bottom: Full Schedule List -->
-      <main class="lineup-main-scroll">
-        <div id="lineup-list" class="lineup-list-container">
-          <!-- Injected by JS -->
-        </div>
-      </main>
+        <!-- Card 2: History of Notices & Intercom Calls -->
+        <aside id="regie-history-card" class="regie-history-card">
+          <div class="regie-history-header">
+            <div class="regie-history-title">
+              <span>📋</span>
+              <span>HISTÓRICO DE AVISOS & CHAMADAS</span>
+            </div>
+            <span id="regie-history-count" class="regie-history-count-badge">0</span>
+          </div>
+          <div id="regie-history-list" class="regie-history-list">
+            <div class="regie-history-empty">Sem avisos ou chamadas registados nesta sessão.</div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Right Column: Full Schedule List -->
+      <div class="regie-right-col">
+        <main class="lineup-main-scroll">
+          <div id="lineup-list" class="lineup-list-container">
+            <!-- Injected by JS -->
+          </div>
+        </main>
+      </div>
     </div>
   </div>
 
   <!-- Cloud MQTT over WSS -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=74"></script>
-  <script src="js/local-sync.js?v=74"></script>
-  <script src="js/regies.js?v=74"></script>
+  <script src="js/pwa.js?v=75"></script>
+  <script src="js/local-sync.js?v=75"></script>
+  <script src="js/regies.js?v=75"></script>
 </body>
 </html>

@@ -26,6 +26,7 @@
 
   const $cmdAllViewer = document.getElementById('cmd-all-viewer');
   const $cmdAllLineup = document.getElementById('cmd-all-lineup');
+  const $cmdAllRegies = document.getElementById('cmd-all-regies');
   const $cmdAllReload = document.getElementById('cmd-all-reload');
   const $cmdClearOffline = document.getElementById('cmd-clear-offline');
 
@@ -75,6 +76,17 @@
     const viewKey = String(dev.viewKey || '').toLowerCase();
     const label = String(dev.label || '').toLowerCase();
 
+    // 0. Modo Régies (FOH & Palco) - Match before generic viewer / palco
+    if (viewKey === 'regies' || path.includes('regies') || label.includes('régies') || label.includes('regies')) {
+      const isStage = label.includes('palco') || path.includes('station=stage');
+      return {
+        key: 'regies',
+        name: isStage ? '📟 Modo Régies (Palco)' : '📟 Modo Régies (FOH)',
+        shortName: 'Régies',
+        badgeClass: 'view-regies'
+      };
+    }
+
     // 1. Lineup / Modo Lista
     if (viewKey === 'lineup' || path.includes('lineup') || label.includes('lista') || label.includes('backstage')) {
       return {
@@ -106,7 +118,7 @@
     }
 
     // 4. Configurador
-    if (viewKey === 'controller' || path.includes('controller') || label.includes('configurador') || label.includes('régie') || label.includes('regie') || label.includes('controlador')) {
+    if (viewKey === 'controller' || path.includes('controller') || label.includes('configurador') || label.includes('controlador')) {
       return {
         key: 'controller',
         name: '🎛️ Configurador',
@@ -126,6 +138,14 @@
     }
 
     // 6. Generic role fallbacks
+    if (role === 'regies') {
+      return {
+        key: 'regies',
+        name: '📟 Modo Régies',
+        shortName: 'Régies',
+        badgeClass: 'view-regies'
+      };
+    }
     if (role === 'viewer') {
       return {
         key: 'viewer',
@@ -277,6 +297,9 @@
               </button>
               <button type="button" class="device-btn ${viewInfo.key === 'lineup' ? 'is-current-view' : ''}" data-cmd="lineup" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Lista Backstage">
                 📋 Lista ${viewInfo.key === 'lineup' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
+              </button>
+              <button type="button" class="device-btn ${viewInfo.key === 'regies' ? 'is-current-view' : ''}" data-cmd="regies" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Régies (FOH & Palco)">
+                📟 Régies ${viewInfo.key === 'regies' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
               </button>
               <button type="button" class="device-btn ${viewInfo.key === 'operator' ? 'is-current-view' : ''}" data-cmd="operator" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Operador Mobile">
                 📱 Operador ${viewInfo.key === 'operator' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
@@ -522,7 +545,7 @@
         }, 800);
       }
 
-      if (cmd === 'viewer' || cmd === 'lineup' || cmd === 'operator' || cmd === 'controller') {
+      if (cmd === 'viewer' || cmd === 'lineup' || cmd === 'regies' || cmd === 'operator' || cmd === 'controller') {
         masterClient.sendDeviceCommand(uuid, {
           action: 'navigate',
           url: `${cmd}.html?room=${encodeURIComponent(room)}`,
@@ -581,6 +604,22 @@
         masterClient.sendDeviceCommand('ALL', { action: 'navigate', url: 'lineup.html' });
         $cmdAllLineup.textContent = '⚡ Enviado a Todos!';
         setTimeout(() => { $cmdAllLineup.textContent = '📋 Todos Lista'; }, 1500);
+      }
+    });
+  }
+
+  if ($cmdAllRegies) {
+    $cmdAllRegies.addEventListener('click', () => {
+      if (confirm('Mudar TODOS os dispositivos online para o Modo Régies?')) {
+        if (navigator.vibrate) { try { navigator.vibrate(35); } catch (e) {} }
+        masterClient.globalDevicesMap.forEach(dev => {
+          dev.viewKey = 'regies';
+          dev.path = 'regies.html';
+        });
+        renderDevicesList();
+        masterClient.sendDeviceCommand('ALL', { action: 'navigate', url: 'regies.html' });
+        $cmdAllRegies.textContent = '⚡ Enviado a Todos!';
+        setTimeout(() => { $cmdAllRegies.textContent = '📟 Todos Régies'; }, 1500);
       }
     });
   }

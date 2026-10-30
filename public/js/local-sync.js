@@ -176,6 +176,7 @@ class UniversalSyncClient {
     const path = typeof location !== 'undefined' ? location.pathname.toLowerCase() : '';
     if (path.includes('master')) return 'master';
     if (path.includes('lineup')) return 'lineup';
+    if (path.includes('regies')) return 'regies';
     if (path.includes('operator')) return 'operator';
     if (path.includes('viewer')) return 'viewer';
     if (path.includes('controller')) return 'controller';
@@ -183,6 +184,7 @@ class UniversalSyncClient {
 
     if (this.role === 'master') return 'master';
     if (this.role === 'operator') return 'operator';
+    if (this.role === 'regies') return 'regies';
     if (this.role === 'viewer') return 'viewer';
     if (this.role === 'controller') return 'controller';
     return this.role || 'index';
@@ -196,6 +198,10 @@ class UniversalSyncClient {
     else if (viewKey === 'controller') roleLabel = 'Configurador';
     else if (viewKey === 'operator') roleLabel = 'Operador Mobile';
     else if (viewKey === 'lineup') roleLabel = 'Modo Lista';
+    else if (viewKey === 'regies') {
+      const st = typeof localStorage !== 'undefined' ? (localStorage.getItem('stagetimer_regie_station') || 'foh') : 'foh';
+      roleLabel = st === 'stage' ? 'Modo Régies (Palco)' : 'Modo Régies (FOH)';
+    }
     else if (viewKey === 'viewer') roleLabel = 'Ecrã de Palco';
     else if (viewKey === 'index') roleLabel = 'Início';
 
@@ -956,6 +962,7 @@ class UniversalSyncClient {
       message: { text: '', visible: false, level: 'info' },
       regieCall: { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' },
       regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null },
+      regieHistory: [],
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
       updatedAt: 0,
       isEmptyDefault: true
@@ -984,6 +991,9 @@ class UniversalSyncClient {
     }
     if (!this._state.regieMessage || typeof this._state.regieMessage !== 'object') {
       this._state.regieMessage = { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null };
+    }
+    if (!Array.isArray(this._state.regieHistory)) {
+      this._state.regieHistory = [];
     }
     // Auto-expire calls older than 5.5 seconds across any client/device
     if (this._state.regieCall && (this._state.regieCall.fohCallingStage || this._state.regieCall.stageCallingFoh)) {
@@ -1374,6 +1384,7 @@ class UniversalSyncClient {
       message: { text: '', visible: false, level: 'info' },
       regieCall: { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' },
       regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null },
+      regieHistory: [],
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
       updatedAt: Date.now()
     };
@@ -1745,6 +1756,7 @@ class UniversalSyncClient {
       message: { text: '', visible: false, level: 'info' },
       regieCall: { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' },
       regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null },
+      regieHistory: [],
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
       updatedAt: Date.now()
     };
@@ -2384,20 +2396,48 @@ class UniversalSyncClient {
     this._ensureRegieStructure();
     const now = Date.now();
     const tgt = String(target || '').toLowerCase();
+    let sender = fromStation;
+    let targetName = 'Todos';
+
     if (tgt === 'stage' || tgt === 'palco') {
       this._state.regieCall.fohCallingStage = true;
       this._state.regieCall.triggeredAt = now;
       this._state.regieCall.triggeredBy = fromStation || 'FOH';
+      sender = fromStation || 'FOH';
+      targetName = 'Palco';
     } else if (tgt === 'foh' || tgt === 'frente') {
       this._state.regieCall.stageCallingFoh = true;
       this._state.regieCall.triggeredAt = now;
       this._state.regieCall.triggeredBy = fromStation || 'PALCO';
+      sender = fromStation || 'PALCO';
+      targetName = 'FOH';
     } else {
       this._state.regieCall.fohCallingStage = true;
       this._state.regieCall.stageCallingFoh = true;
       this._state.regieCall.triggeredAt = now;
       this._state.regieCall.triggeredBy = fromStation || 'ALL';
+      sender = fromStation || 'ALL';
+      targetName = 'Geral';
     }
+
+    // Record in history log
+    if (!Array.isArray(this._state.regieHistory)) {
+      this._state.regieHistory = [];
+    }
+    const callTimeStr = (new Date()).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    this._state.regieHistory.unshift({
+      id: 'rc_' + now + '_' + Math.random().toString(36).substr(2, 4),
+      type: 'call',
+      from: sender,
+      target: targetName,
+      text: `Chamada de Intercom (${sender} ➔ ${targetName})`,
+      timeStr: callTimeStr,
+      ts: now
+    });
+    if (this._state.regieHistory.length > 30) {
+      this._state.regieHistory = this._state.regieHistory.slice(0, 30);
+    }
+
     this._commitStateChange();
 
     // Auto-expire call after exactly 5 seconds
@@ -2429,8 +2469,9 @@ class UniversalSyncClient {
     if (!cleanText) return;
     const now = new Date();
     const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+    const msgId = 'rm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
     this._state.regieMessage = {
-      id: 'rm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      id: msgId,
       text: cleanText,
       visible: true,
       sentAt: Date.now(),
@@ -2438,6 +2479,25 @@ class UniversalSyncClient {
       ackFoh: null,
       ackStage: null
     };
+
+    // Record in history log
+    if (!Array.isArray(this._state.regieHistory)) {
+      this._state.regieHistory = [];
+    }
+    this._state.regieHistory.unshift({
+      id: msgId,
+      type: 'msg',
+      from: 'Stage Manager',
+      text: cleanText,
+      timeStr: timeStr,
+      ts: Date.now(),
+      ackFoh: null,
+      ackStage: null
+    });
+    if (this._state.regieHistory.length > 30) {
+      this._state.regieHistory = this._state.regieHistory.slice(0, 30);
+    }
+
     this._commitStateChange();
   }
 
@@ -2468,6 +2528,16 @@ class UniversalSyncClient {
     } else if (st === 'stage' || st === 'palco') {
       this._state.regieMessage.ackStage = timeStr;
     }
+
+    // Update read receipts in history item
+    if (Array.isArray(this._state.regieHistory)) {
+      const histItem = this._state.regieHistory.find(h => h.id === this._state.regieMessage.id);
+      if (histItem) {
+        if (st === 'foh' || st === 'frente') histItem.ackFoh = timeStr;
+        if (st === 'stage' || st === 'palco') histItem.ackStage = timeStr;
+      }
+    }
+
     this._commitStateChange();
 
     // If both stations have acknowledged reading, auto-clear message after 5 seconds

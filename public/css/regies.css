@@ -312,66 +312,125 @@
   transform: scale(0.96);
 }
 
-/* ─── Stage Manager Technical Message Banner ───────────────────────── */
+/* ─── Stage Manager Technical Message Banner (High Visual Highlight) ── */
 .regie-msg-banner {
   display: none;
-  background: rgba(108, 92, 231, 0.18);
-  border: 1px solid rgba(108, 92, 231, 0.6);
-  border-left: 5px solid #6c5ce7;
-  border-radius: 12px;
-  padding: 12px 16px;
-  gap: 14px;
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.32) 0%, rgba(20, 16, 45, 0.95) 100%);
+  border: 2px solid #a29bfe;
+  border-left: 8px solid #6c5ce7;
+  border-radius: 14px;
+  padding: 14px 20px;
+  gap: 16px;
   justify-content: space-between;
   align-items: center;
-  backdrop-filter: blur(8px);
-  transition: all 0.4s ease;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 0 28px rgba(108, 92, 231, 0.55), inset 0 0 16px rgba(162, 155, 254, 0.15);
+  animation: regieMsgGlow 2.5s infinite alternate ease-in-out;
+  transition: all 0.35s ease;
+  z-index: 90;
 }
 
 .regie-msg-banner.visible {
   display: flex;
 }
 
+@keyframes regieMsgGlow {
+  0% {
+    box-shadow: 0 0 20px rgba(108, 92, 231, 0.45), inset 0 0 10px rgba(162, 155, 254, 0.1);
+    border-color: #a29bfe;
+  }
+  100% {
+    box-shadow: 0 0 36px rgba(108, 92, 231, 0.75), inset 0 0 20px rgba(162, 155, 254, 0.25);
+    border-color: #c4b5fd;
+  }
+}
+
 .regie-msg-content {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
   min-width: 0;
+  flex: 1;
 }
 
 .regie-msg-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.72rem;
-  font-weight: 800;
+  gap: 10px;
+  font-size: 0.78rem;
+  font-weight: 900;
   text-transform: uppercase;
-  color: #a29bfe;
-  letter-spacing: 0.06em;
+  color: #fff;
+  letter-spacing: 0.08em;
+}
+
+.regie-msg-header > span:first-child {
+  background: rgba(108, 92, 231, 0.45);
+  border: 1px solid #a29bfe;
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: #f1f5f9;
 }
 
 .regie-msg-text {
-  font-size: clamp(0.95rem, 1.8vw, 1.2rem);
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.25;
+  font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.3;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  letter-spacing: -0.01em;
 }
 
-.regie-msg-ack-btn {
-  background: #00b894;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 0.82rem;
+.regie-msg-receipts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.regie-msg-receipt-pill {
+  font-size: 0.72rem;
   font-weight: 800;
-  cursor: pointer;
-  white-space: nowrap;
-  box-shadow: 0 3px 10px rgba(0, 184, 148, 0.35);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   transition: all 0.2s ease;
 }
 
+.regie-msg-receipt-pill.read {
+  background: rgba(0, 184, 148, 0.25);
+  color: #00ffb3;
+  border-color: rgba(0, 184, 148, 0.6);
+  box-shadow: 0 0 10px rgba(0, 184, 148, 0.3);
+}
+
+.regie-msg-ack-btn {
+  background: linear-gradient(135deg, #00b894, #00cec9);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 22px;
+  font-size: 0.92rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 18px rgba(0, 184, 148, 0.5);
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .regie-msg-ack-btn:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.regie-msg-ack-btn:active {
+  transform: translateY(1px);
 }
 
 .regie-msg-ack-btn.acknowledged {
@@ -380,9 +439,192 @@
   border: 1px solid #00b894;
   cursor: default;
   box-shadow: none;
+  transform: none;
+}
+
+/* ─── 50/50 Régies Layout (Left: Now Playing + History | Right: Lineup) ── */
+.lineup-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  flex: 1;
+  align-items: start;
+  width: 100%;
+}
+
+.regie-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.regie-left-col .lineup-now-card {
+  position: static;
+  top: auto;
+  width: 100%;
+}
+
+.regie-right-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.regie-right-col .lineup-main-scroll {
+  max-height: calc(100dvh - 130px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* ─── Communications History Card (Left Column Bottom) ──────────────── */
+.regie-history-card {
+  background: rgba(18, 18, 32, 0.88);
+  border: 1px solid rgba(108, 92, 231, 0.35);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.regie-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.regie-history-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #c4b5fd;
+}
+
+.regie-history-count-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: rgba(108, 92, 231, 0.25);
+  color: #a29bfe;
+  border: 1px solid rgba(108, 92, 231, 0.4);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.regie-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.regie-history-empty {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+  padding: 24px 8px;
+}
+
+.regie-history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: background 0.2s ease;
+}
+
+.regie-history-item.is-call {
+  border-left: 4px solid #ff7675;
+  background: linear-gradient(90deg, rgba(214, 48, 49, 0.12) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.regie-history-item.is-msg {
+  border-left: 4px solid #6c5ce7;
+  background: linear-gradient(90deg, rgba(108, 92, 231, 0.15) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.regie-history-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+}
+
+.regie-history-sender {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.regie-history-item.is-call .regie-history-sender {
+  color: #ff7675;
+}
+
+.regie-history-item.is-msg .regie-history-sender {
+  color: #a29bfe;
+}
+
+.regie-history-time {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.regie-history-body {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.3;
+}
+
+.regie-history-receipts {
+  display: flex;
+  gap: 6px;
+  font-size: 0.7rem;
+  margin-top: 2px;
+  color: var(--text-secondary);
+}
+
+.regie-history-receipt-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.regie-history-receipt-tag.read {
+  color: #55efc4;
+  background: rgba(0, 184, 148, 0.15);
 }
 
 /* Responsive Tweaks */
+@media (max-width: 960px) {
+  .lineup-body {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .regie-right-col .lineup-main-scroll {
+    max-height: none;
+  }
+}
 @media (max-width: 900px) {
   .regie-header {
     gap: 10px;
