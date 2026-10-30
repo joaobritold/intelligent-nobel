@@ -1047,11 +1047,15 @@ class UniversalSyncClient {
         this._state.theatre.urgentNotice = { text: '', level: 'warn', visible: false, sentAt: 0 };
       }
       if (typeof this._state.theatre.showState !== 'string') this._state.theatre.showState = 'pre';
+      if (typeof this._state.theatre.phase !== 'string') {
+        this._state.theatre.phase = this._state.theatre.showState === 'running' ? 'live' : 'prep';
+      }
     }
   }
 
   _createDefaultTheatreState() {
     return {
+      phase: 'prep',
       showState: 'pre',
       showStartTime: 0,
       showPausedAt: 0,
@@ -2882,11 +2886,19 @@ class UniversalSyncClient {
     this._commitStateChange();
   }
 
+  setTheatrePhase(phase) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    this._state.theatre.phase = phase === 'live' ? 'live' : 'prep';
+    this._commitStateChange();
+  }
+
   startTheatreShow() {
     if (!this._state) return;
     this._ensureTheatreStructure();
     const th = this._state.theatre;
     th.showState = 'running';
+    th.phase = 'live'; // Automatically enter live show phase
     if (!th.showStartTime || th.showStartTime === 0) {
       th.showStartTime = Date.now();
     } else if (th.showPausedAt > 0) {
@@ -2922,6 +2934,7 @@ class UniversalSyncClient {
     this._ensureTheatreStructure();
     const th = this._state.theatre;
     th.showState = 'pre';
+    th.phase = 'prep'; // Return to preparation phase on reset
     th.showStartTime = 0;
     th.showPausedAt = 0;
     th.showElapsedMs = 0;
@@ -3116,6 +3129,22 @@ class UniversalSyncClient {
     const th = this._state.theatre;
     if (!Array.isArray(th.reports)) return;
     th.reports = th.reports.filter(r => r.id !== reportId);
+    this._commitStateChange();
+  }
+
+  appendTheatreCues(newCues = []) {
+    if (!this._state || !Array.isArray(newCues)) return;
+    this._ensureTheatreStructure();
+    if (!Array.isArray(this._state.theatre.cues)) this._state.theatre.cues = [];
+    this._state.theatre.cues.push(...newCues);
+    this._commitStateChange();
+  }
+
+  appendTheatreScript(newLines = []) {
+    if (!this._state || !Array.isArray(newLines)) return;
+    this._ensureTheatreStructure();
+    if (!Array.isArray(this._state.theatre.script)) this._state.theatre.script = [];
+    this._state.theatre.script.push(...newLines);
     this._commitStateChange();
   }
 

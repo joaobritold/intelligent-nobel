@@ -729,6 +729,7 @@ function render() {
   renderChecklists();
   renderTelemetry();
   renderSavedReports();
+  renderPhase(th);
 }
 
 // ─── Click Delegation for Cues & Tasks ──────────────────────────────
@@ -809,126 +810,355 @@ document.querySelectorAll('[data-close-modal]').forEach(b => {
   });
 });
 
+// ─── Phase Switcher (Fase 1: Preparação vs Fase 2: Decorrer do Espetáculo) ───
+function renderPhase(th) {
+  const phase = th?.phase || 'prep';
+  const $phaseBtnPrep = document.getElementById('dc-phase-btn-prep');
+  const $phaseBtnLive = document.getElementById('dc-phase-btn-live');
+  const $prepBanner = document.getElementById('dc-prep-banner');
+  const $phasePrepBadge = document.getElementById('dc-phase-prep-badge');
+  const $phaseLiveBadge = document.getElementById('dc-phase-live-badge');
+
+  // Calculate readiness percentage across all 5 departments
+  let totalTasks = 0;
+  let doneTasks = 0;
+  const checklists = th?.checklists || {};
+  ['Luz', 'Som', 'Maquinaria', 'Vídeo', 'Coxias'].forEach(d => {
+    const list = checklists[d] || [];
+    totalTasks += list.length;
+    doneTasks += list.filter(t => t.done).length;
+  });
+  const readinessPct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+
+  if ($phasePrepBadge) {
+    $phasePrepBadge.textContent = `PRONTIDÃO ${readinessPct}%`;
+  }
+  if ($phaseLiveBadge) {
+    $phaseLiveBadge.textContent = th?.showState === 'running' ? 'EM CENA / LIVE' : 'A POSTOS';
+  }
+
+  if (phase === 'live') {
+    $phaseBtnPrep?.classList.remove('active');
+    $phaseBtnLive?.classList.add('active', 'live');
+    if ($prepBanner) $prepBanner.style.display = 'none';
+  } else {
+    $phaseBtnPrep?.classList.add('active');
+    $phaseBtnLive?.classList.remove('active', 'live');
+    if ($prepBanner) $prepBanner.style.display = 'flex';
+  }
+}
+
+const $phaseBtnPrep = document.getElementById('dc-phase-btn-prep');
+const $phaseBtnLive = document.getElementById('dc-phase-btn-live');
+const $btnPrepGoLive = document.getElementById('dc-btn-prep-go-live');
+const $btnPrepImportScript = document.getElementById('dc-btn-prep-import-script');
+const $btnPrepImportCues = document.getElementById('dc-btn-prep-import-cues');
+
+if ($phaseBtnPrep) {
+  $phaseBtnPrep.addEventListener('click', () => {
+    client.setTheatrePhase('prep');
+  });
+}
+if ($phaseBtnLive) {
+  $phaseBtnLive.addEventListener('click', () => {
+    client.setTheatrePhase('live');
+  });
+}
+if ($btnPrepGoLive) {
+  $btnPrepGoLive.addEventListener('click', () => {
+    client.setTheatrePhase('live');
+    const tabCuesBtn = document.querySelector('[data-tab="tab-cues"]');
+    if (tabCuesBtn) tabCuesBtn.click();
+  });
+}
+if ($btnPrepImportScript && $modalImportScript) {
+  $btnPrepImportScript.addEventListener('click', () => {
+    $modalImportScript.style.display = 'flex';
+  });
+}
+if ($btnPrepImportCues && $modalImportCues) {
+  $btnPrepImportCues.addEventListener('click', () => {
+    $modalImportCues.style.display = 'flex';
+  });
+}
+
+// ─── Universal Importer: Guião / Texto (PDF, Word, Excel, Docs, TXT) ───
+let stagedScriptLines = [];
+
+const $scriptDropzone = document.getElementById('dc-script-dropzone');
+const $scriptFileInput = document.getElementById('dc-script-file-input');
+const $scriptPreviewContainer = document.getElementById('dc-script-preview-container');
+const $scriptPreviewCount = document.getElementById('dc-script-preview-count');
+const $scriptPreviewFileInfo = document.getElementById('dc-script-preview-file-info');
+const $scriptPreviewBox = document.getElementById('dc-script-preview-box');
+
+// Tab switcher in script import modal
+document.querySelectorAll('.dc-import-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dc-import-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const targetId = btn.dataset.tabPanel;
+    document.querySelectorAll('#dc-modal-import-script .dc-import-panel').forEach(p => p.style.display = 'none');
+    const targetPanel = document.getElementById(targetId);
+    if (targetPanel) targetPanel.style.display = 'block';
+  });
+});
+
+function renderScriptPreview(lines, fileInfo = '') {
+  stagedScriptLines = lines;
+  if ($scriptPreviewCount) $scriptPreviewCount.textContent = lines.length;
+  if ($scriptPreviewFileInfo) $scriptPreviewFileInfo.textContent = fileInfo;
+  if ($scriptPreviewContainer) $scriptPreviewContainer.style.display = lines.length > 0 ? 'block' : 'none';
+
+  if ($scriptPreviewBox) {
+    if (lines.length === 0) {
+      $scriptPreviewBox.innerHTML = '<div style="color: var(--dc-muted); text-align: center; padding: 12px;">Nenhuma fala ou rubrica detetada.</div>';
+      return;
+    }
+    const sample = lines.slice(0, 30);
+    $scriptPreviewBox.innerHTML = sample.map(item => {
+      const isDir = item.type === 'direction';
+      return `
+        <div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+          ${item.speaker ? `<span style="font-weight: 800; color: #ffeaa7; margin-right: 6px;">${escapeHtml(item.speaker)}:</span>` : (isDir ? '<span style="color: #a29bfe; font-style: italic; margin-right: 6px;">[CENA]</span>' : '')}
+          <span>${escapeHtml(item.text)}</span>
+        </div>
+      `;
+    }).join('') + (lines.length > 30 ? `<div style="text-align: center; color: var(--dc-muted); font-size: 0.72rem; margin-top: 6px;">... e mais ${lines.length - 30} falas/rubricas detetadas.</div>` : '');
+  }
+}
+
+async function handleScriptFile(file) {
+  if (!file) return;
+  try {
+    const titleEl = $scriptDropzone?.querySelector('.dc-import-dropzone-title');
+    if (titleEl) titleEl.textContent = '⏳ A processar ficheiro com TheatreImporter...';
+    
+    const text = await TheatreImporter.extractTextFromFile(file);
+    const parsed = TheatreImporter.parseScriptText(text);
+    if ($scriptImportTextarea) $scriptImportTextarea.value = text;
+    renderScriptPreview(parsed, `${file.name} (${Math.round(file.size / 1024)} KB)`);
+    if (titleEl) titleEl.textContent = `✓ ${file.name} carregado com sucesso`;
+  } catch (err) {
+    console.error('Error importing script file:', err);
+    alert('Erro ao processar ficheiro: ' + (err.message || err));
+    const titleEl = $scriptDropzone?.querySelector('.dc-import-dropzone-title');
+    if (titleEl) titleEl.textContent = 'Clique ou arraste um ficheiro com o guião';
+  }
+}
+
+if ($scriptDropzone && $scriptFileInput) {
+  $scriptDropzone.addEventListener('click', () => $scriptFileInput.click());
+  $scriptFileInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleScriptFile(file);
+  });
+
+  $scriptDropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    $scriptDropzone.classList.add('dragover');
+  });
+  $scriptDropzone.addEventListener('dragleave', () => $scriptDropzone.classList.remove('dragover'));
+  $scriptDropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    $scriptDropzone.classList.remove('dragover');
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleScriptFile(file);
+  });
+}
+
+if ($scriptImportTextarea) {
+  $scriptImportTextarea.addEventListener('input', () => {
+    const raw = $scriptImportTextarea.value.trim();
+    if (raw) {
+      const parsed = TheatreImporter.parseScriptText(raw);
+      renderScriptPreview(parsed, 'Texto colado manualmente');
+    } else {
+      renderScriptPreview([], '');
+    }
+  });
+}
+
 if ($btnImportScript && $modalImportScript) {
   $btnImportScript.addEventListener('click', () => {
     $modalImportScript.style.display = 'flex';
-    if ($scriptImportTextarea) $scriptImportTextarea.focus();
   });
 }
 
 if ($scriptImportConfirm) {
   $scriptImportConfirm.addEventListener('click', () => {
-    const raw = ($scriptImportTextarea?.value || '').trim();
-    if (!raw) return;
+    let lines = stagedScriptLines;
+    if (!lines || lines.length === 0) {
+      const raw = ($scriptImportTextarea?.value || '').trim();
+      if (raw) lines = TheatreImporter.parseScriptText(raw);
+    }
 
-    const lines = raw.split('\n');
-    const newScript = [];
-    lines.forEach((line, idx) => {
-      const clean = line.trim();
-      if (!clean) return;
+    if (!lines || lines.length === 0) {
+      alert('Por favor selecione um ficheiro (PDF, Excel, Word, Docs, TXT) ou cole o texto do guião.');
+      return;
+    }
 
-      if (clean.startsWith('[') && clean.endsWith(']')) {
-        newScript.push({
-          id: 'sc_' + Date.now() + '_' + idx,
-          type: 'direction',
-          text: clean,
-          cueAnchor: null
-        });
-      } else {
-        const colonIdx = clean.indexOf(':');
-        if (colonIdx > 0 && colonIdx < 30) {
-          const speaker = clean.substring(0, colonIdx).trim().toUpperCase();
-          const text = clean.substring(colonIdx + 1).trim();
-          newScript.push({
-            id: 'sc_' + Date.now() + '_' + idx,
-            type: 'dialogue',
-            speaker: speaker,
-            text: text,
-            cueAnchor: null
-          });
-        } else {
-          newScript.push({
-            id: 'sc_' + Date.now() + '_' + idx,
-            type: 'dialogue',
-            speaker: '',
-            text: clean,
-            cueAnchor: null
-          });
-        }
-      }
-    });
+    const mode = document.querySelector('input[name="dc-script-import-mode"]:checked')?.value || 'replace';
+    if (mode === 'append') {
+      client.appendTheatreScript(lines);
+    } else {
+      client.updateTheatreScript(lines);
+    }
 
-    if (newScript.length > 0) {
-      client.updateTheatreScript(newScript);
-      $modalImportScript.style.display = 'none';
-      if ($scriptImportTextarea) $scriptImportTextarea.value = '';
+    if ($modalImportScript) $modalImportScript.style.display = 'none';
+    stagedScriptLines = [];
+    if ($scriptImportTextarea) $scriptImportTextarea.value = '';
+    if ($scriptPreviewContainer) $scriptPreviewContainer.style.display = 'none';
+    if ($scriptFileInput) $scriptFileInput.value = '';
+    const titleEl = $scriptDropzone?.querySelector('.dc-import-dropzone-title');
+    if (titleEl) titleEl.textContent = 'Clique ou arraste um ficheiro com o guião';
+  });
+}
+
+// ─── Universal Importer: Deixas / Cues (Excel, PDF, Word, CSV) ────────
+let stagedCues = [];
+
+const $cuesDropzone = document.getElementById('dc-cues-dropzone');
+const $cuesFileInput = document.getElementById('dc-cues-file-input');
+const $cuesPreviewContainer = document.getElementById('dc-cues-preview-container');
+const $cuesPreviewCount = document.getElementById('dc-cues-preview-count');
+const $cuesPreviewFileInfo = document.getElementById('dc-cues-preview-file-info');
+const $cuesPreviewBox = document.getElementById('dc-cues-preview-box');
+
+// Tab switcher in cues import modal
+document.querySelectorAll('.dc-import-cues-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dc-import-cues-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const targetId = btn.dataset.tabPanel;
+    document.querySelectorAll('#dc-modal-import-cues .dc-import-panel').forEach(p => p.style.display = 'none');
+    const targetPanel = document.getElementById(targetId);
+    if (targetPanel) targetPanel.style.display = 'block';
+  });
+});
+
+function renderCuesPreview(cues, fileInfo = '') {
+  stagedCues = cues;
+  if ($cuesPreviewCount) $cuesPreviewCount.textContent = cues.length;
+  if ($cuesPreviewFileInfo) $cuesPreviewFileInfo.textContent = fileInfo;
+  if ($cuesPreviewContainer) $cuesPreviewContainer.style.display = cues.length > 0 ? 'block' : 'none';
+
+  if ($cuesPreviewBox) {
+    if (cues.length === 0) {
+      $cuesPreviewBox.innerHTML = '<div style="color: var(--dc-muted); text-align: center; padding: 12px;">Nenhuma deixa identificada.</div>';
+      return;
+    }
+    const sample = cues.slice(0, 25);
+    $cuesPreviewBox.innerHTML = `
+      <table class="dc-cues-preview-table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">#</th>
+            <th>Nome / Ação</th>
+            <th>Equipas</th>
+            <th>Ponto / Fala</th>
+            <th>Notas</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sample.map(c => `
+            <tr>
+              <td style="font-weight: 800; color: #ffeaa7;">${escapeHtml(c.num)}</td>
+              <td style="font-weight: 700; color: #fff;">${escapeHtml(c.name)}</td>
+              <td>${(c.departments || []).map(d => `<span class="dc-dept-tag ${String(d).toLowerCase()}">${escapeHtml(d)}</span>`).join(' ')}</td>
+              <td style="color: #cbd5e1;">${escapeHtml(c.targetText || '--')}</td>
+              <td style="color: var(--dc-muted); font-size: 0.72rem;">${escapeHtml(c.notes || '--')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      ${cues.length > 25 ? `<div style="text-align: center; color: var(--dc-muted); font-size: 0.72rem; padding: 6px;">... e mais ${cues.length - 25} deixas detetadas.</div>` : ''}
+    `;
+  }
+}
+
+async function handleCuesFile(file) {
+  if (!file) return;
+  try {
+    const titleEl = $cuesDropzone?.querySelector('.dc-import-dropzone-title');
+    if (titleEl) titleEl.textContent = '⏳ A analisar folha de deixas com TheatreImporter...';
+    
+    const parsed = await TheatreImporter.parseCuesFromFile(file);
+    renderCuesPreview(parsed, `${file.name} (${Math.round(file.size / 1024)} KB)`);
+    if (titleEl) titleEl.textContent = `✓ ${file.name} analisado com sucesso`;
+  } catch (err) {
+    console.error('Error importing cues file:', err);
+    alert('Erro ao analisar folha de deixas: ' + (err.message || err));
+    const titleEl = $cuesDropzone?.querySelector('.dc-import-dropzone-title');
+    if (titleEl) titleEl.textContent = 'Clique ou arraste folha Excel, PDF ou Word com deixas';
+  }
+}
+
+if ($cuesDropzone && $cuesFileInput) {
+  $cuesDropzone.addEventListener('click', () => $cuesFileInput.click());
+  $cuesFileInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleCuesFile(file);
+  });
+
+  $cuesDropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    $cuesDropzone.classList.add('dragover');
+  });
+  $cuesDropzone.addEventListener('dragleave', () => $cuesDropzone.classList.remove('dragover'));
+  $cuesDropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    $cuesDropzone.classList.remove('dragover');
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleCuesFile(file);
+  });
+}
+
+if ($cuesImportTextarea) {
+  $cuesImportTextarea.addEventListener('input', () => {
+    const raw = $cuesImportTextarea.value.trim();
+    if (raw) {
+      const parsed = TheatreImporter.parseCuesFromText(raw);
+      renderCuesPreview(parsed, 'Texto colado manualmente');
+    } else {
+      renderCuesPreview([], '');
     }
   });
 }
 
-if ($btnAddLine) {
-  $btnAddLine.addEventListener('click', () => {
-    const text = prompt('Introduza o texto ou fala (ex: "ATOR: Estamos a postos."):');
-    if (text && text.trim()) {
-      const th = state?.theatre;
-      const script = Array.isArray(th?.script) ? [...th.script] : [];
-      script.push({
-        id: 'sc_' + Date.now(),
-        type: 'dialogue',
-        speaker: 'ATOR',
-        text: text.trim(),
-        cueAnchor: null
-      });
-      client.updateTheatreScript(script);
-    }
-  });
-}
-
-// Modal Import Cues
 if ($btnImportCues && $modalImportCues) {
   $btnImportCues.addEventListener('click', () => {
     $modalImportCues.style.display = 'flex';
-    if ($cuesImportTextarea) $cuesImportTextarea.focus();
   });
 }
 
 if ($cuesImportConfirm) {
   $cuesImportConfirm.addEventListener('click', () => {
-    const raw = ($cuesImportTextarea?.value || '').trim();
-    if (!raw) return;
-
-    const lines = raw.split('\n');
-    const newCues = [];
-    lines.forEach((line, idx) => {
-      const clean = line.trim();
-      if (!clean) return;
-      const parts = clean.split(/[;,]/);
-      const num = (parts[0] || `Q${idx + 1}`).trim();
-      const name = (parts[1] || 'Deixa').trim();
-      const depts = (parts[2] || 'Luz').split(/[\s+/]/).map(d => d.trim()).filter(Boolean);
-      const target = (parts[3] || '').trim();
-      const notes = (parts[4] || '').trim();
-
-      newCues.push({
-        id: 'cue_' + Date.now() + '_' + idx,
-        num: num,
-        name: name,
-        targetText: target,
-        departments: depts.length > 0 ? depts : ['Luz'],
-        notes: notes,
-        status: 'pending',
-        standbyAt: 0,
-        firedAt: 0,
-        firedTimecode: '',
-        feedbacks: []
-      });
-    });
-
-    if (newCues.length > 0) {
-      client.updateTheatreCues(newCues);
-      $modalImportCues.style.display = 'none';
-      if ($cuesImportTextarea) $cuesImportTextarea.value = '';
+    let cues = stagedCues;
+    if (!cues || cues.length === 0) {
+      const raw = ($cuesImportTextarea?.value || '').trim();
+      if (raw) cues = TheatreImporter.parseCuesFromText(raw);
     }
+
+    if (!cues || cues.length === 0) {
+      alert('Por favor selecione um ficheiro Excel, PDF ou Word ou cole a lista de deixas.');
+      return;
+    }
+
+    const mode = document.querySelector('input[name="dc-cues-import-mode"]:checked')?.value || 'replace';
+    if (mode === 'append') {
+      client.appendTheatreCues(cues);
+    } else {
+      client.updateTheatreCues(cues);
+    }
+
+    if ($modalImportCues) $modalImportCues.style.display = 'none';
+    stagedCues = [];
+    if ($cuesImportTextarea) $cuesImportTextarea.value = '';
+    if ($cuesPreviewContainer) $cuesPreviewContainer.style.display = 'none';
+    if ($cuesFileInput) $cuesFileInput.value = '';
+    const titleEl = $cuesDropzone?.querySelector('.dc-import-dropzone-title');
+    if (titleEl) titleEl.textContent = 'Clique ou arraste folha Excel, PDF ou Word com deixas';
   });
 }
 

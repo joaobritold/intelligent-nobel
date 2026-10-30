@@ -426,14 +426,21 @@ function renderHeroLight() {
   } else {
     activeFeedbackCueId = null;
     $heroLight.className = 'cs-hero-cue-box is-idle';
-    $heroIndicator.textContent = '● REPOUSO';
-    $heroCueNum.textContent = '--';
-    if (nextPending) {
-      $heroCueName.textContent = `Aguardando Deixa ${nextPending.num}`;
-      $heroCueTarget.textContent = `Próxima: ${nextPending.name} (${nextPending.targetText || nextPending.notes || 'Aguardar sinal'})`;
+    if (th?.phase === 'prep' && th.showState !== 'running') {
+      $heroIndicator.textContent = '🛠️ FASE DE PREPARAÇÃO';
+      $heroCueNum.textContent = 'PREP';
+      $heroCueName.textContent = 'Afinações & Testes do Posto';
+      $heroCueTarget.textContent = 'Consulte e valide os itens da sua equipa na aba "Checklist do Posto & Preset".';
     } else {
-      $heroCueName.textContent = 'Sem Deixas Pendentes';
-      $heroCueTarget.textContent = `Todas as deixas do Posto de ${currentDept} foram executadas nesta sessão.`;
+      $heroIndicator.textContent = '● REPOUSO';
+      $heroCueNum.textContent = '--';
+      if (nextPending) {
+        $heroCueName.textContent = `Aguardando Deixa ${nextPending.num}`;
+        $heroCueTarget.textContent = `Próxima: ${nextPending.name} (${nextPending.targetText || nextPending.notes || 'Aguardar sinal'})`;
+      } else {
+        $heroCueName.textContent = 'Sem Deixas Pendentes';
+        $heroCueTarget.textContent = `Todas as deixas do Posto de ${currentDept} foram executadas nesta sessão.`;
+      }
     }
 
     if ($feedbackBar) $feedbackBar.style.display = 'none';
@@ -622,6 +629,27 @@ if ($newTaskInput) {
   });
 }
 
+// ─── Phase Auto-Tab Switching (Prep vs Live) ──────────────────────
+let lastSeenPhase = null;
+
+function syncPhaseTab(phase, showState) {
+  const currentKey = `${phase}:${showState}`;
+  if (currentKey === lastSeenPhase) return;
+  lastSeenPhase = currentKey;
+
+  if (phase === 'live' || showState === 'running') {
+    const cuesTabBtn = document.querySelector('[data-tab="tab-my-cues"]');
+    if (cuesTabBtn && !cuesTabBtn.classList.contains('active')) {
+      cuesTabBtn.click();
+    }
+  } else if (phase === 'prep' && showState !== 'running') {
+    const chkTabBtn = document.querySelector('[data-tab="tab-my-checklist"]');
+    if (chkTabBtn && !chkTabBtn.classList.contains('active')) {
+      chkTabBtn.click();
+    }
+  }
+}
+
 // ─── Main Render ────────────────────────────────────────────────────
 function render() {
   updateDeptUI();
@@ -630,6 +658,8 @@ function render() {
 
   const th = state.theatre;
   if (!th) return;
+
+  syncPhaseTab(th.phase || 'prep', th.showState || 'pre');
 
   // Urgent Notice check
   if ($urgentBanner && $urgentMessageText) {

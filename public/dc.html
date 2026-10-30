@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -53,8 +53,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Modo Jess (Diretora de Cena)</title>
-  <link rel="stylesheet" href="css/common.css?v=79">
-  <link rel="stylesheet" href="css/dc.css?v=79">
+  <link rel="stylesheet" href="css/common.css?v=82">
+  <link rel="stylesheet" href="css/dc.css?v=82">
 </head>
 <body>
   <div id="dc-screen" class="dc-screen">
@@ -69,7 +69,7 @@
             <div class="dc-brand-title">MODO JESS</div>
             <div class="dc-brand-sub">Diretora de Cena</div>
           </div>
-          <span class="badge dc-version-badge">v81</span>
+          <span class="badge dc-version-badge">v82</span>
         </a>
 
         <!-- Stage / Room Pill -->
@@ -136,6 +136,57 @@
         <button id="dc-urgent-clear-btn" type="button" class="dc-btn-danger">🗑️ Limpar</button>
       </div>
       <div id="dc-urgent-active-tag" style="display: none;" class="dc-urgent-active-text"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- FASE DO ESPETÁCULO: PREPARAÇÃO/AFINAÇÕES vs DECORRER DO SHOW    -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <nav id="dc-phase-bar" class="dc-phase-bar" aria-label="Fase do Espetáculo" style="margin-bottom: 10px;">
+      <button id="dc-phase-btn-prep" type="button" class="dc-phase-btn active" data-phase="prep" title="Fase 1: Preparação, afinações de equipas, checklists de postos e importação de guiões">
+        <div class="dc-phase-btn-left">
+          <span style="font-size: 1.3rem;">🛠️</span>
+          <div>
+            <div class="dc-phase-title">FASE 1: PREPARAÇÃO & AFINAÇÕES</div>
+            <div class="dc-phase-desc">Checklists de postos, verificação de presets e importação universal de ficheiros</div>
+          </div>
+        </div>
+        <span id="dc-phase-prep-badge" class="dc-phase-pill prep">PRONTIDÃO 0%</span>
+      </button>
+
+      <button id="dc-phase-btn-live" type="button" class="dc-phase-btn" data-phase="live" title="Fase 2: Espetáculo ao Vivo com Disparo de Deixas (STANDBY e GO) e Teleprompter">
+        <div class="dc-phase-btn-left">
+          <span style="font-size: 1.3rem;">🎭</span>
+          <div>
+            <div class="dc-phase-title">FASE 2: DECORRER DO ESPETÁCULO</div>
+            <div class="dc-phase-desc">Execução em direto: Standby/GO, fala ativa, teleprompter e timecodes</div>
+          </div>
+        </div>
+        <span id="dc-phase-live-badge" class="dc-phase-pill live">EM CENA</span>
+      </button>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PREPARATION HUB BANNER (FASE 1)                                -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div id="dc-prep-banner" class="dc-prep-banner" style="display: flex; margin-bottom: 12px; background: linear-gradient(135deg, rgba(253, 203, 110, 0.12), rgba(20, 20, 36, 0.85)); border: 1.5px solid rgba(253, 203, 110, 0.35); border-radius: 12px; padding: 12px 18px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="font-size: 2rem; line-height: 1;">🛠️</div>
+        <div>
+          <div style="font-weight: 800; font-size: 1.02rem; color: #ffeaa7;">AFINAÇÕES & PRONTIDÃO DE PALCO (PRÉ-SHOW)</div>
+          <div style="font-size: 0.8rem; color: #cbd5e1;">Importe ficheiros (PDF, Excel, Word, Docs, TXT) e valide as checklists de cada equipa antes de iniciar a récita.</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <button id="dc-btn-prep-import-script" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.22); color: #fff; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer;">
+          📥 Importar Guião
+        </button>
+        <button id="dc-btn-prep-import-cues" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.22); color: #fff; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer;">
+          📥 Importar Deixas
+        </button>
+        <button id="dc-btn-prep-go-live" type="button" class="btn btn-sm" style="background: #00b894; border: 1.5px solid #00b894; color: #000; font-weight: 800; padding: 8px 16px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 184, 148, 0.4);">
+          🎬 TUDO AFINADO? ENTRAR EM CENA ▶
+        </button>
+      </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -362,14 +413,51 @@
 
   <!-- Modal Importar Guião -->
   <div id="dc-modal-import-script" class="dc-modal" style="display: none;">
-    <div class="dc-modal-content">
+    <div class="dc-modal-content" style="max-width: 720px; width: 94%;">
       <div class="dc-modal-header">
-        <h3>📥 Importar Guião da Peça</h3>
+        <h3>📥 Importar Guião & Texto (PDF, Word, Excel, Docs, TXT)</h3>
         <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-script">✕</button>
       </div>
       <div class="dc-modal-body">
-        <p class="dc-modal-desc">Cole o texto da peça abaixo. Linhas com <code>ATOR: Texto</code> serão identificadas como falas e <code>[Texto]</code> como didascálias:</p>
-        <textarea id="dc-script-import-textarea" class="dc-textarea" placeholder="DIRETOR: Tudo pronto nas coxias?&#10;ATOR 1: Estamos a postos.&#10;[Ouve-se o terceiro sinal.]"></textarea>
+        <div class="dc-import-tabs">
+          <button type="button" class="dc-import-tab-btn active" data-tab-panel="script-import-file-panel">📁 Ficheiro (PDF, Word, Excel, Docs, TXT)</button>
+          <button type="button" class="dc-import-tab-btn" data-tab-panel="script-import-paste-panel">✏️ Colar Texto Direto</button>
+        </div>
+
+        <div id="script-import-file-panel" class="dc-import-panel">
+          <div id="dc-script-dropzone" class="dc-import-dropzone">
+            <div class="dc-import-dropzone-icon">📄</div>
+            <div class="dc-import-dropzone-title">Clique ou arraste um ficheiro com o guião</div>
+            <div class="dc-import-dropzone-sub">Suporta <strong>PDF (.pdf)</strong>, <strong>Word (.docx)</strong>, <strong>Excel (.xlsx, .csv)</strong> ou <strong>Texto (.txt)</strong></div>
+            <input type="file" id="dc-script-file-input" accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.rtf" style="display: none;">
+          </div>
+        </div>
+
+        <div id="script-import-paste-panel" class="dc-import-panel" style="display: none;">
+          <p class="dc-modal-desc">Cole o texto da peça. Linhas com <code>ATOR: Texto</code> serão identificadas como falas e <code>[Texto]</code> como didascálias:</p>
+          <textarea id="dc-script-import-textarea" class="dc-textarea" placeholder="DIRETOR: Tudo pronto nas coxias?&#10;ATOR 1: Estamos a postos.&#10;[Ouve-se o terceiro sinal.]"></textarea>
+        </div>
+
+        <!-- Preview Box -->
+        <div id="dc-script-preview-container" style="display: none; margin-top: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <strong style="font-size: 0.82rem; color: #ffeaa7;">Pré-visualização (<span id="dc-script-preview-count">0</span> falas / rubricas detetadas)</strong>
+            <span id="dc-script-preview-file-info" style="font-size: 0.72rem; color: var(--dc-muted);"></span>
+          </div>
+          <div id="dc-script-preview-box" class="dc-import-preview-box"></div>
+        </div>
+
+        <!-- Import Mode -->
+        <div style="display: flex; gap: 16px; margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer;">
+            <input type="radio" name="dc-script-import-mode" value="replace" checked>
+            <span>Substituir guião atual</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer;">
+            <input type="radio" name="dc-script-import-mode" value="append">
+            <span>Acrescentar ao guião existente</span>
+          </label>
+        </div>
       </div>
       <div class="dc-modal-footer">
         <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-import-script">Cancelar</button>
@@ -378,16 +466,53 @@
     </div>
   </div>
 
-  <!-- Modal Importar Deixas (CSV/Texto) -->
+  <!-- Modal Importar Deixas (Universal File + CSV/Texto) -->
   <div id="dc-modal-import-cues" class="dc-modal" style="display: none;">
-    <div class="dc-modal-content">
+    <div class="dc-modal-content" style="max-width: 760px; width: 94%;">
       <div class="dc-modal-header">
-        <h3>📥 Importar Lista de Deixas</h3>
+        <h3>📥 Importar Folha de Deixas / Cues</h3>
         <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-cues">✕</button>
       </div>
       <div class="dc-modal-body">
-        <p class="dc-modal-desc">Cole as deixas no formato <code>Q1; Nome; Departamentos (Luz,Som); Ponto/Texto; Notas</code>:</p>
-        <textarea id="dc-cues-import-textarea" class="dc-textarea" placeholder="Q1; Abertura de Sala; Luz,Som; 3º Sinal; Sala a 80%&#10;Q2; Blackout Inicial; Luz,Som,Coxias; Silêncio; Fade suave"></textarea>
+        <div class="dc-import-tabs">
+          <button type="button" class="dc-import-cues-tab-btn active" data-tab-panel="cues-import-file-panel">📁 Ficheiro (Excel, PDF, Word, CSV)</button>
+          <button type="button" class="dc-import-cues-tab-btn" data-tab-panel="cues-import-paste-panel">✏️ Colar Tabela / Texto</button>
+        </div>
+
+        <div id="cues-import-file-panel" class="dc-import-panel">
+          <div id="dc-cues-dropzone" class="dc-import-dropzone">
+            <div class="dc-import-dropzone-icon">📊</div>
+            <div class="dc-import-dropzone-title">Clique ou arraste folha Excel, PDF ou Word com deixas</div>
+            <div class="dc-import-dropzone-sub">Colunas recomendadas: <strong>Q# | Nome | Departamentos (Luz, Som, etc.) | Ponto / Fala | Notas</strong></div>
+            <input type="file" id="dc-cues-file-input" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc,.txt" style="display: none;">
+          </div>
+        </div>
+
+        <div id="cues-import-paste-panel" class="dc-import-panel" style="display: none;">
+          <p class="dc-modal-desc">Cole as deixas no formato <code>Q1; Nome; Departamentos (Luz,Som); Ponto/Texto; Notas</code>:</p>
+          <textarea id="dc-cues-import-textarea" class="dc-textarea" placeholder="Q1; Abertura de Sala; Luz,Som; 3º Sinal; Sala a 80%&#10;Q2; Blackout Inicial; Luz,Som,Coxias; Silêncio; Fade suave"></textarea>
+        </div>
+
+        <!-- Preview Table Box -->
+        <div id="dc-cues-preview-container" style="display: none; margin-top: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <strong style="font-size: 0.82rem; color: #ffeaa7;">Pré-visualização (<span id="dc-cues-preview-count">0</span> deixas detetadas)</strong>
+            <span id="dc-cues-preview-file-info" style="font-size: 0.72rem; color: var(--dc-muted);"></span>
+          </div>
+          <div id="dc-cues-preview-box" class="dc-import-preview-box" style="padding: 0;"></div>
+        </div>
+
+        <!-- Import Mode -->
+        <div style="display: flex; gap: 16px; margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer;">
+            <input type="radio" name="dc-cues-import-mode" value="replace" checked>
+            <span>Substituir todas as deixas</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer;">
+            <input type="radio" name="dc-cues-import-mode" value="append">
+            <span>Acrescentar às deixas existentes</span>
+          </label>
+        </div>
       </div>
       <div class="dc-modal-footer">
         <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-import-cues">Cancelar</button>
@@ -506,8 +631,12 @@
 
   <!-- Scripts -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=79"></script>
-  <script src="js/local-sync.js?v=79"></script>
-  <script src="js/dc.js?v=79"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="js/theatre-importer.js?v=82"></script>
+  <script src="js/pwa.js?v=82"></script>
+  <script src="js/local-sync.js?v=82"></script>
+  <script src="js/dc.js?v=82"></script>
 </body>
 </html>

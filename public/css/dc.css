@@ -1143,6 +1143,171 @@ body {
   cursor: pointer;
 }
 
+/* ─── PHASE SWITCHER BAR (PREPARATION VS LIVE SHOW) ─────────────── */
+.dc-phase-bar {
+  display: flex;
+  background: rgba(14, 14, 28, 0.95);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 6px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+
+.dc-phase-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 8px 14px;
+  color: var(--dc-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.dc-phase-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dc-phase-btn.active {
+  background: rgba(253, 203, 110, 0.15);
+  border-color: rgba(253, 203, 110, 0.4);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.dc-phase-btn.active.live {
+  background: rgba(0, 184, 148, 0.18);
+  border-color: #00b894;
+}
+
+.dc-phase-btn-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dc-phase-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.dc-phase-desc {
+  font-size: 0.72rem;
+  color: var(--dc-muted);
+}
+
+.dc-phase-pill {
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--dc-gold);
+  border: 1px solid rgba(253, 203, 110, 0.3);
+  white-space: nowrap;
+}
+
+/* ─── Universal File Dropzone & Import Styling ──────────────────────── */
+.dc-import-dropzone {
+  border: 2px dashed rgba(253, 203, 110, 0.4);
+  background: rgba(253, 203, 110, 0.04);
+  border-radius: 12px;
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 12px;
+}
+
+.dc-import-dropzone:hover,
+.dc-import-dropzone.dragover {
+  border-color: #00b894;
+  background: rgba(0, 184, 148, 0.08);
+}
+
+.dc-import-dropzone-icon {
+  font-size: 2rem;
+  margin-bottom: 6px;
+}
+
+.dc-import-dropzone-title {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #fff;
+}
+
+.dc-import-dropzone-sub {
+  font-size: 0.75rem;
+  color: var(--dc-muted);
+  margin-top: 4px;
+}
+
+.dc-import-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.dc-import-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--dc-muted);
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.dc-import-tab-btn.active {
+  background: var(--dc-accent);
+  color: #fff;
+}
+
+.dc-import-preview-box {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  color: #cbd5e1;
+  margin-bottom: 12px;
+}
+
+.dc-cues-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+  text-align: left;
+}
+
+.dc-cues-preview-table th {
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffeaa7;
+  font-weight: 800;
+}
+
+.dc-cues-preview-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 /* ─── Responsive Tweaks ────────────────────────────────────────────── */
 @media (max-width: 960px) {
   .dc-main-grid {
