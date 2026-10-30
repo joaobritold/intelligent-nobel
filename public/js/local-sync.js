@@ -985,6 +985,13 @@ class UniversalSyncClient {
     if (!this._state.regieMessage || typeof this._state.regieMessage !== 'object') {
       this._state.regieMessage = { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null };
     }
+    // Auto-expire calls older than 5.5 seconds across any client/device
+    if (this._state.regieCall && (this._state.regieCall.fohCallingStage || this._state.regieCall.stageCallingFoh)) {
+      if (this._state.regieCall.triggeredAt && (Date.now() - this._state.regieCall.triggeredAt > 5500)) {
+        this._state.regieCall.fohCallingStage = false;
+        this._state.regieCall.stageCallingFoh = false;
+      }
+    }
   }
 
   // ─── Multi-Day Management ──────────────────────────────────────────
@@ -2392,6 +2399,12 @@ class UniversalSyncClient {
       this._state.regieCall.triggeredBy = fromStation || 'ALL';
     }
     this._commitStateChange();
+
+    // Auto-expire call after exactly 5 seconds
+    if (this._regieCallTimer) clearTimeout(this._regieCallTimer);
+    this._regieCallTimer = setTimeout(() => {
+      this.clearRegieCall(target);
+    }, 5000);
   }
 
   clearRegieCall(target = 'all') {
@@ -2456,6 +2469,14 @@ class UniversalSyncClient {
       this._state.regieMessage.ackStage = timeStr;
     }
     this._commitStateChange();
+
+    // If both stations have acknowledged reading, auto-clear message after 5 seconds
+    if (this._state.regieMessage.ackFoh && this._state.regieMessage.ackStage) {
+      if (this._regieMsgClearTimer) clearTimeout(this._regieMsgClearTimer);
+      this._regieMsgClearTimer = setTimeout(() => {
+        this.clearRegieMessage();
+      }, 5000);
+    }
   }
 
   updateTheme(theme) {

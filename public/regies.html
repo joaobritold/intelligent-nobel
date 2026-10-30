@@ -53,80 +53,62 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Modo Régies (FOH & Palco)</title>
-  <link rel="stylesheet" href="css/common.css?v=73">
-  <link rel="stylesheet" href="css/regies.css?v=73">
+  <link rel="stylesheet" href="css/common.css?v=74">
+  <link rel="stylesheet" href="css/regies.css?v=74">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
-    <!-- Top Header -->
-    <header class="lineup-header">
-      <div class="lineup-title-box" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <span style="font-size: 1.7rem;">📟</span>
-        <div>
-          <div class="lineup-title">
-            Modo Régies
-            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 6px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v73</span>
-          </div>
-          <div class="lineup-sub" style="font-size: 0.72rem; color: #a29bfe; font-weight: 600;">Comunicação FOH ↔ Palco & Intercom</div>
-        </div>
-        <!-- Event / Stage Badge & Pills -->
-        <div style="display: flex; align-items: center; gap: 6px; background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.5); padding: 4px 10px; border-radius: 8px;">
-          <span style="font-size: 0.9rem;">🎪</span>
-          <span id="lineup-stage-badge" style="color: #55efc4; font-size: 0.85rem; font-weight: 800; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;" title="Tocar para trocar de palco">Palco</span>
+    <!-- Streamlined Broadcast Header -->
+    <header class="regie-header">
+      <div class="regie-header-left">
+        <!-- Home / Brand -->
+        <a href="index.html" class="regie-home-link" title="Voltar ao Início">
+          <span style="font-size: 1.4rem;">📟</span>
+          <span class="regie-header-title">RÉGIES</span>
+          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v74</span>
+        </a>
+
+        <!-- Stage Selector Pill -->
+        <div class="regie-stage-pill-box">
+          <span style="font-size: 0.85rem;">🎪</span>
+          <span id="lineup-stage-badge" class="regie-stage-badge-text" title="Tocar para trocar de palco">Palco</span>
           <select id="lineup-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco"></select>
         </div>
         <div id="lineup-stage-pills" class="stage-pills-bar" style="display: none;"></div>
-        <span id="lineup-room-badge" class="lineup-room-badge" style="display: none;">PALCO1</span>
+
+        <!-- Sleek Station Toggle (FOH vs Palco) -->
+        <div class="regie-station-pill">
+          <button id="regie-btn-foh" class="regie-station-toggle-btn active" type="button" title="Modo Régie de Frente">
+            🎚️ FOH
+          </button>
+          <button id="regie-btn-stage" class="regie-station-toggle-btn" type="button" title="Modo Régie de Palco">
+            🎛️ Palco
+          </button>
+        </div>
       </div>
 
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <div style="display: flex; flex-direction: column; align-items: flex-end; background: rgba(0, 184, 148, 0.14); border: 1px solid rgba(0, 184, 148, 0.4); padding: 4px 10px; border-radius: 8px;">
-          <span style="font-size: 0.65rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase;">Fim do Evento</span>
-          <span id="lineup-event-end" style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 800; color: #55efc4;">--:--</span>
+      <!-- Center Hero Call Button (5s Burst) -->
+      <div class="regie-header-center">
+        <button id="regie-call-btn" class="regie-hero-call-btn" type="button" title="Acionar aviso de 5 segundos no Intercom">
+          <span>🚨</span> <span id="regie-call-btn-text">CALL PALCO</span>
+        </button>
+        <button id="regie-audio-btn" class="regie-mini-audio-btn enabled" type="button" title="Ativar ou desativar aviso sonoro">
+          <span id="regie-audio-icon">🔔</span>
+        </button>
+      </div>
+
+      <!-- Right: Finish Time & Local Clock -->
+      <div class="regie-header-right">
+        <div class="regie-meta-box">
+          <span class="regie-meta-label">FIM PREVISTO</span>
+          <span id="lineup-event-end" class="regie-meta-value">--:--</span>
         </div>
-        <div class="lineup-clock-box">
-          <div class="lineup-clock-label">HORA LOCAL</div>
-          <div id="lineup-local-clock" class="lineup-clock-time">--:--:--</div>
+        <div class="regie-clock-box">
+          <div class="regie-clock-label">HORA CERTA</div>
+          <div id="lineup-local-clock" class="regie-clock-value">--:--:--</div>
         </div>
       </div>
     </header>
-
-    <!-- Navigation Switcher -->
-    <nav class="lineup-nav">
-      <a id="rg-nav-hub" href="index.html" class="lineup-nav-pill">🏠 Início</a>
-      <a id="rg-nav-viewer" href="viewer.html" class="lineup-nav-pill">📺 Modo Palco</a>
-      <a id="rg-nav-lineup" href="lineup.html" class="lineup-nav-pill">📋 Modo Lista</a>
-      <a id="rg-nav-regies" href="regies.html" class="lineup-nav-pill active">📟 Modo Régies</a>
-      <a id="rg-nav-master" href="master.html" class="lineup-nav-pill" style="display: none; color: #fdcb6e; border-color: rgba(253, 203, 110, 0.4);">👑 Master</a>
-    </nav>
-
-    <!-- Régie Hero Control Panel -->
-    <section class="regie-control-panel">
-      <div class="regie-control-row">
-        <!-- Station Selector -->
-        <div class="regie-station-box">
-          <span class="regie-station-label">Este Dispositivo:</span>
-          <div class="regie-station-toggle">
-            <button id="regie-btn-foh" class="regie-station-btn active" type="button" title="Definir este ecrã como Régie de Frente">
-              <span>🎚️</span> Régie Frente (FOH)
-            </button>
-            <button id="regie-btn-stage" class="regie-station-btn" type="button" title="Definir este ecrã como Régie de Palco">
-              <span>🎛️</span> Régie Palco
-            </button>
-          </div>
-        </div>
-
-        <!-- Call Action Box -->
-        <div class="regie-call-action-box">
-          <button id="regie-audio-btn" class="regie-audio-toggle enabled" type="button" title="Ativar ou desativar som de alerta">
-            <span id="regie-audio-icon">🔔</span> Som Ativo
-          </button>
-          <button id="regie-call-btn" class="regie-call-btn" type="button">
-            <span>🚨</span> <span id="regie-call-btn-text">CALL PALCO (Intercom)</span>
-          </button>
-        </div>
-      </div>
-    </section>
 
     <!-- Massive Flashing Incoming Call Alert -->
     <section id="regie-incoming-alert" class="regie-incoming-alert">
@@ -182,8 +164,8 @@
 
   <!-- Cloud MQTT over WSS -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=73"></script>
-  <script src="js/local-sync.js?v=73"></script>
-  <script src="js/regies.js?v=73"></script>
+  <script src="js/pwa.js?v=74"></script>
+  <script src="js/local-sync.js?v=74"></script>
+  <script src="js/regies.js?v=74"></script>
 </body>
 </html>

@@ -223,12 +223,40 @@ if ($incomingAckBtn) {
   });
 }
 
-// ─── Stage Manager Regie Message Ack Button ──────────────────────────
+// ─── Stage Manager Regie Message Ack Button (5s Auto-Dismiss) ───────
+
+let dismissedMessageId = null;
+let dismissCountdownTimer = null;
 
 if ($msgAckBtn) {
   $msgAckBtn.addEventListener('click', () => {
     if (!state || !state.regieMessage || !state.regieMessage.visible) return;
+    const msgId = state.regieMessage.id;
     client.ackRegieMessage(currentStation);
+
+    $msgAckBtn.classList.add('acknowledged');
+    $msgAckBtn.disabled = true;
+
+    let countdown = 5;
+    $msgAckBtn.textContent = `✓ LIDO (a fechar em ${countdown}s...)`;
+
+    if (dismissCountdownTimer) clearInterval(dismissCountdownTimer);
+    dismissCountdownTimer = setInterval(() => {
+      countdown--;
+      if (countdown > 0) {
+        $msgAckBtn.textContent = `✓ LIDO (a fechar em ${countdown}s...)`;
+      } else {
+        clearInterval(dismissCountdownTimer);
+        dismissCountdownTimer = null;
+        dismissedMessageId = msgId;
+        $msgBanner.style.opacity = '0';
+        $msgBanner.style.transform = 'translateY(-8px)';
+        setTimeout(() => {
+          $msgBanner.classList.remove('visible');
+          $msgBanner.style.display = 'none';
+        }, 400);
+      }
+    }, 1000);
   });
 }
 
@@ -241,36 +269,32 @@ function updateRegieControls() {
 
   const rc = state.regieCall || {};
   const isFoh = currentStation === 'foh';
+  const now = Date.now();
 
-  // 1. Outgoing Call Button Status
-  if (isFoh) {
-    if (rc.fohCallingStage) {
-      $btnCall.classList.add('is-calling');
-      $btnCallText.textContent = 'A CHAMAR PALCO... (CANCELAR)';
-    } else {
-      $btnCall.classList.remove('is-calling');
-      $btnCallText.textContent = 'CALL PALCO (Intercom)';
-    }
+  // 1. Outgoing Call Button Status (Active for 5 seconds)
+  const isCallingOut = isFoh ? Boolean(rc.fohCallingStage) : Boolean(rc.stageCallingFoh);
+  if (isCallingOut) {
+    const elapsedSecs = Math.floor((now - (rc.triggeredAt || now)) / 1000);
+    const remSecs = Math.max(1, 5 - elapsedSecs);
+    $btnCall.classList.add('is-calling');
+    $btnCallText.textContent = isFoh ? `A CHAMAR PALCO (${remSecs}s)...` : `A CHAMAR FOH (${remSecs}s)...`;
   } else {
-    if (rc.stageCallingFoh) {
-      $btnCall.classList.add('is-calling');
-      $btnCallText.textContent = 'A CHAMAR FOH... (CANCELAR)';
-    } else {
-      $btnCall.classList.remove('is-calling');
-      $btnCallText.textContent = 'CALL FOH (Intercom)';
-    }
+    $btnCall.classList.remove('is-calling');
+    $btnCallText.textContent = isFoh ? 'CALL PALCO' : 'CALL FOH';
   }
 
-  // 2. Incoming Call Alert (Am I being called?)
+  // 2. Incoming Call Alert (Active for 5 seconds)
   const isIncoming = isFoh ? Boolean(rc.stageCallingFoh) : Boolean(rc.fohCallingStage);
 
   if (isIncoming) {
+    const elapsedSecs = Math.floor((now - (rc.triggeredAt || now)) / 1000);
+    const remSecs = Math.max(1, 5 - elapsedSecs);
     $incomingAlert.classList.add('visible');
     if (isFoh) {
-      $incomingTitle.textContent = '🚨 ATENÇÃO FOH: PALCO ESTÁ A CHAMAR!';
+      $incomingTitle.textContent = `🚨 ATENÇÃO FOH: PALCO ESTÁ A CHAMAR (${remSecs}s)!`;
       $incomingSub.textContent = 'A Régie de Palco está a chamar no intercomunicador. Por favor coloque os auscultadores.';
     } else {
-      $incomingTitle.textContent = '🚨 ATENÇÃO PALCO: FOH ESTÁ A CHAMAR!';
+      $incomingTitle.textContent = `🚨 ATENÇÃO PALCO: FOH ESTÁ A CHAMAR (${remSecs}s)!`;
       $incomingSub.textContent = 'A Régie da Frente está a chamar no intercomunicador. Por favor coloque os auscultadores.';
     }
 
@@ -283,9 +307,19 @@ function updateRegieControls() {
   }
   lastIncomingCallState = isIncoming;
 
-  // 3. Stage Manager Technical Message Banner
+  // 3. Stage Manager Technical Message Banner (With 5s Auto-Dismiss after Ack)
   const rm = state.regieMessage;
   if (rm && rm.visible && rm.text && rm.text.trim()) {
+    // If user already acknowledged and dismissed this message locally, keep hidden
+    if (dismissedMessageId === rm.id) {
+      $msgBanner.classList.remove('visible');
+      $msgBanner.style.display = 'none';
+      return;
+    }
+
+    $msgBanner.style.display = 'flex';
+    $msgBanner.style.opacity = '1';
+    $msgBanner.style.transform = 'none';
     $msgBanner.classList.add('visible');
     $msgText.textContent = `"${rm.text.trim()}"`;
     $msgTime.textContent = rm.sentTimeStr ? `• Enviada às ${rm.sentTimeStr}` : '';
@@ -305,9 +339,11 @@ function updateRegieControls() {
     const myAck = isFoh ? fohRead : stageRead;
     if ($msgAckBtn) {
       if (myAck) {
-        $msgAckBtn.classList.add('acknowledged');
-        $msgAckBtn.disabled = true;
-        $msgAckBtn.textContent = isFoh ? '✓ LIDO POR FOH' : '✓ LIDO POR PALCO';
+        if (!dismissCountdownTimer) {
+          $msgAckBtn.classList.add('acknowledged');
+          $msgAckBtn.disabled = true;
+          $msgAckBtn.textContent = isFoh ? '✓ LIDO POR FOH' : '✓ LIDO POR PALCO';
+        }
       } else {
         $msgAckBtn.classList.remove('acknowledged');
         $msgAckBtn.disabled = false;
@@ -316,6 +352,12 @@ function updateRegieControls() {
     }
   } else {
     $msgBanner.classList.remove('visible');
+    $msgBanner.style.display = 'none';
+    dismissedMessageId = null;
+    if (dismissCountdownTimer) {
+      clearInterval(dismissCountdownTimer);
+      dismissCountdownTimer = null;
+    }
   }
 }
 
@@ -470,27 +512,7 @@ if ($lineupEventSelect) {
 }
 
 function updateRegieNavLinks(code) {
-  const current = (code || roomId || 'PALCO1').toUpperCase();
-  const q = `?room=${encodeURIComponent(current)}`;
-  const keys = [
-    { id: 'rg-nav-hub', page: 'index.html' },
-    { id: 'rg-nav-viewer', page: 'viewer.html' },
-    { id: 'rg-nav-lineup', page: 'lineup.html' },
-    { id: 'rg-nav-regies', page: 'regies.html' },
-    { id: 'rg-nav-master', page: 'master.html' }
-  ];
-  keys.forEach(k => {
-    const el = document.getElementById(k.id);
-    if (el) el.href = k.page === 'index.html' ? 'index.html' : `${k.page}${q}`;
-  });
-  const $masterPill = document.getElementById('rg-nav-master');
-  if ($masterPill) {
-    const isMaster = typeof window.isStageTimerMaster === 'function' ? window.isStageTimerMaster() : (
-      sessionStorage.getItem('stagetimer_master_active') === '1' ||
-      localStorage.getItem('stagetimer_master_active') === '1'
-    );
-    $masterPill.style.display = isMaster ? 'inline-flex' : 'none';
-  }
+  // Navigation is streamlined through the home link
 }
 updateRegieNavLinks(roomId);
 
