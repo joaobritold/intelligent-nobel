@@ -28,14 +28,23 @@ const client = new StageTimerClient({
 
 let state = null;
 
-// Station Mode: 'foh' (Régie Frente) or 'stage' (Régie Palco)
+// Station Mode: 'foh' (Régie Frente), 'stage' (Régie Palco) or 'tech' (Modo Técnico Mobile)
 let currentStation = 'foh';
-try {
-  const savedStation = localStorage.getItem('stagetimer_regie_station');
-  if (savedStation === 'stage' || savedStation === 'foh') {
-    currentStation = savedStation;
-  }
-} catch (_) {}
+const urlStation = (params.get('station') || '').toLowerCase().trim();
+if (urlStation === 'tech' || urlStation === 'tecnico' || urlStation === 'técnico') {
+  currentStation = 'tech';
+} else if (urlStation === 'stage' || urlStation === 'palco') {
+  currentStation = 'stage';
+} else if (urlStation === 'foh' || urlStation === 'frente') {
+  currentStation = 'foh';
+} else {
+  try {
+    const savedStation = localStorage.getItem('stagetimer_regie_station');
+    if (savedStation === 'stage' || savedStation === 'foh' || savedStation === 'tech') {
+      currentStation = savedStation;
+    }
+  } catch (_) {}
+}
 
 // Audio Alert Toggle
 let audioEnabled = true;
@@ -63,6 +72,7 @@ const $lineupStagePills = document.getElementById('lineup-stage-pills');
 // Régie Specific DOM
 const $btnFoh = document.getElementById('regie-btn-foh');
 const $btnStage = document.getElementById('regie-btn-stage');
+const $btnTech = document.getElementById('regie-btn-tech');
 const $btnCall = document.getElementById('regie-call-btn');
 const $btnCallText = document.getElementById('regie-call-btn-text');
 const $btnAudio = document.getElementById('regie-audio-btn');
@@ -78,7 +88,11 @@ const $msgText = document.getElementById('regie-msg-text');
 const $msgTime = document.getElementById('regie-msg-time');
 const $receiptFoh = document.getElementById('regie-receipt-foh');
 const $receiptStage = document.getElementById('regie-receipt-stage');
+const $receiptTech = document.getElementById('regie-receipt-tech');
 const $msgAckBtn = document.getElementById('regie-msg-ack-btn');
+
+const $mobileTabs = document.getElementById('regie-mobile-tabs');
+const $mainBody = document.getElementById('regie-main-body');
 
 // Web Audio API Synthesizer for Intercom Call Chime
 let audioCtx = null;
@@ -131,19 +145,26 @@ function playIntercomChime() {
 // ─── Station Switcher Setup ──────────────────────────────────────────
 
 function setStation(station) {
-  currentStation = station === 'stage' ? 'stage' : 'foh';
+  if (station === 'tech' || station === 'tecnico') {
+    currentStation = 'tech';
+  } else if (station === 'stage' || station === 'palco') {
+    currentStation = 'stage';
+  } else {
+    currentStation = 'foh';
+  }
+
   try {
     localStorage.setItem('stagetimer_regie_station', currentStation);
   } catch (_) {}
 
-  if ($btnFoh && $btnStage) {
-    if (currentStation === 'foh') {
-      $btnFoh.classList.add('active');
-      $btnStage.classList.remove('active');
-    } else {
-      $btnStage.classList.add('active');
-      $btnFoh.classList.remove('active');
-    }
+  if ($btnFoh) $btnFoh.classList.toggle('active', currentStation === 'foh');
+  if ($btnStage) $btnStage.classList.toggle('active', currentStation === 'stage');
+  if ($btnTech) $btnTech.classList.toggle('active', currentStation === 'tech');
+
+  if ($screen) {
+    $screen.classList.toggle('is-station-tech', currentStation === 'tech');
+    $screen.classList.toggle('is-station-stage', currentStation === 'stage');
+    $screen.classList.toggle('is-station-foh', currentStation === 'foh');
   }
 
   updateRegieControls();
@@ -154,6 +175,9 @@ if ($btnFoh) {
 }
 if ($btnStage) {
   $btnStage.addEventListener('click', () => setStation('stage'));
+}
+if ($btnTech) {
+  $btnTech.addEventListener('click', () => setStation('tech'));
 }
 
 // ─── Audio Toggle Setup ──────────────────────────────────────────────
@@ -200,13 +224,20 @@ if ($btnCall) {
         // Trigger call to Stage
         client.triggerRegieCall('stage', 'FOH');
       }
-    } else {
+    } else if (currentStation === 'stage') {
       if (rc.stageCallingFoh) {
         // Cancel call
         client.clearRegieCall('foh');
       } else {
         // Trigger call to FOH
         client.triggerRegieCall('foh', 'PALCO');
+      }
+    } else {
+      // Modo Técnico: Chamada às Régies
+      if (rc.fohCallingStage || rc.stageCallingFoh) {
+        client.clearRegieCall('all');
+      } else {
+        client.triggerRegieCall('all', 'TÉCNICO');
       }
     }
   });
@@ -217,11 +248,32 @@ if ($incomingAckBtn) {
     if (!state) return;
     if (currentStation === 'foh') {
       client.clearRegieCall('foh');
-    } else {
+    } else if (currentStation === 'stage') {
       client.clearRegieCall('stage');
+    } else {
+      client.clearRegieCall('all');
     }
   });
 }
+
+// ─── Mobile Segment Tabs (Now vs Lineup) ─────────────────────────────
+document.querySelectorAll('.regie-mobile-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const view = btn.dataset.regieView;
+    document.querySelectorAll('.regie-mobile-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    if ($mainBody) {
+      if (view === 'lineup') {
+        $mainBody.classList.add('show-lineup-only');
+        $mainBody.classList.remove('show-now-only');
+      } else {
+        $mainBody.classList.add('show-now-only');
+        $mainBody.classList.remove('show-lineup-only');
+      }
+    }
+  });
+});
 
 // ─── Stage Manager Regie Message Ack Button (5s Auto-Dismiss) ───────
 
@@ -269,22 +321,40 @@ function updateRegieControls() {
 
   const rc = state.regieCall || {};
   const isFoh = currentStation === 'foh';
+  const isStage = currentStation === 'stage';
+  const isTech = currentStation === 'tech';
   const now = Date.now();
 
   // 1. Outgoing Call Button Status (Active for 5 seconds)
-  const isCallingOut = isFoh ? Boolean(rc.fohCallingStage) : Boolean(rc.stageCallingFoh);
+  let isCallingOut = false;
+  if (isFoh) isCallingOut = Boolean(rc.fohCallingStage);
+  else if (isStage) isCallingOut = Boolean(rc.stageCallingFoh);
+  else isCallingOut = Boolean(rc.fohCallingStage && rc.stageCallingFoh);
+
   if (isCallingOut) {
     const elapsedSecs = Math.floor((now - (rc.triggeredAt || now)) / 1000);
     const remSecs = Math.max(1, 5 - elapsedSecs);
     $btnCall.classList.add('is-calling');
-    $btnCallText.textContent = isFoh ? `A CHAMAR PALCO (${remSecs}s)...` : `A CHAMAR FOH (${remSecs}s)...`;
+    if (isFoh) $btnCallText.textContent = `A CHAMAR PALCO (${remSecs}s)...`;
+    else if (isStage) $btnCallText.textContent = `A CHAMAR FOH (${remSecs}s)...`;
+    else $btnCallText.textContent = `A CHAMAR RÉGIES (${remSecs}s)...`;
   } else {
     $btnCall.classList.remove('is-calling');
-    $btnCallText.textContent = isFoh ? 'CALL PALCO' : 'CALL FOH';
+    if (isFoh) $btnCallText.textContent = 'CALL PALCO';
+    else if (isStage) $btnCallText.textContent = 'CALL FOH';
+    else $btnCallText.textContent = 'CALL RÉGIES';
   }
 
   // 2. Incoming Call Alert (Active for 5 seconds)
-  const isIncoming = isFoh ? Boolean(rc.stageCallingFoh) : Boolean(rc.fohCallingStage);
+  // CRITICAL: Técnico mode DOES NOT receive incoming calls! ("so nao recebe as calls o resto e tudo igual")
+  let isIncoming = false;
+  if (isFoh) {
+    isIncoming = Boolean(rc.stageCallingFoh);
+  } else if (isStage) {
+    isIncoming = Boolean(rc.fohCallingStage);
+  } else {
+    isIncoming = false; // Never receives incoming calls in Técnico mode
+  }
 
   if (isIncoming) {
     const elapsedSecs = Math.floor((now - (rc.triggeredAt || now)) / 1000);
@@ -326,6 +396,7 @@ function updateRegieControls() {
 
     const fohRead = Boolean(rm.ackFoh);
     const stageRead = Boolean(rm.ackStage);
+    const techRead = Boolean(rm.ackTech);
 
     if ($receiptFoh) {
       $receiptFoh.className = `regie-msg-receipt-pill ${fohRead ? 'read' : ''}`;
@@ -335,14 +406,18 @@ function updateRegieControls() {
       $receiptStage.className = `regie-msg-receipt-pill ${stageRead ? 'read' : ''}`;
       $receiptStage.textContent = stageRead ? `🎛️ Palco: ✓ Lido (${rm.ackStage})` : '🎛️ Palco: ⏳ Aguarda';
     }
+    if ($receiptTech) {
+      $receiptTech.className = `regie-msg-receipt-pill ${techRead ? 'read' : ''}`;
+      $receiptTech.textContent = techRead ? `🔧 Técnico: ✓ Lido (${rm.ackTech})` : '🔧 Técnico: ⏳ Aguarda';
+    }
 
-    const myAck = isFoh ? fohRead : stageRead;
+    const myAck = isFoh ? fohRead : (isStage ? stageRead : techRead);
     if ($msgAckBtn) {
       if (myAck) {
         if (!dismissCountdownTimer) {
           $msgAckBtn.classList.add('acknowledged');
           $msgAckBtn.disabled = true;
-          $msgAckBtn.textContent = isFoh ? '✓ LIDO POR FOH' : '✓ LIDO POR PALCO';
+          $msgAckBtn.textContent = isFoh ? '✓ LIDO POR FOH' : (isStage ? '✓ LIDO POR PALCO' : '✓ LIDO POR TÉCNICO');
         }
       } else {
         $msgAckBtn.classList.remove('acknowledged');
@@ -377,7 +452,7 @@ function renderRegieHistory() {
     $regieHistoryCount.textContent = history.length;
   }
 
-  const sig = history.map(h => `${h.id}:${h.timeStr}:${h.type}:${h.ackFoh || ''}:${h.ackStage || ''}`).join('|');
+  const sig = history.map(h => `${h.id}:${h.timeStr}:${h.type}:${h.ackFoh || ''}:${h.ackStage || ''}:${h.ackTech || ''}`).join('|');
   if (sig === lastHistorySig) return;
   lastHistorySig = sig;
 
@@ -396,10 +471,12 @@ function renderRegieHistory() {
     if (isMsg) {
       const fohRead = Boolean(item.ackFoh);
       const stageRead = Boolean(item.ackStage);
+      const techRead = Boolean(item.ackTech);
       receiptsHtml = `
         <div class="regie-history-receipts">
           <span class="regie-history-receipt-tag ${fohRead ? 'read' : ''}">🎚️ FOH: ${fohRead ? `✓ Lido (${escapeHtml(item.ackFoh)})` : '⏳ Aguarda'}</span>
           <span class="regie-history-receipt-tag ${stageRead ? 'read' : ''}">🎛️ Palco: ${stageRead ? `✓ Lido (${escapeHtml(item.ackStage)})` : '⏳ Aguarda'}</span>
+          <span class="regie-history-receipt-tag ${techRead ? 'read' : ''}">🔧 Técnico: ${techRead ? `✓ Lido (${escapeHtml(item.ackTech)})` : '⏳ Aguarda'}</span>
         </div>
       `;
     }

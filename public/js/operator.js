@@ -318,6 +318,7 @@ const $opRegieReceiptBox = document.getElementById('op-regie-receipt-box');
 const $opRegieActiveText = document.getElementById('op-regie-active-text');
 const $opReceiptFoh = document.getElementById('op-receipt-foh');
 const $opReceiptStage = document.getElementById('op-receipt-stage');
+const $opReceiptTech = document.getElementById('op-receipt-tech');
 const $opRegieMsgClear = document.getElementById('op-regie-msg-clear');
 
 // ─── Room & Links Setup ────────────────────────────────────────────
@@ -531,6 +532,12 @@ function renderOpRegieSection() {
         $opReceiptStage.textContent = stageRead ? `🎛️ Palco: ✓ Lido (${rm.ackStage})` : '🎛️ Palco: ⏳ Pendente';
         $opReceiptStage.style.background = stageRead ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255, 255, 255, 0.08)';
         $opReceiptStage.style.color = stageRead ? '#55efc4' : '#cbd5e1';
+      }
+      if ($opReceiptTech) {
+        const techRead = Boolean(rm.ackTech);
+        $opReceiptTech.textContent = techRead ? `🔧 Técnico: ✓ Lido (${rm.ackTech})` : '🔧 Técnico: ⏳ Pendente';
+        $opReceiptTech.style.background = techRead ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255, 255, 255, 0.08)';
+        $opReceiptTech.style.color = techRead ? '#55efc4' : '#cbd5e1';
       }
     } else {
       $opRegieReceiptBox.style.display = 'none';

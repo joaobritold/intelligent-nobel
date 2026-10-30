@@ -53,8 +53,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Modo Régies (FOH & Palco)</title>
-  <link rel="stylesheet" href="css/common.css?v=78">
-  <link rel="stylesheet" href="css/regies.css?v=78">
+  <link rel="stylesheet" href="css/common.css?v=79">
+  <link rel="stylesheet" href="css/regies.css?v=79">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
@@ -65,7 +65,7 @@
         <a href="index.html" class="regie-home-link" title="Voltar ao Início">
           <span style="font-size: 1.4rem;">📟</span>
           <span class="regie-header-title">RÉGIES</span>
-          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v77</span>
+          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v79</span>
         </a>
 
         <!-- Stage Selector Pill -->
@@ -76,13 +76,16 @@
         </div>
         <div id="lineup-stage-pills" class="stage-pills-bar" style="display: none;"></div>
 
-        <!-- Sleek Station Toggle (FOH vs Palco) -->
+        <!-- Sleek Station Toggle (FOH vs Palco vs Técnico) -->
         <div class="regie-station-pill">
           <button id="regie-btn-foh" class="regie-station-toggle-btn active" type="button" title="Modo Régie de Frente">
             🎚️ FOH
           </button>
           <button id="regie-btn-stage" class="regie-station-toggle-btn" type="button" title="Modo Régie de Palco">
             🎛️ Palco
+          </button>
+          <button id="regie-btn-tech" class="regie-station-toggle-btn" type="button" title="Modo Técnico Mobile (Avisos de SM e Palco sem chamadas sonoras)">
+            🔧 Técnico
           </button>
         </div>
       </div>
@@ -135,6 +138,7 @@
         <div id="regie-msg-receipts" class="regie-msg-receipts">
           <span id="regie-receipt-foh" class="regie-msg-receipt-pill">🎚️ FOH: Aguarda</span>
           <span id="regie-receipt-stage" class="regie-msg-receipt-pill">🎛️ Palco: Aguarda</span>
+          <span id="regie-receipt-tech" class="regie-msg-receipt-pill">🔧 Técnico: Aguarda</span>
         </div>
       </div>
       <button id="regie-msg-ack-btn" class="regie-msg-ack-btn" type="button">
@@ -142,8 +146,18 @@
       </button>
     </section>
 
+    <!-- Mobile Segment Switcher (Visível em Telemóveis e Tablets) -->
+    <nav id="regie-mobile-tabs" class="regie-mobile-tab-bar" aria-label="Navegação Régie Mobile">
+      <button type="button" class="regie-mobile-tab-btn active" data-regie-view="now">
+        <span>⚡</span> <span>Em Palco & Avisos</span>
+      </button>
+      <button type="button" class="regie-mobile-tab-btn" data-regie-view="lineup">
+        <span>📋</span> <span>Alinhamento & Horários</span>
+      </button>
+    </nav>
+
     <!-- Main Content: 50% Left (Active Stage + Communications History) & 50% Right (Full Lineup) -->
-    <div class="lineup-body">
+    <div class="lineup-body" id="regie-main-body">
       <!-- Left Column: Active Stage + History -->
       <div class="regie-left-col">
         <!-- Card 1: Currently on Stage -->
@@ -183,8 +197,8 @@
 
   <!-- Cloud MQTT over WSS -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=78"></script>
-  <script src="js/local-sync.js?v=78"></script>
-  <script src="js/regies.js?v=78"></script>
+  <script src="js/pwa.js?v=79"></script>
+  <script src="js/local-sync.js?v=79"></script>
+  <script src="js/regies.js?v=79"></script>
 </body>
 </html>

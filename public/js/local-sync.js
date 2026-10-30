@@ -1003,7 +1003,9 @@ class UniversalSyncClient {
       this._state.regieCall = { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' };
     }
     if (!this._state.regieMessage || typeof this._state.regieMessage !== 'object') {
-      this._state.regieMessage = { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null };
+      this._state.regieMessage = { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null, ackTech: null };
+    } else {
+      if (this._state.regieMessage.ackTech === undefined) this._state.regieMessage.ackTech = null;
     }
     if (!Array.isArray(this._state.regieHistory)) {
       this._state.regieHistory = [];
@@ -2702,7 +2704,8 @@ class UniversalSyncClient {
       sentAt: Date.now(),
       sentTimeStr: timeStr,
       ackFoh: null,
-      ackStage: null
+      ackStage: null,
+      ackTech: null
     };
 
     // Record in history log
@@ -2717,7 +2720,8 @@ class UniversalSyncClient {
       timeStr: timeStr,
       ts: Date.now(),
       ackFoh: null,
-      ackStage: null
+      ackStage: null,
+      ackTech: null
     });
     if (this._state.regieHistory.length > 30) {
       this._state.regieHistory = this._state.regieHistory.slice(0, 30);
@@ -2736,7 +2740,8 @@ class UniversalSyncClient {
       sentAt: 0,
       sentTimeStr: '',
       ackFoh: null,
-      ackStage: null
+      ackStage: null,
+      ackTech: null
     };
     this._commitStateChange();
   }
@@ -2752,6 +2757,8 @@ class UniversalSyncClient {
       this._state.regieMessage.ackFoh = timeStr;
     } else if (st === 'stage' || st === 'palco') {
       this._state.regieMessage.ackStage = timeStr;
+    } else if (st === 'tech' || st === 'tecnico' || st === 'técnico') {
+      this._state.regieMessage.ackTech = timeStr;
     }
 
     // Update read receipts in history item
@@ -2760,6 +2767,7 @@ class UniversalSyncClient {
       if (histItem) {
         if (st === 'foh' || st === 'frente') histItem.ackFoh = timeStr;
         if (st === 'stage' || st === 'palco') histItem.ackStage = timeStr;
+        if (st === 'tech' || st === 'tecnico' || st === 'técnico') histItem.ackTech = timeStr;
       }
     }
 

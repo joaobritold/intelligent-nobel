@@ -76,13 +76,14 @@
     const viewKey = String(dev.viewKey || '').toLowerCase();
     const label = String(dev.label || '').toLowerCase();
 
-    // 0. Modo Régies (FOH & Palco) - Match before generic viewer / palco
+    // 0. Modo Régies (FOH & Palco & Técnico) - Match before generic viewer / palco
     if (viewKey === 'regies' || path.includes('regies') || label.includes('régies') || label.includes('regies')) {
+      const isTech = label.includes('técnico') || label.includes('tecnico') || path.includes('station=tech');
       const isStage = label.includes('palco') || path.includes('station=stage');
       return {
         key: 'regies',
-        name: isStage ? '📟 Modo Régies (Palco)' : '📟 Modo Régies (FOH)',
-        shortName: 'Régies',
+        name: isTech ? '🔧 Modo Régies (Técnico)' : (isStage ? '🎛️ Modo Régies (Palco)' : '🎚️ Modo Régies (FOH)'),
+        shortName: isTech ? 'Técnico' : (isStage ? 'Palco' : 'FOH'),
         badgeClass: 'view-regies'
       };
     }
