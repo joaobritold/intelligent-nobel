@@ -1042,6 +1042,7 @@ class UniversalSyncClient {
         });
       }
       if (!Array.isArray(this._state.theatre.telemetry)) this._state.theatre.telemetry = [];
+      if (!Array.isArray(this._state.theatre.reports)) this._state.theatre.reports = [];
       if (!this._state.theatre.urgentNotice || typeof this._state.theatre.urgentNotice !== 'object') {
         this._state.theatre.urgentNotice = { text: '', level: 'warn', visible: false, sentAt: 0 };
       }
@@ -1061,7 +1062,8 @@ class UniversalSyncClient {
       cues: this._createDefaultCues(),
       script: this._createDefaultScript(),
       checklists: this._createDefaultChecklists(),
-      telemetry: []
+      telemetry: [],
+      reports: []
     };
   }
 
@@ -3084,6 +3086,36 @@ class UniversalSyncClient {
     if (!this._state || !Array.isArray(script)) return;
     this._ensureTheatreStructure();
     this._state.theatre.script = script;
+    this._commitStateChange();
+  }
+
+  saveTheatreReport(reportData = {}) {
+    if (!this._state) return null;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    if (!Array.isArray(th.reports)) th.reports = [];
+    const now = new Date();
+    const dateStr = reportData.dateStr || `${now.toLocaleDateString('pt-PT')} ${now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`;
+    const rep = {
+      id: 'rep_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      title: (reportData.title || `Relatório de Espetáculo — ${dateStr}`).trim(),
+      dateStr: dateStr,
+      duration: reportData.duration || '00:00:00',
+      cuesCount: typeof reportData.cuesCount === 'number' ? reportData.cuesCount : 0,
+      text: String(reportData.text || '').trim(),
+      ts: Date.now()
+    };
+    th.reports.unshift(rep);
+    this._commitStateChange();
+    return rep;
+  }
+
+  deleteTheatreReport(reportId) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    if (!Array.isArray(th.reports)) return;
+    th.reports = th.reports.filter(r => r.id !== reportId);
     this._commitStateChange();
   }
 

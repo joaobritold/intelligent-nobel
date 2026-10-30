@@ -69,7 +69,7 @@
             <div class="dc-brand-title">MODO JESS</div>
             <div class="dc-brand-sub">Diretora de Cena</div>
           </div>
-          <span class="badge dc-version-badge">v80</span>
+          <span class="badge dc-version-badge">v81</span>
         </a>
 
         <!-- Stage / Room Pill -->
@@ -299,13 +299,35 @@
             </div>
 
             <div class="dc-telemetry-actions">
+              <button id="dc-btn-save-report" type="button" class="btn btn-sm" style="background: #00b894; border: 1.5px solid #00b894; color: #000; font-weight: 800; padding: 7px 12px; border-radius: 8px; cursor: pointer;" title="Guardar este relatório permanentemente no histórico do evento">
+                💾 Guardar no Evento
+              </button>
               <button id="dc-btn-copy-report" type="button" class="dc-btn-primary dc-btn-sm" title="Copiar relatório completo para a área de transferência">
                 📋 Copiar Relatório
               </button>
               <button id="dc-btn-download-report" type="button" class="dc-tool-btn" title="Descarregar ficheiro de texto do relatório">
-                💾 Descarregar TXT
+                📥 Descarregar TXT
               </button>
             </div>
+          </div>
+
+          <!-- Saved Reports History Section -->
+          <div class="dc-saved-reports-section" style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.15rem;">📜</span>
+                <span style="font-weight: 800; font-size: 0.95rem; color: #ffeaa7;">Relatórios Gravados deste Evento (<span id="dc-saved-reports-count">0</span>)</span>
+              </div>
+              <span style="font-size: 0.72rem; color: var(--dc-muted);">Gravados no evento até serem eliminados</span>
+            </div>
+            <div id="dc-saved-reports-list" class="dc-saved-reports-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px;">
+              <!-- Injected by dc.js -->
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <strong style="font-size: 0.88rem; color: #fff;">⚡ Telemetria da Sessão Ativa</strong>
+            <span style="font-size: 0.72rem; color: var(--dc-muted);">Timecodes e feedback em direto</span>
           </div>
 
           <!-- Telemetry Feed -->
@@ -314,6 +336,23 @@
           </div>
         </div>
       </section>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- MODAL: VER RELATÓRIO GRAVADO                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div id="dc-modal-view-report" class="dc-modal" style="display: none;">
+    <div class="dc-modal-content" style="max-width: 680px; width: 92%;">
+      <div class="dc-modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dc-border); padding-bottom: 10px; margin-bottom: 12px;">
+        <h3 id="dc-modal-view-report-title" style="margin: 0; font-size: 1.1rem; color: #ffeaa7;">📜 Relatório de Régie</h3>
+        <button id="dc-modal-view-report-close" type="button" class="dc-tool-btn" style="font-size: 1.1rem;">✕</button>
+      </div>
+      <pre id="dc-modal-view-report-body" style="background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.08); padding: 14px; border-radius: 8px; font-family: var(--font-mono); font-size: 0.82rem; color: #cbd5e1; white-space: pre-wrap; max-height: 420px; overflow-y: auto; line-height: 1.5;"></pre>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;">
+        <button id="dc-modal-view-report-copy" type="button" class="dc-btn-primary dc-btn-sm">📋 Copiar Texto</button>
+        <button id="dc-modal-view-report-download" type="button" class="dc-tool-btn">📥 Descarregar TXT</button>
+      </div>
     </div>
   </div>
 

@@ -735,6 +735,9 @@
               <a href="cue-station.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" style="background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4; font-weight: 700;" title="Abrir Posto Técnico (Cue Station)">
                 🚦 Posto Cues
               </a>
+              <button type="button" class="btn btn-sm btn-master-theatre-reports" data-room="${encodeURIComponent(primaryTargetRoom)}" data-title="${escapeHtml(ev.title || ev.code)}" style="background: rgba(108, 92, 231, 0.2); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Ver relatórios de régie gravados deste espetáculo">
+                📜 Relatórios
+              </button>
             ` : `
               <a href="controller.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm btn-primary" title="Abrir configurador para este palco">
                 🎛️ Configurador
@@ -1356,6 +1359,90 @@
   if (window.innerWidth <= 768) {
     switchMobileTab('section-devices', false);
   }
+
+  // ─── Master Theatre Reports Viewer ──────────────────────────────────
+  const $theatreReportsModal = document.getElementById('master-theatre-reports-modal');
+  const $theatreReportsTitle = document.getElementById('master-theatre-reports-title');
+  const $theatreReportsSub = document.getElementById('master-theatre-reports-sub');
+  const $theatreReportsList = document.getElementById('master-theatre-reports-list');
+  const $theatreReportsClose = document.getElementById('master-theatre-reports-close');
+
+  function openMasterTheatreReports(room, title) {
+    if (!$theatreReportsModal || !$theatreReportsList) return;
+    $theatreReportsTitle.textContent = `📜 Relatórios: ${title || room}`;
+    $theatreReportsSub.textContent = `Sala ${room} • Histórico gravado no evento`;
+
+    let state = multiRoomsMap.get(room);
+    if (!state) {
+      try {
+        const raw = localStorage.getItem(`stagetimer_state_${room}`);
+        if (raw) state = JSON.parse(raw);
+      } catch (_) {}
+    }
+
+    const reports = state?.theatre?.reports || [];
+    if (reports.length === 0) {
+      $theatreReportsList.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-muted); background: rgba(255,255,255,0.02); border-radius: 8px;">Ainda não há relatórios gravados neste espetáculo. Quando o Modo Jess terminar o espetáculo ou clicar em "Guardar no Evento", os relatórios ficarão disponíveis aqui.</div>`;
+    } else {
+      $theatreReportsList.innerHTML = reports.map(r => `
+        <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+          <div>
+            <div style="font-weight: 800; font-size: 0.95rem; color: #ffeaa7;">${escapeHtml(r.title)}</div>
+            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap;">
+              <span>⏱️ Duração: <strong style="color: #fff;">${escapeHtml(r.duration)}</strong></span>
+              <span>⚡ Deixas: <strong style="color: #fff;">${r.cuesCount}</strong></span>
+              <span>📅 ${escapeHtml(r.dateStr)}</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn btn-sm btn-master-copy-rep" data-rep-text="${encodeURIComponent(r.text)}" style="background: rgba(108, 92, 231, 0.2); border: 1px solid var(--accent); color: #c4b5fd; font-size: 0.75rem;">📋 Copiar</button>
+            <button type="button" class="btn btn-sm btn-master-dl-rep" data-rep-text="${encodeURIComponent(r.text)}" data-rep-name="${escapeHtml(r.title)}" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 0.75rem;">📥 TXT</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    $theatreReportsModal.style.display = 'flex';
+  }
+
+  if ($theatreReportsClose) {
+    $theatreReportsClose.addEventListener('click', () => {
+      if ($theatreReportsModal) $theatreReportsModal.style.display = 'none';
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    const repBtn = e.target.closest('.btn-master-theatre-reports');
+    if (repBtn) {
+      const room = repBtn.dataset.room;
+      const title = repBtn.dataset.title;
+      openMasterTheatreReports(room, title);
+      return;
+    }
+
+    const copyBtn = e.target.closest('.btn-master-copy-rep');
+    if (copyBtn) {
+      const text = decodeURIComponent(copyBtn.dataset.repText || '');
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtn.textContent = '✓ Copiado!';
+        setTimeout(() => { copyBtn.textContent = '📋 Copiar'; }, 2000);
+      });
+      return;
+    }
+
+    const dlBtn = e.target.closest('.btn-master-dl-rep');
+    if (dlBtn) {
+      const text = decodeURIComponent(dlBtn.dataset.repText || '');
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Relatorio_${(dlBtn.dataset.repName || 'Teatro').replace(/\s+/g, '_')}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+  });
 
   // Initial Boot
   preloadLocalStagesState();

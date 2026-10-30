@@ -93,6 +93,17 @@ const $telemetryFeedbackCount = document.getElementById('dc-telemetry-feedback-c
 const $telemetryList = document.getElementById('dc-telemetry-list');
 const $btnCopyReport = document.getElementById('dc-btn-copy-report');
 const $btnDownloadReport = document.getElementById('dc-btn-download-report');
+const $btnSaveReport = document.getElementById('dc-btn-save-report');
+const $savedReportsCount = document.getElementById('dc-saved-reports-count');
+const $savedReportsList = document.getElementById('dc-saved-reports-list');
+
+// Modal Ver Relatório
+const $modalViewReport = document.getElementById('dc-modal-view-report');
+const $modalViewReportTitle = document.getElementById('dc-modal-view-report-title');
+const $modalViewReportBody = document.getElementById('dc-modal-view-report-body');
+const $modalViewReportClose = document.getElementById('dc-modal-view-report-close');
+const $modalViewReportCopy = document.getElementById('dc-modal-view-report-copy');
+const $modalViewReportDownload = document.getElementById('dc-modal-view-report-download');
 
 // Modals
 const $modalImportScript = document.getElementById('dc-modal-import-script');
@@ -193,6 +204,17 @@ if ($btnPauseShow) {
 if ($btnEndShow) {
   $btnEndShow.addEventListener('click', () => {
     if (confirm('Tem a certeza de que deseja terminar o espetáculo e fechar a contagem?')) {
+      // Auto-save show report into the event before ending
+      try {
+        const rep = buildReportText();
+        const dur = $telemetryDuration?.textContent || '00:00:00';
+        const fCount = state?.theatre?.telemetry?.length || 0;
+        client.saveTheatreReport({
+          text: rep,
+          duration: dur,
+          cuesCount: fCount
+        });
+      } catch (_) {}
       client.endTheatreShow();
     }
   });
@@ -706,6 +728,7 @@ function render() {
   renderCues();
   renderChecklists();
   renderTelemetry();
+  renderSavedReports();
 }
 
 // ─── Click Delegation for Cues & Tasks ──────────────────────────────
@@ -1171,6 +1194,127 @@ if ($btnDownloadReport) {
     const a = document.createElement('a');
     a.href = url;
     a.download = `Relatorio_Regie_Jess_${roomId}_${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+// ─── Saved Reports Management (Persisted in Event) ──────────────────
+let viewingReport = null;
+
+function renderSavedReports() {
+  const reports = state?.theatre?.reports || [];
+  if ($savedReportsCount) $savedReportsCount.textContent = reports.length;
+
+  if (!$savedReportsList) return;
+
+  if (reports.length === 0) {
+    $savedReportsList.innerHTML = `<div style="text-align: center; padding: 14px; font-size: 0.8rem; color: var(--dc-muted); background: rgba(255,255,255,0.02); border-radius: 8px;">Ainda não há relatórios gravados neste evento. Ao terminar um espetáculo ou clicar em "Guardar no Evento", os relatórios ficam arquivados aqui até serem eliminados.</div>`;
+    return;
+  }
+
+  $savedReportsList.innerHTML = reports.map(r => `
+    <div class="dc-saved-report-card" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 10px 14px; gap: 10px; flex-wrap: wrap;">
+      <div>
+        <div style="font-weight: 800; font-size: 0.9rem; color: #ffeaa7;">${escapeHtml(r.title)}</div>
+        <div style="font-size: 0.74rem; color: var(--dc-muted); margin-top: 3px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <span>⏱️ Duração: <strong style="color: #fff;">${escapeHtml(r.duration)}</strong></span>
+          <span>⚡ Deixas: <strong style="color: #fff;">${r.cuesCount}</strong></span>
+          <span>📅 ${escapeHtml(r.dateStr)}</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <button type="button" class="btn btn-sm btn-open-report" data-rep-id="${escapeHtml(r.id)}" style="background: rgba(108, 92, 231, 0.2); border: 1px solid var(--accent); color: #c4b5fd; font-size: 0.75rem; padding: 4px 9px; border-radius: 6px; cursor: pointer; font-weight: 700;">👁️ Ver</button>
+        <button type="button" class="btn btn-sm btn-download-saved-rep" data-rep-id="${escapeHtml(r.id)}" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 0.75rem; padding: 4px 9px; border-radius: 6px; cursor: pointer;">📥 TXT</button>
+        <button type="button" class="btn btn-sm btn-delete-saved-rep" data-rep-id="${escapeHtml(r.id)}" style="background: rgba(235, 77, 75, 0.2); border: 1px solid #eb4d4b; color: #ff7675; font-size: 0.75rem; padding: 4px 9px; border-radius: 6px; cursor: pointer;" title="Eliminar este relatório do evento">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+if ($btnSaveReport) {
+  $btnSaveReport.addEventListener('click', () => {
+    const report = buildReportText();
+    const dur = $telemetryDuration?.textContent || '00:00:00';
+    const fCount = state?.theatre?.telemetry?.length || 0;
+    client.saveTheatreReport({
+      text: report,
+      duration: dur,
+      cuesCount: fCount
+    });
+    $btnSaveReport.textContent = '✓ Gravado no Evento!';
+    setTimeout(() => { $btnSaveReport.textContent = '💾 Guardar no Evento'; }, 2500);
+  });
+}
+
+// Delegation for saved reports list actions
+document.addEventListener('click', (e) => {
+  const openBtn = e.target.closest('.btn-open-report');
+  if (openBtn) {
+    const repId = openBtn.dataset.repId;
+    const reports = state?.theatre?.reports || [];
+    const rep = reports.find(r => r.id === repId);
+    if (rep) {
+      viewingReport = rep;
+      if ($modalViewReportTitle) $modalViewReportTitle.textContent = `📜 ${rep.title}`;
+      if ($modalViewReportBody) $modalViewReportBody.textContent = rep.text;
+      if ($modalViewReport) $modalViewReport.style.display = 'flex';
+    }
+    return;
+  }
+
+  const dlBtn = e.target.closest('.btn-download-saved-rep');
+  if (dlBtn) {
+    const repId = dlBtn.dataset.repId;
+    const reports = state?.theatre?.reports || [];
+    const rep = reports.find(r => r.id === repId);
+    if (rep) {
+      const blob = new Blob([rep.text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Relatorio_${(state?.name || roomId).replace(/\s+/g, '_')}_${rep.id}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    return;
+  }
+
+  const delBtn = e.target.closest('.btn-delete-saved-rep');
+  if (delBtn) {
+    const repId = delBtn.dataset.repId;
+    if (confirm('Tem a certeza de que deseja eliminar este relatório guardado do evento?')) {
+      client.deleteTheatreReport(repId);
+    }
+    return;
+  }
+});
+
+// Modal View Report buttons
+if ($modalViewReportClose) {
+  $modalViewReportClose.addEventListener('click', () => {
+    if ($modalViewReport) $modalViewReport.style.display = 'none';
+  });
+}
+
+if ($modalViewReportCopy) {
+  $modalViewReportCopy.addEventListener('click', () => {
+    if (!viewingReport || !viewingReport.text) return;
+    navigator.clipboard.writeText(viewingReport.text).then(() => {
+      $modalViewReportCopy.textContent = '✓ Copiado!';
+      setTimeout(() => { $modalViewReportCopy.textContent = '📋 Copiar Texto'; }, 2000);
+    });
+  });
+}
+
+if ($modalViewReportDownload) {
+  $modalViewReportDownload.addEventListener('click', () => {
+    if (!viewingReport || !viewingReport.text) return;
+    const blob = new Blob([viewingReport.text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Relatorio_${(state?.name || roomId).replace(/\s+/g, '_')}_${viewingReport.id}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   });
