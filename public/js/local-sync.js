@@ -331,7 +331,18 @@ class UniversalSyncClient {
     const isClean = urlParams.get('clean') === '1';
 
     if (isClean) {
-      const regItem = this.getEventsList().find(e => e.code === this.cleanRoom);
+      let regItem = null;
+      const allEvs = this.getEventsList();
+      for (const ev of allEvs) {
+        if (ev.code === this.cleanRoom) { regItem = ev; break; }
+        if (Array.isArray(ev.stages)) {
+          const st = ev.stages.find(s => (s.code || s.id || '').toUpperCase() === this.cleanRoom);
+          if (st) {
+            regItem = { ...st, title: st.name || st.code };
+            break;
+          }
+        }
+      }
       this._state = this._createDefaultRoom(this.cleanRoom);
       if (regItem && regItem.title) {
         this._state.name = regItem.title;
@@ -354,13 +365,27 @@ class UniversalSyncClient {
         } catch (e) {}
       }
       if (!this._state) {
-        const regItem = this.getEventsList().find(e => e.code === this.cleanRoom);
+        let regItem = null;
+        const allEvs = this.getEventsList();
+        for (const ev of allEvs) {
+          if (ev.code === this.cleanRoom) { regItem = ev; break; }
+          if (Array.isArray(ev.stages)) {
+            const st = ev.stages.find(s => (s.code || s.id || '').toUpperCase() === this.cleanRoom);
+            if (st) {
+              regItem = { ...st, title: st.name || st.code };
+              break;
+            }
+          }
+        }
         this._state = this._createDefaultRoom(this.cleanRoom);
         if (regItem && regItem.title) {
           this._state.name = regItem.title;
         }
         this._saveLocal();
       }
+    }
+    if (this._state && this._state.id !== this.cleanRoom) {
+      this._state.id = this.cleanRoom;
     }
 
     // Ensure days structure is initialized
@@ -957,6 +982,8 @@ class UniversalSyncClient {
     const targetDay = Number(dayNumber) || 1;
     const curDayKey = String(this._state.currentDay || 1);
     const targetKey = String(targetDay);
+
+    this._lastDaySwitchAt = this.getTrueTime();
 
     if (this._state.currentDay === targetDay) return;
 
@@ -1897,14 +1924,11 @@ class UniversalSyncClient {
     const incomingUpdatedAt = incoming.updatedAt || 0;
     const isCurrentEmpty = Boolean(
       this._state?.isEmptyDefault ||
-      !Array.isArray(this._state?.timers) ||
-      this._state.timers.length === 0 ||
       currentUpdatedAt === 0
     );
 
     // Discard stale incoming states (monotonic clock check)
     // If incoming state has an older timestamp, ignore it to prevent jump-back glitches!
-    // But NEVER discard incoming state if our local state is an empty default or has 0 timers!
     if (!isCurrentEmpty && currentUpdatedAt > 0 && incomingUpdatedAt > 0 && incomingUpdatedAt < currentUpdatedAt) {
       return;
     }
@@ -1914,6 +1938,21 @@ class UniversalSyncClient {
       if (this._state?.activeTimerId && incoming.activeTimerId !== this._state.activeTimerId) {
         incoming.activeTimerId = this._state.activeTimerId;
       }
+    }
+
+    // Protection against day switch echo / race conditions (< 3 seconds)
+    if (this._lastDaySwitchAt && (this.getTrueTime() - this._lastDaySwitchAt < 3000)) {
+      if (this._state?.currentDay && incoming.currentDay !== this._state.currentDay) {
+        incoming.currentDay = this._state.currentDay;
+        if (incoming.days && incoming.days[String(incoming.currentDay)]) {
+          incoming.timers = [...incoming.days[String(incoming.currentDay)]];
+        }
+      }
+    }
+
+    // Preserve local days map if incoming does not have them or is partial
+    if (this._state?.days && typeof this._state.days === 'object') {
+      incoming.days = { ...(this._state.days || {}), ...(incoming.days || {}) };
     }
 
     const trueNow = this.getTrueTime();
@@ -1965,6 +2004,9 @@ class UniversalSyncClient {
   _commitStateChange(retain = true) {
     this._ensureDaysStructure();
     this._enforceInactiveReset();
+    if (this._state && this._state.id !== this.cleanRoom) {
+      this._state.id = this.cleanRoom;
+    }
     const trueNow = this.getTrueTime();
     this._state.updatedAt = trueNow;
 

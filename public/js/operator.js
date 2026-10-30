@@ -12,7 +12,7 @@ let roomId = (paramRoom || savedActiveRoom || savedDeviceRoom || savedLastRoom |
 
 // Smart resolve: if roomId is parent event code with multiple stages, resolve to Stage 1
 try {
-  const localEvents = JSON.parse(localStorage.getItem('stagetimer_v10_events_list') || '[]');
+  const localEvents = JSON.parse(localStorage.getItem('stagetimer_v63_registry') || localStorage.getItem('stagetimer_v10_events_list') || '[]');
   const matchedEv = localEvents.find(e => (e.code || '').toUpperCase() === roomId);
   if (matchedEv && Array.isArray(matchedEv.stages) && matchedEv.stages.length > 0) {
     const hasCurrent = matchedEv.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId);
@@ -78,15 +78,33 @@ function renderOpStageBadge() {
     $opStageBadge.textContent = name;
   }
 
-  // Quick Stage Pills for Operator
+  // Quick Stage Pills for Operator (Show all stages if multiple exist)
   if ($opStagePills) {
-    if (currentEvent && Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
+    const allStages = [];
+    list.forEach(ev => {
+      const evTitle = ev.title || ev.code;
+      const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: evTitle }];
+      stages.forEach(st => {
+        const stCode = (st.code || st.id || '').toUpperCase();
+        allStages.push({
+          code: stCode,
+          name: st.name || stCode,
+          eventTitle: evTitle,
+          isCurrent: stCode === currentCode
+        });
+      });
+    });
+
+    if (allStages.length > 1) {
       $opStagePills.style.display = 'flex';
-      $opStagePills.innerHTML = currentEvent.stages.map(st => {
-        const isAct = (st.code || st.id || '').toUpperCase() === currentCode;
+      $opStagePills.innerHTML = allStages.map(st => {
+        const isAct = st.isCurrent;
+        const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
+          ? `${st.eventTitle} • ${st.name}`
+          : st.name;
         return `
-          <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code || st.id)}">
-            🎪 ${escapeHtml(st.name || st.code)}
+          <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code)}">
+            🎪 ${escapeHtml(label)}
           </button>
         `;
       }).join('');
@@ -144,9 +162,9 @@ if ($opStageBadge && $opEventSelect) {
 
 // Stage pills click delegation
 document.addEventListener('click', (e) => {
-  const pill = e.target.closest('[data-switch-stage]');
+  const pill = e.target.closest('[data-switch-stage], [data-ctrl-switch-stage]');
   if (pill) {
-    const targetRoom = (pill.dataset.switchStage || '').toUpperCase().trim();
+    const targetRoom = (pill.dataset.switchStage || pill.dataset.ctrlSwitchStage || '').toUpperCase().trim();
     if (targetRoom && targetRoom !== (state?.id || roomId).toUpperCase()) {
       try {
         localStorage.setItem('stagetimer_device_room', targetRoom);
@@ -201,12 +219,29 @@ if ($opDayTabs) {
   $opDayTabs.addEventListener('click', (e) => {
     const dayBtn = e.target.closest('[data-op-day]');
     if (dayBtn) {
-      client.switchDay(parseInt(dayBtn.dataset.opDay, 10));
+      const d = parseInt(dayBtn.dataset.opDay, 10);
+      if (!isNaN(d)) {
+        client.switchDay(d);
+        if (state) {
+          state.currentDay = d;
+          if (state.days && state.days[String(d)]) {
+            state.timers = [...state.days[String(d)]];
+          }
+          renderOpDayTabs();
+          if (typeof renderQueue === 'function') renderQueue();
+          render();
+        }
+      }
       return;
     }
     const addBtn = e.target.closest('#op-add-day-btn');
     if (addBtn) {
       client.addDay();
+      if (state) {
+        renderOpDayTabs();
+        if (typeof renderQueue === 'function') renderQueue();
+        render();
+      }
     }
   });
 }

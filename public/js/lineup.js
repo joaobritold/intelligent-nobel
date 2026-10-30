@@ -12,7 +12,7 @@ let roomId = (paramRoom || savedActiveRoom || savedDeviceRoom || savedLastRoom |
 
 // Smart resolve: if roomId is parent event code with multiple stages, resolve to Stage 1
 try {
-  const localEvents = JSON.parse(localStorage.getItem('stagetimer_v10_events_list') || '[]');
+  const localEvents = JSON.parse(localStorage.getItem('stagetimer_v63_registry') || localStorage.getItem('stagetimer_v10_events_list') || '[]');
   const matchedEv = localEvents.find(e => (e.code || '').toUpperCase() === roomId);
   if (matchedEv && Array.isArray(matchedEv.stages) && matchedEv.stages.length > 0) {
     const hasCurrent = matchedEv.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId);
@@ -85,15 +85,32 @@ function renderLineupEventSelector() {
     $lineupStageBadge.textContent = name;
   }
 
-  // Quick Stage Pills for Lineup
+  // Quick Stage Pills for Lineup (Show all stages if multiple exist)
   if ($lineupStagePills) {
-    if (currentEvent && Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
+    const allStages = [];
+    list.forEach(ev => {
+      const evTitle = ev.title || ev.code;
+      const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: evTitle }];
+      stages.forEach(st => {
+        const stCode = (st.code || st.id || '').toUpperCase();
+        allStages.push({
+          code: stCode,
+          name: st.name || stCode,
+          eventTitle: evTitle,
+          isCurrent: stCode === currentCode
+        });
+      });
+    });
+
+    if (allStages.length > 1) {
       $lineupStagePills.style.display = 'flex';
-      $lineupStagePills.innerHTML = currentEvent.stages.map(st => {
-        const isAct = (st.code || st.id || '').toUpperCase() === currentCode;
+      $lineupStagePills.innerHTML = allStages.map(st => {
+        const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
+          ? `${st.eventTitle} • ${st.name}`
+          : st.name;
         return `
-          <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code || st.id)}">
-            🎪 ${escapeHtml(st.name || st.code)}
+          <button type="button" class="stage-pill ${st.isCurrent ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code)}">
+            🎪 ${escapeHtml(label)}
           </button>
         `;
       }).join('');
@@ -346,22 +363,8 @@ function render() {
     document.body.style.backgroundColor = state.theme.viewerBg;
   }
 
-  const $dayTabs = document.getElementById('lineup-day-tabs');
-  if ($dayTabs && state.days) {
-    const dayKeys = Object.keys(state.days).map(Number).sort((a, b) => a - b);
-    if (dayKeys.length > 1) {
-      $dayTabs.innerHTML = dayKeys.map(d => {
-        const isAct = d === (state.currentDay || 1);
-        return `<button type="button" class="btn btn-sm ${isAct ? 'btn-primary' : ''}" data-lineup-day="${d}" style="padding: 2px 7px; font-size: 0.7rem; font-weight: 700; border-radius: 6px;">Dia ${d}</button>`;
-      }).join('');
-    } else {
-      $dayTabs.innerHTML = '';
-    }
-  }
-
   if ($roomBadge) {
-    const daySuffix = (state.currentDay && state.days && Object.keys(state.days).length > 1) ? ` • Dia ${state.currentDay}` : '';
-    $roomBadge.textContent = `${state.name || roomId}${daySuffix}`;
+    $roomBadge.textContent = state.name || roomId;
   }
 
   const $eventEnd = document.getElementById('lineup-event-end');

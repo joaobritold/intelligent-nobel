@@ -14,7 +14,7 @@ let roomId = (paramRoom || savedActiveRoom || savedDeviceRoom || savedLastRoom |
 
 // Smart resolve: if roomId is parent event code with multiple stages, resolve to Stage 1
 try {
-  const localEvents = JSON.parse(localStorage.getItem('stagetimer_v10_events_list') || '[]');
+  const localEvents = JSON.parse(localStorage.getItem('stagetimer_v63_registry') || localStorage.getItem('stagetimer_v10_events_list') || '[]');
   const matchedEv = localEvents.find(e => (e.code || '').toUpperCase() === roomId);
   if (matchedEv && Array.isArray(matchedEv.stages) && matchedEv.stages.length > 0) {
     const hasCurrent = matchedEv.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId);
@@ -120,7 +120,17 @@ if ($ctrlDayTabs) {
     const switchBtn = e.target.closest('[data-switch-day]');
     if (switchBtn) {
       const d = parseInt(switchBtn.dataset.switchDay, 10);
-      client.switchDay(d);
+      if (!isNaN(d)) {
+        client.switchDay(d);
+        if (state) {
+          state.currentDay = d;
+          if (state.days && state.days[String(d)]) {
+            state.timers = [...state.days[String(d)]];
+          }
+          renderDayTabs();
+          renderTimers();
+        }
+      }
       return;
     }
     const delBtn = e.target.closest('[data-del-day]');
@@ -128,12 +138,20 @@ if ($ctrlDayTabs) {
       const d = parseInt(delBtn.dataset.delDay, 10);
       if (confirm(`Tem a certeza que pretende apagar o Dia ${d} e os seus artistas?`)) {
         client.removeDay(d);
+        if (state) {
+          renderDayTabs();
+          renderTimers();
+        }
       }
       return;
     }
     const addBtn = e.target.closest('#ctrl-add-day-btn');
     if (addBtn) {
       client.addDay();
+      if (state) {
+        renderDayTabs();
+        renderTimers();
+      }
     }
   });
 }
@@ -221,15 +239,33 @@ function renderEventSelector() {
     }
   }
 
-  // Quick stages pills (rendered next to Day tabs when event has multiple stages)
+  // Quick stages pills (rendered next to Day tabs - show all stages if multiple exist)
   if ($ctrlStagePills) {
-    if (currentEvent && Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
+    const allStages = [];
+    list.forEach(ev => {
+      const evTitle = ev.title || ev.code;
+      const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: evTitle }];
+      stages.forEach(st => {
+        const stCode = (st.code || st.id || '').toUpperCase();
+        allStages.push({
+          code: stCode,
+          name: st.name || stCode,
+          eventTitle: evTitle,
+          isCurrent: stCode === currentCode
+        });
+      });
+    });
+
+    if (allStages.length > 1) {
       $ctrlStagePills.style.display = 'inline-flex';
-      $ctrlStagePills.innerHTML = currentEvent.stages.map(st => {
-        const isAct = st.code === currentCode;
+      $ctrlStagePills.innerHTML = allStages.map(st => {
+        const isAct = st.isCurrent;
+        const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
+          ? `${st.eventTitle} • ${st.name}`
+          : st.name;
         return `
-          <button type="button" class="btn btn-sm ${isAct ? 'btn-primary' : ''}" data-ctrl-switch-stage="${escapeHtml(st.code)}" style="padding: 3px 8px; font-size: 0.75rem; font-weight: 700; border-radius: 6px; ${isAct ? 'background: #00b894; border-color: #00b894; color: #fff;' : 'background: rgba(255,255,255,0.06); border-color: var(--border); color: #cbd5e1;'}">
-            🎪 ${escapeHtml(st.name || st.code)}
+          <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-ctrl-switch-stage="${escapeHtml(st.code)}" data-switch-stage="${escapeHtml(st.code)}">
+            🎪 ${escapeHtml(label)}
           </button>
         `;
       }).join('');
@@ -290,14 +326,14 @@ if ($ctrlEventSelect) {
 
 if ($ctrlStagePills) {
   $ctrlStagePills.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-ctrl-switch-stage]');
+    const btn = e.target.closest('[data-ctrl-switch-stage], [data-switch-stage]');
     if (btn) {
-      const targetStage = btn.dataset.ctrlSwitchStage;
-      if (targetStage && targetStage !== (state?.id || roomId)) {
+      const targetStage = (btn.dataset.ctrlSwitchStage || btn.dataset.switchStage || '').toUpperCase().trim();
+      if (targetStage && targetStage !== (state?.id || roomId).toUpperCase()) {
         try {
-          localStorage.setItem('stagetimer_device_room', targetStage.toUpperCase());
-          localStorage.setItem('stagetimer_last_room', targetStage.toUpperCase());
-          sessionStorage.setItem('stagetimer_active_room', targetStage.toUpperCase());
+          localStorage.setItem('stagetimer_device_room', targetStage);
+          localStorage.setItem('stagetimer_last_room', targetStage);
+          sessionStorage.setItem('stagetimer_active_room', targetStage);
         } catch (_) {}
         window.location.replace(`controller.html?room=${encodeURIComponent(targetStage)}`);
       }
