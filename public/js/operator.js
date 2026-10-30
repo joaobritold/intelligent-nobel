@@ -46,7 +46,10 @@ const $opEventSelect = document.getElementById('op-event-select');
 const $opDayTabs = document.getElementById('op-day-tabs');
 const $opStagePills = document.getElementById('op-stage-pills');
 
-function renderOpStageBadge() {
+let lastOpStagePillsSig = '';
+let lastOpSelectSig = '';
+
+function renderOpStageBadge(force = false) {
   const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
   const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
   let currentEvent = null;
@@ -75,7 +78,9 @@ function renderOpStageBadge() {
         name = currentEvent.title || currentEvent.code;
       }
     }
-    $opStageBadge.textContent = name;
+    if ($opStageBadge.textContent !== name) {
+      $opStageBadge.textContent = name;
+    }
   }
 
   // Quick Stage Pills for Operator (Show all stages if multiple exist)
@@ -97,20 +102,27 @@ function renderOpStageBadge() {
 
     if (allStages.length > 1) {
       $opStagePills.style.display = 'flex';
-      $opStagePills.innerHTML = allStages.map(st => {
-        const isAct = st.isCurrent;
-        const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
-          ? `${st.eventTitle} • ${st.name}`
-          : st.name;
-        return `
-          <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code)}">
-            🎪 ${escapeHtml(label)}
-          </button>
-        `;
-      }).join('');
+      const pillsSig = allStages.map(s => `${s.code}:${s.name}:${s.isCurrent}`).join('|');
+      if (force || pillsSig !== lastOpStagePillsSig) {
+        lastOpStagePillsSig = pillsSig;
+        $opStagePills.innerHTML = allStages.map(st => {
+          const isAct = st.isCurrent;
+          const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
+            ? `${st.eventTitle} • ${st.name}`
+            : st.name;
+          return `
+            <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code)}">
+              🎪 ${escapeHtml(label)}
+            </button>
+          `;
+        }).join('');
+      }
     } else {
       $opStagePills.style.display = 'none';
-      $opStagePills.innerHTML = '';
+      if (lastOpStagePillsSig !== '') {
+        $opStagePills.innerHTML = '';
+        lastOpStagePillsSig = '';
+      }
     }
   }
 
@@ -122,29 +134,34 @@ function renderOpStageBadge() {
   if ($opEventSelect) {
     if (list.length > 1 || totalStagesCount > 1) {
       $opEventSelect.style.display = 'inline-block';
-      let optionsHtml = '';
-      list.forEach(ev => {
-        const evTitle = ev.title || ev.code;
-        const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
-        if (stages.length > 1) {
-          optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
-          stages.forEach(st => {
-            const stCode = (st.code || st.id || '').toUpperCase();
+      const selectSig = list.map(ev => `${ev.code}:${ev.title}:${(ev.stages || []).map(s => `${s.code}:${s.name}`).join(';')}`).join('||') + `::${currentCode}`;
+      if (force || selectSig !== lastOpSelectSig) {
+        lastOpSelectSig = selectSig;
+        let optionsHtml = '';
+        list.forEach(ev => {
+          const evTitle = ev.title || ev.code;
+          const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
+          if (stages.length > 1) {
+            optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+            stages.forEach(st => {
+              const stCode = (st.code || st.id || '').toUpperCase();
+              const isSel = stCode === currentCode;
+              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
+            });
+            optionsHtml += `</optgroup>`;
+          } else {
+            const stCode = (stages[0].code || ev.code).toUpperCase();
             const isSel = stCode === currentCode;
-            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
-          });
-          optionsHtml += `</optgroup>`;
-        } else {
-          const stCode = (stages[0].code || ev.code).toUpperCase();
-          const isSel = stCode === currentCode;
-          optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
-        }
-      });
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
+          }
+        });
 
-      $opEventSelect.innerHTML = optionsHtml;
-      $opEventSelect.value = currentCode;
+        $opEventSelect.innerHTML = optionsHtml;
+        $opEventSelect.value = currentCode;
+      }
     } else {
       $opEventSelect.style.display = 'none';
+      lastOpSelectSig = '';
     }
   }
 }
@@ -195,12 +212,18 @@ if ($navHub) {
   $navHub.href = 'index.html';
 }
 
-function renderOpDayTabs() {
+let lastOpDayTabsSig = '';
+
+function renderOpDayTabs(force = false) {
   if (!$opDayTabs || !state) return;
   const currentDay = state.currentDay || 1;
   const daysMap = state.days || { '1': state.timers || [] };
   const dayKeys = Object.keys(daysMap).map(Number).sort((a, b) => a - b);
   if (dayKeys.length === 0) dayKeys.push(1);
+
+  const sig = `${currentDay}:${dayKeys.map(d => `${d}:${Array.isArray(daysMap[String(d)]) ? daysMap[String(d)].length : (d === currentDay ? (state.timers?.length || 0) : 0)}`).join(',')}`;
+  if (!force && sig === lastOpDayTabsSig) return;
+  lastOpDayTabsSig = sig;
 
   $opDayTabs.innerHTML = dayKeys.map(d => {
     const isAct = d === currentDay;
@@ -247,8 +270,8 @@ if ($opDayTabs) {
 }
 
 client.on('events-list-update', (list) => {
-  renderOpStageBadge();
-  renderOpDayTabs();
+  renderOpStageBadge(true);
+  renderOpDayTabs(true);
 });
 
 const $navController = document.getElementById('nav-controller');

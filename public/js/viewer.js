@@ -63,7 +63,10 @@ function escapeHtml(str) {
   }[m]));
 }
 
-function renderViewerEventSelector() {
+let lastViewerStagePillsSig = '';
+let lastViewerSelectSig = '';
+
+function renderViewerEventSelector(force = false) {
   const currentCode = (state?.id || roomId).toUpperCase();
   const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
   let currentEvent = null;
@@ -92,7 +95,9 @@ function renderViewerEventSelector() {
         name = currentEvent.title || currentEvent.code;
       }
     }
-    $viewerStageBadge.textContent = name;
+    if ($viewerStageBadge.textContent !== name) {
+      $viewerStageBadge.textContent = name;
+    }
   }
 
   // Quick Stage Pills for Viewer (Show all stages if multiple exist)
@@ -114,20 +119,27 @@ function renderViewerEventSelector() {
 
     if (allStages.length > 1) {
       $viewerStagePills.style.display = 'flex';
-      $viewerStagePills.innerHTML = allStages.map(st => {
-        const isAct = st.isCurrent;
-        const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
-          ? `${st.eventTitle} • ${st.name}`
-          : st.name;
-        return `
-          <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code)}">
-            🎪 ${escapeHtml(label)}
-          </button>
-        `;
-      }).join('');
+      const pillsSig = allStages.map(s => `${s.code}:${s.name}:${s.isCurrent}`).join('|');
+      if (force || pillsSig !== lastViewerStagePillsSig) {
+        lastViewerStagePillsSig = pillsSig;
+        $viewerStagePills.innerHTML = allStages.map(st => {
+          const isAct = st.isCurrent;
+          const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
+            ? `${st.eventTitle} • ${st.name}`
+            : st.name;
+          return `
+            <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code)}">
+              🎪 ${escapeHtml(label)}
+            </button>
+          `;
+        }).join('');
+      }
     } else {
       $viewerStagePills.style.display = 'none';
-      $viewerStagePills.innerHTML = '';
+      if (lastViewerStagePillsSig !== '') {
+        $viewerStagePills.innerHTML = '';
+        lastViewerStagePillsSig = '';
+      }
     }
   }
 
@@ -139,31 +151,37 @@ function renderViewerEventSelector() {
   if ($viewerEventSelect) {
     if (list.length > 1 || totalStagesCount > 1) {
       $viewerEventSelect.style.display = 'inline-block';
-      let optionsHtml = '';
-      list.forEach(ev => {
-        const evTitle = ev.title || ev.code;
-        const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
-        if (stages.length > 1) {
-          optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
-          stages.forEach(st => {
-            const stCode = (st.code || st.id || '').toUpperCase();
+      const selectSig = list.map(ev => `${ev.code}:${ev.title}:${(ev.stages || []).map(s => `${s.code}:${s.name}`).join(';')}`).join('||') + `::${currentCode}`;
+      if (force || selectSig !== lastViewerSelectSig) {
+        lastViewerSelectSig = selectSig;
+        let optionsHtml = '';
+        list.forEach(ev => {
+          const evTitle = ev.title || ev.code;
+          const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
+          if (stages.length > 1) {
+            optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+            stages.forEach(st => {
+              const stCode = (st.code || st.id || '').toUpperCase();
+              const isSel = stCode === currentCode;
+              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
+            });
+            optionsHtml += `</optgroup>`;
+          } else {
+            const stCode = (stages[0].code || ev.code).toUpperCase();
             const isSel = stCode === currentCode;
-            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
-          });
-          optionsHtml += `</optgroup>`;
-        } else {
-          const stCode = (stages[0].code || ev.code).toUpperCase();
-          const isSel = stCode === currentCode;
-          optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
-        }
-      });
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
+          }
+        });
 
-      $viewerEventSelect.innerHTML = optionsHtml;
-      $viewerEventSelect.value = currentCode;
+        $viewerEventSelect.innerHTML = optionsHtml;
+        $viewerEventSelect.value = currentCode;
+      }
     } else {
       $viewerEventSelect.style.display = 'none';
+      lastViewerSelectSig = '';
     }
   }
+}
 
   if ($viewerLineupBtn) {
     $viewerLineupBtn.href = `lineup.html?room=${encodeURIComponent(currentCode)}`;
@@ -233,7 +251,7 @@ if ($viewerEventSelect) {
 }
 
 client.on('events-list-update', (list) => {
-  renderViewerEventSelector();
+  renderViewerEventSelector(true);
 });
 
 // Auto-dim top bar after 5s of mouse idle when a timer is running

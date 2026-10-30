@@ -53,7 +53,10 @@ const $list = document.getElementById('lineup-list');
 
 if ($roomBadge) $roomBadge.textContent = roomId;
 
-function renderLineupEventSelector() {
+let lastLineupStagePillsSig = '';
+let lastLineupSelectSig = '';
+
+function renderLineupEventSelector(force = false) {
   const currentCode = (state?.id || roomId).toUpperCase();
   const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
   let currentEvent = null;
@@ -82,7 +85,9 @@ function renderLineupEventSelector() {
         name = currentEvent.title || currentEvent.code;
       }
     }
-    $lineupStageBadge.textContent = name;
+    if ($lineupStageBadge.textContent !== name) {
+      $lineupStageBadge.textContent = name;
+    }
   }
 
   // Quick Stage Pills for Lineup (Show all stages if multiple exist)
@@ -104,19 +109,26 @@ function renderLineupEventSelector() {
 
     if (allStages.length > 1) {
       $lineupStagePills.style.display = 'flex';
-      $lineupStagePills.innerHTML = allStages.map(st => {
-        const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
-          ? `${st.eventTitle} • ${st.name}`
-          : st.name;
-        return `
-          <button type="button" class="stage-pill ${st.isCurrent ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code)}">
-            🎪 ${escapeHtml(label)}
-          </button>
-        `;
-      }).join('');
+      const pillsSig = allStages.map(s => `${s.code}:${s.name}:${s.isCurrent}`).join('|');
+      if (force || pillsSig !== lastLineupStagePillsSig) {
+        lastLineupStagePillsSig = pillsSig;
+        $lineupStagePills.innerHTML = allStages.map(st => {
+          const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
+            ? `${st.eventTitle} • ${st.name}`
+            : st.name;
+          return `
+            <button type="button" class="stage-pill ${st.isCurrent ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code)}">
+              🎪 ${escapeHtml(label)}
+            </button>
+          `;
+        }).join('');
+      }
     } else {
       $lineupStagePills.style.display = 'none';
-      $lineupStagePills.innerHTML = '';
+      if (lastLineupStagePillsSig !== '') {
+        $lineupStagePills.innerHTML = '';
+        lastLineupStagePillsSig = '';
+      }
     }
   }
 
@@ -128,31 +140,37 @@ function renderLineupEventSelector() {
   if ($lineupEventSelect) {
     if (list.length > 1 || totalStagesCount > 1) {
       $lineupEventSelect.style.display = 'inline-block';
-      let optionsHtml = '';
-      list.forEach(ev => {
-        const evTitle = ev.title || ev.code;
-        const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
-        if (stages.length > 1) {
-          optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
-          stages.forEach(st => {
-            const stCode = (st.code || st.id || '').toUpperCase();
+      const selectSig = list.map(ev => `${ev.code}:${ev.title}:${(ev.stages || []).map(s => `${s.code}:${s.name}`).join(';')}`).join('||') + `::${currentCode}`;
+      if (force || selectSig !== lastLineupSelectSig) {
+        lastLineupSelectSig = selectSig;
+        let optionsHtml = '';
+        list.forEach(ev => {
+          const evTitle = ev.title || ev.code;
+          const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
+          if (stages.length > 1) {
+            optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+            stages.forEach(st => {
+              const stCode = (st.code || st.id || '').toUpperCase();
+              const isSel = stCode === currentCode;
+              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
+            });
+            optionsHtml += `</optgroup>`;
+          } else {
+            const stCode = (stages[0].code || ev.code).toUpperCase();
             const isSel = stCode === currentCode;
-            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
-          });
-          optionsHtml += `</optgroup>`;
-        } else {
-          const stCode = (stages[0].code || ev.code).toUpperCase();
-          const isSel = stCode === currentCode;
-          optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
-        }
-      });
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
+          }
+        });
 
-      $lineupEventSelect.innerHTML = optionsHtml;
-      $lineupEventSelect.value = currentCode;
+        $lineupEventSelect.innerHTML = optionsHtml;
+        $lineupEventSelect.value = currentCode;
+      }
     } else {
       $lineupEventSelect.style.display = 'none';
+      lastLineupSelectSig = '';
     }
   }
+}
 }
 
 // Stage badge click focuses/opens select
@@ -475,7 +493,7 @@ function render() {
 }
 
 client.on('events-list-update', (list) => {
-  renderLineupEventSelector();
+  renderLineupEventSelector(true);
   updateLineupNavLinks(roomId);
 });
 

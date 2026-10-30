@@ -92,12 +92,18 @@ function updateTopNavLinks(code) {
 }
 updateTopNavLinks(roomId);
 
-function renderDayTabs() {
+let lastCtrlDayTabsSig = '';
+
+function renderDayTabs(force = false) {
   if (!$ctrlDayTabs || !state) return;
   const currentDay = state.currentDay || 1;
   const daysMap = state.days || { '1': state.timers || [] };
   const dayKeys = Object.keys(daysMap).map(Number).sort((a, b) => a - b);
   if (dayKeys.length === 0) dayKeys.push(1);
+
+  const sig = `${currentDay}:${dayKeys.map(d => `${d}:${Array.isArray(daysMap[String(d)]) ? daysMap[String(d)].length : (d === currentDay ? (state.timers?.length || 0) : 0)}`).join(',')}`;
+  if (!force && sig === lastCtrlDayTabsSig) return;
+  lastCtrlDayTabsSig = sig;
 
   $ctrlDayTabs.innerHTML = dayKeys.map(d => {
     const isAct = d === currentDay;
@@ -156,7 +162,10 @@ if ($ctrlDayTabs) {
   });
 }
 
-function renderEventSelector() {
+let lastCtrlStagePillsSig = '';
+let lastCtrlSelectSig = '';
+
+function renderEventSelector(force = false) {
   const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
   const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
   
@@ -178,7 +187,7 @@ function renderEventSelector() {
     }
   }
 
-  if ($ctrlStageBadge) {
+  if ($ctrlStageBadge && $ctrlStageBadge.textContent !== name) {
     $ctrlStageBadge.textContent = name;
   }
 
@@ -199,42 +208,51 @@ function renderEventSelector() {
       $ctrlEventSelect.style.display = 'inline-block';
       if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'none';
 
-      let optionsHtml = '';
-      list.forEach(ev => {
-        const evTitle = ev.title || ev.code;
-        const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
-        if (stages.length > 1) {
-          optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
-          stages.forEach(st => {
-            const stCode = (st.code || st.id || '').toUpperCase();
+      const selectSig = `${currentCode}:${list.map(e => `${e.code}:${e.title}:${(e.stages||[]).map(s=>`${s.code}:${s.name}`).join(';')}`).join('|')}`;
+      if (force || selectSig !== lastCtrlSelectSig) {
+        lastCtrlSelectSig = selectSig;
+        let optionsHtml = '';
+        list.forEach(ev => {
+          const evTitle = ev.title || ev.code;
+          const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
+          if (stages.length > 1) {
+            optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+            stages.forEach(st => {
+              const stCode = (st.code || st.id || '').toUpperCase();
+              const isSel = stCode === currentCode;
+              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
+            });
+            optionsHtml += `</optgroup>`;
+          } else {
+            const stCode = (stages[0].code || ev.code).toUpperCase();
             const isSel = stCode === currentCode;
-            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
-          });
-          optionsHtml += `</optgroup>`;
-        } else {
-          const stCode = (stages[0].code || ev.code).toUpperCase();
-          const isSel = stCode === currentCode;
-          optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
-        }
-      });
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
+          }
+        });
 
-      $ctrlEventSelect.innerHTML = optionsHtml;
-      $ctrlEventSelect.value = currentCode;
+        $ctrlEventSelect.innerHTML = optionsHtml;
+        $ctrlEventSelect.value = currentCode;
+      }
     } else if (currentEvent && Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
       // Event has multiple stages: show stages dropdown
       $ctrlEventSelect.style.display = 'inline-block';
       if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'none';
-      let optionsHtml = `<optgroup label="🎪 ${escapeHtml(currentEvent.title || currentEvent.code)}">`;
-      currentEvent.stages.forEach(st => {
-        const stCode = (st.code || st.id || '').toUpperCase();
-        const isSel = stCode === currentCode;
-        optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(st.name || stCode)}</option>`;
-      });
-      optionsHtml += `</optgroup>`;
-      $ctrlEventSelect.innerHTML = optionsHtml;
-      $ctrlEventSelect.value = currentCode;
+      const selectSig = `stages:${currentCode}:${currentEvent.stages.map(s=>`${s.code}:${s.name}`).join(';')}`;
+      if (force || selectSig !== lastCtrlSelectSig) {
+        lastCtrlSelectSig = selectSig;
+        let optionsHtml = `<optgroup label="🎪 ${escapeHtml(currentEvent.title || currentEvent.code)}">`;
+        currentEvent.stages.forEach(st => {
+          const stCode = (st.code || st.id || '').toUpperCase();
+          const isSel = stCode === currentCode;
+          optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(st.name || stCode)}</option>`;
+        });
+        optionsHtml += `</optgroup>`;
+        $ctrlEventSelect.innerHTML = optionsHtml;
+        $ctrlEventSelect.value = currentCode;
+      }
     } else {
       $ctrlEventSelect.style.display = 'none';
+      lastCtrlSelectSig = '';
       if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'inline-block';
     }
   }
@@ -258,20 +276,25 @@ function renderEventSelector() {
 
     if (allStages.length > 1) {
       $ctrlStagePills.style.display = 'inline-flex';
-      $ctrlStagePills.innerHTML = allStages.map(st => {
-        const isAct = st.isCurrent;
-        const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
-          ? `${st.eventTitle} • ${st.name}`
-          : st.name;
-        return `
-          <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-ctrl-switch-stage="${escapeHtml(st.code)}" data-switch-stage="${escapeHtml(st.code)}">
-            🎪 ${escapeHtml(label)}
-          </button>
-        `;
-      }).join('');
+      const pillsSig = allStages.map(s => `${s.code}:${s.name}:${s.isCurrent}`).join('|');
+      if (force || pillsSig !== lastCtrlStagePillsSig) {
+        lastCtrlStagePillsSig = pillsSig;
+        $ctrlStagePills.innerHTML = allStages.map(st => {
+          const isAct = st.isCurrent;
+          const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
+            ? `${st.eventTitle} • ${st.name}`
+            : st.name;
+          return `
+            <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-ctrl-switch-stage="${escapeHtml(st.code)}" data-switch-stage="${escapeHtml(st.code)}">
+              🎪 ${escapeHtml(label)}
+            </button>
+          `;
+        }).join('');
+      }
     } else {
       $ctrlStagePills.style.display = 'none';
       $ctrlStagePills.innerHTML = '';
+      lastCtrlStagePillsSig = '';
     }
   }
 
@@ -407,8 +430,8 @@ if ($ctrlDeleteAllEventsBtn) {
 }
 
 client.on('events-list-update', (list) => {
-  renderEventSelector();
-  renderDayTabs();
+  renderEventSelector(true);
+  renderDayTabs(true);
 });
 
 if ($roomCodeInput) {
@@ -477,7 +500,6 @@ client.on('room-state', (data) => {
   renderTimers();
   renderPreview();
   renderMessageState();
-  renderEventSelector();
 });
 
 renderEventSelector();
