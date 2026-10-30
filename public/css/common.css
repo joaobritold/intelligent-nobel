@@ -283,3 +283,47 @@ select.input {
   font-weight: 600;
   padding: 8px;
 }
+
+/* ─── Quick Stage Switcher Pills ────────────────────────────────── */
+.stage-pills-bar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 0;
+}
+
+.stage-pills-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.stage-pill {
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
+  color: #cbd5e1;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.15s ease;
+}
+
+.stage-pill:hover,
+.stage-pill:active {
+  background: rgba(108, 92, 231, 0.25);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.stage-pill.active {
+  background: #00b894 !important;
+  border-color: #00b894 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(0, 184, 148, 0.4);
+}

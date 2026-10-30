@@ -12,6 +12,18 @@ const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim(
 
 let roomId = (paramRoom || savedActiveRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
 
+// Smart resolve: if roomId is parent event code with multiple stages, resolve to Stage 1
+try {
+  const localEvents = JSON.parse(localStorage.getItem('stagetimer_v10_events_list') || '[]');
+  const matchedEv = localEvents.find(e => (e.code || '').toUpperCase() === roomId);
+  if (matchedEv && Array.isArray(matchedEv.stages) && matchedEv.stages.length > 0) {
+    const hasCurrent = matchedEv.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId);
+    if (!hasCurrent && matchedEv.stages[0]?.code) {
+      roomId = matchedEv.stages[0].code.toUpperCase();
+    }
+  }
+} catch (_) {}
+
 try {
   localStorage.setItem('stagetimer_device_room', roomId);
   localStorage.setItem('stagetimer_last_room', roomId);
@@ -160,7 +172,12 @@ function renderEventSelector() {
   );
 
   if ($ctrlEventSelect) {
-    if (isMaster && list.length > 0) {
+    let totalStagesCount = 0;
+    list.forEach(e => {
+      totalStagesCount += (Array.isArray(e.stages) && e.stages.length > 0) ? e.stages.length : 1;
+    });
+
+    if (isMaster || list.length > 1 || totalStagesCount > 1) {
       $ctrlEventSelect.style.display = 'inline-block';
       if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'none';
 
@@ -171,29 +188,33 @@ function renderEventSelector() {
         if (stages.length > 1) {
           optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
           stages.forEach(st => {
-            const isSel = st.code === currentCode;
-            optionsHtml += `<option value="${escapeHtml(st.code)}" ${isSel ? 'selected' : ''}>👑 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || st.code)}</option>`;
+            const stCode = (st.code || st.id || '').toUpperCase();
+            const isSel = stCode === currentCode;
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
           });
           optionsHtml += `</optgroup>`;
         } else {
-          const stCode = stages[0].code || ev.code;
+          const stCode = (stages[0].code || ev.code).toUpperCase();
           const isSel = stCode === currentCode;
-          optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>👑 ${escapeHtml(evTitle)}</option>`;
+          optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
         }
       });
 
       $ctrlEventSelect.innerHTML = optionsHtml;
+      $ctrlEventSelect.value = currentCode;
     } else if (currentEvent && Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
-      // Event has multiple stages: show stages dropdown even for non-master devices of this event!
+      // Event has multiple stages: show stages dropdown
       $ctrlEventSelect.style.display = 'inline-block';
       if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'none';
       let optionsHtml = `<optgroup label="🎪 ${escapeHtml(currentEvent.title || currentEvent.code)}">`;
       currentEvent.stages.forEach(st => {
-        const isSel = st.code === currentCode;
-        optionsHtml += `<option value="${escapeHtml(st.code)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(st.name || st.code)}</option>`;
+        const stCode = (st.code || st.id || '').toUpperCase();
+        const isSel = stCode === currentCode;
+        optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(st.name || stCode)}</option>`;
       });
       optionsHtml += `</optgroup>`;
       $ctrlEventSelect.innerHTML = optionsHtml;
+      $ctrlEventSelect.value = currentCode;
     } else {
       $ctrlEventSelect.style.display = 'none';
       if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'inline-block';
@@ -1046,12 +1067,40 @@ if ($globalStart) $globalStart.addEventListener('click', () => client.globalActi
 if ($globalPause) $globalPause.addEventListener('click', () => client.globalAction('pause'));
 if ($globalReset) $globalReset.addEventListener('click', () => client.globalAction('reset'));
 
+// Quick Stage Message Presets: select & pre-fill without broadcasting
+document.querySelectorAll('.ctrl-preset-chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const wasActive = btn.classList.contains('active');
+    document.querySelectorAll('.ctrl-preset-chip').forEach(b => b.classList.remove('active'));
+    if (wasActive) {
+      if ($messageInput) $messageInput.dataset.level = 'info';
+      return;
+    }
+    btn.classList.add('active');
+    const msg = btn.dataset.msg;
+    const level = btn.dataset.level || 'info';
+    if ($messageInput) {
+      $messageInput.value = msg;
+      $messageInput.dataset.level = level;
+    }
+    // Only pre-fill input: do NOT broadcast to stage until user clicks "Mostrar"!
+    showToast(`Mensagem selecionada: "${msg}". Clique em "Mostrar" para enviar ao palco.`);
+  });
+});
+
+if ($messageInput) {
+  $messageInput.addEventListener('input', () => {
+    document.querySelectorAll('.ctrl-preset-chip').forEach(b => b.classList.remove('active'));
+  });
+}
+
 // Message controls (Info vs Urgent vs Toggle Visibility)
 if ($sendInfoBtn) {
   $sendInfoBtn.addEventListener('click', () => {
     const text = $messageInput ? $messageInput.value.trim() : '';
     if (text) {
       client.sendMessage(text, true, 'info');
+      if ($messageInput) $messageInput.dataset.level = 'info';
     } else if ($messageInput) {
       $messageInput.focus();
     }
@@ -1063,6 +1112,7 @@ if ($sendUrgentBtn) {
     const text = $messageInput ? $messageInput.value.trim() : '';
     if (text) {
       client.sendMessage(text, true, 'urgent');
+      if ($messageInput) $messageInput.dataset.level = 'urgent';
     } else if ($messageInput) {
       $messageInput.focus();
     }
@@ -1086,7 +1136,8 @@ if ($toggleMsgBtn) {
         showToast('Escreva uma mensagem primeiro');
         return;
       }
-      client.sendMessage(currentText, true, state?.message?.level || 'info');
+      const level = ($messageInput && $messageInput.dataset.level) || state?.message?.level || 'info';
+      client.sendMessage(currentText, true, level);
       showToast('Mensagem enviada para o palco');
     }
   });

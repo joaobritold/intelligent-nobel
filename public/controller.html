@@ -52,8 +52,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=66">
-  <link rel="stylesheet" href="css/controller.css?v=66">
+  <link rel="stylesheet" href="css/common.css?v=67">
+  <link rel="stylesheet" href="css/controller.css?v=67">
 </head>
 <body>
   <div class="app">
@@ -64,7 +64,7 @@
           <div class="logo">
             <span class="logo-icon">⏱️</span>
             <span>StageTimer</span>
-            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 4px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v66</span>
+            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 4px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v67</span>
           </div>
           <div class="room-info" style="display: flex; align-items: center; gap: 8px;">
             <span>🎪</span>
@@ -170,6 +170,12 @@
               <button id="send-info-btn" class="btn btn-primary" title="Mensagem Informativa (Leve)">💬 Info</button>
               <button id="send-urgent-btn" class="btn" style="background: #d63031; border-color: #d63031; color: #fff;" title="Mensagem Urgente (Destaque)">🔴 Urgente</button>
               <button id="toggle-msg-btn" class="btn" style="min-width: 96px; font-weight: 700; white-space: nowrap;" title="Mostrar ou ocultar mensagem no ecrã de palco">👁️ Mostrar</button>
+            </div>
+            <div class="ctrl-presets" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+              <button type="button" class="ctrl-preset-chip" data-level="urgent" data-msg="Por favor, conclua!">⏳ Concluir!</button>
+              <button type="button" class="ctrl-preset-chip" data-level="info" data-msg="Últimos 2 minutos">⚠️ 2 Minutos</button>
+              <button type="button" class="ctrl-preset-chip" data-level="urgent" data-msg="Tempo Esgotado!">🛑 Tempo Esgotado</button>
+              <button type="button" class="ctrl-preset-chip" data-level="info" data-msg="Fale mais perto do microfone">🎤 Microfone</button>
             </div>
           </div>
         </div>
@@ -324,15 +330,15 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=66"></script>
+  <script src="js/schedule-importer.js?v=67"></script>
 
   <!-- Access Control (Password: 1379 or brito) -->
-  <script src="js/auth.js?v=66"></script>
+  <script src="js/auth.js?v=67"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=66"></script>
-  <script src="js/local-sync.js?v=66"></script>
-  <script src="js/controller.js?v=66"></script>
+  <script src="js/pwa.js?v=67"></script>
+  <script src="js/local-sync.js?v=67"></script>
+  <script src="js/controller.js?v=67"></script>
 </body>
 </html>

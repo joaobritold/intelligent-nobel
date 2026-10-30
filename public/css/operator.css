@@ -33,19 +33,26 @@ body {
 }
 
 .op-mode-bar {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 5px;
-  padding: 8px 12px 0;
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.op-mode-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .op-mode-bar .mode-pill {
+  flex-shrink: 0;
   text-align: center;
-  padding: 6px 4px;
-  font-size: 0.72rem;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-radius: 8px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .op-room-box {
@@ -288,10 +295,11 @@ body {
   touch-action: manipulation;
 }
 
-.op-preset-chip:active, .op-dur-chip:active, .op-dur-chip.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+.op-preset-chip:active, .op-dur-chip:active, .op-dur-chip.active, .op-preset-chip.active {
+  background: var(--accent) !important;
+  border-color: #a29bfe !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(108, 92, 231, 0.4);
 }
 
 .op-queue-actions {

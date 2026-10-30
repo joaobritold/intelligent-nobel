@@ -529,6 +529,31 @@
   border-bottom: 1px solid var(--border);
 }
 
+.ctrl-preset-chip {
+  padding: 5px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.15s ease;
+}
+
+.ctrl-preset-chip:hover {
+  background: rgba(108, 92, 231, 0.2);
+  border-color: var(--accent);
+}
+
+.ctrl-preset-chip.active {
+  background: var(--accent) !important;
+  border-color: #a29bfe !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(108, 92, 231, 0.4);
+}
+
 .message-title {
   font-size: 0.75rem;
   font-weight: 600;

@@ -53,8 +53,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Modo Palco</title>
-  <link rel="stylesheet" href="css/common.css?v=66">
-  <link rel="stylesheet" href="css/viewer.css?v=66">
+  <link rel="stylesheet" href="css/common.css?v=67">
+  <link rel="stylesheet" href="css/viewer.css?v=67">
 </head>
 <body>
   <div class="viewer">
@@ -62,18 +62,20 @@
     <div id="viewer-connection" class="viewer-connection disconnected" title="Connection status"></div>
 
     <!-- Top Control Bar (Stage Badge & Fast Navigation) -->
-    <div id="viewer-top-bar" class="viewer-top-bar" style="position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: calc(16px + env(safe-area-inset-left, 0px)); display: flex; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(10px); padding: 6px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5); z-index: 50; transition: opacity 0.3s ease;">
-      <div style="display: flex; align-items: center; gap: 6px;">
+    <div id="viewer-top-bar" class="viewer-top-bar" style="position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: calc(12px + env(safe-area-inset-left, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); padding: 6px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5); z-index: 50; transition: opacity 0.3s ease;">
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
         <span style="font-size: 0.95rem;">🎪</span>
-        <span id="viewer-stage-badge" style="color: #55efc4; font-size: 0.82rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: rgba(0, 184, 148, 0.15); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Palco</span>
-        <select id="viewer-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco (Modo Master)"></select>
+        <span id="viewer-stage-badge" style="color: #55efc4; font-size: 0.82rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: rgba(0, 184, 148, 0.15); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;" title="Tocar para trocar de palco">Palco</span>
+        <select id="viewer-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco"></select>
+        <div id="viewer-stage-pills" class="stage-pills-bar" style="display: none;"></div>
       </div>
-      <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.2);"></div>
-      <a id="viewer-nav-hub" href="index.html" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.72rem; text-decoration: none; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; border-radius: 6px;">🏠 Início</a>
-      <a id="viewer-nav-operator" href="operator.html" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.72rem; text-decoration: none; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; border-radius: 6px;">📱 Operador</a>
-      <a id="viewer-lineup-btn" href="lineup.html" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.72rem; text-decoration: none; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; border-radius: 6px;">📋 Lista</a>
-      <a id="viewer-nav-master" href="master.html" class="btn btn-sm" style="display: none; padding: 3px 8px; font-size: 0.72rem; text-decoration: none; background: rgba(253, 203, 110, 0.12); border: 1px solid #fdcb6e; color: #fdcb6e; border-radius: 6px; font-weight: 700;">👑 Master</a>
-      <span style="font-family: var(--font-mono); font-size: 0.68rem; opacity: 0.5; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); color: #cbd5e1;">v66</span>
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <a id="viewer-nav-hub" href="index.html" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.72rem; text-decoration: none; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; border-radius: 6px;">🏠 Início</a>
+        <a id="viewer-nav-operator" href="operator.html" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.72rem; text-decoration: none; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; border-radius: 6px;">📱 Operador</a>
+        <a id="viewer-lineup-btn" href="lineup.html" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.72rem; text-decoration: none; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; border-radius: 6px;">📋 Lista</a>
+        <a id="viewer-nav-master" href="master.html" class="btn btn-sm" style="display: none; padding: 3px 8px; font-size: 0.72rem; text-decoration: none; background: rgba(253, 203, 110, 0.12); border: 1px solid #fdcb6e; color: #fdcb6e; border-radius: 6px; font-weight: 700;">👑 Master</a>
+        <span style="font-family: var(--font-mono); font-size: 0.68rem; opacity: 0.5; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); color: #cbd5e1;">v67</span>
+      </div>
     </div>
 
     <!-- Active Timer Name -->
@@ -118,8 +120,8 @@
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=66"></script>
-  <script src="js/local-sync.js?v=66"></script>
-  <script src="js/viewer.js?v=66"></script>
+  <script src="js/pwa.js?v=67"></script>
+  <script src="js/local-sync.js?v=67"></script>
+  <script src="js/viewer.js?v=67"></script>
 </body>
 </html>

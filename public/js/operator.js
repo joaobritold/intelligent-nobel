@@ -10,6 +10,18 @@ const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim(
 
 let roomId = (paramRoom || savedActiveRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
 
+// Smart resolve: if roomId is parent event code with multiple stages, resolve to Stage 1
+try {
+  const localEvents = JSON.parse(localStorage.getItem('stagetimer_v10_events_list') || '[]');
+  const matchedEv = localEvents.find(e => (e.code || '').toUpperCase() === roomId);
+  if (matchedEv && Array.isArray(matchedEv.stages) && matchedEv.stages.length > 0) {
+    const hasCurrent = matchedEv.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId);
+    if (!hasCurrent && matchedEv.stages[0]?.code) {
+      roomId = matchedEv.stages[0].code.toUpperCase();
+    }
+  }
+} catch (_) {}
+
 try {
   localStorage.setItem('stagetimer_device_room', roomId);
   localStorage.setItem('stagetimer_last_room', roomId);
@@ -32,40 +44,66 @@ const $bgColor = document.getElementById('op-bg-color');
 const $opStageBadge = document.getElementById('op-stage-badge');
 const $opEventSelect = document.getElementById('op-event-select');
 const $opDayTabs = document.getElementById('op-day-tabs');
+const $opStagePills = document.getElementById('op-stage-pills');
 
 function renderOpStageBadge() {
   const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
   const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
-  if ($opStageBadge) {
-    let name = currentCode;
-    for (const ev of list) {
-      if (ev.code === currentCode) {
-        name = ev.title || ev.code;
+  let currentEvent = null;
+
+  for (const ev of list) {
+    if (ev.code === currentCode) {
+      currentEvent = ev;
+      break;
+    }
+    if (Array.isArray(ev.stages)) {
+      const st = ev.stages.find(s => (s.code || s.id || '').toUpperCase() === currentCode);
+      if (st) {
+        currentEvent = ev;
         break;
       }
-      if (Array.isArray(ev.stages)) {
-        const st = ev.stages.find(s => s.code === currentCode);
-        if (st) {
-          name = `${ev.title || ev.code} • ${st.name || st.code}`;
-          break;
-        }
+    }
+  }
+
+  if ($opStageBadge) {
+    let name = currentCode;
+    if (currentEvent) {
+      if (Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
+        const st = currentEvent.stages.find(s => (s.code || s.id || '').toUpperCase() === currentCode);
+        name = `${currentEvent.title || currentEvent.code} • ${st?.name || currentCode}`;
+      } else {
+        name = currentEvent.title || currentEvent.code;
       }
     }
     $opStageBadge.textContent = name;
   }
 
-  const isMaster = typeof window.isStageTimerMaster === 'function' ? window.isStageTimerMaster() : (
-    sessionStorage.getItem('stagetimer_master_active') === '1' ||
-    localStorage.getItem('stagetimer_master_active') === '1' ||
-    sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
-    localStorage.getItem('stagetimer_master_auth_v12') === 'true'
-  );
+  // Quick Stage Pills for Operator
+  if ($opStagePills) {
+    if (currentEvent && Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
+      $opStagePills.style.display = 'flex';
+      $opStagePills.innerHTML = currentEvent.stages.map(st => {
+        const isAct = (st.code || st.id || '').toUpperCase() === currentCode;
+        return `
+          <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code || st.id)}">
+            🎪 ${escapeHtml(st.name || st.code)}
+          </button>
+        `;
+      }).join('');
+    } else {
+      $opStagePills.style.display = 'none';
+      $opStagePills.innerHTML = '';
+    }
+  }
+
+  let totalStagesCount = 0;
+  list.forEach(e => {
+    totalStagesCount += (Array.isArray(e.stages) && e.stages.length > 0) ? e.stages.length : 1;
+  });
 
   if ($opEventSelect) {
-    if (isMaster && list.length > 0) {
+    if (list.length > 1 || totalStagesCount > 1) {
       $opEventSelect.style.display = 'inline-block';
-      if ($opStageBadge) $opStageBadge.style.display = 'none';
-
       let optionsHtml = '';
       list.forEach(ev => {
         const evTitle = ev.title || ev.code;
@@ -73,35 +111,52 @@ function renderOpStageBadge() {
         if (stages.length > 1) {
           optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
           stages.forEach(st => {
-            const isSel = st.code === currentCode;
-            optionsHtml += `<option value="${escapeHtml(st.code)}" ${isSel ? 'selected' : ''}>👑 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || st.code)}</option>`;
+            const stCode = (st.code || st.id || '').toUpperCase();
+            const isSel = stCode === currentCode;
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
           });
           optionsHtml += `</optgroup>`;
         } else {
-          const stCode = stages[0].code || ev.code;
+          const stCode = (stages[0].code || ev.code).toUpperCase();
           const isSel = stCode === currentCode;
-          optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>👑 ${escapeHtml(evTitle)}</option>`;
+          optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
         }
       });
 
       $opEventSelect.innerHTML = optionsHtml;
-    } else if (currentEvent && Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
-      // Event has multiple stages: show stages dropdown even for non-master devices of this event!
-      $opEventSelect.style.display = 'inline-block';
-      if ($opStageBadge) $opStageBadge.style.display = 'none';
-      let optionsHtml = `<optgroup label="🎪 ${escapeHtml(currentEvent.title || currentEvent.code)}">`;
-      currentEvent.stages.forEach(st => {
-        const isSel = st.code === currentCode;
-        optionsHtml += `<option value="${escapeHtml(st.code)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(st.name || st.code)}</option>`;
-      });
-      optionsHtml += `</optgroup>`;
-      $opEventSelect.innerHTML = optionsHtml;
+      $opEventSelect.value = currentCode;
     } else {
       $opEventSelect.style.display = 'none';
-      if ($opStageBadge) $opStageBadge.style.display = 'inline-block';
     }
   }
 }
+
+// Stage badge click focuses/opens select
+if ($opStageBadge && $opEventSelect) {
+  $opStageBadge.style.cursor = 'pointer';
+  $opStageBadge.addEventListener('click', () => {
+    if ($opEventSelect.style.display !== 'none') {
+      $opEventSelect.focus();
+      try { $opEventSelect.showPicker(); } catch (_) {}
+    }
+  });
+}
+
+// Stage pills click delegation
+document.addEventListener('click', (e) => {
+  const pill = e.target.closest('[data-switch-stage]');
+  if (pill) {
+    const targetRoom = (pill.dataset.switchStage || '').toUpperCase().trim();
+    if (targetRoom && targetRoom !== (state?.id || roomId).toUpperCase()) {
+      try {
+        localStorage.setItem('stagetimer_device_room', targetRoom);
+        localStorage.setItem('stagetimer_last_room', targetRoom);
+        sessionStorage.setItem('stagetimer_active_room', targetRoom);
+      } catch (_) {}
+      window.location.replace(`operator.html?room=${encodeURIComponent(targetRoom)}`);
+    }
+  }
+});
 
 if ($opEventSelect) {
   $opEventSelect.addEventListener('change', () => {
@@ -556,6 +611,7 @@ if ($msgInfo) {
     const txt = $msgInput.value.trim();
     if (txt) {
       client.sendMessage(txt, true, 'info');
+      $msgInput.dataset.level = 'info';
       $msgInput.blur();
     }
   });
@@ -566,6 +622,7 @@ if ($msgUrgent) {
     const txt = $msgInput.value.trim();
     if (txt) {
       client.sendMessage(txt, true, 'urgent');
+      $msgInput.dataset.level = 'urgent';
       $msgInput.blur();
     }
   });
@@ -586,19 +643,38 @@ if ($msgToggle) {
         if ($msgInput) $msgInput.focus();
         return;
       }
-      client.sendMessage(currentText, true, state?.message?.level || 'info');
+      const level = ($msgInput && $msgInput.dataset.level) || state?.message?.level || 'info';
+      client.sendMessage(currentText, true, level);
     }
   });
 }
 
+// Quick Stage Message Presets: select & pre-fill without broadcasting
 document.querySelectorAll('.op-preset-chip').forEach(btn => {
   btn.addEventListener('click', () => {
+    const wasActive = btn.classList.contains('active');
+    document.querySelectorAll('.op-preset-chip').forEach(b => b.classList.remove('active'));
+    if (wasActive) {
+      if ($msgInput) $msgInput.dataset.level = 'info';
+      return;
+    }
+    btn.classList.add('active');
     const msg = btn.dataset.msg;
     const level = btn.dataset.level || 'info';
-    $msgInput.value = msg;
-    client.sendMessage(msg, true, level);
+    if ($msgInput) {
+      $msgInput.value = msg;
+      $msgInput.dataset.level = level;
+    }
+    // Note: Do NOT broadcast to stage yet! The user must click "Mostrar" or "Informativo" / "Urgente"
+    if (navigator.vibrate) { try { navigator.vibrate(25); } catch (_) {} }
   });
 });
+
+if ($msgInput) {
+  $msgInput.addEventListener('input', () => {
+    document.querySelectorAll('.op-preset-chip').forEach(b => b.classList.remove('active'));
+  });
+}
 
 document.querySelectorAll('.op-dur-chip').forEach(btn => {
   btn.addEventListener('click', () => {

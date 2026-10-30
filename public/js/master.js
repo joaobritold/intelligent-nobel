@@ -413,7 +413,8 @@
 
   function updateMasterNavLinks() {
     const events = masterClient.getEventsList();
-    const activeCode = (sessionStorage.getItem('stagetimer_active_room') || localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || events[0]?.code || 'PALCO1').toUpperCase();
+    const defaultFirstStage = (events[0] && Array.isArray(events[0].stages) && events[0].stages.length > 0 && events[0].stages[0].code) ? events[0].stages[0].code : (events[0]?.code || 'PALCO1');
+    const activeCode = (sessionStorage.getItem('stagetimer_active_room') || localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || defaultFirstStage).toUpperCase();
     const q = `?room=${encodeURIComponent(activeCode)}`;
     document.querySelectorAll('.master-nav-btn').forEach(btn => {
       const href = btn.getAttribute('href');
@@ -640,6 +641,7 @@
     $eventsList.innerHTML = events.map(ev => {
       const count = typeof ev.timersCount === 'number' ? ev.timersCount : 0;
       const day = ev.currentDay || 1;
+      const primaryTargetRoom = (Array.isArray(ev.stages) && ev.stages.length > 0 && ev.stages[0].code) ? ev.stages[0].code : ev.code;
 
       return `
         <div class="event-manage-card" data-stage-code="${escapeHtml(ev.code)}">
@@ -663,16 +665,16 @@
           </div>
 
           <div class="event-manage-btns">
-            <a href="controller.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm btn-primary" title="Abrir configurador para este palco">
+            <a href="controller.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm btn-primary" title="Abrir configurador para este palco">
               🎛️ Configurador
             </a>
-            <a href="operator.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm" title="Abrir operador mobile para este palco">
+            <a href="operator.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" title="Abrir operador mobile para este palco">
               📱 Operador
             </a>
-            <a href="viewer.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm" title="Abrir ecrã de palco">
+            <a href="viewer.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" title="Abrir ecrã de palco">
               📺 Palco
             </a>
-            <a href="lineup.html?room=${encodeURIComponent(ev.code)}" class="btn btn-sm" title="Abrir lista de horários">
+            <a href="lineup.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" title="Abrir lista de horários">
               📋 Lista
             </a>
             <button type="button" class="btn btn-sm" data-add-substage="${escapeHtml(ev.code)}" style="background: rgba(0, 184, 148, 0.18); border-color: #00b894; color: #55efc4; font-weight: 700;" title="Adicionar um novo palco a este evento">
