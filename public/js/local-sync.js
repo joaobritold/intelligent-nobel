@@ -1299,6 +1299,17 @@ class UniversalSyncClient {
     if (!title) {
       title = isDefault ? 'Palco Principal' : code;
     }
+
+    let eventType = item?.eventType || '';
+    if (eventType !== 'theatre' && eventType !== 'concert') {
+      const lowerTitle = (title || '').toLowerCase();
+      if (lowerTitle.includes('teatro') || lowerTitle.includes('peça') || lowerTitle.includes('peca') || lowerTitle.includes('cena') || lowerTitle.includes('espetaculo') || lowerTitle.includes('espetáculo') || lowerTitle.includes('recita') || lowerTitle.includes('récita')) {
+        eventType = 'theatre';
+      } else {
+        eventType = 'concert';
+      }
+    }
+
     const count = typeof item?.timersCount === 'number'
       ? item.timersCount
       : (typeof item?.artistCount === 'number' ? item.artistCount : 0);
@@ -1356,6 +1367,7 @@ class UniversalSyncClient {
       timersCount: count,
       artistCount: count,
       currentDay: item?.currentDay || 1,
+      eventType,
       createdAt: createdTime,
       updatedAt: updatedTime
     };
@@ -1478,6 +1490,7 @@ class UniversalSyncClient {
           ...existing,
           ...inc,
           title: incUpdated >= existUpdated ? (inc.title || existing.title) : (existing.title || inc.title),
+          eventType: incUpdated >= existUpdated ? (inc.eventType || existing.eventType) : (existing.eventType || inc.eventType),
           stagesCount: Math.max(existing.stagesCount || 1, inc.stagesCount || 1, mergedStages.length),
           stages: mergedStages,
           timersCount: Math.max(existing.timersCount || 0, inc.timersCount || 0),
@@ -1646,7 +1659,7 @@ class UniversalSyncClient {
     return pin || String(Math.floor(1000 + Math.random() * 9000));
   }
 
-  createEventWithStages({ title, stagesCount = 1, masterPass = '' }) {
+  createEventWithStages({ title, stagesCount = 1, eventType = 'concert', masterPass = '' }) {
     if (masterPass !== '1379brito') {
       throw new Error('Apenas o Master com a senha 1379brito pode criar eventos.');
     }
@@ -1658,6 +1671,12 @@ class UniversalSyncClient {
       .replace(/^-+|-+$/g, '')
       .substring(0, 14);
     if (!baseCode) baseCode = 'EVT-' + Math.floor(100 + Math.random() * 900);
+
+    let resolvedEventType = eventType === 'theatre' ? 'theatre' : 'concert';
+    const lowerTitle = cleanTitle.toLowerCase();
+    if (lowerTitle.includes('teatro') || lowerTitle.includes('peça') || lowerTitle.includes('peca') || lowerTitle.includes('cena') || lowerTitle.includes('espetaculo') || lowerTitle.includes('espetáculo')) {
+      resolvedEventType = 'theatre';
+    }
 
     // Unmark baseCode from deleted list if it was previously deleted
     this._unmarkDeletedEvent(baseCode);
@@ -1719,6 +1738,7 @@ class UniversalSyncClient {
       timersCount: 0,
       artistCount: 0,
       currentDay: 1,
+      eventType: resolvedEventType,
       createdAt: Date.now(),
       updatedAt: Date.now()
     });
@@ -1734,6 +1754,7 @@ class UniversalSyncClient {
         timersCount: 0,
         artistCount: 0,
         currentDay: 1,
+        eventType: resolvedEventType,
         createdAt: Date.now(),
         updatedAt: Date.now()
       };

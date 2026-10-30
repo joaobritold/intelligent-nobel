@@ -56,7 +56,7 @@
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="./index.html">
   <title>StageTimer PFP — Timer de Palco & Lineup</title>
-  <link rel="stylesheet" href="css/common.css?v=76">
+  <link rel="stylesheet" href="css/common.css?v=77">
   <style>
     body {
       display: flex;
@@ -364,7 +364,7 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 10px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v76</span>
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v77</span>
       </footer>
     </div>
 
@@ -398,8 +398,20 @@
         </div>
 
         <div style="margin-bottom: 14px; text-align: left;">
-          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Nome do Evento / Festival:</label>
-          <input id="create-modal-title" class="input" placeholder="ex: Festival de Verão 2026, Gala IPCA..." style="width: 100%; font-size: 0.95rem;" autocomplete="off">
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Tipo de Produção / Evento:</label>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" id="create-type-concert-btn" class="btn" style="flex: 1; padding: 10px 8px; font-size: 0.85rem; font-weight: 800; border-radius: 10px; border: 1.5px solid #6c5ce7; background: rgba(108, 92, 231, 0.28); color: #fff; cursor: pointer; transition: all 0.2s ease;">
+              🎪 Concerto / Festival
+            </button>
+            <button type="button" id="create-type-theatre-btn" class="btn" style="flex: 1; padding: 10px 8px; font-size: 0.85rem; font-weight: 700; border-radius: 10px; border: 1.5px solid var(--border); background: rgba(255, 255, 255, 0.05); color: #94a3b8; cursor: pointer; transition: all 0.2s ease;">
+              🎭 Teatro / Cénico
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px; text-align: left;">
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Nome do Evento / Espetáculo:</label>
+          <input id="create-modal-title" class="input" placeholder="ex: Festival de Verão 2026, Peça Hamlet, Gala..." style="width: 100%; font-size: 0.95rem;" autocomplete="off">
         </div>
 
         <div style="margin-bottom: 16px; text-align: left;">
@@ -512,15 +524,18 @@
 
       <input id="hub-room" type="hidden" value="PALCO1">
 
-      <!-- Secção 1: Modos de Concerto & Espetáculo ao Vivo -->
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-        <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary);">
-          🎪 Modos de Concerto & Espetáculo ao Vivo
-        </span>
+      <!-- Alternador de Suite: Concerto & Ao Vivo vs Teatro & Artes Cénicas -->
+      <div class="hub-suite-bar" style="background: rgba(0,0,0,0.4); padding: 5px; border-radius: 14px; border: 1px solid var(--border); display: flex; gap: 8px; margin-bottom: 16px;">
+        <button id="hub-suite-concert-btn" type="button" class="btn" style="flex: 1; padding: 11px 12px; font-weight: 800; font-size: 0.88rem; border-radius: 10px; border: 1.5px solid #6c5ce7; background: rgba(108, 92, 231, 0.28); color: #fff; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span>🎪</span> <span>Concerto & Ao Vivo</span>
+        </button>
+        <button id="hub-suite-theatre-btn" type="button" class="btn" style="flex: 1; padding: 11px 12px; font-weight: 800; font-size: 0.88rem; border-radius: 10px; border: 1.5px solid var(--border); background: rgba(255, 255, 255, 0.05); color: #94a3b8; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span>🎭</span> <span>Teatro & Artes Cénicas</span>
+        </button>
       </div>
 
-      <!-- 6 Concert Cards -->
-      <div class="modes-grid">
+      <!-- Container 1: Modos de Concerto & Espetáculo ao Vivo -->
+      <div id="hub-grid-concert" class="modes-grid">
         <!-- Modo Configurador -->
         <a id="card-controller" href="controller.html" class="mode-card">
           <div class="mode-icon">🎛️</div>
@@ -582,33 +597,26 @@
         </a>
       </div>
 
-      <!-- Secção 2: Nova Suite de Teatro & Artes Cénicas -->
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px; margin-bottom: 8px;">
-        <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #fdcb6e; display: flex; align-items: center; gap: 6px;">
-          <span>🎭</span> Régie de Teatro & Artes Cénicas
-        </span>
-        <span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border: 1px solid rgba(253, 203, 110, 0.4); font-size: 0.65rem; font-weight: 700;">NOVO</span>
-      </div>
-
-      <div class="modes-grid">
+      <!-- Container 2: Modos de Teatro & Artes Cénicas -->
+      <div id="hub-grid-theatre" class="modes-grid" style="display: none;">
         <!-- Mesa da Diretora de Cena (DC) -->
-        <a id="card-dc" href="dc.html" class="mode-card" style="border: 1px solid rgba(253, 203, 110, 0.45); background: linear-gradient(135deg, rgba(235, 77, 75, 0.15) 0%, rgba(20, 16, 35, 0.9) 100%);">
+        <a id="card-dc" href="dc.html" class="mode-card" style="border: 1.5px solid #fdcb6e; background: linear-gradient(135deg, rgba(235, 77, 75, 0.2) 0%, rgba(26, 20, 45, 0.95) 100%);">
           <div class="mode-icon">📖</div>
           <div class="mode-info">
-            <div class="mode-name" style="color: #ffeaa7;">Mesa da Diretora de Cena (DC)</div>
-            <div class="mode-desc">Ecrã Master para Teatro: guião da peça lado a lado com deixas sequenciais (STANDBY & GO com Barra de Espaço), checklists e telemetria.</div>
+            <div class="mode-name" style="color: #ffeaa7; font-size: 1.15rem; font-weight: 800;">Mesa da Diretora de Cena (DC)</div>
+            <div class="mode-desc">Ecrã Master para Teatro: guião da peça lado a lado com deixas sequenciais (STANDBY & GO com Barra de Espaço), checklists de afinação e telemetria.</div>
           </div>
-          <span class="mode-badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border: 1px solid rgba(253, 203, 110, 0.4);">Ecrã Master / DC</span>
+          <span class="mode-badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border: 1.5px solid #fdcb6e; font-weight: 800;">Ecrã Master / DC</span>
         </a>
 
         <!-- Posto Técnico (Cue Station) -->
-        <a id="card-cuestation" href="cue-station.html" class="mode-card" style="border: 1px solid rgba(0, 184, 148, 0.45); background: linear-gradient(135deg, rgba(0, 184, 148, 0.15) 0%, rgba(20, 20, 35, 0.9) 100%);">
+        <a id="card-cuestation" href="cue-station.html" class="mode-card" style="border: 1.5px solid #00b894; background: linear-gradient(135deg, rgba(0, 184, 148, 0.2) 0%, rgba(20, 26, 38, 0.95) 100%);">
           <div class="mode-icon">🚦</div>
           <div class="mode-info">
-            <div class="mode-name" style="color: #55efc4;">Posto Técnico (Cue Station)</div>
-            <div class="mode-desc">Ecrã filtrado por departamento (Luz, Som, Maquinaria, Vídeo, Coxias) com sinalizadores de STANDBY e GO, feedback rápido e checklist de afinação.</div>
+            <div class="mode-name" style="color: #55efc4; font-size: 1.15rem; font-weight: 800;">Posto Técnico (Cue Station)</div>
+            <div class="mode-desc">Ecrã de posto para técnicos (Luz, Som, Maquinaria, Vídeo, Coxias) com sinalizadores de STANDBY e GO, feedback instantâneo e checklist de afinação.</div>
           </div>
-          <span class="mode-badge" style="background: rgba(0, 184, 148, 0.2); color: #55efc4; border: 1px solid rgba(0, 184, 148, 0.4);">Técnicos / Departamentos</span>
+          <span class="mode-badge" style="background: rgba(0, 184, 148, 0.2); color: #55efc4; border: 1.5px solid #00b894; font-weight: 800;">Técnicos / Departamentos</span>
         </a>
       </div>
 
@@ -625,14 +633,14 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v76</span>
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v77</span>
       </footer>
     </div>
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=76"></script>
-  <script src="js/local-sync.js?v=76"></script>
+  <script src="js/pwa.js?v=77"></script>
+  <script src="js/local-sync.js?v=77"></script>
   <script>
     const hubClient = new StageTimerClient({
       role: 'viewer',
@@ -676,6 +684,8 @@
 
     // Create Modal
     const $createModal = document.getElementById('portal-create-modal');
+    const $createTypeConcertBtn = document.getElementById('create-type-concert-btn');
+    const $createTypeTheatreBtn = document.getElementById('create-type-theatre-btn');
     const $createTitle = document.getElementById('create-modal-title');
     const $createStagesCount = document.getElementById('create-modal-stages-count');
     const $createStagesMinus = document.getElementById('create-modal-stages-minus');
@@ -695,15 +705,24 @@
     const $hubCurrentStageBadge = document.getElementById('hub-current-stage-badge');
     const $hubStagesBox = document.getElementById('hub-stages-box');
     const $hubStagesPills = document.getElementById('hub-stages-pills');
+    const $hubSuiteConcertBtn = document.getElementById('hub-suite-concert-btn');
+    const $hubSuiteTheatreBtn = document.getElementById('hub-suite-theatre-btn');
+    const $hubGridConcert = document.getElementById('hub-grid-concert');
+    const $hubGridTheatre = document.getElementById('hub-grid-theatre');
     const $room = document.getElementById('hub-room');
     const $controller = document.getElementById('card-controller');
     const $operator = document.getElementById('card-operator');
     const $viewer = document.getElementById('card-viewer');
     const $lineup = document.getElementById('card-lineup');
     const $regies = document.getElementById('card-regies');
+    const $dc = document.getElementById('card-dc');
+    const $cueStation = document.getElementById('card-cuestation');
     const $toggleQr = document.getElementById('toggle-qr-btn');
     const $qrContainer = document.getElementById('qr-container');
     const $qrImg = document.getElementById('qr-img');
+
+    let selectedCreateType = 'concert';
+    let currentHubSuite = 'concert';
 
     function tryEnterFullscreen() {
       const el = document.documentElement;
@@ -839,8 +858,12 @@
       }
 
       $portalEventsList.innerHTML = allEvents.map(ev => {
+        const isTheatre = ev.eventType === 'theatre';
         const count = ev.stagesCount || (ev.stages ? ev.stages.length : 1);
         const stageLabel = count > 1 ? `${count} palcos` : '1 palco';
+        const typeBadge = isTheatre
+          ? `<span style="background: rgba(253, 203, 110, 0.18); color: #fdcb6e; font-weight: 800; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(253, 203, 110, 0.35);">🎭 Teatro</span>`
+          : `<span style="background: rgba(108, 92, 231, 0.18); color: #c4b5fd; font-weight: 800; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.35);">🎪 Concerto</span>`;
         const pinBadge = isMasterActive
           ? `<span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 800; font-family: var(--font-mono); padding: 4px 10px; border-radius: 8px; border: 1px solid #fdcb6e; font-size: 0.82rem;">🔑 PIN: ${escapeHtml(ev.pin)}</span>`
           : '';
@@ -858,9 +881,11 @@
           <div class="event-row" data-portal-code="${escapeHtml(ev.code)}" style="padding: 14px 16px; cursor: pointer;">
             <div class="event-row-left">
                <div class="event-row-title" style="font-size: 1.05rem;">
-                <span>🎪 ${escapeHtml(ev.title || ev.code)}</span>
+                <span>${isTheatre ? '🎭' : '🎪'} ${escapeHtml(ev.title || ev.code)}</span>
               </div>
               <div class="event-row-meta" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+                ${typeBadge}
+                <span>•</span>
                 <span>${stageLabel}</span>
                 ${pinBadge ? `<span>•</span>${pinBadge}` : ''}
                 ${copyButtons}
@@ -877,9 +902,41 @@
       }).join('');
     }
 
+    function setHubSuite(suite) {
+      currentHubSuite = suite;
+      const isTheatre = suite === 'theatre';
+      if ($hubGridConcert) $hubGridConcert.style.display = isTheatre ? 'none' : 'grid';
+      if ($hubGridTheatre) $hubGridTheatre.style.display = isTheatre ? 'grid' : 'none';
+
+      if ($hubSuiteConcertBtn) {
+        $hubSuiteConcertBtn.style.border = isTheatre ? '1.5px solid var(--border)' : '1.5px solid #6c5ce7';
+        $hubSuiteConcertBtn.style.background = isTheatre ? 'rgba(255, 255, 255, 0.05)' : 'rgba(108, 92, 231, 0.28)';
+        $hubSuiteConcertBtn.style.color = isTheatre ? '#94a3b8' : '#fff';
+      }
+      if ($hubSuiteTheatreBtn) {
+        $hubSuiteTheatreBtn.style.border = isTheatre ? '1.5px solid #fdcb6e' : '1.5px solid var(--border)';
+        $hubSuiteTheatreBtn.style.background = isTheatre ? 'rgba(253, 203, 110, 0.22)' : 'rgba(255, 255, 255, 0.05)';
+        $hubSuiteTheatreBtn.style.color = isTheatre ? '#ffeaa7' : '#94a3b8';
+      }
+    }
+
+    if ($hubSuiteConcertBtn) {
+      $hubSuiteConcertBtn.addEventListener('click', () => setHubSuite('concert'));
+    }
+    if ($hubSuiteTheatreBtn) {
+      $hubSuiteTheatreBtn.addEventListener('click', () => setHubSuite('theatre'));
+    }
+
     function renderEventHub(unlockedEv) {
       if ($hubCurrentEventName) {
         $hubCurrentEventName.textContent = unlockedEv.title || unlockedEv.code;
+      }
+
+      // Automatically select the correct suite matching the event nature
+      if (unlockedEv.eventType === 'theatre') {
+        setHubSuite('theatre');
+      } else {
+        setHubSuite('concert');
       }
 
       const stages = Array.isArray(unlockedEv.stages) && unlockedEv.stages.length > 0
@@ -929,9 +986,12 @@
       if ($viewer) $viewer.href = `viewer.html${q}`;
       if ($lineup) $lineup.href = `lineup.html${q}`;
       if ($regies) $regies.href = `regies.html${q}`;
+      if ($dc) $dc.href = `dc.html${q}`;
+      if ($cueStation) $cueStation.href = `cue-station.html${q}`;
       if ($qrImg) {
         const baseUrl = location.href.split('?')[0].replace(/\/index\.html$/i, '').replace(/\/+$/, '');
-        const fullUrl = `${baseUrl}/viewer.html${q}`;
+        const targetPage = unlockedEv.eventType === 'theatre' ? 'cue-station.html' : 'viewer.html';
+        const fullUrl = `${baseUrl}/${targetPage}${q}`;
         $qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(fullUrl)}`;
       }
 
@@ -950,18 +1010,24 @@
       const allEvents = hubClient.getEventsList();
       $hubMasterEventsList.innerHTML = allEvents.map(ev => {
         const isSelected = ev.code === currentUnlockedEventCode;
+        const isTheatre = ev.eventType === 'theatre';
         const count = ev.stagesCount || (ev.stages ? ev.stages.length : 1);
         const stageLabel = count > 1 ? `${count} palcos` : '1 palco';
         const timerCount = typeof ev.timersCount === 'number' ? `${ev.timersCount} artista(s)` : '0 artistas';
+        const typeBadge = isTheatre
+          ? `<span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 700; font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(253, 203, 110, 0.4);">🎭 Teatro</span>`
+          : `<span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; font-weight: 700; font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(108, 92, 231, 0.4);">🎪 Concerto</span>`;
 
         return `
           <div class="event-row ${isSelected ? 'active' : ''}" data-hub-switch-event="${escapeHtml(ev.code)}" style="cursor: pointer; padding: 12px 14px; border-radius: 10px; background: ${isSelected ? 'rgba(0, 184, 148, 0.16)' : 'rgba(255,255,255,0.04)'}; border: 1.5px solid ${isSelected ? '#00b894' : 'rgba(255,255,255,0.12)'}; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: all 0.2s ease;">
             <div class="event-row-left">
               <div class="event-row-title" style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1rem; font-weight: 800; color: #fff;">${isSelected ? '🟢' : '⚪'} ${escapeHtml(ev.title || ev.code)}</span>
+                <span style="font-size: 1rem; font-weight: 800; color: #fff;">${isSelected ? '🟢' : '⚪'} ${isTheatre ? '🎭' : '🎪'} ${escapeHtml(ev.title || ev.code)}</span>
                 <span class="event-code-pill">${escapeHtml(ev.code)}</span>
               </div>
               <div class="event-row-meta" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; font-size: 0.75rem; color: var(--text-secondary);">
+                ${typeBadge}
+                <span>•</span>
                 <span>${stageLabel}</span>
                 <span>•</span>
                 <span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 800; font-family: var(--font-mono); padding: 1px 7px; border-radius: 5px; border: 1px solid rgba(253, 203, 110, 0.4); font-size: 0.72rem;">🔑 PIN: ${escapeHtml(ev.pin)}</span>
@@ -1223,9 +1289,37 @@
     }
 
     // Create Event Modal (Master Only)
+    function setCreateType(type) {
+      selectedCreateType = type;
+      const isTheatre = type === 'theatre';
+      if ($createTypeConcertBtn) {
+        $createTypeConcertBtn.style.border = isTheatre ? '1.5px solid var(--border)' : '1.5px solid #6c5ce7';
+        $createTypeConcertBtn.style.background = isTheatre ? 'rgba(255, 255, 255, 0.05)' : 'rgba(108, 92, 231, 0.28)';
+        $createTypeConcertBtn.style.color = isTheatre ? '#94a3b8' : '#fff';
+      }
+      if ($createTypeTheatreBtn) {
+        $createTypeTheatreBtn.style.border = isTheatre ? '1.5px solid #fdcb6e' : '1.5px solid var(--border)';
+        $createTypeTheatreBtn.style.background = isTheatre ? 'rgba(253, 203, 110, 0.22)' : 'rgba(255, 255, 255, 0.05)';
+        $createTypeTheatreBtn.style.color = isTheatre ? '#ffeaa7' : '#94a3b8';
+      }
+      if ($createTitle) {
+        $createTitle.placeholder = isTheatre
+          ? 'ex: Peça Hamlet, Auto da Barca, Gala Cénica...'
+          : 'ex: Festival de Verão 2026, Concerto Rock, Sunset...';
+      }
+    }
+
+    if ($createTypeConcertBtn) {
+      $createTypeConcertBtn.addEventListener('click', () => setCreateType('concert'));
+    }
+    if ($createTypeTheatreBtn) {
+      $createTypeTheatreBtn.addEventListener('click', () => setCreateType('theatre'));
+    }
+
     if ($portalBtnCreateEvent) {
       $portalBtnCreateEvent.addEventListener('click', () => {
         if (!isMasterActive) return;
+        setCreateType('concert');
         if ($createTitle) $createTitle.value = '';
         if ($createStagesCount) $createStagesCount.value = '1';
         if ($createGeneratedPin) $createGeneratedPin.textContent = hubClient.generateUniquePin();
@@ -1284,6 +1378,7 @@
           const newEvent = hubClient.createEventWithStages({
             title,
             stagesCount,
+            eventType: selectedCreateType,
             masterPass: '1379brito'
           });
           if ($createModal) $createModal.style.display = 'none';

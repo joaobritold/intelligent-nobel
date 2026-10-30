@@ -698,6 +698,7 @@
     }
 
     $eventsList.innerHTML = events.map(ev => {
+      const isTheatre = ev.eventType === 'theatre';
       const count = typeof ev.timersCount === 'number' ? ev.timersCount : 0;
       const day = ev.currentDay || 1;
       const primaryTargetRoom = (Array.isArray(ev.stages) && ev.stages.length > 0 && ev.stages[0].code) ? ev.stages[0].code : ev.code;
@@ -707,12 +708,14 @@
           <div class="event-manage-top">
             <div>
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <div class="event-manage-title" style="margin-bottom: 0;">${escapeHtml(ev.title || ev.code)}</div>
+                <div class="event-manage-title" style="margin-bottom: 0;">${isTheatre ? '🎭' : '🎪'} ${escapeHtml(ev.title || ev.code)}</div>
                 <button type="button" class="btn btn-sm" data-rename-event="${escapeHtml(ev.code)}" data-current-name="${escapeHtml(ev.title || ev.code)}" style="padding: 2px 8px; font-size: 0.72rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe; font-weight: 600;" title="Renomear este Evento">
                   ✏️ Renomear Evento
                 </button>
               </div>
               <div class="event-manage-stats" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+                ${isTheatre ? '<span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border: 1px solid #fdcb6e; font-weight: 700; font-size: 0.75rem;">🎭 Teatro</span>' : '<span class="badge" style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700; font-size: 0.75rem;">🎪 Concerto</span>'}
+                <span>•</span>
                 <span>${ev.stagesCount || 1} palco(s)</span>
                 <span>•</span>
                 <span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 800; font-family: var(--font-mono); padding: 2px 8px; border-radius: 6px; border: 1px solid #fdcb6e; font-size: 0.78rem;">🔑 PIN: ${escapeHtml(ev.pin || '----')}</span>
@@ -724,18 +727,27 @@
           </div>
 
           <div class="event-manage-btns">
-            <a href="controller.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm btn-primary" title="Abrir configurador para este palco">
-              🎛️ Configurador
-            </a>
-            <a href="operator.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" title="Abrir operador mobile para este palco">
-              📱 Operador
-            </a>
-            <a href="viewer.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" title="Abrir ecrã de palco">
-              📺 Palco
-            </a>
-            <a href="lineup.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" title="Abrir lista de horários">
-              📋 Lista
-            </a>
+            ${isTheatre ? `
+              <a href="dc.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" style="background: rgba(253, 203, 110, 0.2); border-color: #fdcb6e; color: #ffeaa7; font-weight: 700;" title="Abrir Mesa da Diretora de Cena (DC)">
+                📖 Mesa DC
+              </a>
+              <a href="cue-station.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" style="background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4; font-weight: 700;" title="Abrir Posto Técnico (Cue Station)">
+                🚦 Posto Cues
+              </a>
+            ` : `
+              <a href="controller.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm btn-primary" title="Abrir configurador para este palco">
+                🎛️ Configurador
+              </a>
+              <a href="operator.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" title="Abrir operador mobile para este palco">
+                📱 Operador
+              </a>
+              <a href="viewer.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" title="Abrir ecrã de palco">
+                📺 Palco
+              </a>
+              <a href="lineup.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" title="Abrir lista de horários">
+                📋 Lista
+              </a>
+            `}
             <button type="button" class="btn btn-sm" data-add-substage="${escapeHtml(ev.code)}" style="background: rgba(0, 184, 148, 0.18); border-color: #00b894; color: #55efc4; font-weight: 700;" title="Adicionar um novo palco a este evento">
               ➕ + Palco
             </button>
@@ -751,15 +763,20 @@
               <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Palcos deste evento:</span>
               ${ev.stages.map(st => `
                 <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; flex-wrap: wrap;">
-                  <strong style="font-size: 0.78rem; color: #55efc4;">🎪 ${escapeHtml(st.name || st.code)}</strong>
+                  <strong style="font-size: 0.78rem; color: #55efc4;">${isTheatre ? '🎭' : '🎪'} ${escapeHtml(st.name || st.code)}</strong>
                   <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">(${escapeHtml(st.code)})</span>
                   <button type="button" class="btn btn-sm" data-rename-stage="${escapeHtml(st.code)}" data-parent-event="${escapeHtml(ev.code)}" data-current-name="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe; font-weight: 600;" title="Renomear este palco">
                     ✏️ Renomear Palco
                   </button>
-                  <a href="controller.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Configurador">🎛️</a>
-                  <a href="operator.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Operador">📱</a>
-                  <a href="viewer.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Palco">📺</a>
-                  <a href="lineup.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Lista">📋</a>
+                  ${isTheatre ? `
+                    <a href="dc.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem; background: rgba(253, 203, 110, 0.2); border-color: #fdcb6e; color: #ffeaa7;" title="Abrir Mesa DC">📖</a>
+                    <a href="cue-station.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem; background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4;" title="Abrir Posto Cues">🚦</a>
+                  ` : `
+                    <a href="controller.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Configurador">🎛️</a>
+                    <a href="operator.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Operador">📱</a>
+                    <a href="viewer.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Palco">📺</a>
+                    <a href="lineup.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Lista">📋</a>
+                  `}
                   ${ev.stages.length > 1 ? `
                     <button type="button" class="btn btn-sm btn-danger" data-delete-substage="${escapeHtml(st.code)}" data-parent-event="${escapeHtml(ev.code)}" data-stage-name="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; margin-left: 2px;" title="Eliminar este palco do evento">
                       ✕
@@ -969,10 +986,13 @@
       }
       const stagesSelect = document.getElementById('master-new-stages-count');
       const stagesCount = Math.max(1, Math.min(20, parseInt(stagesSelect ? stagesSelect.value : '1', 10) || 1));
+      const typeSelect = document.getElementById('master-new-event-type');
+      const eventType = typeSelect ? typeSelect.value : 'concert';
       try {
         const created = masterClient.createEventWithStages({
           title: name,
           stagesCount,
+          eventType,
           masterPass: '1379brito'
         });
         if ($newStageInput) $newStageInput.value = '';
@@ -980,7 +1000,8 @@
         renderMultiview();
         renderMasterEventSelector();
         updateMasterNavLinks();
-        alert(`✅ Evento "${created.title}" criado com sucesso!\n🎪 Palcos: ${created.stagesCount}\n🔑 PIN atribuído à equipa: ${created.pin}`);
+        const typeEmoji = created.eventType === 'theatre' ? '🎭' : '🎪';
+        alert(`✅ Evento "${created.title}" criado com sucesso!\n${typeEmoji} Tipo: ${created.eventType === 'theatre' ? 'Teatro / Cénico' : 'Concerto / Festival'}\n🎪 Palcos: ${created.stagesCount}\n🔑 PIN atribuído à equipa: ${created.pin}`);
       } catch (err) {
         alert(err.message || 'Erro ao criar evento.');
       }

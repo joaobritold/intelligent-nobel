@@ -52,8 +52,8 @@
   <link rel="apple-touch-icon" href="icon.svg">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f0f1a">
-  <link rel="stylesheet" href="css/master.css?v=76">
-  <script src="js/auth.js?v=76"></script>
+  <link rel="stylesheet" href="css/master.css?v=77">
+  <script src="js/auth.js?v=77"></script>
 </head>
 <body>
   <div class="master-container">
@@ -67,7 +67,7 @@
             <h1 class="master-header-title">
               Painel Master
               <span class="badge">Super Régie</span>
-              <span class="badge" style="background: rgba(253, 203, 110, 0.18); color: #fdcb6e; border-color: #fdcb6e; font-family: var(--font-mono); font-weight: 700;">v76</span>
+              <span class="badge" style="background: rgba(253, 203, 110, 0.18); color: #fdcb6e; border-color: #fdcb6e; font-family: var(--font-mono); font-weight: 700;">v77</span>
             </h1>
             <div class="master-header-sub">
               Gestão Central de Ecrãs e Palcos
@@ -211,7 +211,14 @@
 
       <!-- Quick Add Stage / Event Bar -->
       <div class="master-quick-add" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
-        <input id="master-new-stage-input" class="input" placeholder="Nome do novo evento (ex: Festival Rock, Sunset, Gala...)" autocomplete="off" style="flex: 2; min-width: 180px;">
+        <input id="master-new-stage-input" class="input" placeholder="Nome do novo evento (ex: Festival Rock, Peça Hamlet, Gala...)" autocomplete="off" style="flex: 2; min-width: 180px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <label for="master-new-event-type" style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap;">Tipo:</label>
+          <select id="master-new-event-type" class="input" style="width: auto; padding: 6px 10px; font-weight: 700; background: rgba(15, 23, 42, 0.95); border: 1.5px solid var(--accent); border-radius: 8px; color: #fff;">
+            <option value="concert">🎪 Concerto</option>
+            <option value="theatre">🎭 Teatro</option>
+          </select>
+        </div>
         <div style="display: flex; align-items: center; gap: 6px;">
           <label for="master-new-stages-count" style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap;">Nº Palcos:</label>
           <select id="master-new-stages-count" class="input" style="width: auto; padding: 6px 10px; font-weight: 700; background: rgba(15, 23, 42, 0.95); border: 1.5px solid var(--accent); border-radius: 8px; color: #fff;">
@@ -278,14 +285,14 @@
 
     <!-- Footer Version Indicator -->
     <footer style="text-align: center; padding: 24px 0 12px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-      StageTimer Super Régie Master • <span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(253, 203, 110, 0.4); font-weight: 700;">v76</span>
+      StageTimer Super Régie Master • <span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(253, 203, 110, 0.4); font-weight: 700;">v77</span>
     </footer>
 
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=76"></script>
-  <script src="js/local-sync.js?v=76"></script>
-  <script src="js/master.js?v=76"></script>
+  <script src="js/pwa.js?v=77"></script>
+  <script src="js/local-sync.js?v=77"></script>
+  <script src="js/master.js?v=77"></script>
 </body>
 </html>
