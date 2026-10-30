@@ -1023,7 +1023,6 @@
     const targetOrder = allStages
       .map(s => $multiviewGrid.querySelector(`[data-mv-room="${CSS.escape(s.code)}"]`))
       .filter(Boolean);
-      .filter(Boolean);
 
     let needsReorder = false;
     for (let i = 0; i < targetOrder.length; i++) {
