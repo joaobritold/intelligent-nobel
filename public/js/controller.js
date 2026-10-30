@@ -512,6 +512,10 @@ function updateLocalClock() {
   if (el) {
     el.textContent = StageTimerClient.getTrueTimeString();
   }
+  const $ctrlEventEnd = document.getElementById('ctrl-event-end');
+  if ($ctrlEventEnd) {
+    $ctrlEventEnd.textContent = getEventEndTime();
+  }
 }
 updateLocalClock();
 setInterval(updateLocalClock, 1000);

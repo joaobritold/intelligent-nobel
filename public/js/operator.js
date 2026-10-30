@@ -345,6 +345,10 @@ function updateOpClock() {
   if (el) {
     el.textContent = StageTimerClient.getTrueTimeString();
   }
+  const $opEventEnd = document.getElementById('op-event-end');
+  if ($opEventEnd) {
+    $opEventEnd.textContent = getEventEndTime();
+  }
 }
 updateOpClock();
 setInterval(updateOpClock, 1000);

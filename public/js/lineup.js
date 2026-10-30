@@ -509,6 +509,10 @@ client.on('room-state', (data) => {
 
 setInterval(() => {
   if (state?.timers) {
+    const $eventEnd = document.getElementById('lineup-event-end');
+    if ($eventEnd) {
+      $eventEnd.textContent = getEventEndTime(state);
+    }
     const active = StageTimerClient.getActiveTimer(state);
     if (active && active.mode === 'clock') {
       const $nowTimer = document.getElementById('lineup-now-timer');

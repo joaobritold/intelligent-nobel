@@ -2458,56 +2458,35 @@ class UniversalSyncClient {
       }
     }
 
-    // 3. Active timer finishing time (live if running)
+    const trueNow = UniversalSyncClient.globalTrueTime();
+
+    // 3. Active timer finishing time (live if running, paused or stopped)
     if (targetIdx === activeIdx) {
-      if (activeTimer?.state === 'running') {
-        const end = new Date(Date.now() + activeRemaining);
-        const hh = String(end.getHours()).padStart(2, '0');
-        const mm = String(end.getMinutes()).padStart(2, '0');
-        return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
-      }
-      return `${Math.round((activeTimer?.duration || 0) / 60000)} min`;
+      const rem = (activeTimer?.state === 'running' || activeTimer?.state === 'paused')
+        ? activeRemaining
+        : (activeTimer?.duration || 0);
+      const end = new Date(trueNow + rem);
+      const hh = String(end.getHours()).padStart(2, '0');
+      const mm = String(end.getMinutes()).padStart(2, '0');
+      return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
     }
 
-    // 4. Future timer: cumulative projection
+    // 4. Future timer: cumulative projection from active timer
     if (targetIdx > activeIdx) {
-      if (activeTimer?.state === 'running') {
-        let accumMs = activeRemaining;
-        for (let i = (activeIdx >= 0 ? activeIdx + 1 : 0); i <= targetIdx; i++) {
-          const t = state.timers[i];
-          if (t && t.mode !== 'clock') {
-            accumMs += (t.duration || 0);
-          }
-        }
-        const end = new Date(Date.now() + accumMs);
-        const hh = String(end.getHours()).padStart(2, '0');
-        const mm = String(end.getMinutes()).padStart(2, '0');
-        return `${hh}:${mm}`;
-      } else {
-        // Not running: calculate from earlier scheduled timers if available
-        let baseMins = null;
-        let accumDur = 0;
-        for (let i = 0; i <= targetIdx; i++) {
-          const t = state.timers[i];
-          if (t.startTime) {
-            const m = String(t.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
-            if (m) {
-              baseMins = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-              accumDur = Math.round((t.duration || 0) / 60000);
-              continue;
-            }
-          }
-          if (baseMins !== null && i > 0) {
-            accumDur += Math.round((t.duration || 0) / 60000);
-          }
-        }
-        if (baseMins !== null) {
-          const endMins = (baseMins + accumDur) % 1440;
-          const hh = String(Math.floor(endMins / 60)).padStart(2, '0');
-          const mm = String(endMins % 60).padStart(2, '0');
-          return `${hh}:${mm}`;
+      let accumMs = (activeTimer?.state === 'running' || activeTimer?.state === 'paused')
+        ? activeRemaining
+        : (activeTimer?.duration || 0);
+      const startFrom = (activeIdx >= 0) ? activeIdx + 1 : 0;
+      for (let i = startFrom; i <= targetIdx; i++) {
+        const t = state.timers[i];
+        if (t && t.mode !== 'clock') {
+          accumMs += (t.duration || 0);
         }
       }
+      const end = new Date(trueNow + accumMs);
+      const hh = String(end.getHours()).padStart(2, '0');
+      const mm = String(end.getMinutes()).padStart(2, '0');
+      return `${hh}:${mm}`;
     }
 
     return '--:--';
@@ -2554,20 +2533,51 @@ class UniversalSyncClient {
     const countdownTimers = state.timers.filter(t => t.mode !== 'clock');
     if (countdownTimers.length === 0) return '--:--';
 
+    // If all countdown timers are finished
+    if (countdownTimers.every(t => t.state === 'finished')) {
+      return 'Concluído';
+    }
+
+    const trueNow = UniversalSyncClient.globalTrueTime();
     const activeIdx = state.timers.findIndex(t => t.id === state.activeTimerId);
     const activeTimer = activeIdx >= 0 ? state.timers[activeIdx] : null;
 
-    let activeElapsed = UniversalSyncClient.getTimerElapsed(activeTimer);
+    // Determine current focal timer (active timer or first non-finished countdown timer)
+    let effectiveIdx = activeIdx;
+    if (effectiveIdx < 0 || (activeTimer && activeTimer.state === 'finished')) {
+      effectiveIdx = state.timers.findIndex(t => t.mode !== 'clock' && t.state !== 'finished');
+      if (effectiveIdx < 0) effectiveIdx = 0;
+    }
+    const currentTimer = state.timers[effectiveIdx] || countdownTimers[0];
 
-    const activeRemaining = activeTimer ? Math.max(0, (activeTimer.duration || 0) - activeElapsed) : 0;
-    const activeOvertimeMs = activeTimer && activeElapsed > (activeTimer.duration || 0)
-      ? activeElapsed - activeTimer.duration
+    // Compute remaining duration of the active timer
+    let activeElapsed = UniversalSyncClient.getTimerElapsed(currentTimer);
+    const activeDuration = currentTimer.duration || 0;
+    const activeRemaining = (currentTimer.state === 'finished')
+      ? 0
+      : ((currentTimer.state === 'running' || currentTimer.state === 'paused')
+          ? Math.max(0, activeDuration - activeElapsed)
+          : activeDuration);
+
+    const activeOvertimeMs = (currentTimer.state === 'running' || currentTimer.state === 'paused') && activeElapsed > activeDuration
+      ? activeElapsed - activeDuration
       : 0;
     const activeOvertimeMins = Math.floor(activeOvertimeMs / 60000);
 
-    // 1. Check for scheduled time in countdown timers
+    // Compute remaining duration of all subsequent timers
+    let subsequentDurMs = 0;
+    for (let i = effectiveIdx + 1; i < state.timers.length; i++) {
+      const t = state.timers[i];
+      if (t && t.mode !== 'clock' && t.state !== 'finished') {
+        subsequentDurMs += (t.duration || 0);
+      }
+    }
+
+    const totalRemainingMs = activeRemaining + subsequentDurMs;
+
+    // 1. Check for scheduled times in countdown timers
     let lastKnownEndMins = null;
-    let subsequentDurMins = 0;
+    let durAfterScheduledMs = 0;
 
     for (let i = 0; i < countdownTimers.length; i++) {
       const t = countdownTimers[i];
@@ -2575,56 +2585,57 @@ class UniversalSyncClient {
         const rangeMatch = String(t.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
         if (rangeMatch) {
           lastKnownEndMins = parseInt(rangeMatch[3], 10) * 60 + parseInt(rangeMatch[4], 10);
-          subsequentDurMins = 0;
+          durAfterScheduledMs = 0;
           continue;
         }
         const singleMatch = String(t.startTime).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
         if (singleMatch) {
           const sMins = parseInt(singleMatch[1], 10) * 60 + parseInt(singleMatch[2], 10);
           lastKnownEndMins = sMins + Math.round((t.duration || 0) / 60000);
-          subsequentDurMins = 0;
+          durAfterScheduledMs = 0;
           continue;
         }
       }
       if (lastKnownEndMins !== null) {
-        subsequentDurMins += Math.round((t.duration || 0) / 60000);
+        durAfterScheduledMs += (t.duration || 0);
       }
     }
+
+    // Calculated local end Date if running from right now
+    const realEndDate = new Date(trueNow + totalRemainingMs);
+    const realHh = String(realEndDate.getHours()).padStart(2, '0');
+    const realMm = String(realEndDate.getMinutes()).padStart(2, '0');
 
     if (lastKnownEndMins !== null) {
-      const finalEndMins = (lastKnownEndMins + subsequentDurMins + activeOvertimeMins) % 1440;
-      const hh = String(Math.floor(finalEndMins / 60)).padStart(2, '0');
-      const mm = String(finalEndMins % 60).padStart(2, '0');
-      return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
-    }
+      const plannedEndMins = (lastKnownEndMins + Math.round(durAfterScheduledMs / 60000) + activeOvertimeMins) % 1440;
+      const schedHh = String(Math.floor(plannedEndMins / 60)).padStart(2, '0');
+      const schedMm = String(plannedEndMins % 60).padStart(2, '0');
 
-    // 2. Real-time finish if active timer is running
-    if (activeTimer && activeTimer.state === 'running') {
-      let totalRemainingMs = activeRemaining;
-      const startFrom = (activeIdx >= 0) ? activeIdx + 1 : 0;
-      for (let i = startFrom; i < state.timers.length; i++) {
-        const t = state.timers[i];
-        if (t && t.mode !== 'clock') {
-          totalRemainingMs += (t.duration || 0);
-        }
+      if (activeOvertimeMins > 0) {
+        return `${schedHh}:${schedMm} (+${activeOvertimeMins}m)`;
       }
-      const endDate = new Date(UniversalSyncClient.globalTrueTime() + totalRemainingMs);
-      const hh = String(endDate.getHours()).padStart(2, '0');
-      const mm = String(endDate.getMinutes()).padStart(2, '0');
-      return activeOvertimeMins > 0 ? `${hh}:${mm} (+${activeOvertimeMins}m)` : `${hh}:${mm}`;
+
+      // If active timer is running or paused, check if real duration pushes past the schedule
+      if (currentTimer.state === 'running' || currentTimer.state === 'paused') {
+        const nowDate = new Date(trueNow);
+        const schedMsFromMidnight = plannedEndMins * 60000;
+        const nowMsFromMidnightToday = (nowDate.getHours() * 3600 + nowDate.getMinutes() * 60 + nowDate.getSeconds()) * 1000;
+        const plannedMsRemaining = schedMsFromMidnight >= nowMsFromMidnightToday
+          ? schedMsFromMidnight - nowMsFromMidnightToday
+          : (schedMsFromMidnight + 86400000) - nowMsFromMidnightToday;
+
+        if (totalRemainingMs > plannedMsRemaining + 60000) {
+          const delayMins = Math.round((totalRemainingMs - plannedMsRemaining) / 60000);
+          return `${realHh}:${realMm} (+${delayMins}m)`;
+        }
+        return `${schedHh}:${schedMm}`;
+      }
+
+      return `${schedHh}:${schedMm}`;
     }
 
-    // 3. Otherwise show total planned duration
-    let totalDurMins = 0;
-    for (const t of countdownTimers) {
-      totalDurMins += Math.round((t.duration || 0) / 60000);
-    }
-    const totalHours = Math.floor(totalDurMins / 60);
-    const remMins = totalDurMins % 60;
-    if (totalHours > 0) {
-      return `${totalHours}h ${remMins > 0 ? `${remMins}m` : ''}`.trim();
-    }
-    return `${totalDurMins}m`;
+    // 2. No scheduled times in schedule: ALWAYS return the estimated local finish time from duration
+    return activeOvertimeMins > 0 ? `${realHh}:${realMm} (+${activeOvertimeMins}m)` : `${realHh}:${realMm}`;
   }
 
   // ─── Event System ───────────────────────────────────────────────────
