@@ -28,12 +28,46 @@ const client = new StageTimerClient({
 
 let state = null;
 
-// Department: 'Luz', 'Som', 'Maquinaria', 'Vídeo', 'Coxias', 'Geral'
-let currentDept = 'Luz';
-try {
-  const savedDept = localStorage.getItem('stagetimer_cue_dept');
-  if (savedDept) currentDept = savedDept;
-} catch (_) {}
+// ─── Department Resolution & Isolation ────────────────────────────────
+const VALID_DEPTS = ['Som', 'Luz', 'Maquinaria', 'Vídeo', 'Coxias'];
+
+const DEPT_INFO = {
+  'Som': { name: 'POSTO SOM', icon: '🔊', title: 'Técnico de Som', color: '#74b9ff', border: '#0984e3' },
+  'Luz': { name: 'POSTO LUZ', icon: '💡', title: 'Técnico de Luz', color: '#ffeaa7', border: '#fdcb6e' },
+  'Maquinaria': { name: 'POSTO MAQUINARIA', icon: '⚙️', title: 'Técnico de Maquinaria', color: '#fab1a0', border: '#e17055' },
+  'Vídeo': { name: 'POSTO VÍDEO', icon: '🎥', title: 'Técnico de Vídeo', color: '#55efc4', border: '#00b894' },
+  'Coxias': { name: 'POSTO COXIAS', icon: '🎭', title: 'Técnico de Coxias / Adereços', color: '#fd79a8', border: '#e84393' }
+};
+
+function resolveDeptName(deptStr) {
+  if (!deptStr) return null;
+  const norm = String(deptStr).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  for (const d of VALID_DEPTS) {
+    const dNorm = d.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (dNorm === norm) return d;
+  }
+  return null;
+}
+
+const urlDeptParam = resolveDeptName(params.get('dept'));
+let currentDept = urlDeptParam;
+
+if (!currentDept) {
+  try {
+    const saved = localStorage.getItem('stagetimer_cue_dept');
+    currentDept = resolveDeptName(saved);
+  } catch (_) {}
+}
+
+let promptDeptModal = false;
+if (!currentDept) {
+  currentDept = 'Som';
+  promptDeptModal = true;
+} else {
+  try {
+    localStorage.setItem('stagetimer_cue_dept', currentDept);
+  } catch (_) {}
+}
 
 // Audio Alert Toggle
 let audioEnabled = true;
@@ -70,12 +104,17 @@ const $heroCueTarget = document.getElementById('cs-hero-cue-target');
 const $feedbackBar = document.getElementById('cs-feedback-bar');
 const $feedbackStatus = document.getElementById('cs-feedback-status');
 
-// Tabs
+// Tabs & Items
 const $myCuesCount = document.getElementById('cs-my-cues-count');
 const $myChecklistCount = document.getElementById('cs-my-checklist-count');
 const $cuesList = document.getElementById('cs-cues-list');
 const $checklistProgressPill = document.getElementById('cs-checklist-progress-pill');
 const $myChecklistItems = document.getElementById('cs-my-checklist-items');
+
+// Modal Elements
+const $deptModal = document.getElementById('cs-dept-modal');
+const $btnChangeDept = document.getElementById('cs-btn-change-dept');
+const $btnDeptModalClose = document.getElementById('cs-dept-modal-close');
 
 // ─── Web Audio Synthesizer for Cue Beacons ───────────────────────────
 let audioCtx = null;
@@ -147,32 +186,75 @@ function playGoChime() {
   } catch (e) {}
 }
 
-// ─── Department Switching ───────────────────────────────────────────
+// ─── Department Switching & UI ──────────────────────────────────────
+function showDeptModal() {
+  if ($deptModal) $deptModal.style.display = 'flex';
+}
+
+function hideDeptModal() {
+  if ($deptModal) $deptModal.style.display = 'none';
+}
+
+function updateDeptUI() {
+  const info = DEPT_INFO[currentDept] || DEPT_INFO['Som'];
+  const $icon = document.getElementById('cs-hud-dept-icon');
+  const $name = document.getElementById('cs-hud-dept-name');
+  const $sub = document.getElementById('cs-hud-dept-subtitle');
+  const $heroBadge = document.getElementById('cs-hero-dept-badge');
+  const $chkTitle = document.getElementById('cs-checklist-dept-title');
+
+  if ($icon) $icon.textContent = info.icon;
+  if ($name) {
+    $name.textContent = info.name;
+    $name.style.color = info.color;
+  }
+  if ($sub) $sub.textContent = info.title;
+  if ($heroBadge) {
+    $heroBadge.textContent = `${info.name}`;
+    $heroBadge.style.color = info.color;
+    $heroBadge.style.borderColor = info.border;
+  }
+  if ($chkTitle) {
+    $chkTitle.textContent = `Validação de Equipamentos & Presets (${currentDept})`;
+  }
+}
+
 function setDepartment(dept) {
-  currentDept = dept || 'Luz';
+  const resolved = resolveDeptName(dept) || 'Som';
+  currentDept = resolved;
   try {
     localStorage.setItem('stagetimer_cue_dept', currentDept);
   } catch (_) {}
 
-  document.querySelectorAll('.cs-dept-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.dept === currentDept);
-  });
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set('dept', currentDept);
+    window.history.replaceState(null, '', u.toString());
+  } catch (_) {}
 
-  if ($deptSubtitle) {
-    $deptSubtitle.textContent = `Departamento: ${currentDept}`;
-  }
-  if ($heroDeptBadge) {
-    $heroDeptBadge.textContent = `DEPARTAMENTO: ${currentDept.toUpperCase()}`;
-  }
-
+  hideDeptModal();
+  updateDeptUI();
+  lastMyCuesSig = '';
+  lastMyChecklistSig = '';
   render();
 }
 
-document.querySelectorAll('.cs-dept-btn').forEach(b => {
-  b.addEventListener('click', () => {
-    setDepartment(b.dataset.dept);
+if ($btnChangeDept) {
+  $btnChangeDept.addEventListener('click', showDeptModal);
+}
+if ($btnDeptModalClose) {
+  $btnDeptModalClose.addEventListener('click', hideDeptModal);
+}
+
+document.querySelectorAll('.cs-modal-dept-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setDepartment(btn.dataset.modalDept);
   });
 });
+
+if (promptDeptModal) {
+  showDeptModal();
+}
 
 // ─── Audio Toggle Setup ─────────────────────────────────────────────
 function updateAudioUI() {
@@ -202,6 +284,7 @@ if ($audioBtn) {
   });
 }
 updateAudioUI();
+updateDeptUI();
 
 // ─── Clocks Loop ────────────────────────────────────────────────────
 function formatElapsed(ms) {
@@ -273,7 +356,7 @@ document.querySelectorAll('.cs-fb-btn').forEach(btn => {
 
     if ($feedbackStatus) {
       $feedbackStatus.style.display = 'inline-block';
-      $feedbackStatus.textContent = `✓ Feedback "${btn.textContent.trim()}" enviado!`;
+      $feedbackStatus.textContent = `✓ Feedback "${btn.textContent.trim()}" enviado para o Modo Jess!`;
       setTimeout(() => {
         if ($feedbackStatus) $feedbackStatus.style.display = 'none';
       }, 3000);
@@ -281,7 +364,7 @@ document.querySelectorAll('.cs-fb-btn').forEach(btn => {
   });
 });
 
-// ─── Render Functions ────────────────────────────────────────────────
+// ─── Cue Relevance & Hero Cue Light ─────────────────────────────────
 let lastTriggeredStandbyCueId = null;
 let lastTriggeredGoCueId = null;
 
@@ -290,16 +373,19 @@ let lastMyChecklistSig = '';
 
 function isCueRelevant(cue) {
   if (!cue) return false;
-  if (currentDept === 'Geral') return true;
-  const depts = Array.isArray(cue.departments) ? cue.departments.map(d => String(d).toLowerCase()) : [];
-  return depts.some(d => d.includes(currentDept.toLowerCase()));
+  const targetNorm = currentDept.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const depts = Array.isArray(cue.departments) ? cue.departments : [];
+  return depts.some(d => {
+    const dNorm = String(d || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return dNorm.includes(targetNorm);
+  });
 }
 
 function renderHeroLight() {
   const th = state?.theatre;
   const cues = th?.cues || [];
 
-  // Filter cues for this department
+  // Strictly filter cues for this department
   const relevantCues = cues.filter(isCueRelevant);
 
   // Check if any relevant cue is currently FIRED or on STANDBY
@@ -347,111 +433,35 @@ function renderHeroLight() {
       $heroCueTarget.textContent = `Próxima: ${nextPending.name} (${nextPending.targetText || nextPending.notes || 'Aguardar sinal'})`;
     } else {
       $heroCueName.textContent = 'Sem Deixas Pendentes';
-      $heroCueTarget.textContent = 'Todas as deixas do seu departamento foram executadas nesta sessão.';
+      $heroCueTarget.textContent = `Todas as deixas do Posto de ${currentDept} foram executadas nesta sessão.`;
     }
 
     if ($feedbackBar) $feedbackBar.style.display = 'none';
   }
 }
 
-let currentCueFilter = 'all';
-let currentChkFilter = 'my';
-
-// ─── Filter Bar Delegation ──────────────────────────────────────────
-document.addEventListener('click', (e) => {
-  // Cue filter buttons
-  const cueFilterBtn = e.target.closest('.cs-cue-filter-btn');
-  if (cueFilterBtn) {
-    document.querySelectorAll('.cs-cue-filter-btn').forEach(b => b.classList.remove('active'));
-    cueFilterBtn.classList.add('active');
-    currentCueFilter = cueFilterBtn.dataset.filter || 'all';
-    lastMyCuesSig = ''; // Force re-render
-    renderCuesList();
-    return;
-  }
-
-  // Checklist filter buttons
-  const chkFilterBtn = e.target.closest('.cs-chk-filter-btn');
-  if (chkFilterBtn) {
-    document.querySelectorAll('.cs-chk-filter-btn').forEach(b => b.classList.remove('active'));
-    chkFilterBtn.classList.add('active');
-    currentChkFilter = chkFilterBtn.dataset.chkFilter || 'my';
-    lastMyChecklistSig = ''; // Force re-render
-    renderChecklist();
-    return;
-  }
-
-  // Click row to toggle checklist
-  const chkRow = e.target.closest('[data-cs-chk-row]');
-  if (chkRow && e.target.type !== 'checkbox') {
-    const chkBox = chkRow.querySelector('input[type="checkbox"]');
-    if (chkBox) {
-      chkBox.checked = !chkBox.checked;
-      const itemId = chkBox.dataset.csChk;
-      const dept = chkBox.dataset.csDept || currentDept;
-      client.toggleChecklistItem(dept, itemId, chkBox.checked);
-    }
-  }
-});
-
-// Quick Add Task Button for Technician Post
-const $newTaskInput = document.getElementById('cs-new-task-input');
-const $newTaskBtn = document.getElementById('cs-new-task-btn');
-
-function handleAddNewTask() {
-  const label = ($newTaskInput?.value || '').trim();
-  if (!label) return;
-  const dept = currentDept === 'Geral' ? 'Luz' : currentDept;
-  client.addChecklistItem(dept, label, false);
-  if ($newTaskInput) $newTaskInput.value = '';
-}
-
-if ($newTaskBtn) {
-  $newTaskBtn.addEventListener('click', handleAddNewTask);
-}
-if ($newTaskInput) {
-  $newTaskInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddNewTask();
-    }
-  });
-}
-
+// ─── Render Cues List (Strictly for this Department) ────────────────
 function renderCuesList() {
   const cues = state?.theatre?.cues || [];
   const myCues = cues.filter(isCueRelevant);
 
-  if ($myCuesCount) $myCuesCount.textContent = cues.length;
-  const countMyEl = document.getElementById('cs-count-filter-my');
-  if (countMyEl) countMyEl.textContent = myCues.length;
+  const $countMyEl = document.getElementById('cs-count-my-cues');
+  if ($countMyEl) $countMyEl.textContent = myCues.length;
+  if ($myCuesCount) $myCuesCount.textContent = myCues.length;
 
-  // Filter based on selected tab filter
-  let displayedCues = cues;
-  if (currentCueFilter === 'my') {
-    displayedCues = myCues;
-  } else if (currentCueFilter !== 'all') {
-    displayedCues = cues.filter(c => {
-      const depts = Array.isArray(c.departments) ? c.departments.map(d => String(d).toLowerCase()) : [];
-      return depts.some(d => d.includes(currentCueFilter.toLowerCase()));
-    });
-  }
-
-  const sig = `${currentDept}:${currentCueFilter}:${displayedCues.map(c => `${c.id}:${c.status}:${c.firedTimecode}`).join('|')}`;
+  const sig = `${currentDept}:${myCues.map(c => `${c.id}:${c.status}:${c.firedTimecode}`).join('|')}`;
   if (sig === lastMyCuesSig) return;
   lastMyCuesSig = sig;
 
-  if (displayedCues.length === 0) {
-    $cuesList.innerHTML = `<div style="text-align: center; padding: 28px; color: var(--cs-muted);">Nenhuma deixa encontrada para o filtro selecionado.</div>`;
+  if (myCues.length === 0) {
+    $cuesList.innerHTML = `<div style="text-align: center; padding: 28px; color: var(--cs-muted);">Nenhuma deixa atribuída ao Posto de ${currentDept} neste espetáculo.</div>`;
     return;
   }
 
-  $cuesList.innerHTML = displayedCues.map(c => {
-    const isMine = isCueRelevant(c);
-    let cardClass = 'cs-cue-card';
+  $cuesList.innerHTML = myCues.map(c => {
+    let cardClass = 'cs-cue-card is-my-dept-cue';
     if (c.status === 'standby') cardClass += ' is-active-standby';
     else if (c.status === 'fired') cardClass += ' is-active-go';
-    if (isMine) cardClass += ' is-my-dept-cue';
 
     const depts = Array.isArray(c.departments) ? c.departments : [];
     const deptPills = depts.map(d => {
@@ -468,13 +478,12 @@ function renderCuesList() {
     }).join(' ');
 
     return `
-      <div class="${cardClass}" style="${isMine ? 'border: 1.5px solid #00b894; background: linear-gradient(135deg, rgba(0, 184, 148, 0.12) 0%, rgba(20, 24, 38, 0.95) 100%);' : 'background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);'} margin-bottom: 8px; padding: 12px 14px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <div class="${cardClass}" style="border: 1.5px solid #00b894; background: linear-gradient(135deg, rgba(0, 184, 148, 0.12) 0%, rgba(20, 24, 38, 0.95) 100%); margin-bottom: 8px; padding: 12px 14px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div class="cs-cue-num" style="font-size: 1.3rem; font-weight: 900; color: ${isMine ? '#55efc4' : '#fff'}; font-family: var(--font-mono);">${escapeHtml(c.num)}</div>
+          <div class="cs-cue-num" style="font-size: 1.3rem; font-weight: 900; color: #55efc4; font-family: var(--font-mono);">${escapeHtml(c.num)}</div>
           <div>
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               <span class="cs-cue-title" style="font-weight: 800; font-size: 1rem; color: #fff;">${escapeHtml(c.name)}</span>
-              ${isMine ? `<span style="background: #00b894; color: #000; font-weight: 900; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; letter-spacing: 0.04em;">⭐ TUA DEIXA</span>` : ''}
               ${deptPills}
             </div>
             <div class="cs-cue-desc" style="font-size: 0.82rem; color: #cbd5e1; margin-top: 4px;">${escapeHtml(c.targetText || c.notes || '')}</div>
@@ -489,13 +498,55 @@ function renderCuesList() {
   }).join('');
 }
 
+// ─── Default Checklist Fallback ──────────────────────────────────────
+const DEFAULT_CHECKLISTS_FALLBACK = {
+  'Som': [
+    { id: 'chk_s_1', label: 'Baterias novas nos microfones emissores (Atores 1 e 2)', done: true, isOneOff: false },
+    { id: 'chk_s_2', label: 'Teste de ganho e equalização nas caixas de boca de cena', done: true, isOneOff: false },
+    { id: 'chk_s_3', label: 'Carregar e testar trilhas no software de playback', done: false, isOneOff: false },
+    { id: 'chk_s_4', label: 'Comunicação Intercom verificada com Modo Jess', done: false, isOneOff: false }
+  ],
+  'Luz': [
+    { id: 'chk_l_1', label: 'Verificar canais de DMX e splitters', done: true, isOneOff: false },
+    { id: 'chk_l_2', label: 'Afinar varas frontais e contra-luz', done: true, isOneOff: false },
+    { id: 'chk_l_3', label: 'Testar dimmers e lâmpadas de reserva', done: false, isOneOff: false },
+    { id: 'chk_l_4', label: 'Preset de sala a 80%', done: false, isOneOff: false }
+  ],
+  'Maquinaria': [
+    { id: 'chk_m_1', label: 'Inspecionar cabos de aço e contrapesos das varas', done: true, isOneOff: false },
+    { id: 'chk_m_2', label: 'Teste de abertura/fecho da cortina de boca', done: true, isOneOff: false },
+    { id: 'chk_m_3', label: 'Carris lubrificados e livres de obstrução', done: false, isOneOff: false }
+  ],
+  'Vídeo': [
+    { id: 'chk_v_1', label: 'Calibração de foco e keystone do projetor principal', done: true, isOneOff: false },
+    { id: 'chk_v_2', label: 'Teste de envio HDMI / fibra para o ciclorama', done: false, isOneOff: false },
+    { id: 'chk_v_3', label: 'Verificar obturador (shutter) de proteção', done: false, isOneOff: false }
+  ],
+  'Coxias': [
+    { id: 'chk_c_1', label: 'Passagens laterais limpas e sinalizadas com luz azul', done: true, isOneOff: false },
+    { id: 'chk_c_2', label: 'Mesa de adereços conferida (cadeira, relógio de bolso, capa)', done: false, isOneOff: false },
+    { id: 'chk_c_3', label: 'Água e toalhas prontas nos postos de entrada', done: false, isOneOff: false }
+  ]
+};
+
+// ─── Render Checklist (Strictly for this Department) ────────────────
 function renderChecklist() {
   const checklists = state?.theatre?.checklists || {};
-  const isAllFilter = currentChkFilter === 'all';
+  
+  let items = checklists[currentDept];
+  if (!Array.isArray(items) || items.length === 0) {
+    const norm = currentDept.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    for (const k of Object.keys(checklists)) {
+      if (k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === norm) {
+        items = checklists[k];
+        break;
+      }
+    }
+  }
 
-  const items = isAllFilter
-    ? Object.keys(checklists).flatMap(d => (checklists[d] || []).map(item => ({ ...item, dept: d })))
-    : (checklists[currentDept] || []);
+  if (!Array.isArray(items) || items.length === 0) {
+    items = DEFAULT_CHECKLISTS_FALLBACK[currentDept] || [];
+  }
 
   const total = items.length;
   const done = items.filter(i => i.done).length;
@@ -504,29 +555,77 @@ function renderChecklist() {
   if ($myChecklistCount) $myChecklistCount.textContent = `${pct}%`;
   if ($checklistProgressPill) $checklistProgressPill.textContent = `${pct}% Concluído (${done}/${total})`;
 
-  const sig = `${currentDept}:${currentChkFilter}:${items.map(i => `${i.id}:${i.done}:${i.label}`).join(';')}`;
+  const sig = `${currentDept}:${items.map(i => `${i.id}:${i.done}:${i.label}`).join(';')}`;
   if (sig === lastMyChecklistSig) return;
   lastMyChecklistSig = sig;
 
   if (items.length === 0) {
-    $myChecklistItems.innerHTML = `<div style="text-align: center; padding: 28px; color: var(--cs-muted);">Sem tarefas de checklist para ${isAllFilter ? 'qualquer departamento' : currentDept}. Pode adicionar uma tarefa rápida no botão abaixo.</div>`;
+    $myChecklistItems.innerHTML = `<div style="text-align: center; padding: 28px; color: var(--cs-muted);">Sem tarefas de checklist para ${currentDept}. Pode adicionar uma tarefa rápida no botão abaixo.</div>`;
     return;
   }
 
   $myChecklistItems.innerHTML = items.map(item => {
-    const itemDept = item.dept || currentDept;
     return `
-      <div class="cs-chk-row ${item.done ? 'done' : ''}" data-cs-chk-row="${escapeHtml(item.id)}" data-cs-dept="${escapeHtml(itemDept)}" style="user-select: none;">
-        <input type="checkbox" class="cs-chk-box" data-cs-chk="${escapeHtml(item.id)}" data-cs-dept="${escapeHtml(itemDept)}" ${item.done ? 'checked' : ''}>
+      <div class="cs-chk-row ${item.done ? 'done' : ''}" data-cs-chk-row="${escapeHtml(item.id)}" data-cs-dept="${escapeHtml(currentDept)}" style="user-select: none;">
+        <input type="checkbox" class="cs-chk-box" data-cs-chk="${escapeHtml(item.id)}" data-cs-dept="${escapeHtml(currentDept)}" ${item.done ? 'checked' : ''}>
         <span style="flex: 1; font-weight: 600; font-size: 0.9rem; color: ${item.done ? '#94a3b8' : '#fff'};">${escapeHtml(item.label)}</span>
-        ${item.dept ? `<span class="badge" style="font-size: 0.68rem; font-weight: 700;">${escapeHtml(item.dept)}</span>` : ''}
         ${item.isOneOff ? `<span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-size: 0.65rem;">Só Hoje</span>` : ''}
       </div>
     `;
   }).join('');
 }
 
+// ─── Click & Input Delegation for Checklist ─────────────────────────
+document.addEventListener('click', (e) => {
+  // Click row to toggle checklist
+  const chkRow = e.target.closest('[data-cs-chk-row]');
+  if (chkRow && e.target.type !== 'checkbox') {
+    const chkBox = chkRow.querySelector('input[type="checkbox"]');
+    if (chkBox) {
+      chkBox.checked = !chkBox.checked;
+      const itemId = chkBox.dataset.csChk;
+      const dept = chkBox.dataset.csDept || currentDept;
+      client.toggleChecklistItem(dept, itemId, chkBox.checked);
+    }
+  }
+});
+
+document.addEventListener('change', (e) => {
+  const chk = e.target.closest('[data-cs-chk]');
+  if (chk) {
+    const itemId = chk.dataset.csChk;
+    const dept = chk.dataset.csDept || currentDept;
+    client.toggleChecklistItem(dept, itemId, chk.checked);
+  }
+});
+
+// Quick Add Task Button for Technician Post
+const $newTaskInput = document.getElementById('cs-new-task-input');
+const $newTaskBtn = document.getElementById('cs-new-task-btn');
+
+function handleAddNewTask() {
+  const label = ($newTaskInput?.value || '').trim();
+  if (!label) return;
+  client.addChecklistItem(currentDept, label, false);
+  if ($newTaskInput) $newTaskInput.value = '';
+}
+
+if ($newTaskBtn) {
+  $newTaskBtn.addEventListener('click', handleAddNewTask);
+}
+if ($newTaskInput) {
+  $newTaskInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddNewTask();
+    }
+  });
+}
+
+// ─── Main Render ────────────────────────────────────────────────────
 function render() {
+  updateDeptUI();
+
   if (!state) return;
 
   const th = state.theatre;
@@ -548,15 +647,14 @@ function render() {
   renderChecklist();
 }
 
-// Checklist toggle delegation
-document.addEventListener('change', (e) => {
-  const chk = e.target.closest('[data-cs-chk]');
-  if (chk) {
-    const itemId = chk.dataset.csChk;
-    const dept = chk.dataset.csDept || currentDept;
-    client.toggleChecklistItem(dept, itemId, chk.checked);
-  }
-});
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 // ─── Client Event Handlers ──────────────────────────────────────────
 client.on('room-state', (newState) => {
@@ -569,4 +667,4 @@ client.on('tick', () => {
 });
 
 client.connect();
-setDepartment(currentDept);
+render();

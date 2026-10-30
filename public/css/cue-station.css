@@ -709,6 +709,75 @@ body {
   cursor: pointer;
 }
 
+/* ─── Department Locked Badge in HUD ──────────────────────────────── */
+.cs-dept-current-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  padding: 6px 12px;
+  border-radius: 10px;
+}
+
+/* ─── Department Selection Modal ───────────────────────────────────── */
+.cs-dept-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.cs-dept-modal-box {
+  background: #121422;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  animation: csFadeIn 0.2s ease-out;
+}
+
+@keyframes csFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.cs-dept-modal-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cs-modal-dept-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.cs-modal-dept-btn:hover,
+.cs-modal-dept-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
 /* ─── Responsive Tweaks ────────────────────────────────────────────── */
 @media (max-width: 800px) {
   .cs-hud-left, .cs-hud-right {

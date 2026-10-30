@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -364,7 +364,7 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 10px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v79</span>
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v80</span>
       </footer>
     </div>
 
@@ -614,15 +614,48 @@
           <span class="mode-badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border: 1.5px solid #fdcb6e; font-weight: 800;">Ecrã Master / Jess</span>
         </a>
 
-        <!-- Posto Técnico (Cue Station) -->
-        <a id="card-cuestation" href="cue-station.html" class="mode-card" style="border: 1.5px solid #00b894; background: linear-gradient(135deg, rgba(0, 184, 148, 0.2) 0%, rgba(20, 26, 38, 0.95) 100%);">
-          <div class="mode-icon">🚦</div>
-          <div class="mode-info">
-            <div class="mode-name" style="color: #55efc4; font-size: 1.15rem; font-weight: 800;">Posto Técnico (Cue Station)</div>
-            <div class="mode-desc">Ecrã de posto para técnicos (Luz, Som, Maquinaria, Vídeo, Coxias) com sinalizadores de STANDBY e GO, feedback instantâneo e checklist de afinação.</div>
+        <!-- Postos Técnicos (Cue Station) por Departamento -->
+        <div id="card-cuestation-wrapper" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(0, 184, 148, 0.15) 0%, rgba(20, 26, 38, 0.95) 100%); border: 1.5px solid #00b894; border-radius: 16px; padding: 18px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 1.6rem;">🚦</span>
+              <div>
+                <div style="color: #55efc4; font-size: 1.15rem; font-weight: 800;">Postos Técnicos (Cue Station)</div>
+                <div style="color: var(--text-secondary); font-size: 0.82rem;">Acesso exclusivo por equipa: canal isolado sem cruzamento de deixas ou afinações.</div>
+              </div>
+            </div>
+            <span class="mode-badge" style="background: rgba(0, 184, 148, 0.2); color: #55efc4; border: 1.5px solid #00b894; font-weight: 800;">Canais Isolados</span>
           </div>
-          <span class="mode-badge" style="background: rgba(0, 184, 148, 0.2); color: #55efc4; border: 1.5px solid #00b894; font-weight: 800;">Técnicos / Departamentos</span>
-        </a>
+
+          <!-- Botões Diretos de Cada Equipa -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 10px;">
+            <a class="btn cs-dept-hub-link" data-dept="Som" href="cue-station.html?dept=Som" style="background: rgba(9, 132, 227, 0.22); border: 1.5px solid #0984e3; color: #74b9ff; font-weight: 800; padding: 12px 10px; border-radius: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none;">
+              <span style="font-size: 1.5rem;">🔊</span>
+              <span style="font-size: 0.92rem;">Posto SOM</span>
+              <small style="font-size: 0.68rem; opacity: 0.8;">Deixas & Afinações</small>
+            </a>
+            <a class="btn cs-dept-hub-link" data-dept="Luz" href="cue-station.html?dept=Luz" style="background: rgba(253, 203, 110, 0.22); border: 1.5px solid #fdcb6e; color: #ffeaa7; font-weight: 800; padding: 12px 10px; border-radius: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none;">
+              <span style="font-size: 1.5rem;">💡</span>
+              <span style="font-size: 0.92rem;">Posto LUZ</span>
+              <small style="font-size: 0.68rem; opacity: 0.8;">Deixas & Afinações</small>
+            </a>
+            <a class="btn cs-dept-hub-link" data-dept="Maquinaria" href="cue-station.html?dept=Maquinaria" style="background: rgba(225, 112, 85, 0.22); border: 1.5px solid #e17055; color: #fab1a0; font-weight: 800; padding: 12px 10px; border-radius: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none;">
+              <span style="font-size: 1.5rem;">⚙️</span>
+              <span style="font-size: 0.92rem;">Posto MAQ</span>
+              <small style="font-size: 0.68rem; opacity: 0.8;">Cenário & Varas</small>
+            </a>
+            <a class="btn cs-dept-hub-link" data-dept="Vídeo" href="cue-station.html?dept=Vídeo" style="background: rgba(0, 184, 148, 0.22); border: 1.5px solid #00b894; color: #55efc4; font-weight: 800; padding: 12px 10px; border-radius: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none;">
+              <span style="font-size: 1.5rem;">🎥</span>
+              <span style="font-size: 0.92rem;">Posto VÍDEO</span>
+              <small style="font-size: 0.68rem; opacity: 0.8;">Projeção & Telas</small>
+            </a>
+            <a class="btn cs-dept-hub-link" data-dept="Coxias" href="cue-station.html?dept=Coxias" style="background: rgba(232, 67, 147, 0.22); border: 1.5px solid #e84393; color: #fd79a8; font-weight: 800; padding: 12px 10px; border-radius: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none;">
+              <span style="font-size: 1.5rem;">🎭</span>
+              <span style="font-size: 0.92rem;">Posto COXIA</span>
+              <small style="font-size: 0.68rem; opacity: 0.8;">Atores & Adereços</small>
+            </a>
+          </div>
+        </div>
       </div>
 
       <!-- Share / QR Code Box -->
@@ -638,7 +671,7 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v79</span>
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v80</span>
       </footer>
     </div>
   </div>
@@ -993,6 +1026,10 @@
       if ($regies) $regies.href = `regies.html${q}`;
       if ($dc) $dc.href = `dc.html${q}`;
       if ($cueStation) $cueStation.href = `cue-station.html${q}`;
+      document.querySelectorAll('.cs-dept-hub-link').forEach(link => {
+        const d = link.dataset.dept || 'Som';
+        link.href = `cue-station.html${q}&dept=${encodeURIComponent(d)}`;
+      });
       if ($qrImg) {
         const baseUrl = location.href.split('?')[0].replace(/\/index\.html$/i, '').replace(/\/+$/, '');
         const targetPage = unlockedEv.eventType === 'theatre' ? 'cue-station.html' : 'viewer.html';

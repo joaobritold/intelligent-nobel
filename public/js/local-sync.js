@@ -208,7 +208,7 @@ class UniversalSyncClient {
     }
     else if (viewKey === 'dc') roleLabel = 'Modo Jess (Diretora de Cena)';
     else if (viewKey === 'cue-station') {
-      const dept = typeof localStorage !== 'undefined' ? (localStorage.getItem('stagetimer_cue_dept') || 'Geral') : 'Geral';
+      const dept = typeof localStorage !== 'undefined' ? (localStorage.getItem('stagetimer_cue_dept') || 'Som') : 'Som';
       roleLabel = `Posto Técnico (${dept})`;
     }
     else if (viewKey === 'viewer') roleLabel = 'Ecrã de Palco';
@@ -1032,8 +1032,12 @@ class UniversalSyncClient {
       } else {
         const defaults = this._createDefaultChecklists();
         defaultDepts.forEach(d => {
-          if (!Array.isArray(this._state.theatre.checklists[d])) {
-            this._state.theatre.checklists[d] = defaults[d] || [];
+          // Normalize video without accent if present
+          if (d === 'Vídeo' && Array.isArray(this._state.theatre.checklists['Video']) && this._state.theatre.checklists['Video'].length > 0) {
+            this._state.theatre.checklists['Vídeo'] = this._state.theatre.checklists['Video'];
+          }
+          if (!Array.isArray(this._state.theatre.checklists[d]) || this._state.theatre.checklists[d].length === 0) {
+            this._state.theatre.checklists[d] = defaults[d] ? JSON.parse(JSON.stringify(defaults[d])) : [];
           }
         });
       }
@@ -2931,12 +2935,24 @@ class UniversalSyncClient {
     this._commitStateChange();
   }
 
+  _resolveDeptKey(deptName) {
+    if (!deptName) return 'Luz';
+    const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const targetNorm = norm(deptName);
+    const validDepts = ['Luz', 'Som', 'Maquinaria', 'Vídeo', 'Coxias'];
+    for (const vd of validDepts) {
+      if (norm(vd) === targetNorm) return vd;
+    }
+    return deptName;
+  }
+
   toggleChecklistItem(dept, itemId, done) {
     if (!this._state) return;
     this._ensureTheatreStructure();
+    const resolvedDept = this._resolveDeptKey(dept);
     const th = this._state.theatre;
-    if (!th.checklists || !Array.isArray(th.checklists[dept])) return;
-    const item = th.checklists[dept].find(i => i.id === itemId);
+    if (!th.checklists || !Array.isArray(th.checklists[resolvedDept])) return;
+    const item = th.checklists[resolvedDept].find(i => i.id === itemId);
     if (!item) return;
     item.done = Boolean(done);
     this._commitStateChange();
@@ -2945,12 +2961,13 @@ class UniversalSyncClient {
   addChecklistItem(dept, label, isOneOff = false) {
     if (!this._state) return;
     this._ensureTheatreStructure();
+    const resolvedDept = this._resolveDeptKey(dept);
     const th = this._state.theatre;
     if (!th.checklists) th.checklists = {};
-    if (!Array.isArray(th.checklists[dept])) th.checklists[dept] = [];
+    if (!Array.isArray(th.checklists[resolvedDept])) th.checklists[resolvedDept] = [];
     const cleanLabel = (label || '').trim();
     if (!cleanLabel) return;
-    th.checklists[dept].push({
+    th.checklists[resolvedDept].push({
       id: 'chk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
       label: cleanLabel,
       done: false,
@@ -2962,9 +2979,10 @@ class UniversalSyncClient {
   removeChecklistItem(dept, itemId) {
     if (!this._state) return;
     this._ensureTheatreStructure();
+    const resolvedDept = this._resolveDeptKey(dept);
     const th = this._state.theatre;
-    if (!th.checklists || !Array.isArray(th.checklists[dept])) return;
-    th.checklists[dept] = th.checklists[dept].filter(i => i.id !== itemId);
+    if (!th.checklists || !Array.isArray(th.checklists[resolvedDept])) return;
+    th.checklists[resolvedDept] = th.checklists[resolvedDept].filter(i => i.id !== itemId);
     this._commitStateChange();
   }
 

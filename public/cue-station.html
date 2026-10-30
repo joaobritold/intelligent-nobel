@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -53,8 +53,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Posto Técnico (Cue Station)</title>
-  <link rel="stylesheet" href="css/common.css?v=79">
-  <link rel="stylesheet" href="css/cue-station.css?v=79">
+  <link rel="stylesheet" href="css/common.css?v=80">
+  <link rel="stylesheet" href="css/cue-station.css?v=80">
 </head>
 <body>
   <div id="cue-screen" class="cs-screen">
@@ -67,19 +67,19 @@
           <span style="font-size: 1.4rem;">🚦</span>
           <div>
             <div class="cs-brand-title">POSTO TÉCNICO</div>
-            <div class="cs-brand-sub" id="cs-hud-dept-subtitle">Departamento: Luz</div>
+            <div class="cs-brand-sub" id="cs-hud-dept-subtitle">Técnico</div>
           </div>
-          <span class="badge cs-version-badge">v79</span>
+          <span class="badge cs-version-badge">v80</span>
         </a>
 
-        <!-- Department Switcher Bar -->
-        <div class="cs-dept-pill-bar" role="tablist" aria-label="Escolher Departamento">
-          <button type="button" class="cs-dept-btn active" data-dept="Luz">💡 Luz</button>
-          <button type="button" class="cs-dept-btn" data-dept="Som">🔊 Som</button>
-          <button type="button" class="cs-dept-btn" data-dept="Maquinaria">⚙️ Maquinaria</button>
-          <button type="button" class="cs-dept-btn" data-dept="Vídeo">🎥 Vídeo</button>
-          <button type="button" class="cs-dept-btn" data-dept="Coxias">🎭 Coxias</button>
-          <button type="button" class="cs-dept-btn" data-dept="Geral">🌟 Todos</button>
+        <!-- Department Locked Badge & Switch Button -->
+        <div class="cs-dept-current-badge">
+          <span id="cs-hud-dept-icon" style="font-size: 1.3rem;">🔊</span>
+          <div style="display: flex; flex-direction: column;">
+            <span id="cs-hud-dept-name" style="font-weight: 800; font-size: 0.9rem; color: #fff; letter-spacing: 0.02em;">POSTO SOM</span>
+            <span style="font-size: 0.68rem; color: var(--cs-muted);">Canal Exclusivo</span>
+          </div>
+          <button id="cs-btn-change-dept" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: var(--text-secondary); font-size: 0.72rem; padding: 4px 9px; border-radius: 6px; margin-left: 6px;">🔄 Trocar</button>
         </div>
       </div>
 
@@ -161,17 +161,11 @@
         </button>
       </nav>
 
-      <!-- TAB 1: LISTA DE DEIXAS COM FILTRO POR TÉCNICO -->
+      <!-- TAB 1: LISTA DE DEIXAS EXCLUSIVA DO POSTO TÉCNICO -->
       <div id="tab-my-cues" class="cs-tab-content active">
-        <!-- Filter bar for cues -->
-        <div class="cs-cues-filter-bar" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-          <button type="button" class="btn btn-sm cs-cue-filter-btn active" data-filter="all" style="padding: 5px 12px; font-weight: 700; font-size: 0.78rem;">🌟 Todas as Deixas</button>
-          <button type="button" class="btn btn-sm cs-cue-filter-btn" data-filter="my" style="padding: 5px 12px; font-weight: 700; font-size: 0.78rem;">⭐ Só Minhas (<span id="cs-count-filter-my">0</span>)</button>
-          <button type="button" class="btn btn-sm cs-cue-filter-btn" data-filter="Luz" style="padding: 5px 10px; font-size: 0.78rem;">💡 Luz</button>
-          <button type="button" class="btn btn-sm cs-cue-filter-btn" data-filter="Som" style="padding: 5px 10px; font-size: 0.78rem;">🔊 Som</button>
-          <button type="button" class="btn btn-sm cs-cue-filter-btn" data-filter="Maquinaria" style="padding: 5px 10px; font-size: 0.78rem;">⚙️ Maq</button>
-          <button type="button" class="btn btn-sm cs-cue-filter-btn" data-filter="Vídeo" style="padding: 5px 10px; font-size: 0.78rem;">🎥 Vídeo</button>
-          <button type="button" class="btn btn-sm cs-cue-filter-btn" data-filter="Coxias" style="padding: 5px 10px; font-size: 0.78rem;">🎭 Coxias</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap; gap: 6px;">
+          <span style="font-weight: 800; font-size: 0.88rem; color: #fff;">⚡ Deixas da Tua Equipa (<span id="cs-count-my-cues">0</span>)</span>
+          <span style="font-size: 0.74rem; color: var(--cs-muted);">Canal isolado • Sem cruzamento de equipas</span>
         </div>
 
         <div id="cs-cues-list" class="cs-cues-list">
@@ -179,23 +173,17 @@
         </div>
       </div>
 
-      <!-- TAB 2: CHECKLIST DO DEPARTAMENTO -->
+      <!-- TAB 2: CHECKLIST EXCLUSIVA DO DEPARTAMENTO -->
       <div id="tab-my-checklist" class="cs-tab-content">
         <div class="cs-checklist-header">
           <div>
-            <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #fff;">Validação de Equipamentos & Presets</h3>
-            <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: var(--text-secondary);">Marque as tarefas concluídas. O progresso é sincronizado em tempo real com o Modo Jess.</p>
+            <h3 id="cs-checklist-dept-title" style="margin: 0; font-size: 1rem; font-weight: 800; color: #fff;">Validação de Equipamentos & Presets</h3>
+            <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: var(--text-secondary);">Marque as tarefas da sua equipa. O progresso sincroniza em tempo real com o Modo Jess.</p>
           </div>
           <div id="cs-checklist-progress-pill" class="cs-readiness-pill">0% Concluído</div>
         </div>
 
-        <!-- Filter bar for checklist -->
-        <div class="cs-chk-filter-bar" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; margin-bottom: 10px;">
-          <button type="button" class="btn btn-sm cs-chk-filter-btn active" data-chk-filter="my" style="padding: 4px 10px; font-size: 0.75rem; font-weight: 700;">⭐ Tarefas do Meu Posto</button>
-          <button type="button" class="btn btn-sm cs-chk-filter-btn" data-chk-filter="all" style="padding: 4px 10px; font-size: 0.75rem;">🌟 Todas as Equipas</button>
-        </div>
-
-        <div id="cs-my-checklist-items" class="cs-checklist-items">
+        <div id="cs-my-checklist-items" class="cs-checklist-items" style="margin-top: 10px;">
           <!-- Injected by cue-station.js -->
         </div>
 
@@ -206,12 +194,67 @@
         </div>
       </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- MODAL: SELETOR DE POSTO TÉCNICO                                  -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div id="cs-dept-modal" class="cs-dept-modal" style="display: none;">
+      <div class="cs-dept-modal-box">
+        <div style="font-size: 2.2rem; margin-bottom: 6px;">🎭</div>
+        <h2 style="margin: 0; color: #fff; font-size: 1.25rem; font-weight: 800;">Seleciona o teu Posto Técnico</h2>
+        <p style="color: var(--text-secondary); font-size: 0.82rem; margin: 6px 0 18px 0;">Cada equipa tem canal reservado e exclusivo. A equipa de Som não vê Luz e vice-versa.</p>
+        
+        <div class="cs-dept-modal-grid">
+          <button type="button" class="cs-modal-dept-btn" data-modal-dept="Som">
+            <span style="font-size: 1.6rem;">🔊</span>
+            <div style="text-align: left;">
+              <strong style="display: block; font-size: 0.95rem; color: #74b9ff;">Posto de Som</strong>
+              <small style="color: var(--cs-muted); font-size: 0.72rem;">Microfones, Playback, Trilha, PA</small>
+            </div>
+          </button>
+
+          <button type="button" class="cs-modal-dept-btn" data-modal-dept="Luz">
+            <span style="font-size: 1.6rem;">💡</span>
+            <div style="text-align: left;">
+              <strong style="display: block; font-size: 0.95rem; color: #ffeaa7;">Posto de Luz</strong>
+              <small style="color: var(--cs-muted); font-size: 0.72rem;">Varas, Dimmers, Focos, Presets</small>
+            </div>
+          </button>
+
+          <button type="button" class="cs-modal-dept-btn" data-modal-dept="Maquinaria">
+            <span style="font-size: 1.6rem;">⚙️</span>
+            <div style="text-align: left;">
+              <strong style="display: block; font-size: 0.95rem; color: #fab1a0;">Posto de Maquinaria</strong>
+              <small style="color: var(--cs-muted); font-size: 0.72rem;">Cortina, Varas de Cenário, Motores</small>
+            </div>
+          </button>
+
+          <button type="button" class="cs-modal-dept-btn" data-modal-dept="Vídeo">
+            <span style="font-size: 1.6rem;">🎥</span>
+            <div style="text-align: left;">
+              <strong style="display: block; font-size: 0.95rem; color: #55efc4;">Posto de Vídeo</strong>
+              <small style="color: var(--cs-muted); font-size: 0.72rem;">Projetores, Shutter, HDMI, Telas</small>
+            </div>
+          </button>
+
+          <button type="button" class="cs-modal-dept-btn" data-modal-dept="Coxias">
+            <span style="font-size: 1.6rem;">🎭</span>
+            <div style="text-align: left;">
+              <strong style="display: block; font-size: 0.95rem; color: #fd79a8;">Posto de Coxias / Adereços</strong>
+              <small style="color: var(--cs-muted); font-size: 0.72rem;">Atores, Adereços, Entradas laterais</small>
+            </div>
+          </button>
+        </div>
+
+        <button id="cs-dept-modal-close" type="button" class="btn btn-sm" style="margin-top: 16px; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: var(--text-secondary); padding: 8px;">Fechar</button>
+      </div>
+    </div>
   </div>
 
   <!-- Scripts -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=79"></script>
-  <script src="js/local-sync.js?v=79"></script>
-  <script src="js/cue-station.js?v=79"></script>
+  <script src="js/pwa.js?v=80"></script>
+  <script src="js/local-sync.js?v=80"></script>
+  <script src="js/cue-station.js?v=80"></script>
 </body>
 </html>
