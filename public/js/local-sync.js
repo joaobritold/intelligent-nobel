@@ -1508,18 +1508,162 @@ class UniversalSyncClient {
   renameEvent(code, newTitle) {
     if (!code || !newTitle) return;
     const cleanTitle = newTitle.trim();
+    if (!cleanTitle) return;
     const cleanCode = code.toUpperCase().trim();
     const list = this.getEventsList();
     const item = list.find(e => e.code === cleanCode);
     if (item) {
       item.title = cleanTitle;
       item.updatedAt = Date.now();
+
+      // If the event has only 1 stage and it was sharing the event title, align it too
+      if (Array.isArray(item.stages) && item.stages.length === 1) {
+        item.stages[0].name = cleanTitle;
+        const stCode = (item.stages[0].code || item.stages[0].id || cleanCode).toUpperCase().trim();
+        if (stCode && stCode !== cleanCode) {
+          try {
+            const stKey = `stagetimer_v10_state_${stCode}`;
+            const stRaw = localStorage.getItem(stKey);
+            if (stRaw) {
+              const stParsed = JSON.parse(stRaw);
+              stParsed.name = cleanTitle;
+              stParsed.updatedAt = Date.now();
+              localStorage.setItem(stKey, JSON.stringify(stParsed));
+              if (this.mqttClient && this.mqttClient.connected) {
+                this.mqttClient.publish(
+                  `stagetimer_v10/${stCode}/state`,
+                  JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: stParsed }),
+                  { qos: 0, retain: true }
+                );
+              }
+            }
+          } catch (_) {}
+        }
+      }
+
       this._saveEventsList(list, true, true);
+
+      // Also update local state & MQTT for that event
+      try {
+        const key = `stagetimer_v10_state_${cleanCode}`;
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          parsed.name = cleanTitle;
+          parsed.updatedAt = Date.now();
+          localStorage.setItem(key, JSON.stringify(parsed));
+          if (this.mqttClient && this.mqttClient.connected) {
+            this.mqttClient.publish(
+              `stagetimer_v10/${cleanCode}/state`,
+              JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: parsed }),
+              { qos: 0, retain: true }
+            );
+          }
+        }
+      } catch (_) {}
+
       if (this.cleanRoom === cleanCode && this._state) {
         this._state.name = cleanTitle;
         this._commitStateChange(true);
       }
     }
+  }
+
+  renameStage(eventCode, stageCode, newStageName) {
+    if (!stageCode || !newStageName) return;
+    const cleanStageName = newStageName.trim();
+    if (!cleanStageName) return;
+    const cleanStageCode = stageCode.toUpperCase().trim();
+    const cleanEventCode = (eventCode || '').toUpperCase().trim();
+
+    const list = this.getEventsList();
+    let updated = false;
+
+    list.forEach(ev => {
+      if (cleanEventCode && ev.code !== cleanEventCode) return;
+      if (Array.isArray(ev.stages)) {
+        const st = ev.stages.find(s => (s.code || s.id || '').toUpperCase() === cleanStageCode);
+        if (st) {
+          st.name = cleanStageName;
+          ev.updatedAt = Date.now();
+          updated = true;
+        }
+      }
+    });
+
+    if (updated) {
+      this._saveEventsList(list, true, true);
+
+      // Also update stored stage state & publish over MQTT
+      try {
+        const key = `stagetimer_v10_state_${cleanStageCode}`;
+        const raw = localStorage.getItem(key);
+        let parsed = raw ? JSON.parse(raw) : null;
+        if (!parsed) {
+          parsed = {
+            id: cleanStageCode,
+            name: cleanStageName,
+            currentDay: 1,
+            days: { '1': [] },
+            timers: [],
+            activeTimerId: null,
+            message: { text: '', visible: false, level: 'info' },
+            theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
+            updatedAt: Date.now()
+          };
+        } else {
+          parsed.name = cleanStageName;
+          parsed.updatedAt = Date.now();
+        }
+        localStorage.setItem(key, JSON.stringify(parsed));
+
+        if (this.mqttClient && this.mqttClient.connected) {
+          this.mqttClient.publish(
+            `stagetimer_v10/${cleanStageCode}/state`,
+            JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: parsed }),
+            { qos: 0, retain: true }
+          );
+        }
+      } catch (_) {}
+
+      if (this.cleanRoom === cleanStageCode && this._state) {
+        this._state.name = cleanStageName;
+        this._commitStateChange(true);
+      }
+    }
+  }
+
+  removeStageFromEvent(eventCode, stageCode) {
+    if (!eventCode || !stageCode) return;
+    const cleanEventCode = eventCode.toUpperCase().trim();
+    const cleanStageCode = stageCode.toUpperCase().trim();
+    const list = this.getEventsList();
+    const ev = list.find(e => e.code === cleanEventCode);
+    if (!ev || !Array.isArray(ev.stages) || ev.stages.length <= 1) {
+      throw new Error('Não é possível apagar o único palco deste evento.');
+    }
+
+    this._recordDeletedEvent(cleanStageCode);
+    ev.stages = ev.stages.filter(s => (s.code || s.id || '').toUpperCase() !== cleanStageCode);
+    ev.stagesCount = ev.stages.length;
+    ev.updatedAt = Date.now();
+
+    try {
+      localStorage.removeItem(`stagetimer_v10_state_${cleanStageCode}`);
+    } catch (_) {}
+
+    if (this.mqttClient && this.mqttClient.connected) {
+      try {
+        this.mqttClient.publish(
+          `stagetimer_v10/${cleanStageCode}/state`,
+          JSON.stringify({ deleted: true, sender: this.clientId, sentAt: Date.now(), data: null }),
+          { qos: 0, retain: true }
+        );
+      } catch (_) {}
+    }
+
+    this._saveEventsList(list, true, true);
+    return ev;
   }
 
   deleteEvent(code) {

@@ -617,7 +617,10 @@
     const tabEvBadge = document.getElementById('tab-events-badge');
     if (tabEvBadge) tabEvBadge.textContent = events.length;
 
-    const sig = events.map(ev => `${ev.code}:${ev.title}:${ev.timersCount}:${ev.currentDay}:${ev.pin}:${ev.stagesCount}`).join('||');
+    const sig = events.map(ev => {
+      const stagesStr = (ev.stages || []).map(s => `${s.code || ''}-${s.name || ''}`).join(',');
+      return `${ev.code}:${ev.title}:${ev.timersCount}:${ev.currentDay}:${ev.pin}:${ev.stagesCount}:${stagesStr}`;
+    }).join('||');
     if (sig === lastEventsManagerSig && events.length > 0) return;
     lastEventsManagerSig = sig;
 
@@ -642,7 +645,12 @@
         <div class="event-manage-card" data-stage-code="${escapeHtml(ev.code)}">
           <div class="event-manage-top">
             <div>
-              <div class="event-manage-title">${escapeHtml(ev.title || ev.code)}</div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <div class="event-manage-title" style="margin-bottom: 0;">${escapeHtml(ev.title || ev.code)}</div>
+                <button type="button" class="btn btn-sm" data-rename-event="${escapeHtml(ev.code)}" data-current-name="${escapeHtml(ev.title || ev.code)}" style="padding: 2px 8px; font-size: 0.72rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe; font-weight: 600;" title="Renomear este Evento">
+                  ✏️ Renomear Evento
+                </button>
+              </div>
               <div class="event-manage-stats" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
                 <span>${ev.stagesCount || 1} palco(s)</span>
                 <span>•</span>
@@ -670,23 +678,32 @@
             <button type="button" class="btn btn-sm" data-add-substage="${escapeHtml(ev.code)}" style="background: rgba(0, 184, 148, 0.18); border-color: #00b894; color: #55efc4; font-weight: 700;" title="Adicionar um novo palco a este evento">
               ➕ + Palco
             </button>
-            <button type="button" class="btn btn-sm" data-rename-stage="${escapeHtml(ev.code)}" title="Renomear este palco">
-              ✏️
+            <button type="button" class="btn btn-sm" data-rename-event="${escapeHtml(ev.code)}" data-current-name="${escapeHtml(ev.title || ev.code)}" title="Renomear este evento">
+              ✏️ Renomear
             </button>
-            <button type="button" class="btn btn-sm btn-danger" data-delete-stage="${escapeHtml(ev.code)}" title="Apagar definitivamente este palco">
+            <button type="button" class="btn btn-sm btn-danger" data-delete-stage="${escapeHtml(ev.code)}" title="Apagar definitivamente este evento">
               🗑️ Apagar
             </button>
           </div>
           ${Array.isArray(ev.stages) && ev.stages.length > 0 ? `
-            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); align-items: center;">
-              <span style="font-size: 0.72rem; color: var(--text-muted);">Palcos deste evento:</span>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); align-items: center;">
+              <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Palcos deste evento:</span>
               ${ev.stages.map(st => `
-                <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 2px 6px;">
-                  <strong style="font-size: 0.75rem; color: #55efc4;">🎪 ${escapeHtml(st.name || st.code)}</strong>
-                  <a href="controller.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" title="Abrir Configurador">🎛️</a>
-                  <a href="operator.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" title="Abrir Operador">📱</a>
-                  <a href="viewer.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" title="Abrir Palco">📺</a>
-                  <a href="lineup.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 5px; font-size: 0.68rem;" title="Abrir Lista">📋</a>
+                <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; flex-wrap: wrap;">
+                  <strong style="font-size: 0.78rem; color: #55efc4;">🎪 ${escapeHtml(st.name || st.code)}</strong>
+                  <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">(${escapeHtml(st.code)})</span>
+                  <button type="button" class="btn btn-sm" data-rename-stage="${escapeHtml(st.code)}" data-parent-event="${escapeHtml(ev.code)}" data-current-name="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe; font-weight: 600;" title="Renomear este palco">
+                    ✏️ Renomear Palco
+                  </button>
+                  <a href="controller.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Configurador">🎛️</a>
+                  <a href="operator.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Operador">📱</a>
+                  <a href="viewer.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Palco">📺</a>
+                  <a href="lineup.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Lista">📋</a>
+                  ${ev.stages.length > 1 ? `
+                    <button type="button" class="btn btn-sm btn-danger" data-delete-substage="${escapeHtml(st.code)}" data-parent-event="${escapeHtml(ev.code)}" data-stage-name="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; margin-left: 2px;" title="Eliminar este palco do evento">
+                      ✕
+                    </button>
+                  ` : ''}
                 </div>
               `).join('')}
             </div>
@@ -704,14 +721,118 @@
     updateMasterNavLinks();
   });
 
+  // ─── Modal de Renomeação / Adição de Palco ───────────────────────────
+  let currentModalAction = null; // { type: 'event'|'stage'|'add-stage', eventCode, stageCode, currentName }
+
+  function openRenameModal({ type, eventCode, stageCode, currentName }) {
+    currentModalAction = { type, eventCode, stageCode, currentName };
+    const modal = document.getElementById('master-rename-modal');
+    const titleEl = document.getElementById('master-rename-title');
+    const subtitleEl = document.getElementById('master-rename-subtitle');
+    const input = document.getElementById('master-rename-input');
+    const saveBtn = document.getElementById('master-rename-save-btn');
+    if (!modal || !input) return;
+
+    if (type === 'event') {
+      if (titleEl) titleEl.innerHTML = '✏️ Renomear Evento';
+      if (subtitleEl) subtitleEl.textContent = `Indique o novo nome para o evento (${eventCode}):`;
+      if (saveBtn) saveBtn.textContent = '💾 Guardar Nome';
+      input.placeholder = 'Ex: Festival Rock 2026';
+    } else if (type === 'stage') {
+      if (titleEl) titleEl.innerHTML = '🎪 Renomear Palco';
+      if (subtitleEl) subtitleEl.textContent = `Indique o novo nome para o palco (${stageCode}):`;
+      if (saveBtn) saveBtn.textContent = '💾 Guardar Nome';
+      input.placeholder = 'Ex: Palco Sunset, Palco Club...';
+    } else if (type === 'add-stage') {
+      if (titleEl) titleEl.innerHTML = '➕ Adicionar Novo Palco';
+      if (subtitleEl) subtitleEl.textContent = `Indique o nome do novo palco a adicionar ao evento (${eventCode}):`;
+      if (saveBtn) saveBtn.textContent = '✨ Criar Palco';
+      input.placeholder = 'Ex: Palco 2, VIP Lounge, Sunset...';
+    }
+
+    input.value = currentName || '';
+    modal.style.display = 'flex';
+    setTimeout(() => {
+      input.focus();
+      input.select();
+    }, 50);
+  }
+
+  function closeRenameModal() {
+    const modal = document.getElementById('master-rename-modal');
+    if (modal) modal.style.display = 'none';
+    currentModalAction = null;
+  }
+
+  function handleSaveModal() {
+    if (!currentModalAction) return;
+    const input = document.getElementById('master-rename-input');
+    const val = (input ? input.value : '').trim();
+    if (!val) {
+      alert('Por favor introduza um nome válido.');
+      if (input) input.focus();
+      return;
+    }
+
+    const { type, eventCode, stageCode } = currentModalAction;
+    try {
+      if (type === 'event') {
+        masterClient.renameEvent(eventCode, val);
+      } else if (type === 'stage') {
+        masterClient.renameStage(eventCode, stageCode, val);
+      } else if (type === 'add-stage') {
+        masterClient.addStageToEvent(eventCode, val);
+      }
+      closeRenameModal();
+      lastEventsManagerSig = ''; // Force re-render
+      renderEventsManager();
+      renderMultiview();
+      renderMasterEventSelector();
+      updateMasterNavLinks();
+    } catch (err) {
+      alert(err.message || 'Erro ao processar alteração.');
+    }
+  }
+
+  const $renameModal = document.getElementById('master-rename-modal');
+  const $renameCancelBtn = document.getElementById('master-rename-cancel-btn');
+  const $renameSaveBtn = document.getElementById('master-rename-save-btn');
+  const $renameInput = document.getElementById('master-rename-input');
+
+  if ($renameCancelBtn) {
+    $renameCancelBtn.addEventListener('click', closeRenameModal);
+  }
+  if ($renameSaveBtn) {
+    $renameSaveBtn.addEventListener('click', handleSaveModal);
+  }
+  if ($renameInput) {
+    $renameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSaveModal();
+      } else if (e.key === 'Escape') {
+        closeRenameModal();
+      }
+    });
+  }
+  if ($renameModal) {
+    $renameModal.addEventListener('click', (e) => {
+      if (e.target === $renameModal) {
+        closeRenameModal();
+      }
+    });
+  }
+
   if ($eventsList) {
     $eventsList.addEventListener('click', (e) => {
+      // 1. Delete whole event
       const delBtn = e.target.closest('[data-delete-stage]');
       if (delBtn) {
         const code = delBtn.dataset.deleteStage;
-        if (confirm(`Tem a certeza que pretende APAGAR o palco/evento "${code}"?\nEsta ação elimina todos os timers deste palco.`)) {
+        if (confirm(`Tem a certeza que pretende APAGAR o evento "${code}"?\nEsta ação elimina todos os palcos e timers deste evento.`)) {
           masterClient.deleteEventFromRegistry(code);
           stagesStateMap.delete(code);
+          lastEventsManagerSig = '';
           renderEventsManager();
           renderMultiview();
           renderMasterEventSelector();
@@ -720,37 +841,58 @@
         return;
       }
 
-      const renameBtn = e.target.closest('[data-rename-stage]');
-      if (renameBtn) {
-        const code = renameBtn.dataset.renameStage;
-        const currentItem = masterClient.getEventsList().find(item => item.code === code);
-        const newTitle = prompt('Novo nome para o palco/evento:', currentItem?.title || code);
-        if (newTitle && newTitle.trim()) {
-          masterClient.renameEvent(code, newTitle.trim());
-          renderEventsManager();
-          renderMultiview();
-          renderMasterEventSelector();
-          updateMasterNavLinks();
+      // 2. Rename event
+      const renameEvBtn = e.target.closest('[data-rename-event]');
+      if (renameEvBtn) {
+        const code = renameEvBtn.dataset.renameEvent;
+        const currentName = renameEvBtn.dataset.currentName || code;
+        openRenameModal({ type: 'event', eventCode: code, currentName });
+        return;
+      }
+
+      // 3. Rename individual stage
+      const renameStBtn = e.target.closest('[data-rename-stage]');
+      if (renameStBtn) {
+        const stageCode = renameStBtn.dataset.renameStage;
+        const parentEvent = renameStBtn.dataset.parentEvent || stageCode;
+        const currentName = renameStBtn.dataset.currentName || stageCode;
+        openRenameModal({ type: 'stage', eventCode: parentEvent, stageCode, currentName });
+        return;
+      }
+
+      // 4. Delete sub-stage
+      const delSubBtn = e.target.closest('[data-delete-substage]');
+      if (delSubBtn) {
+        const parentEvent = delSubBtn.dataset.parentEvent;
+        const stageCode = delSubBtn.dataset.deleteSubstage;
+        const stageName = delSubBtn.dataset.stageName || stageCode;
+        if (confirm(`Eliminar o palco "${stageName}" deste evento?\nEsta ação apagará as programações deste palco.`)) {
+          try {
+            masterClient.removeStageFromEvent(parentEvent, stageCode);
+            stagesStateMap.delete(stageCode);
+            lastEventsManagerSig = '';
+            renderEventsManager();
+            renderMultiview();
+            renderMasterEventSelector();
+            updateMasterNavLinks();
+          } catch (err) {
+            alert(err.message || 'Erro ao apagar palco.');
+          }
         }
         return;
       }
 
+      // 5. Add stage to event
       const addStageBtn = e.target.closest('[data-add-substage]');
       if (addStageBtn) {
         const code = addStageBtn.dataset.addSubstage;
         const currentEv = masterClient.getEventsList().find(item => item.code === code);
         const nextIdx = (currentEv?.stages?.length || 1) + 1;
-        const stageName = prompt(`Nome do novo palco para "${currentEv?.title || code}" (ex: Sunset, VIP, Palco ${nextIdx}):`, `Palco ${nextIdx}`);
-        if (stageName === null) return;
-        try {
-          masterClient.addStageToEvent(code, stageName);
-          renderEventsManager();
-          renderMultiview();
-          renderMasterEventSelector();
-          updateMasterNavLinks();
-        } catch (err) {
-          alert(err.message || 'Erro ao adicionar palco.');
-        }
+        openRenameModal({
+          type: 'add-stage',
+          eventCode: code,
+          currentName: `Palco ${nextIdx}`
+        });
         return;
       }
     });
