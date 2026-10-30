@@ -56,7 +56,7 @@
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="./index.html">
   <title>StageTimer PFP — Timer de Palco & Lineup</title>
-  <link rel="stylesheet" href="css/common.css?v=75">
+  <link rel="stylesheet" href="css/common.css?v=76">
   <style>
     body {
       display: flex;
@@ -364,7 +364,7 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 10px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v75</span>
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v76</span>
       </footer>
     </div>
 
@@ -512,7 +512,14 @@
 
       <input id="hub-room" type="hidden" value="PALCO1">
 
-      <!-- 4 Mode Cards -->
+      <!-- Secção 1: Modos de Concerto & Espetáculo ao Vivo -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary);">
+          🎪 Modos de Concerto & Espetáculo ao Vivo
+        </span>
+      </div>
+
+      <!-- 6 Concert Cards -->
       <div class="modes-grid">
         <!-- Modo Configurador -->
         <a id="card-controller" href="controller.html" class="mode-card">
@@ -575,6 +582,36 @@
         </a>
       </div>
 
+      <!-- Secção 2: Nova Suite de Teatro & Artes Cénicas -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px; margin-bottom: 8px;">
+        <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #fdcb6e; display: flex; align-items: center; gap: 6px;">
+          <span>🎭</span> Régie de Teatro & Artes Cénicas
+        </span>
+        <span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border: 1px solid rgba(253, 203, 110, 0.4); font-size: 0.65rem; font-weight: 700;">NOVO</span>
+      </div>
+
+      <div class="modes-grid">
+        <!-- Mesa da Diretora de Cena (DC) -->
+        <a id="card-dc" href="dc.html" class="mode-card" style="border: 1px solid rgba(253, 203, 110, 0.45); background: linear-gradient(135deg, rgba(235, 77, 75, 0.15) 0%, rgba(20, 16, 35, 0.9) 100%);">
+          <div class="mode-icon">📖</div>
+          <div class="mode-info">
+            <div class="mode-name" style="color: #ffeaa7;">Mesa da Diretora de Cena (DC)</div>
+            <div class="mode-desc">Ecrã Master para Teatro: guião da peça lado a lado com deixas sequenciais (STANDBY & GO com Barra de Espaço), checklists e telemetria.</div>
+          </div>
+          <span class="mode-badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border: 1px solid rgba(253, 203, 110, 0.4);">Ecrã Master / DC</span>
+        </a>
+
+        <!-- Posto Técnico (Cue Station) -->
+        <a id="card-cuestation" href="cue-station.html" class="mode-card" style="border: 1px solid rgba(0, 184, 148, 0.45); background: linear-gradient(135deg, rgba(0, 184, 148, 0.15) 0%, rgba(20, 20, 35, 0.9) 100%);">
+          <div class="mode-icon">🚦</div>
+          <div class="mode-info">
+            <div class="mode-name" style="color: #55efc4;">Posto Técnico (Cue Station)</div>
+            <div class="mode-desc">Ecrã filtrado por departamento (Luz, Som, Maquinaria, Vídeo, Coxias) com sinalizadores de STANDBY e GO, feedback rápido e checklist de afinação.</div>
+          </div>
+          <span class="mode-badge" style="background: rgba(0, 184, 148, 0.2); color: #55efc4; border: 1px solid rgba(0, 184, 148, 0.4);">Técnicos / Departamentos</span>
+        </a>
+      </div>
+
       <!-- Share / QR Code Box -->
       <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 14px;">
         <button id="toggle-qr-btn" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-secondary);">
@@ -588,14 +625,14 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v75</span>
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v76</span>
       </footer>
     </div>
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=75"></script>
-  <script src="js/local-sync.js?v=75"></script>
+  <script src="js/pwa.js?v=76"></script>
+  <script src="js/local-sync.js?v=76"></script>
   <script>
     const hubClient = new StageTimerClient({
       role: 'viewer',

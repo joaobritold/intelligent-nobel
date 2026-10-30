@@ -87,6 +87,26 @@
       };
     }
 
+    // 0.1 Teatro: Mesa DC (Diretora de Cena)
+    if (viewKey === 'dc' || path.includes('dc.html') || label.includes('diretora') || label.includes('mesa dc')) {
+      return {
+        key: 'dc',
+        name: '📖 Mesa Diretora de Cena (DC)',
+        shortName: 'Mesa DC',
+        badgeClass: 'view-dc'
+      };
+    }
+
+    // 0.2 Teatro: Posto Técnico (Cue Station)
+    if (viewKey === 'cue-station' || path.includes('cue-station') || path.includes('cuestation') || label.includes('posto técnico') || label.includes('cue station')) {
+      return {
+        key: 'cue-station',
+        name: '🎛️ Posto Técnico (Cue Station)',
+        shortName: 'Posto Cues',
+        badgeClass: 'view-cuestation'
+      };
+    }
+
     // 1. Lineup / Modo Lista
     if (viewKey === 'lineup' || path.includes('lineup') || label.includes('lista') || label.includes('backstage')) {
       return {
@@ -545,7 +565,7 @@
         }, 800);
       }
 
-      if (cmd === 'viewer' || cmd === 'lineup' || cmd === 'regies' || cmd === 'operator' || cmd === 'controller') {
+      if (cmd === 'viewer' || cmd === 'lineup' || cmd === 'regies' || cmd === 'operator' || cmd === 'controller' || cmd === 'dc' || cmd === 'cue-station') {
         masterClient.sendDeviceCommand(uuid, {
           action: 'navigate',
           url: `${cmd}.html?room=${encodeURIComponent(room)}`,

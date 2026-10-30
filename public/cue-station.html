@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <script>
+    (function() {
+      try {
+        var EPOCH_KEY = 'stagetimer_epoch_clean_v10';
+        if (localStorage.getItem(EPOCH_KEY) !== 'true') {
+          var mActive = localStorage.getItem('stagetimer_master_active');
+          var mV12 = localStorage.getItem('stagetimer_master_auth_v12');
+          var devUuid = localStorage.getItem('stagetimer_device_uuid');
+
+          var keys = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && k.indexOf('stagetimer_') === 0) {
+              keys.push(k);
+            }
+          }
+          for (var j = 0; j < keys.length; j++) {
+            localStorage.removeItem(keys[j]);
+          }
+          try { sessionStorage.clear(); } catch (_) {}
+
+          if (mActive) localStorage.setItem('stagetimer_master_active', mActive);
+          if (mV12) localStorage.setItem('stagetimer_master_auth_v12', mV12);
+          if (devUuid) localStorage.setItem('stagetimer_device_uuid', devUuid);
+
+          localStorage.setItem(EPOCH_KEY, 'true');
+
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              for (var n of names) caches.delete(n);
+            }).catch(function() {});
+          }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              for (var r of regs) r.unregister();
+            }).catch(function() {});
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StageTimer Cue Station">
+  <meta name="theme-color" content="#090913">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>StageTimer — Posto Técnico (Cue Station)</title>
+  <link rel="stylesheet" href="css/common.css?v=76">
+  <link rel="stylesheet" href="css/cue-station.css?v=76">
+</head>
+<body>
+  <div id="cue-screen" class="cs-screen">
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 1. FIXED TOP HUD: Departamento, Estado de Espetáculo & Relógio  -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <header class="cs-hud">
+      <div class="cs-hud-left">
+        <a href="index.html" class="cs-brand-link" title="Voltar ao Início">
+          <span style="font-size: 1.4rem;">🚦</span>
+          <div>
+            <div class="cs-brand-title">POSTO TÉCNICO</div>
+            <div class="cs-brand-sub" id="cs-hud-dept-subtitle">Departamento: Luz</div>
+          </div>
+          <span class="badge cs-version-badge">v76</span>
+        </a>
+
+        <!-- Department Switcher Bar -->
+        <div class="cs-dept-pill-bar" role="tablist" aria-label="Escolher Departamento">
+          <button type="button" class="cs-dept-btn active" data-dept="Luz">💡 Luz</button>
+          <button type="button" class="cs-dept-btn" data-dept="Som">🔊 Som</button>
+          <button type="button" class="cs-dept-btn" data-dept="Maquinaria">⚙️ Maquinaria</button>
+          <button type="button" class="cs-dept-btn" data-dept="Vídeo">🎥 Vídeo</button>
+          <button type="button" class="cs-dept-btn" data-dept="Coxias">🎭 Coxias</button>
+          <button type="button" class="cs-dept-btn" data-dept="Geral">🌟 Todos</button>
+        </div>
+      </div>
+
+      <!-- Right HUD Controls & Clocks -->
+      <div class="cs-hud-right">
+        <button id="cs-audio-btn" class="cs-hud-tool-btn enabled" type="button" title="Ativar ou desativar aviso sonoro de deixas">
+          <span id="cs-audio-icon">🔔</span>
+          <span id="cs-audio-text">Som Ativo</span>
+        </button>
+
+        <div class="cs-clock-card">
+          <span class="cs-clock-label">ESPETÁCULO</span>
+          <span id="cs-clock-elapsed" class="cs-clock-value elapsed">+00:00:00</span>
+        </div>
+
+        <div class="cs-clock-card">
+          <span class="cs-clock-label">HORA CERTA</span>
+          <span id="cs-clock-real" class="cs-clock-value">--:--:--</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- URGENT NOTICE FROM DC BANNER                                    -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="cs-urgent-banner" class="cs-urgent-banner" style="display: none;">
+      <div class="cs-urgent-content">
+        <span class="cs-urgent-icon">🚨</span>
+        <div class="cs-urgent-text-box">
+          <div class="cs-urgent-title">AVISO URGENTE DA DIRETORA DE CENA (DC):</div>
+          <div id="cs-urgent-message-text" class="cs-urgent-message">--</div>
+        </div>
+      </div>
+      <button id="cs-urgent-ack-btn" class="cs-urgent-ack-btn" type="button">✓ CIENTE / CONFIRMADO</button>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 2. HERO CUE LIGHT: SINALIZADOR LUMINOSO GIGANTE (STANDBY / GO) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section id="cs-hero-light" class="cs-hero-cue-box is-idle">
+      <div class="cs-hero-header">
+        <span id="cs-hero-indicator" class="cs-hero-indicator">● REPOUSO</span>
+        <span id="cs-hero-dept-badge" class="cs-hero-dept-badge">DEPARTAMENTO: LUZ</span>
+      </div>
+
+      <div class="cs-hero-body">
+        <div id="cs-hero-cue-num" class="cs-hero-num">--</div>
+        <div id="cs-hero-cue-name" class="cs-hero-name">Aguardando Próxima Deixa...</div>
+        <div id="cs-hero-cue-target" class="cs-hero-target">O sinal de Standby (Amarelo) acenderá automaticamente quando a fala se aproximar.</div>
+      </div>
+
+      <!-- Quick Feedback Buttons (Shown when Standby or Fired) -->
+      <div id="cs-feedback-bar" class="cs-feedback-bar" style="display: none;">
+        <span class="cs-feedback-label">FEEDBACK DA DEIXA:</span>
+        <div class="cs-feedback-buttons">
+          <button type="button" class="cs-fb-btn fb-good" data-fb-type="on_time">✓ No Tempo</button>
+          <button type="button" class="cs-fb-btn fb-late" data-fb-type="late">🐢 Tarde</button>
+          <button type="button" class="cs-fb-btn fb-early" data-fb-type="early">🐇 Cedo</button>
+          <button type="button" class="cs-fb-btn fb-issue" data-fb-type="issue">⚠️ Mudar / Atenção</button>
+        </div>
+        <span id="cs-feedback-status" class="cs-feedback-sent-tag" style="display: none;">✓ Enviado para a Mesa DC</span>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 3. TABS: MINHAS DEIXAS | MINHA CHECKLIST DE MONTAGEM           -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="cs-main-tabs-card">
+      <nav class="cs-tab-bar" aria-label="Navegação do Técnico">
+        <button type="button" class="cs-tab-btn active" data-tab="tab-my-cues">
+          <span>⚡</span>
+          <span>Deixas do meu Departamento</span>
+          <span id="cs-my-cues-count" class="cs-badge">0</span>
+        </button>
+        <button type="button" class="cs-tab-btn" data-tab="tab-my-checklist">
+          <span>📋</span>
+          <span>Checklist de Montagem & Preset</span>
+          <span id="cs-my-checklist-count" class="cs-badge">0%</span>
+        </button>
+      </nav>
+
+      <!-- TAB 1: LISTA FILTRADA DE DEIXAS -->
+      <div id="tab-my-cues" class="cs-tab-content active">
+        <div id="cs-cues-list" class="cs-cues-list">
+          <!-- Injected dynamically by cue-station.js -->
+        </div>
+      </div>
+
+      <!-- TAB 2: CHECKLIST DO DEPARTAMENTO -->
+      <div id="tab-my-checklist" class="cs-tab-content">
+        <div class="cs-checklist-header">
+          <div>
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #fff;">Validação de Equipamentos & Presets</h3>
+            <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: var(--text-secondary);">Marque as tarefas concluídas. O progresso é sincronizado em tempo real com a Mesa da DC.</p>
+          </div>
+          <div id="cs-checklist-progress-pill" class="cs-readiness-pill">0% Concluído</div>
+        </div>
+
+        <div id="cs-my-checklist-items" class="cs-checklist-items">
+          <!-- Injected by cue-station.js -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
+  <script src="js/pwa.js?v=76"></script>
+  <script src="js/local-sync.js?v=76"></script>
+  <script src="js/cue-station.js?v=76"></script>
+</body>
+</html>

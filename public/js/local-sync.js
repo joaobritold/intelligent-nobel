@@ -180,11 +180,15 @@ class UniversalSyncClient {
     if (path.includes('operator')) return 'operator';
     if (path.includes('viewer')) return 'viewer';
     if (path.includes('controller')) return 'controller';
+    if (path.includes('cue-station') || path.includes('cuestation')) return 'cue-station';
+    if (path.includes('dc')) return 'dc';
     if (path.includes('index') || path === '' || path === '/') return 'index';
 
     if (this.role === 'master') return 'master';
     if (this.role === 'operator') return 'operator';
     if (this.role === 'regies') return 'regies';
+    if (this.role === 'dc') return 'dc';
+    if (this.role === 'cue-station') return 'cue-station';
     if (this.role === 'viewer') return 'viewer';
     if (this.role === 'controller') return 'controller';
     return this.role || 'index';
@@ -201,6 +205,11 @@ class UniversalSyncClient {
     else if (viewKey === 'regies') {
       const st = typeof localStorage !== 'undefined' ? (localStorage.getItem('stagetimer_regie_station') || 'foh') : 'foh';
       roleLabel = st === 'stage' ? 'Modo Régies (Palco)' : 'Modo Régies (FOH)';
+    }
+    else if (viewKey === 'dc') roleLabel = 'Mesa Diretora de Cena';
+    else if (viewKey === 'cue-station') {
+      const dept = typeof localStorage !== 'undefined' ? (localStorage.getItem('stagetimer_cue_dept') || 'Geral') : 'Geral';
+      roleLabel = `Posto Técnico (${dept})`;
     }
     else if (viewKey === 'viewer') roleLabel = 'Ecrã de Palco';
     else if (viewKey === 'index') roleLabel = 'Início';
@@ -963,6 +972,8 @@ class UniversalSyncClient {
       regieCall: { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' },
       regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null },
       regieHistory: [],
+      theatre: this._createDefaultTheatreState(),
+      theatre: this._createDefaultTheatreState(),
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
       updatedAt: 0,
       isEmptyDefault: true
@@ -982,6 +993,7 @@ class UniversalSyncClient {
       this._state.days[curDayKey] = Array.isArray(this._state.timers) ? [...this._state.timers] : [];
     }
     this._ensureRegieStructure();
+    this._ensureTheatreStructure();
   }
 
   _ensureRegieStructure() {
@@ -1002,6 +1014,186 @@ class UniversalSyncClient {
         this._state.regieCall.stageCallingFoh = false;
       }
     }
+  }
+
+  _ensureTheatreStructure() {
+    if (!this._state) return;
+    if (!this._state.theatre || typeof this._state.theatre !== 'object') {
+      this._state.theatre = this._createDefaultTheatreState();
+    } else {
+      if (!Array.isArray(this._state.theatre.cues)) this._state.theatre.cues = this._createDefaultCues();
+      if (!Array.isArray(this._state.theatre.script)) this._state.theatre.script = this._createDefaultScript();
+      if (!this._state.theatre.checklists || typeof this._state.theatre.checklists !== 'object') {
+        this._state.theatre.checklists = this._createDefaultChecklists();
+      }
+      if (!Array.isArray(this._state.theatre.telemetry)) this._state.theatre.telemetry = [];
+      if (!this._state.theatre.urgentNotice || typeof this._state.theatre.urgentNotice !== 'object') {
+        this._state.theatre.urgentNotice = { text: '', level: 'warn', visible: false, sentAt: 0 };
+      }
+      if (typeof this._state.theatre.showState !== 'string') this._state.theatre.showState = 'pre';
+    }
+  }
+
+  _createDefaultTheatreState() {
+    return {
+      showState: 'pre',
+      showStartTime: 0,
+      showPausedAt: 0,
+      showElapsedMs: 0,
+      activeCueId: null,
+      standbyCueId: null,
+      urgentNotice: { text: '', level: 'warn', visible: false, sentAt: 0 },
+      cues: this._createDefaultCues(),
+      script: this._createDefaultScript(),
+      checklists: this._createDefaultChecklists(),
+      telemetry: []
+    };
+  }
+
+  _createDefaultCues() {
+    return [
+      {
+        id: 'cue_1',
+        num: 'Q1',
+        name: 'Abertura de Sala',
+        targetText: 'Público a entrar / 3º Sinal',
+        departments: ['Luz', 'Som'],
+        notes: 'Luz de sala a 80%, Som ambiente suave.',
+        status: 'pending',
+        standbyAt: 0,
+        firedAt: 0,
+        firedTimecode: '',
+        feedbacks: []
+      },
+      {
+        id: 'cue_2',
+        num: 'Q2',
+        name: 'Blackout & Fecho de Sala',
+        targetText: 'Aviso de início / Silêncio no teatro',
+        departments: ['Luz', 'Som', 'Coxias'],
+        notes: 'Desvanecimento suave da sala para 0%. Fade-out do som.',
+        status: 'pending',
+        standbyAt: 0,
+        firedAt: 0,
+        firedTimecode: '',
+        feedbacks: []
+      },
+      {
+        id: 'cue_3',
+        num: 'Q3',
+        name: 'Abertura de Cortina & Trilha',
+        targetText: 'Primeira respiração do ator / Luz de fundo',
+        departments: ['Luz', 'Som', 'Maquinaria'],
+        notes: 'Cortina principal abre a velocidade 3. Foco pontual sobre cadeira.',
+        status: 'pending',
+        standbyAt: 0,
+        firedAt: 0,
+        firedTimecode: '',
+        feedbacks: []
+      },
+      {
+        id: 'cue_4',
+        num: 'Q4',
+        name: 'Entrada do Protagonista & Projeção',
+        targetText: '“As pedras do chão não mentem...”',
+        departments: ['Luz', 'Vídeo'],
+        notes: 'Projeção mapeada no ciclorama (nuvens). Luz quente zenital.',
+        status: 'pending',
+        standbyAt: 0,
+        firedAt: 0,
+        firedTimecode: '',
+        feedbacks: []
+      },
+      {
+        id: 'cue_5',
+        num: 'Q5',
+        name: 'Trovão & Relâmpago',
+        targetText: '“...quando a tempestade se ergue sobre o vale.”',
+        departments: ['Luz', 'Som'],
+        notes: 'Flash estroboscópico de 0.5s sincronizado com estrondo sub-grave.',
+        status: 'pending',
+        standbyAt: 0,
+        firedAt: 0,
+        firedTimecode: '',
+        feedbacks: []
+      },
+      {
+        id: 'cue_6',
+        num: 'Q6',
+        name: 'Mudança de Cenário / Coxias',
+        targetText: 'Saída do ator pela esquerda alta',
+        departments: ['Maquinaria', 'Coxias'],
+        notes: 'Descida da vara 4 (janela de madeira). Verificação de adereços.',
+        status: 'pending',
+        standbyAt: 0,
+        firedAt: 0,
+        firedTimecode: '',
+        feedbacks: []
+      },
+      {
+        id: 'cue_7',
+        num: 'Q7',
+        name: 'Agradecimentos & Fecho Final',
+        targetText: 'Atores alinham na boca de cena',
+        departments: ['Luz', 'Som', 'Maquinaria'],
+        notes: 'Luz geral de agradecimentos, aplausos, subida de cortina.',
+        status: 'pending',
+        standbyAt: 0,
+        firedAt: 0,
+        firedTimecode: '',
+        feedbacks: []
+      }
+    ];
+  }
+
+  _createDefaultScript() {
+    return [
+      { id: 'sc_1', type: 'direction', text: 'CENA I — O ALVORECER NO VELHO TEATRO', cueAnchor: 'cue_1' },
+      { id: 'sc_2', type: 'dialogue', speaker: 'DIRETOR', text: 'Tudo pronto nas coxias? O público já tomou os seus lugares.' },
+      { id: 'sc_3', type: 'dialogue', speaker: 'ATOR 1', text: 'Estamos a postos. Apenas aguardo o sinal luminoso.' },
+      { id: 'sc_4', type: 'direction', text: '[Ouve-se o 3º sinal. O murmúrio da plateia acalma-se progressivamente.]', cueAnchor: 'cue_2' },
+      { id: 'sc_5', type: 'direction', text: '[Blackout total. A cortina abre-se em silêncio solene.]', cueAnchor: 'cue_3' },
+      { id: 'sc_6', type: 'dialogue', speaker: 'ATOR 1', text: 'As pedras do chão não mentem...' },
+      { id: 'sc_7', type: 'direction', text: '[Surge no ciclorama a imagem difusa de nuvens em movimento rápido.]', cueAnchor: 'cue_4' },
+      { id: 'sc_8', type: 'dialogue', speaker: 'ATOR 1', text: '...quando a tempestade se ergue sobre o vale.' },
+      { id: 'sc_9', type: 'direction', text: '[Relâmpago estroboscópico seguido de estrondo violento de trovão.]', cueAnchor: 'cue_5' },
+      { id: 'sc_10', type: 'dialogue', speaker: 'ATOR 2 (em off)', text: 'Não há refúgio onde a verdade não nos alcance!' },
+      { id: 'sc_11', type: 'direction', text: '[Saída do Ator 1. A vara de madeira desce suavemente no plano médio.]', cueAnchor: 'cue_6' },
+      { id: 'sc_12', type: 'dialogue', speaker: 'ATOR 2', text: 'E agora resta apenas o silêncio e as memórias da noite.' },
+      { id: 'sc_13', type: 'direction', text: '[Blackout final. O elenco regressa para os agradecimentos.]', cueAnchor: 'cue_7' }
+    ];
+  }
+
+  _createDefaultChecklists() {
+    return {
+      'Luz': [
+        { id: 'chk_l_1', label: 'Verificar canais de DMX e splitters', done: true, isOneOff: false },
+        { id: 'chk_l_2', label: 'Afinar varas frontais e contra-luz', done: true, isOneOff: false },
+        { id: 'chk_l_3', label: 'Testar dimmers e lâmpadas de reserva', done: false, isOneOff: false },
+        { id: 'chk_l_4', label: 'Preset de sala a 80%', done: false, isOneOff: false }
+      ],
+      'Som': [
+        { id: 'chk_s_1', label: 'Baterias novas nos microfones emissores (Atores 1 e 2)', done: true, isOneOff: false },
+        { id: 'chk_s_2', label: 'Teste de ganho e equalização nas caixas de boca de cena', done: true, isOneOff: false },
+        { id: 'chk_s_3', label: 'Carregar e testar trilhas no software de playback', done: false, isOneOff: false },
+        { id: 'chk_s_4', label: 'Comunicação Intercom verificada com Mesa DC', done: false, isOneOff: false }
+      ],
+      'Maquinaria': [
+        { id: 'chk_m_1', label: 'Inspecionar cabos de aço e contrapesos das varas', done: true, isOneOff: false },
+        { id: 'chk_m_2', label: 'Teste de abertura/fecho da cortina de boca', done: true, isOneOff: false },
+        { id: 'chk_m_3', label: 'Carris lubrificados e livres de obstrução', done: false, isOneOff: false }
+      ],
+      'Vídeo': [
+        { id: 'chk_v_1', label: 'Calibração de foco e keystone do projetor principal', done: true, isOneOff: false },
+        { id: 'chk_v_2', label: 'Teste de envio HDMI / fibra para o ciclorama', done: false, isOneOff: false },
+        { id: 'chk_v_3', label: 'Verificar obturador (shutter) de proteção', done: false, isOneOff: false }
+      ],
+      'Coxias': [
+        { id: 'chk_c_1', label: 'Passagens laterais limpas e sinalizadas com luz azul', done: true, isOneOff: false },
+        { id: 'chk_c_2', label: 'Mesa de adereços conferida (cadeira, relógio de bolso, capa)', done: false, isOneOff: false },
+        { id: 'chk_c_3', label: 'Água e toalhas prontas nos postos de entrada', done: false, isOneOff: false }
+      ]
+    };
   }
 
   // ─── Multi-Day Management ──────────────────────────────────────────
@@ -1385,6 +1577,7 @@ class UniversalSyncClient {
       regieCall: { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' },
       regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null },
       regieHistory: [],
+      theatre: this._createDefaultTheatreState(),
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
       updatedAt: Date.now()
     };
@@ -1757,6 +1950,7 @@ class UniversalSyncClient {
       regieCall: { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' },
       regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null },
       regieHistory: [],
+      theatre: this._createDefaultTheatreState(),
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
       updatedAt: Date.now()
     };
@@ -2547,6 +2741,258 @@ class UniversalSyncClient {
         this.clearRegieMessage();
       }, 5000);
     }
+  }
+
+  // ─── Theatre Suite (Mesa DC & Cue Stations) ─────────────────────────
+
+  standbyCue(cueId) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    const target = th.cues.find(c => c.id === cueId);
+    if (!target) return;
+
+    // Reset previous standby if any
+    th.cues.forEach(c => {
+      if (c.status === 'standby' && c.id !== cueId) {
+        c.status = 'pending';
+      }
+    });
+
+    target.status = 'standby';
+    target.standbyAt = Date.now();
+    th.standbyCueId = target.id;
+    this._commitStateChange();
+  }
+
+  fireCue(cueId) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    const target = th.cues.find(c => c.id === cueId);
+    if (!target) return;
+
+    const now = Date.now();
+    let elapsedMs = 0;
+    if (th.showStartTime > 0) {
+      elapsedMs = Math.max(0, now - th.showStartTime);
+    }
+
+    const elapsedTotalSecs = Math.floor(elapsedMs / 1000);
+    const hh = String(Math.floor(elapsedTotalSecs / 3600)).padStart(2, '0');
+    const mm = String(Math.floor((elapsedTotalSecs % 3600) / 60)).padStart(2, '0');
+    const ss = String(elapsedTotalSecs % 60).padStart(2, '0');
+    const timecode = `+${hh}:${mm}:${ss}`;
+
+    target.status = 'fired';
+    target.firedAt = now;
+    target.firedTimecode = timecode;
+    th.activeCueId = target.id;
+    th.standbyCueId = null;
+
+    // Record in Telemetry log
+    if (!Array.isArray(th.telemetry)) th.telemetry = [];
+    th.telemetry.unshift({
+      id: 'tel_' + now + '_' + Math.random().toString(36).substr(2, 4),
+      cueId: target.id,
+      num: target.num,
+      name: target.name,
+      departments: [...(target.departments || [])],
+      timecode: timecode,
+      firedAt: now,
+      feedbacks: []
+    });
+
+    if (th.telemetry.length > 100) {
+      th.telemetry = th.telemetry.slice(0, 100);
+    }
+
+    this._commitStateChange();
+  }
+
+  completeCue(cueId) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    const target = th.cues.find(c => c.id === cueId);
+    if (!target) return;
+    target.status = 'completed';
+    if (th.activeCueId === cueId) th.activeCueId = null;
+    this._commitStateChange();
+  }
+
+  resetCue(cueId) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    const target = th.cues.find(c => c.id === cueId);
+    if (!target) return;
+    target.status = 'pending';
+    target.standbyAt = 0;
+    target.firedAt = 0;
+    target.firedTimecode = '';
+    target.feedbacks = [];
+    if (th.standbyCueId === cueId) th.standbyCueId = null;
+    if (th.activeCueId === cueId) th.activeCueId = null;
+    this._commitStateChange();
+  }
+
+  startTheatreShow() {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    th.showState = 'running';
+    if (!th.showStartTime || th.showStartTime === 0) {
+      th.showStartTime = Date.now();
+    } else if (th.showPausedAt > 0) {
+      const pauseDuration = Date.now() - th.showPausedAt;
+      th.showStartTime += pauseDuration;
+      th.showPausedAt = 0;
+    }
+    this._commitStateChange();
+  }
+
+  pauseTheatreShow() {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    th.showState = 'paused';
+    th.showPausedAt = Date.now();
+    this._commitStateChange();
+  }
+
+  endTheatreShow() {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    th.showState = 'ended';
+    if (th.showStartTime > 0) {
+      th.showElapsedMs = Date.now() - th.showStartTime;
+    }
+    this._commitStateChange();
+  }
+
+  resetTheatreShow() {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    th.showState = 'pre';
+    th.showStartTime = 0;
+    th.showPausedAt = 0;
+    th.showElapsedMs = 0;
+    th.activeCueId = null;
+    th.standbyCueId = null;
+    th.cues.forEach(c => {
+      c.status = 'pending';
+      c.standbyAt = 0;
+      c.firedAt = 0;
+      c.firedTimecode = '';
+      c.feedbacks = [];
+    });
+    this._commitStateChange();
+  }
+
+  toggleChecklistItem(dept, itemId, done) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    if (!th.checklists || !Array.isArray(th.checklists[dept])) return;
+    const item = th.checklists[dept].find(i => i.id === itemId);
+    if (!item) return;
+    item.done = Boolean(done);
+    this._commitStateChange();
+  }
+
+  addChecklistItem(dept, label, isOneOff = false) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    if (!th.checklists) th.checklists = {};
+    if (!Array.isArray(th.checklists[dept])) th.checklists[dept] = [];
+    const cleanLabel = (label || '').trim();
+    if (!cleanLabel) return;
+    th.checklists[dept].push({
+      id: 'chk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      label: cleanLabel,
+      done: false,
+      isOneOff: Boolean(isOneOff)
+    });
+    this._commitStateChange();
+  }
+
+  removeChecklistItem(dept, itemId) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    if (!th.checklists || !Array.isArray(th.checklists[dept])) return;
+    th.checklists[dept] = th.checklists[dept].filter(i => i.id !== itemId);
+    this._commitStateChange();
+  }
+
+  sendUrgentNotice(text, level = 'warn') {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const cleanText = (text || '').trim();
+    if (!cleanText) return;
+    this._state.theatre.urgentNotice = {
+      text: cleanText,
+      level: level || 'warn',
+      visible: true,
+      sentAt: Date.now()
+    };
+    this._commitStateChange();
+  }
+
+  clearUrgentNotice() {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    this._state.theatre.urgentNotice = {
+      text: '',
+      level: 'warn',
+      visible: false,
+      sentAt: 0
+    };
+    this._commitStateChange();
+  }
+
+  sendTechnicalFeedback(cueId, dept, feedbackType, note = '') {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    const cue = th.cues.find(c => c.id === cueId);
+    if (!cue) return;
+    if (!Array.isArray(cue.feedbacks)) cue.feedbacks = [];
+    const fb = {
+      dept: dept || 'Técnico',
+      type: feedbackType,
+      note: (note || '').trim(),
+      ts: Date.now()
+    };
+    cue.feedbacks.push(fb);
+
+    if (Array.isArray(th.telemetry)) {
+      const tel = th.telemetry.find(t => t.cueId === cueId);
+      if (tel) {
+        if (!Array.isArray(tel.feedbacks)) tel.feedbacks = [];
+        tel.feedbacks.push(fb);
+      }
+    }
+
+    this._commitStateChange();
+  }
+
+  updateTheatreCues(cues) {
+    if (!this._state || !Array.isArray(cues)) return;
+    this._ensureTheatreStructure();
+    this._state.theatre.cues = cues;
+    this._commitStateChange();
+  }
+
+  updateTheatreScript(script) {
+    if (!this._state || !Array.isArray(script)) return;
+    this._ensureTheatreStructure();
+    this._state.theatre.script = script;
+    this._commitStateChange();
   }
 
   updateTheme(theme) {

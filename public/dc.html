@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <script>
+    (function() {
+      try {
+        var EPOCH_KEY = 'stagetimer_epoch_clean_v10';
+        if (localStorage.getItem(EPOCH_KEY) !== 'true') {
+          var mActive = localStorage.getItem('stagetimer_master_active');
+          var mV12 = localStorage.getItem('stagetimer_master_auth_v12');
+          var devUuid = localStorage.getItem('stagetimer_device_uuid');
+
+          var keys = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && k.indexOf('stagetimer_') === 0) {
+              keys.push(k);
+            }
+          }
+          for (var j = 0; j < keys.length; j++) {
+            localStorage.removeItem(keys[j]);
+          }
+          try { sessionStorage.clear(); } catch (_) {}
+
+          if (mActive) localStorage.setItem('stagetimer_master_active', mActive);
+          if (mV12) localStorage.setItem('stagetimer_master_auth_v12', mV12);
+          if (devUuid) localStorage.setItem('stagetimer_device_uuid', devUuid);
+
+          localStorage.setItem(EPOCH_KEY, 'true');
+
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              for (var n of names) caches.delete(n);
+            }).catch(function() {});
+          }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              for (var r of regs) r.unregister();
+            }).catch(function() {});
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StageTimer DC">
+  <meta name="theme-color" content="#0a0a14">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>StageTimer — Mesa da Diretora de Cena (DC)</title>
+  <link rel="stylesheet" href="css/common.css?v=76">
+  <link rel="stylesheet" href="css/dc.css?v=76">
+</head>
+<body>
+  <div id="dc-screen" class="dc-screen">
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 1. FIXED TOP HUD: Telemetria de Espetáculo & Relógios           -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <header class="dc-hud">
+      <div class="dc-hud-left">
+        <a href="index.html" class="dc-brand-link" title="Voltar ao Início">
+          <span style="font-size: 1.5rem;">🎭</span>
+          <div>
+            <div class="dc-brand-title">MESA DC</div>
+            <div class="dc-brand-sub">Diretora de Cena</div>
+          </div>
+          <span class="badge dc-version-badge">v76</span>
+        </a>
+
+        <!-- Stage / Room Pill -->
+        <div class="dc-stage-pill" id="dc-stage-badge-container">
+          <span style="font-size: 0.85rem;">🎪</span>
+          <span id="dc-stage-badge" class="dc-stage-badge-text">Palco</span>
+          <select id="dc-stage-select" class="dc-stage-select-hidden" title="Trocar Palco"></select>
+        </div>
+      </div>
+
+      <!-- Center: Show State Controller -->
+      <div class="dc-hud-center">
+        <div class="dc-show-status-pill" id="dc-show-status-badge">
+          <span class="dc-status-dot">●</span>
+          <span id="dc-show-status-text">PRÉ-SHOW</span>
+        </div>
+
+        <div class="dc-show-btn-group">
+          <button id="dc-btn-start-show" type="button" class="dc-hud-btn dc-hud-btn-start" title="Iniciar espetáculo e contagem">
+            ▶ Iniciar
+          </button>
+          <button id="dc-btn-pause-show" type="button" class="dc-hud-btn" style="display: none;" title="Pausar contagem">
+            ⏸ Pausa
+          </button>
+          <button id="dc-btn-end-show" type="button" class="dc-hud-btn dc-hud-btn-end" style="display: none;" title="Terminar espetáculo e fechar relatório">
+            ⏹ Terminar
+          </button>
+          <button id="dc-btn-reset-show" type="button" class="dc-hud-btn dc-hud-btn-reset" title="Reiniciar espetáculo e limpar deixas">
+            🔄 Reset
+          </button>
+        </div>
+
+        <!-- Broadcast Urgent Notice Button -->
+        <button id="dc-btn-urgent-toggle" type="button" class="dc-hud-btn dc-hud-btn-warn" title="Enviar aviso imediato para todos os postos técnicos">
+          🚨 Aviso Rápido
+        </button>
+      </div>
+
+      <!-- Right: Clocks and Telemetry -->
+      <div class="dc-hud-right">
+        <div class="dc-clock-card">
+          <span class="dc-clock-label">TEMPO DECORRIDO</span>
+          <span id="dc-clock-elapsed" class="dc-clock-value elapsed">+00:00:00</span>
+        </div>
+        <div class="dc-clock-card">
+          <span class="dc-clock-label">FIM PREVISTO</span>
+          <span id="dc-clock-end" class="dc-clock-value end">--:--</span>
+        </div>
+        <div class="dc-clock-card">
+          <span class="dc-clock-label">HORA CERTA</span>
+          <span id="dc-clock-real" class="dc-clock-value">--:--:--</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- URGENT NOTICE BAR (DC TO ALL STATIONS)                          -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div id="dc-urgent-bar" class="dc-urgent-broadcast-bar" style="display: none;">
+      <div class="dc-urgent-input-row">
+        <span style="font-size: 1.2rem;">📢</span>
+        <input id="dc-urgent-input" class="dc-urgent-input" placeholder="Escreva aviso urgente para todos os postos técnicos (ex: Aguardar 2 min antes da vara 4)..." autocomplete="off">
+        <button id="dc-urgent-send-btn" type="button" class="dc-btn-primary">⚡ Enviar Aviso</button>
+        <button id="dc-urgent-clear-btn" type="button" class="dc-btn-danger">🗑️ Limpar</button>
+      </div>
+      <div id="dc-urgent-active-tag" style="display: none;" class="dc-urgent-active-text"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 2. MAIN 50/50 SPLIT: GUIÃO (ESQUERDA) | DEIXAS & CUES (DIREITA) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="dc-main-grid">
+      <!-- ─── PAINEL ESQUERDO: TEXTO / GUIÃO DA PEÇA ─────────────────── -->
+      <section class="dc-pane dc-script-pane">
+        <div class="dc-pane-header">
+          <div class="dc-pane-title">
+            <span>📖</span>
+            <span>GUIÃO DA PEÇA & TEXTO</span>
+          </div>
+
+          <div class="dc-pane-tools">
+            <button id="dc-btn-import-script" type="button" class="dc-tool-btn" title="Carregar guião via ficheiro ou texto">
+              📥 Importar Guião
+            </button>
+            <button id="dc-btn-add-line" type="button" class="dc-tool-btn" title="Adicionar nova fala ou didascália">
+              ➕ Fala
+            </button>
+            <label class="dc-toggle-label" title="Rolar o guião automaticamente para acompanhar as falas">
+              <input type="checkbox" id="dc-toggle-autoscroll" checked>
+              <span>Auto-Scroll</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="dc-script-feed" class="dc-script-feed">
+          <!-- Injected dynamically by dc.js -->
+        </div>
+      </section>
+
+      <!-- ─── PAINEL DIREITO: DEIXAS, CHECKLISTS & TELEMETRIA ─────────── -->
+      <section class="dc-pane dc-cues-pane">
+        <!-- Navigation Tabs -->
+        <nav class="dc-tab-bar" aria-label="Navegação da Mesa de Deixas">
+          <button type="button" class="dc-tab-btn active" data-tab="tab-cues">
+            <span>⚡</span>
+            <span>Deixas Sequenciais</span>
+            <span id="dc-cues-count-badge" class="dc-count-badge">0</span>
+          </button>
+          <button type="button" class="dc-tab-btn" data-tab="tab-checklists">
+            <span>📋</span>
+            <span>Checklists Equipas</span>
+            <span id="dc-checklists-progress-badge" class="dc-count-badge">0%</span>
+          </button>
+          <button type="button" class="dc-tab-btn" data-tab="tab-telemetry">
+            <span>📊</span>
+            <span>Telemetria & Relatório</span>
+          </button>
+        </nav>
+
+        <!-- ── TAB 1: DEIXAS SEQUENCIAIS (STANDBY & GO) ── -->
+        <div id="tab-cues" class="dc-tab-content active">
+          <!-- Giant Action Box -->
+          <div class="dc-action-box">
+            <div class="dc-action-meta">
+              <span class="dc-action-hint">PRÓXIMA DEIXA A DISPARAR:</span>
+              <span id="dc-next-cue-summary" class="dc-next-cue-summary">--</span>
+            </div>
+
+            <div class="dc-action-btn-row">
+              <button id="dc-btn-standby" type="button" class="dc-hero-btn dc-btn-standby" title="Colocar a próxima deixa em Standby (Sinal Amarelo)">
+                <span class="dc-hero-icon">🟡</span>
+                <span class="dc-hero-text">STANDBY</span>
+              </button>
+              <button id="dc-btn-go" type="button" class="dc-hero-btn dc-btn-go" title="Executar deixa ativa (Sinal Verde). Atalho: BARRA DE ESPAÇO">
+                <span class="dc-hero-icon">🟢</span>
+                <span class="dc-hero-text">GO (ESPAÇO)</span>
+              </button>
+            </div>
+
+            <div class="dc-action-subtools">
+              <button id="dc-btn-add-cue" type="button" class="dc-mini-btn" title="Adicionar deixa personalizada">
+                ➕ Nova Deixa
+              </button>
+              <button id="dc-btn-import-cues" type="button" class="dc-mini-btn" title="Importar lista de deixas via CSV/Texto">
+                📥 Importar Deixas
+              </button>
+              <button id="dc-btn-reset-cues" type="button" class="dc-mini-btn" title="Voltar todas as deixas a pendente">
+                ↩️ Reset Deixas
+              </button>
+            </div>
+          </div>
+
+          <!-- Cues List -->
+          <div id="dc-cues-list" class="dc-cues-list">
+            <!-- Injected by dc.js -->
+          </div>
+        </div>
+
+        <!-- ── TAB 2: CHECKLISTS DE AFINAÇÃO ── -->
+        <div id="tab-checklists" class="dc-tab-content">
+          <!-- Readiness Overview -->
+          <div class="dc-checklists-overview">
+            <div class="dc-overview-header">
+              <span class="dc-overview-title">ESTADO GERAL DE AFINAÇÕES ANTES DA RÉCITA</span>
+              <span id="dc-readiness-percent" class="dc-readiness-pill">0% PRONTO</span>
+            </div>
+            <div class="dc-progress-bar-bg">
+              <div id="dc-readiness-bar" class="dc-progress-bar-fill" style="width: 0%;"></div>
+            </div>
+
+            <!-- Mini Dept Gauges -->
+            <div id="dc-dept-gauges" class="dc-dept-gauges">
+              <!-- Injected by dc.js -->
+            </div>
+          </div>
+
+          <!-- Add Item Bar -->
+          <div class="dc-add-task-row">
+            <select id="dc-task-dept-select" class="dc-select-sm">
+              <option value="Luz">💡 Luz</option>
+              <option value="Som">🔊 Som</option>
+              <option value="Maquinaria">⚙️ Maquinaria</option>
+              <option value="Vídeo">🎥 Vídeo</option>
+              <option value="Coxias">🎭 Coxias</option>
+            </select>
+            <input id="dc-task-label-input" class="dc-input-sm" placeholder="Nova tarefa (ex: Afinar vara 3, Testar microfone 2)...">
+            <label class="dc-checkbox-label" title="Marcar como tarefa pontual que só se aplica a esta récita">
+              <input type="checkbox" id="dc-task-oneoff-check">
+              <span>Só Hoje</span>
+            </label>
+            <button id="dc-task-add-btn" type="button" class="dc-btn-primary dc-btn-sm">Adicionar</button>
+          </div>
+
+          <!-- Multi-Department Lists Container -->
+          <div id="dc-checklists-container" class="dc-checklists-container">
+            <!-- Injected by dc.js -->
+          </div>
+        </div>
+
+        <!-- ── TAB 3: TELEMETRIA & RELATÓRIO DE RÉGIE ── -->
+        <div id="tab-telemetry" class="dc-tab-content">
+          <div class="dc-telemetry-header">
+            <div class="dc-telemetry-stats">
+              <div class="dc-stat-box">
+                <span class="dc-stat-label">DEIXAS DISPARADAS</span>
+                <span id="dc-telemetry-fired-count" class="dc-stat-val">0</span>
+              </div>
+              <div class="dc-stat-box">
+                <span class="dc-stat-label">DURAÇÃO TOTAL</span>
+                <span id="dc-telemetry-duration" class="dc-stat-val">00:00:00</span>
+              </div>
+              <div class="dc-stat-box">
+                <span class="dc-stat-label">FEEDBACKS TÉCNICOS</span>
+                <span id="dc-telemetry-feedback-count" class="dc-stat-val">0</span>
+              </div>
+            </div>
+
+            <div class="dc-telemetry-actions">
+              <button id="dc-btn-copy-report" type="button" class="dc-btn-primary dc-btn-sm" title="Copiar relatório completo para a área de transferência">
+                📋 Copiar Relatório
+              </button>
+              <button id="dc-btn-download-report" type="button" class="dc-tool-btn" title="Descarregar ficheiro de texto do relatório">
+                💾 Descarregar TXT
+              </button>
+            </div>
+          </div>
+
+          <!-- Telemetry Feed -->
+          <div id="dc-telemetry-list" class="dc-telemetry-list">
+            <!-- Injected by dc.js -->
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- MODALS: IMPORTADOR & CRIAÇÃO                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <!-- Modal Importar Guião -->
+  <div id="dc-modal-import-script" class="dc-modal" style="display: none;">
+    <div class="dc-modal-content">
+      <div class="dc-modal-header">
+        <h3>📥 Importar Guião da Peça</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-script">✕</button>
+      </div>
+      <div class="dc-modal-body">
+        <p class="dc-modal-desc">Cole o texto da peça abaixo. Linhas com <code>ATOR: Texto</code> serão identificadas como falas e <code>[Texto]</code> como didascálias:</p>
+        <textarea id="dc-script-import-textarea" class="dc-textarea" placeholder="DIRETOR: Tudo pronto nas coxias?&#10;ATOR 1: Estamos a postos.&#10;[Ouve-se o terceiro sinal.]"></textarea>
+      </div>
+      <div class="dc-modal-footer">
+        <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-import-script">Cancelar</button>
+        <button id="dc-script-import-confirm" type="button" class="dc-btn-primary">Carregar no Guião</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Importar Deixas (CSV/Texto) -->
+  <div id="dc-modal-import-cues" class="dc-modal" style="display: none;">
+    <div class="dc-modal-content">
+      <div class="dc-modal-header">
+        <h3>📥 Importar Lista de Deixas</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-cues">✕</button>
+      </div>
+      <div class="dc-modal-body">
+        <p class="dc-modal-desc">Cole as deixas no formato <code>Q1; Nome; Departamentos (Luz,Som); Ponto/Texto; Notas</code>:</p>
+        <textarea id="dc-cues-import-textarea" class="dc-textarea" placeholder="Q1; Abertura de Sala; Luz,Som; 3º Sinal; Sala a 80%&#10;Q2; Blackout Inicial; Luz,Som,Coxias; Silêncio; Fade suave"></textarea>
+      </div>
+      <div class="dc-modal-footer">
+        <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-import-cues">Cancelar</button>
+        <button id="dc-cues-import-confirm" type="button" class="dc-btn-primary">Importar Deixas</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nova Deixa -->
+  <div id="dc-modal-new-cue" class="dc-modal" style="display: none;">
+    <div class="dc-modal-content">
+      <div class="dc-modal-header">
+        <h3>➕ Nova Deixa / Cue</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-new-cue">✕</button>
+      </div>
+      <div class="dc-modal-body">
+        <div class="dc-form-group">
+          <label>Identificador (ex: Q8, Q8.5, Q-FIM):</label>
+          <input id="dc-new-cue-num" class="dc-input" placeholder="ex: Q8">
+        </div>
+        <div class="dc-form-group">
+          <label>Nome / Ação da Deixa:</label>
+          <input id="dc-new-cue-name" class="dc-input" placeholder="ex: Entrada do Coro & Luz Vermelha">
+        </div>
+        <div class="dc-form-group">
+          <label>Ponto do Guião / Fala Desencadeadora:</label>
+          <input id="dc-new-cue-target" class="dc-input" placeholder="ex: Na palavra 'Libertação'...">
+        </div>
+        <div class="dc-form-group">
+          <label>Departamentos Destinatários:</label>
+          <div class="dc-dept-checkbox-row">
+            <label><input type="checkbox" name="dc-dept" value="Luz" checked> 💡 Luz</label>
+            <label><input type="checkbox" name="dc-dept" value="Som"> 🔊 Som</label>
+            <label><input type="checkbox" name="dc-dept" value="Maquinaria"> ⚙️ Maquinaria</label>
+            <label><input type="checkbox" name="dc-dept" value="Vídeo"> 🎥 Vídeo</label>
+            <label><input type="checkbox" name="dc-dept" value="Coxias"> 🎭 Coxias</label>
+          </div>
+        </div>
+        <div class="dc-form-group">
+          <label>Notas Técnicas / Advertências:</label>
+          <input id="dc-new-cue-notes" class="dc-input" placeholder="ex: Fade in lento de 4 segundos">
+        </div>
+      </div>
+      <div class="dc-modal-footer">
+        <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-new-cue">Cancelar</button>
+        <button id="dc-new-cue-confirm" type="button" class="dc-btn-primary">Criar Deixa</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
+  <script src="js/pwa.js?v=76"></script>
+  <script src="js/local-sync.js?v=76"></script>
+  <script src="js/dc.js?v=76"></script>
+</body>
+</html>

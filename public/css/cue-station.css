@@ -1,0 +1,626 @@
+/* ─── StageTimer Cue Station (Posto Técnico) ─────────────────────────── */
+
+:root {
+  --cs-bg: #070712;
+  --cs-card-bg: rgba(18, 18, 34, 0.9);
+  --cs-card-border: rgba(255, 255, 255, 0.1);
+  --cs-amber: #fdcb6e;
+  --cs-amber-glow: rgba(253, 203, 110, 0.5);
+  --cs-emerald: #00b894;
+  --cs-emerald-glow: rgba(0, 184, 148, 0.6);
+  --cs-accent: #6c5ce7;
+  --cs-muted: #94a3b8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--cs-bg);
+  color: #fff;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.cs-screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) calc(env(safe-area-inset-right, 0px) + 14px) calc(env(safe-area-inset-bottom, 0px) + 14px) calc(env(safe-area-inset-left, 0px) + 14px);
+  gap: 12px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ─── 1. FIXED TOP HUD ─────────────────────────────────────────────── */
+.cs-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(16, 16, 30, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 10px 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  flex-wrap: wrap;
+}
+
+.cs-hud-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.cs-brand-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #fff;
+}
+
+.cs-brand-title {
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.cs-brand-sub {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--cs-amber);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.cs-version-badge {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  background: rgba(253, 203, 110, 0.2);
+  color: var(--cs-amber);
+  border: 1px solid rgba(253, 203, 110, 0.4);
+}
+
+/* Department Switcher */
+.cs-dept-pill-bar {
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.cs-dept-btn {
+  background: transparent;
+  border: none;
+  color: var(--cs-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.cs-dept-btn.active {
+  background: #6c5ce7;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.5);
+}
+
+.cs-hud-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cs-hud-tool-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.cs-hud-tool-btn.enabled {
+  background: rgba(0, 184, 148, 0.18);
+  border-color: #00b894;
+  color: #55efc4;
+}
+
+.cs-clock-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 4px 10px;
+}
+
+.cs-clock-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--cs-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cs-clock-value {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.cs-clock-value.elapsed {
+  color: #00ffb3;
+}
+
+/* ─── URGENT BANNER FROM DC ────────────────────────────────────────── */
+.cs-urgent-banner {
+  background: linear-gradient(135deg, #ff0055, #d63031);
+  border: 2px solid #fff;
+  border-radius: 12px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: 0 0 35px rgba(255, 0, 85, 0.85);
+  animation: csStrobeAlert 0.8s infinite alternate;
+  z-index: 99;
+}
+
+@keyframes csStrobeAlert {
+  0% {
+    background: #d63031;
+    box-shadow: 0 0 20px rgba(214, 48, 49, 0.7);
+  }
+  100% {
+    background: #ff0055;
+    box-shadow: 0 0 45px rgba(255, 0, 85, 1);
+  }
+}
+
+.cs-urgent-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cs-urgent-icon {
+  font-size: 1.8rem;
+}
+
+.cs-urgent-title {
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ffeaa7;
+}
+
+.cs-urgent-message {
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.25;
+}
+
+.cs-urgent-ack-btn {
+  background: #fff;
+  color: #111;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease;
+}
+
+.cs-urgent-ack-btn:active {
+  transform: scale(0.96);
+}
+
+/* ─── 2. HERO CUE LIGHT (STANDBY / GO) ─────────────────────────────── */
+.cs-hero-cue-box {
+  background: var(--cs-card-bg);
+  border: 2px solid var(--cs-card-border);
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.cs-hero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cs-hero-indicator {
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--cs-muted);
+}
+
+.cs-hero-dept-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cs-amber);
+}
+
+.cs-hero-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 14px 10px;
+}
+
+.cs-hero-num {
+  font-family: var(--font-mono);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  color: #cbd5e1;
+  line-height: 1;
+}
+
+.cs-hero-name {
+  font-size: clamp(1.4rem, 3.2vw, 2.2rem);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.cs-hero-target {
+  font-size: clamp(0.95rem, 1.8vw, 1.25rem);
+  color: var(--cs-muted);
+  max-width: 800px;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* ── STATE: IDLE ── */
+.cs-hero-cue-box.is-idle {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ── STATE: STANDBY (AMARELO / ÂMBAR) ── */
+.cs-hero-cue-box.is-standby {
+  background: linear-gradient(135deg, rgba(253, 203, 110, 0.22) 0%, rgba(35, 25, 20, 0.95) 100%);
+  border: 3px solid var(--cs-amber);
+  box-shadow: 0 0 45px rgba(253, 203, 110, 0.45);
+  animation: csPulseStandby 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes csPulseStandby {
+  0% {
+    box-shadow: 0 0 25px rgba(253, 203, 110, 0.35);
+    border-color: rgba(253, 203, 110, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 55px rgba(253, 203, 110, 0.75);
+    border-color: #ffeaa7;
+  }
+}
+
+.cs-hero-cue-box.is-standby .cs-hero-indicator {
+  background: #fdcb6e;
+  color: #111;
+  box-shadow: 0 0 15px rgba(253, 203, 110, 0.6);
+}
+
+.cs-hero-cue-box.is-standby .cs-hero-num {
+  color: #ffeaa7;
+  text-shadow: 0 0 20px rgba(253, 203, 110, 0.5);
+}
+
+.cs-hero-cue-box.is-standby .cs-hero-target {
+  color: #ffeaa7;
+  font-weight: 700;
+}
+
+/* ── STATE: GO (VERDE ESMERALDA FLUORESCENTE) ── */
+.cs-hero-cue-box.is-go {
+  background: linear-gradient(135deg, rgba(0, 184, 148, 0.3) 0%, rgba(10, 35, 25, 0.95) 100%);
+  border: 4px solid #00ffb3;
+  box-shadow: 0 0 60px rgba(0, 255, 179, 0.85);
+  animation: csFlashGo 0.7s infinite alternate ease-in-out;
+}
+
+@keyframes csFlashGo {
+  0% {
+    box-shadow: 0 0 30px rgba(0, 255, 179, 0.6);
+    border-color: #00b894;
+  }
+  100% {
+    box-shadow: 0 0 80px rgba(0, 255, 179, 1);
+    border-color: #00ffb3;
+  }
+}
+
+.cs-hero-cue-box.is-go .cs-hero-indicator {
+  background: #00ffb3;
+  color: #000;
+  box-shadow: 0 0 20px rgba(0, 255, 179, 0.8);
+}
+
+.cs-hero-cue-box.is-go .cs-hero-num {
+  color: #00ffb3;
+  text-shadow: 0 0 30px rgba(0, 255, 179, 0.9);
+}
+
+/* Quick Feedback Bar */
+.cs-feedback-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px 14px;
+  flex-wrap: wrap;
+}
+
+.cs-feedback-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--cs-muted);
+  letter-spacing: 0.06em;
+}
+
+.cs-feedback-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cs-fb-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.cs-fb-btn:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.cs-fb-btn.fb-good { background: rgba(0, 184, 148, 0.25); color: #55efc4; border: 1px solid #00b894; }
+.cs-fb-btn.fb-late { background: rgba(253, 203, 110, 0.25); color: #fed330; border: 1px solid #fdcb6e; }
+.cs-fb-btn.fb-early { background: rgba(56, 189, 248, 0.25); color: #7dd3fc; border: 1px solid #38bdf8; }
+.cs-fb-btn.fb-issue { background: rgba(214, 48, 49, 0.25); color: #ff7675; border: 1px solid #ff7675; }
+
+.cs-feedback-sent-tag {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #55efc4;
+}
+
+/* ─── 3. TABS: MINHAS DEIXAS & CHECKLIST ───────────────────────────── */
+.cs-main-tabs-card {
+  background: var(--cs-card-bg);
+  border: 1px solid var(--cs-card-border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  flex: 1;
+}
+
+.cs-tab-bar {
+  display: flex;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cs-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--cs-muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cs-tab-btn.active {
+  background: var(--cs-accent);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(108, 92, 231, 0.5);
+}
+
+.cs-badge {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.cs-tab-content {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cs-tab-content.active {
+  display: flex;
+}
+
+/* Cues List */
+.cs-cues-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: calc(100dvh - 460px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.cs-cue-card {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: all 0.2s ease;
+}
+
+.cs-cue-card.is-active-standby {
+  border-color: var(--cs-amber);
+  background: linear-gradient(90deg, rgba(253, 203, 110, 0.18) 0%, rgba(255, 255, 255, 0.03) 100%);
+}
+
+.cs-cue-card.is-active-go {
+  border-color: var(--cs-emerald);
+  background: linear-gradient(90deg, rgba(0, 184, 148, 0.2) 0%, rgba(255, 255, 255, 0.03) 100%);
+}
+
+.cs-cue-num {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--cs-amber);
+}
+
+.cs-cue-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.cs-cue-desc {
+  font-size: 0.78rem;
+  color: var(--cs-muted);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* Checklist Styles */
+.cs-checklist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cs-readiness-pill {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 900;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(0, 184, 148, 0.2);
+  color: #55efc4;
+}
+
+.cs-checklist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: calc(100dvh - 460px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.cs-chk-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.cs-chk-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cs-chk-row.done {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
+.cs-chk-box {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+/* ─── Responsive Tweaks ────────────────────────────────────────────── */
+@media (max-width: 800px) {
+  .cs-hud-left, .cs-hud-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .cs-hero-body {
+    padding: 8px;
+  }
+}

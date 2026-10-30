@@ -453,6 +453,36 @@
   color: #c4b5fd;
 }
 
+.device-view-status-banner.view-dc {
+  background: linear-gradient(135deg, rgba(235, 77, 75, 0.25) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: rgba(235, 77, 75, 0.65);
+  color: #ff7979;
+}
+.device-view-status-banner.view-dc .device-view-tag-name {
+  color: #ffbe76;
+  text-shadow: 0 0 10px rgba(255, 190, 118, 0.4);
+}
+.device-view-status-banner.view-dc .device-view-live-pill {
+  background: rgba(235, 77, 75, 0.25);
+  border-color: rgba(235, 77, 75, 0.55);
+  color: #ffbe76;
+}
+
+.device-view-status-banner.view-cuestation {
+  background: linear-gradient(135deg, rgba(240, 147, 43, 0.25) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: rgba(240, 147, 43, 0.65);
+  color: #f0932b;
+}
+.device-view-status-banner.view-cuestation .device-view-tag-name {
+  color: #badc58;
+  text-shadow: 0 0 10px rgba(186, 220, 88, 0.4);
+}
+.device-view-status-banner.view-cuestation .device-view-live-pill {
+  background: rgba(240, 147, 43, 0.25);
+  border-color: rgba(240, 147, 43, 0.55);
+  color: #badc58;
+}
+
 .device-view-status-banner.view-master {
   background: linear-gradient(135deg, rgba(253, 203, 110, 0.22) 0%, rgba(15, 23, 42, 0.9) 100%);
   border-color: rgba(253, 203, 110, 0.6);
