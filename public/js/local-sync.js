@@ -954,6 +954,8 @@ class UniversalSyncClient {
       timers: [],
       activeTimerId: null,
       message: { text: '', visible: false, level: 'info' },
+      regieCall: { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' },
+      regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null },
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
       updatedAt: 0,
       isEmptyDefault: true
@@ -971,6 +973,17 @@ class UniversalSyncClient {
     const curDayKey = String(this._state.currentDay);
     if (!Array.isArray(this._state.days[curDayKey])) {
       this._state.days[curDayKey] = Array.isArray(this._state.timers) ? [...this._state.timers] : [];
+    }
+    this._ensureRegieStructure();
+  }
+
+  _ensureRegieStructure() {
+    if (!this._state) return;
+    if (!this._state.regieCall || typeof this._state.regieCall !== 'object') {
+      this._state.regieCall = { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' };
+    }
+    if (!this._state.regieMessage || typeof this._state.regieMessage !== 'object') {
+      this._state.regieMessage = { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null };
     }
   }
 
@@ -1352,6 +1365,8 @@ class UniversalSyncClient {
       timers: [],
       activeTimerId: null,
       message: { text: '', visible: false, level: 'info' },
+      regieCall: { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' },
+      regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null },
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
       updatedAt: Date.now()
     };
@@ -1721,6 +1736,8 @@ class UniversalSyncClient {
       timers: [],
       activeTimerId: null,
       message: { text: '', visible: false, level: 'info' },
+      regieCall: { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' },
+      regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null },
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
       updatedAt: Date.now()
     };
@@ -2350,6 +2367,94 @@ class UniversalSyncClient {
 
   clearMessage() {
     this._state.message = { text: '', visible: false, level: 'info' };
+    this._commitStateChange();
+  }
+
+  // ─── Régie Intercom Call & Messages ─────────────────────────────────
+
+  triggerRegieCall(target, fromStation = '') {
+    if (!this._state) return;
+    this._ensureRegieStructure();
+    const now = Date.now();
+    const tgt = String(target || '').toLowerCase();
+    if (tgt === 'stage' || tgt === 'palco') {
+      this._state.regieCall.fohCallingStage = true;
+      this._state.regieCall.triggeredAt = now;
+      this._state.regieCall.triggeredBy = fromStation || 'FOH';
+    } else if (tgt === 'foh' || tgt === 'frente') {
+      this._state.regieCall.stageCallingFoh = true;
+      this._state.regieCall.triggeredAt = now;
+      this._state.regieCall.triggeredBy = fromStation || 'PALCO';
+    } else {
+      this._state.regieCall.fohCallingStage = true;
+      this._state.regieCall.stageCallingFoh = true;
+      this._state.regieCall.triggeredAt = now;
+      this._state.regieCall.triggeredBy = fromStation || 'ALL';
+    }
+    this._commitStateChange();
+  }
+
+  clearRegieCall(target = 'all') {
+    if (!this._state) return;
+    this._ensureRegieStructure();
+    const tgt = String(target || '').toLowerCase();
+    if (tgt === 'stage' || tgt === 'palco') {
+      this._state.regieCall.fohCallingStage = false;
+    } else if (tgt === 'foh' || tgt === 'frente') {
+      this._state.regieCall.stageCallingFoh = false;
+    } else {
+      this._state.regieCall.fohCallingStage = false;
+      this._state.regieCall.stageCallingFoh = false;
+    }
+    this._commitStateChange();
+  }
+
+  sendRegieMessage(text) {
+    if (!this._state) return;
+    this._ensureRegieStructure();
+    const cleanText = (text || '').trim();
+    if (!cleanText) return;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+    this._state.regieMessage = {
+      id: 'rm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      text: cleanText,
+      visible: true,
+      sentAt: Date.now(),
+      sentTimeStr: timeStr,
+      ackFoh: null,
+      ackStage: null
+    };
+    this._commitStateChange();
+  }
+
+  clearRegieMessage() {
+    if (!this._state) return;
+    this._ensureRegieStructure();
+    this._state.regieMessage = {
+      id: '',
+      text: '',
+      visible: false,
+      sentAt: 0,
+      sentTimeStr: '',
+      ackFoh: null,
+      ackStage: null
+    };
+    this._commitStateChange();
+  }
+
+  ackRegieMessage(station) {
+    if (!this._state) return;
+    this._ensureRegieStructure();
+    if (!this._state.regieMessage || !this._state.regieMessage.visible) return;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+    const st = String(station || '').toLowerCase();
+    if (st === 'foh' || st === 'frente') {
+      this._state.regieMessage.ackFoh = timeStr;
+    } else if (st === 'stage' || st === 'palco') {
+      this._state.regieMessage.ackStage = timeStr;
+    }
     this._commitStateChange();
   }
 

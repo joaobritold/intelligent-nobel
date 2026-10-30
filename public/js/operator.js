@@ -306,6 +306,20 @@ const $liveArtistBtn = document.getElementById('op-live-artist-btn');
 const $heroNotes = document.getElementById('op-hero-notes');
 const $heroNext = document.getElementById('op-hero-next');
 
+// Régies Intercom & Messages DOM Elements
+const $opRegieCallStatus = document.getElementById('op-regie-call-status');
+const $opCallStageBtn = document.getElementById('op-call-stage-btn');
+const $opCallFohBtn = document.getElementById('op-call-foh-btn');
+const $opCallCancelBtn = document.getElementById('op-call-cancel-btn');
+
+const $opRegieMsgInput = document.getElementById('op-regie-msg-input');
+const $opRegieMsgSend = document.getElementById('op-regie-msg-send');
+const $opRegieReceiptBox = document.getElementById('op-regie-receipt-box');
+const $opRegieActiveText = document.getElementById('op-regie-active-text');
+const $opReceiptFoh = document.getElementById('op-receipt-foh');
+const $opReceiptStage = document.getElementById('op-receipt-stage');
+const $opRegieMsgClear = document.getElementById('op-regie-msg-clear');
+
 // ─── Room & Links Setup ────────────────────────────────────────────
 
 $roomInput.value = roomId;
@@ -321,6 +335,8 @@ function updateNavLinks() {
   if ($navViewer) $navViewer.href = `viewer.html?room=${code}`;
   const $navLineup = document.getElementById('nav-lineup');
   if ($navLineup) $navLineup.href = `lineup.html?room=${code}`;
+  const $navRegies = document.getElementById('nav-regies');
+  if ($navRegies) $navRegies.href = `regies.html?room=${code}`;
   const $navMaster = document.getElementById('nav-master');
   if ($navMaster) $navMaster.href = `master.html?room=${code}`;
   renderOpStageBadge();
@@ -453,6 +469,75 @@ function getEventEndTime() {
   return StageTimerClient.computeEventEndTime(state);
 }
 
+function renderOpRegieSection() {
+  if (!state) return;
+  const rc = state.regieCall || {};
+
+  if ($opRegieCallStatus) {
+    if (rc.fohCallingStage && rc.stageCallingFoh) {
+      $opRegieCallStatus.textContent = '🚨 Ambas as Régies a Chamar!';
+      $opRegieCallStatus.style.color = '#ff7675';
+    } else if (rc.fohCallingStage) {
+      $opRegieCallStatus.textContent = '🚨 FOH a Chamar Palco!';
+      $opRegieCallStatus.style.color = '#ff7675';
+    } else if (rc.stageCallingFoh) {
+      $opRegieCallStatus.textContent = '🚨 Palco a Chamar FOH!';
+      $opRegieCallStatus.style.color = '#ff7675';
+    } else {
+      $opRegieCallStatus.textContent = '✅ Repouso';
+      $opRegieCallStatus.style.color = '#55efc4';
+    }
+  }
+
+  if ($opCallStageBtn) {
+    if (rc.fohCallingStage) {
+      $opCallStageBtn.style.background = '#d63031';
+      $opCallStageBtn.style.color = '#fff';
+      $opCallStageBtn.textContent = '🚨 Palco a Tocar!';
+    } else {
+      $opCallStageBtn.style.background = 'rgba(225, 112, 85, 0.2)';
+      $opCallStageBtn.style.color = '#ff7675';
+      $opCallStageBtn.textContent = '🚨 Chamar Palco';
+    }
+  }
+
+  if ($opCallFohBtn) {
+    if (rc.stageCallingFoh) {
+      $opCallFohBtn.style.background = '#d63031';
+      $opCallFohBtn.style.color = '#fff';
+      $opCallFohBtn.textContent = '🚨 FOH a Tocar!';
+    } else {
+      $opCallFohBtn.style.background = 'rgba(225, 112, 85, 0.2)';
+      $opCallFohBtn.style.color = '#ff7675';
+      $opCallFohBtn.textContent = '🚨 Chamar FOH';
+    }
+  }
+
+  const rm = state.regieMessage;
+  if ($opRegieReceiptBox) {
+    if (rm && rm.visible && rm.text && rm.text.trim()) {
+      $opRegieReceiptBox.style.display = 'block';
+      if ($opRegieActiveText) {
+        $opRegieActiveText.textContent = `"${rm.text.trim()}" ${rm.sentTimeStr ? `(${rm.sentTimeStr})` : ''}`;
+      }
+      if ($opReceiptFoh) {
+        const fohRead = Boolean(rm.ackFoh);
+        $opReceiptFoh.textContent = fohRead ? `🎚️ FOH: ✓ Lido (${rm.ackFoh})` : '🎚️ FOH: ⏳ Pendente';
+        $opReceiptFoh.style.background = fohRead ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255, 255, 255, 0.08)';
+        $opReceiptFoh.style.color = fohRead ? '#55efc4' : '#cbd5e1';
+      }
+      if ($opReceiptStage) {
+        const stageRead = Boolean(rm.ackStage);
+        $opReceiptStage.textContent = stageRead ? `🎛️ Palco: ✓ Lido (${rm.ackStage})` : '🎛️ Palco: ⏳ Pendente';
+        $opReceiptStage.style.background = stageRead ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255, 255, 255, 0.08)';
+        $opReceiptStage.style.color = stageRead ? '#55efc4' : '#cbd5e1';
+      }
+    } else {
+      $opRegieReceiptBox.style.display = 'none';
+    }
+  }
+}
+
 // ─── Render ────────────────────────────────────────────────────────
 
 let lastQueueSignature = '';
@@ -568,6 +653,9 @@ function render() {
   if ($msgInput && !$msgInput.value && state.message?.text && document.activeElement !== $msgInput) {
     $msgInput.value = state.message.text;
   }
+
+  // Update Régies Intercom & Technical Messages in Operator view
+  renderOpRegieSection();
 
   // Render queue only when structure changes to keep touch targets stable
   const sig = state.timers.map(t => `${t.id}:${t.name}:${t.startTime || ''}:${t.notes || ''}:${t.duration}:${t.mode}:${t.id === state.activeTimerId}:${t.state}`).join('|');
@@ -712,10 +800,10 @@ if ($msgToggle) {
 }
 
 // Quick Stage Message Presets: select & pre-fill without broadcasting
-document.querySelectorAll('.op-preset-chip').forEach(btn => {
+document.querySelectorAll('.op-preset-chip:not(.op-regie-chip)').forEach(btn => {
   btn.addEventListener('click', () => {
     const wasActive = btn.classList.contains('active');
-    document.querySelectorAll('.op-preset-chip').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.op-preset-chip:not(.op-regie-chip)').forEach(b => b.classList.remove('active'));
     if (wasActive) {
       if ($msgInput) $msgInput.dataset.level = 'info';
       return;
@@ -732,9 +820,66 @@ document.querySelectorAll('.op-preset-chip').forEach(btn => {
   });
 });
 
+// Quick Regie Technical Message Presets
+document.querySelectorAll('.op-regie-chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if ($opRegieMsgInput) {
+      $opRegieMsgInput.value = btn.dataset.msg;
+      $opRegieMsgInput.focus();
+    }
+    if (navigator.vibrate) { try { navigator.vibrate(25); } catch (_) {} }
+  });
+});
+
+// Régie Intercom & Technical Messages Action Listeners
+if ($opCallStageBtn) {
+  $opCallStageBtn.addEventListener('click', () => {
+    client.triggerRegieCall('stage', 'SM');
+  });
+}
+
+if ($opCallFohBtn) {
+  $opCallFohBtn.addEventListener('click', () => {
+    client.triggerRegieCall('foh', 'SM');
+  });
+}
+
+if ($opCallCancelBtn) {
+  $opCallCancelBtn.addEventListener('click', () => {
+    client.clearRegieCall('all');
+  });
+}
+
+if ($opRegieMsgSend) {
+  $opRegieMsgSend.addEventListener('click', () => {
+    const text = ($opRegieMsgInput?.value || '').trim();
+    if (text) {
+      client.sendRegieMessage(text);
+      if ($opRegieMsgInput) {
+        $opRegieMsgInput.value = '';
+        $opRegieMsgInput.blur();
+      }
+    }
+  });
+}
+
+if ($opRegieMsgInput) {
+  $opRegieMsgInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      $opRegieMsgSend?.click();
+    }
+  });
+}
+
+if ($opRegieMsgClear) {
+  $opRegieMsgClear.addEventListener('click', () => {
+    client.clearRegieMessage();
+  });
+}
+
 if ($msgInput) {
   $msgInput.addEventListener('input', () => {
-    document.querySelectorAll('.op-preset-chip').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.op-preset-chip:not(.op-regie-chip)').forEach(b => b.classList.remove('active'));
   });
 }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stagetimer-pfp-v72';
+const CACHE_NAME = 'stagetimer-pfp-v73';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const ASSETS = [
   './operator.html',
   './viewer.html',
   './lineup.html',
+  './regies.html',
   './master.html',
   './manifest.json',
   './icon.svg',
@@ -14,12 +15,14 @@ const ASSETS = [
   './css/operator.css',
   './css/viewer.css',
   './css/lineup.css',
+  './css/regies.css',
   './css/master.css',
   './js/local-sync.js',
   './js/controller.js',
   './js/operator.js',
   './js/viewer.js',
   './js/lineup.js',
+  './js/regies.js',
   './js/master.js',
   './js/auth.js',
   './js/schedule-importer.js',

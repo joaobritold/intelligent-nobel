@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <script>
+    (function() {
+      try {
+        var EPOCH_KEY = 'stagetimer_epoch_clean_v10';
+        if (localStorage.getItem(EPOCH_KEY) !== 'true') {
+          var mActive = localStorage.getItem('stagetimer_master_active');
+          var mV12 = localStorage.getItem('stagetimer_master_auth_v12');
+          var devUuid = localStorage.getItem('stagetimer_device_uuid');
+
+          var keys = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && k.indexOf('stagetimer_') === 0) {
+              keys.push(k);
+            }
+          }
+          for (var j = 0; j < keys.length; j++) {
+            localStorage.removeItem(keys[j]);
+          }
+          try { sessionStorage.clear(); } catch (_) {}
+
+          if (mActive) localStorage.setItem('stagetimer_master_active', mActive);
+          if (mV12) localStorage.setItem('stagetimer_master_auth_v12', mV12);
+          if (devUuid) localStorage.setItem('stagetimer_device_uuid', devUuid);
+
+          localStorage.setItem(EPOCH_KEY, 'true');
+
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              for (var n of names) caches.delete(n);
+            }).catch(function() {});
+          }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              for (var r of regs) r.unregister();
+            }).catch(function() {});
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StageTimer Régies">
+  <meta name="theme-color" content="#080811">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>StageTimer — Modo Régies (FOH & Palco)</title>
+  <link rel="stylesheet" href="css/common.css?v=73">
+  <link rel="stylesheet" href="css/regies.css?v=73">
+</head>
+<body>
+  <div id="lineup-screen" class="lineup-screen">
+    <!-- Top Header -->
+    <header class="lineup-header">
+      <div class="lineup-title-box" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="font-size: 1.7rem;">📟</span>
+        <div>
+          <div class="lineup-title">
+            Modo Régies
+            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 6px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v73</span>
+          </div>
+          <div class="lineup-sub" style="font-size: 0.72rem; color: #a29bfe; font-weight: 600;">Comunicação FOH ↔ Palco & Intercom</div>
+        </div>
+        <!-- Event / Stage Badge & Pills -->
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.5); padding: 4px 10px; border-radius: 8px;">
+          <span style="font-size: 0.9rem;">🎪</span>
+          <span id="lineup-stage-badge" style="color: #55efc4; font-size: 0.85rem; font-weight: 800; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;" title="Tocar para trocar de palco">Palco</span>
+          <select id="lineup-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco"></select>
+        </div>
+        <div id="lineup-stage-pills" class="stage-pills-bar" style="display: none;"></div>
+        <span id="lineup-room-badge" class="lineup-room-badge" style="display: none;">PALCO1</span>
+      </div>
+
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <div style="display: flex; flex-direction: column; align-items: flex-end; background: rgba(0, 184, 148, 0.14); border: 1px solid rgba(0, 184, 148, 0.4); padding: 4px 10px; border-radius: 8px;">
+          <span style="font-size: 0.65rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase;">Fim do Evento</span>
+          <span id="lineup-event-end" style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 800; color: #55efc4;">--:--</span>
+        </div>
+        <div class="lineup-clock-box">
+          <div class="lineup-clock-label">HORA LOCAL</div>
+          <div id="lineup-local-clock" class="lineup-clock-time">--:--:--</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Switcher -->
+    <nav class="lineup-nav">
+      <a id="rg-nav-hub" href="index.html" class="lineup-nav-pill">🏠 Início</a>
+      <a id="rg-nav-viewer" href="viewer.html" class="lineup-nav-pill">📺 Modo Palco</a>
+      <a id="rg-nav-lineup" href="lineup.html" class="lineup-nav-pill">📋 Modo Lista</a>
+      <a id="rg-nav-regies" href="regies.html" class="lineup-nav-pill active">📟 Modo Régies</a>
+      <a id="rg-nav-master" href="master.html" class="lineup-nav-pill" style="display: none; color: #fdcb6e; border-color: rgba(253, 203, 110, 0.4);">👑 Master</a>
+    </nav>
+
+    <!-- Régie Hero Control Panel -->
+    <section class="regie-control-panel">
+      <div class="regie-control-row">
+        <!-- Station Selector -->
+        <div class="regie-station-box">
+          <span class="regie-station-label">Este Dispositivo:</span>
+          <div class="regie-station-toggle">
+            <button id="regie-btn-foh" class="regie-station-btn active" type="button" title="Definir este ecrã como Régie de Frente">
+              <span>🎚️</span> Régie Frente (FOH)
+            </button>
+            <button id="regie-btn-stage" class="regie-station-btn" type="button" title="Definir este ecrã como Régie de Palco">
+              <span>🎛️</span> Régie Palco
+            </button>
+          </div>
+        </div>
+
+        <!-- Call Action Box -->
+        <div class="regie-call-action-box">
+          <button id="regie-audio-btn" class="regie-audio-toggle enabled" type="button" title="Ativar ou desativar som de alerta">
+            <span id="regie-audio-icon">🔔</span> Som Ativo
+          </button>
+          <button id="regie-call-btn" class="regie-call-btn" type="button">
+            <span>🚨</span> <span id="regie-call-btn-text">CALL PALCO (Intercom)</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Massive Flashing Incoming Call Alert -->
+    <section id="regie-incoming-alert" class="regie-incoming-alert">
+      <div class="regie-incoming-text-box">
+        <div class="regie-incoming-icon">🚨</div>
+        <div>
+          <div id="regie-incoming-title" class="regie-incoming-title">CHAMADA INTERCOM!</div>
+          <div id="regie-incoming-sub" class="regie-incoming-sub">A outra régie está a chamar. Por favor verifique o intercomunicador.</div>
+        </div>
+      </div>
+      <button id="regie-incoming-ack-btn" class="regie-ack-btn" type="button">
+        ✓ CIENTE / ATENDIDO
+      </button>
+    </section>
+
+    <!-- Stage Manager Technical Message Banner -->
+    <section id="regie-msg-banner" class="regie-msg-banner">
+      <div class="regie-msg-content">
+        <div class="regie-msg-header">
+          <span>📢 MENSAGEM DO STAGE MANAGER</span>
+          <span id="regie-msg-time" style="opacity: 0.8; font-family: var(--font-mono);"></span>
+        </div>
+        <div id="regie-msg-text" class="regie-msg-text">--</div>
+        <div id="regie-msg-receipts" class="regie-msg-receipts">
+          <span id="regie-receipt-foh" class="regie-msg-receipt-pill">🎚️ FOH: Aguarda</span>
+          <span id="regie-receipt-stage" class="regie-msg-receipt-pill">🎛️ Palco: Aguarda</span>
+        </div>
+      </div>
+      <button id="regie-msg-ack-btn" class="regie-msg-ack-btn" type="button">
+        ✓ CONFIRMAR LEITURA
+      </button>
+    </section>
+
+    <!-- Main Content: Active Stage + Full Artist List -->
+    <div class="lineup-body">
+      <!-- Left / Top: Currently on Stage -->
+      <aside id="lineup-now-card" class="lineup-now-card">
+        <div id="lineup-now-badge" class="lineup-now-badge">● EM PALCO AGORA</div>
+        <div id="lineup-now-name" class="lineup-now-name">--</div>
+        <div id="lineup-now-slot" class="lineup-now-slot"></div>
+        <div id="lineup-now-timer" class="lineup-now-timer">--:--</div>
+        <div id="lineup-now-notes" class="lineup-now-notes" style="display: none;"></div>
+      </aside>
+
+      <!-- Right / Bottom: Full Schedule List -->
+      <main class="lineup-main-scroll">
+        <div id="lineup-list" class="lineup-list-container">
+          <!-- Injected by JS -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Cloud MQTT over WSS -->
+  <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
+  <script src="js/pwa.js?v=73"></script>
+  <script src="js/local-sync.js?v=73"></script>
+  <script src="js/regies.js?v=73"></script>
+</body>
+</html>

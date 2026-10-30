@@ -220,6 +220,7 @@ function updateLineupNavLinks(code) {
     { id: 'ln-nav-hub', page: 'index.html' },
     { id: 'ln-nav-viewer', page: 'viewer.html' },
     { id: 'ln-nav-lineup', page: 'lineup.html' },
+    { id: 'ln-nav-regies', page: 'regies.html' },
     { id: 'ln-nav-master', page: 'master.html' }
   ];
   keys.forEach(k => {

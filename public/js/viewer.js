@@ -220,10 +220,12 @@ function updateViewerNavLinks(code) {
   const $hub = document.getElementById('viewer-nav-hub');
   const $op = document.getElementById('viewer-nav-operator');
   const $ln = document.getElementById('viewer-lineup-btn');
+  const $rg = document.getElementById('viewer-regies-btn');
   const $master = document.getElementById('viewer-nav-master');
   if ($hub) $hub.href = 'index.html';
   if ($op) $op.href = `operator.html${q}`;
   if ($ln) $ln.href = `lineup.html${q}`;
+  if ($rg) $rg.href = `regies.html${q}`;
   if ($master) {
     $master.href = `master.html${q}`;
     const isMaster = typeof window.isStageTimerMaster === 'function' ? window.isStageTimerMaster() : (

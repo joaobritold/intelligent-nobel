@@ -1,0 +1,358 @@
+/* ─── Mode Régies (FOH & Palco) ─────────────────────────────────── */
+
+/* Import base lineup styles */
+@import url('lineup.css');
+
+/* Régie Hero Control Panel */
+.regie-control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(18, 18, 34, 0.85);
+  border: 1.5px solid rgba(108, 92, 231, 0.4);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.regie-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Station Switcher (FOH vs Palco) */
+.regie-station-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.regie-station-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+}
+
+.regie-station-toggle {
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 4px;
+}
+
+.regie-station-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.regie-station-btn.active {
+  background: #6c5ce7;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(108, 92, 231, 0.45);
+}
+
+/* Call Trigger Button */
+.regie-call-action-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.regie-call-btn {
+  background: linear-gradient(135deg, #e17055, #d63031);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(214, 48, 49, 0.4);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.regie-call-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px rgba(214, 48, 49, 0.55);
+}
+
+.regie-call-btn:active {
+  transform: translateY(1px);
+}
+
+/* When calling is active (I am ringing the other station) */
+.regie-call-btn.is-calling {
+  background: linear-gradient(135deg, #fdcb6e, #e17055);
+  color: #111;
+  animation: regiePulseRinging 1.2s infinite ease-in-out;
+}
+
+@keyframes regiePulseRinging {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(253, 203, 110, 0.6);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 24px rgba(225, 112, 85, 0.9);
+  }
+}
+
+/* Audio Toggle Chip */
+.regie-audio-toggle {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.regie-audio-toggle.enabled {
+  background: rgba(0, 184, 148, 0.16);
+  border-color: #00b894;
+  color: #55efc4;
+}
+
+/* ─── Massive Flashing Incoming Call Banner ────────────────────────── */
+.regie-incoming-alert {
+  display: none;
+  background: linear-gradient(135deg, #ff0055, #d63031);
+  border: 2px solid #ff7675;
+  border-radius: 16px;
+  padding: 18px 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 0 40px rgba(255, 0, 85, 0.8);
+  animation: regieStrobeAlert 0.8s infinite alternate;
+  z-index: 100;
+}
+
+.regie-incoming-alert.visible {
+  display: flex;
+}
+
+@keyframes regieStrobeAlert {
+  0% {
+    background: #d63031;
+    box-shadow: 0 0 25px rgba(214, 48, 49, 0.7);
+    border-color: #ff7675;
+  }
+  100% {
+    background: #ff0055;
+    box-shadow: 0 0 55px rgba(255, 0, 85, 1);
+    border-color: #fff;
+  }
+}
+
+.regie-incoming-text-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #fff;
+}
+
+.regie-incoming-icon {
+  font-size: 2.2rem;
+  animation: regieShake 0.4s infinite ease-in-out;
+}
+
+@keyframes regieShake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  75% { transform: rotate(10deg); }
+}
+
+.regie-incoming-title {
+  font-size: clamp(1.1rem, 2.4vw, 1.6rem);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.regie-incoming-sub {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
+.regie-ack-btn {
+  background: #fff;
+  color: #111;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease;
+  white-space: nowrap;
+}
+
+.regie-ack-btn:active {
+  transform: scale(0.96);
+}
+
+/* ─── Stage Manager Technical Message Banner ───────────────────────── */
+.regie-msg-banner {
+  display: none;
+  background: rgba(108, 92, 231, 0.16);
+  border: 1.5px solid rgba(108, 92, 231, 0.6);
+  border-left: 6px solid #6c5ce7;
+  border-radius: 14px;
+  padding: 16px 20px;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+  backdrop-filter: blur(8px);
+}
+
+.regie-msg-banner.visible {
+  display: flex;
+}
+
+.regie-msg-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.regie-msg-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #a29bfe;
+  letter-spacing: 0.06em;
+}
+
+.regie-msg-text {
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+}
+
+.regie-msg-receipts {
+  display: flex;
+  gap: 12px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.regie-msg-receipt-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.regie-msg-receipt-pill.read {
+  background: rgba(0, 184, 148, 0.18);
+  color: #55efc4;
+}
+
+.regie-msg-ack-btn {
+  background: #00b894;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 184, 148, 0.4);
+  transition: all 0.2s ease;
+}
+
+.regie-msg-ack-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.regie-msg-ack-btn.acknowledged {
+  background: rgba(0, 184, 148, 0.2);
+  color: #55efc4;
+  border: 1px solid #00b894;
+  cursor: default;
+  box-shadow: none;
+}
+
+@media (max-width: 768px) {
+  .regie-control-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .regie-station-box {
+    justify-content: space-between;
+  }
+  .regie-call-action-box {
+    justify-content: stretch;
+  }
+  .regie-call-btn {
+    flex: 1;
+    justify-content: center;
+  }
+  .regie-incoming-alert {
+    flex-direction: column;
+    text-align: center;
+  }
+  .regie-incoming-text-box {
+    flex-direction: column;
+  }
+  .regie-ack-btn {
+    width: 100%;
+  }
+  .regie-msg-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .regie-msg-ack-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

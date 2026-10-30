@@ -82,12 +82,14 @@ function updateTopNavLinks(code) {
   const topOperator = document.getElementById('top-nav-operator');
   const topViewer = document.getElementById('top-nav-viewer');
   const topLineup = document.getElementById('top-nav-lineup');
+  const topRegies = document.getElementById('top-nav-regies');
   const topMaster = document.getElementById('top-nav-master');
   if (topHub) topHub.href = 'index.html';
   if (topController) topController.href = `controller.html${q}`;
   if (topOperator) topOperator.href = `operator.html${q}`;
   if (topViewer) topViewer.href = `viewer.html${q}`;
   if (topLineup) topLineup.href = `lineup.html${q}`;
+  if (topRegies) topRegies.href = `regies.html${q}`;
   if (topMaster) topMaster.href = `master.html${q}`;
 }
 updateTopNavLinks(roomId);

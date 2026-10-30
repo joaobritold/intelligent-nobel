@@ -56,7 +56,7 @@
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="./index.html">
   <title>StageTimer PFP — Timer de Palco & Lineup</title>
-  <link rel="stylesheet" href="css/common.css?v=72">
+  <link rel="stylesheet" href="css/common.css?v=73">
   <style>
     body {
       display: flex;
@@ -364,7 +364,7 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 10px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v72</span>
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v73</span>
       </footer>
     </div>
 
@@ -554,6 +554,16 @@
           <span class="mode-badge">Backstage / Camarim</span>
         </a>
 
+        <!-- Modo Régies (FOH & Palco) -->
+        <a id="card-regies" href="regies.html" class="mode-card" style="border: 1px solid rgba(108, 92, 231, 0.45); background: linear-gradient(135deg, rgba(108, 92, 231, 0.12) 0%, rgba(225, 112, 85, 0.1) 100%);">
+          <div class="mode-icon">📟</div>
+          <div class="mode-info">
+            <div class="mode-name" style="color: #c4b5fd;">Modo Régies (FOH & Palco)</div>
+            <div class="mode-desc">Comunicação direta FOH ↔ Palco: luz de Call para intercom e avisos do Stage Manager com confirmação de leitura.</div>
+          </div>
+          <span class="mode-badge" style="background: rgba(108, 92, 231, 0.25); color: #c4b5fd; border-color: #6c5ce7;">Técnico / FOH & Palco</span>
+        </a>
+
         <!-- Modo Master / Super Régie -->
         <a id="card-master" href="master.html" class="mode-card" style="border: 1px solid rgba(253, 203, 110, 0.45); background: linear-gradient(135deg, rgba(253, 203, 110, 0.08) 0%, rgba(108, 92, 231, 0.12) 100%);">
           <div class="mode-icon">👑</div>
@@ -578,14 +588,14 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v72</span>
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v73</span>
       </footer>
     </div>
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=72"></script>
-  <script src="js/local-sync.js?v=72"></script>
+  <script src="js/pwa.js?v=73"></script>
+  <script src="js/local-sync.js?v=73"></script>
   <script>
     const hubClient = new StageTimerClient({
       role: 'viewer',
@@ -653,6 +663,7 @@
     const $operator = document.getElementById('card-operator');
     const $viewer = document.getElementById('card-viewer');
     const $lineup = document.getElementById('card-lineup');
+    const $regies = document.getElementById('card-regies');
     const $toggleQr = document.getElementById('toggle-qr-btn');
     const $qrContainer = document.getElementById('qr-container');
     const $qrImg = document.getElementById('qr-img');
@@ -880,6 +891,7 @@
       if ($operator) $operator.href = `operator.html${q}`;
       if ($viewer) $viewer.href = `viewer.html${q}`;
       if ($lineup) $lineup.href = `lineup.html${q}`;
+      if ($regies) $regies.href = `regies.html${q}`;
       if ($qrImg) {
         const baseUrl = location.href.split('?')[0].replace(/\/index\.html$/i, '').replace(/\/+$/, '');
         const fullUrl = `${baseUrl}/viewer.html${q}`;
