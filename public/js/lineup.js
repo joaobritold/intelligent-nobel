@@ -288,8 +288,20 @@ function getTimerDisplayValue(timer) {
   return formatTime(elapsed);
 }
 
-// Compute automatic estimated times if startTime isn't explicitly set
+// Compute automatic cascaded estimated times
 function computeScheduleSlots(timers, activeIdx) {
+  if (!state) return [];
+  if (typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.computeCascadeSchedule === 'function') {
+    const cascade = StageTimerClient.computeCascadeSchedule(state);
+    if (cascade && Array.isArray(cascade.slots) && cascade.slots.length > 0) {
+      return timers.map(t => {
+        const slot = cascade.slots.find(s => s.id === t.id);
+        if (slot) return slot.slotRange;
+        return t.startTime ? t.startTime.trim() : '--:--';
+      });
+    }
+  }
+
   const rollingMs = StageTimerClient.globalTrueTime();
   return timers.map((t, i) => {
     if (t.startTime && t.startTime.trim()) {
@@ -405,7 +417,9 @@ function render() {
     const isLong = displayVal.length > 5;
     $nowBadge.textContent = activeTimer.state === 'running' ? '● EM PALCO AGORA' : '● PREPARADO EM PALCO';
     $nowName.textContent = activeTimer.name;
-    $nowSlot.textContent = activeTimer.startTime ? `Horário: ${activeTimer.startTime}` : `Duração: ${formatTime(activeTimer.duration)}`;
+    const activeCascade = typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.computeCascadeSchedule === 'function' ? StageTimerClient.computeCascadeSchedule(state) : null;
+    const activeSlot = activeCascade?.slots?.find(s => s.id === activeTimer.id);
+    $nowSlot.textContent = activeSlot ? `Horário Previsto: ${activeSlot.slotRange}` : (activeTimer.startTime ? `Horário: ${activeTimer.startTime}` : `Duração: ${formatTime(activeTimer.duration)}`);
     $nowTimer.textContent = displayVal;
     $nowTimer.className = `lineup-now-timer ${color}${isLong ? ' is-long' : ''}`;
 
