@@ -2384,6 +2384,13 @@ class UniversalSyncClient {
   // ─── Actions (Work from Controller, Operator & Master) ─────────────
 
   createTimer(data = {}) {
+    if (!this._state) {
+      this._state = this._loadState() || this._createDefaultRoom(this.cleanRoom);
+    }
+    if (!this._state) return null;
+    if (!Array.isArray(this._state.timers)) {
+      this._state.timers = [];
+    }
     if (!this._state.theme) {
       this._state.theme = { viewerBg: '#000000', controllerBg: '#0f0f1a' };
     }
@@ -2946,8 +2953,11 @@ class UniversalSyncClient {
     this._commitStateChange();
   }
 
-  addStageNote(text) {
-    if (!this._state) return;
+  addStageNote(text, author = 'DC') {
+    if (!this._state) {
+      this._state = this._loadState() || this._createDefaultRoom(this.cleanRoom);
+    }
+    if (!this._state) return null;
     this._ensureTheatreStructure();
     const th = this._state.theatre;
     if (!Array.isArray(th.stageNotes)) th.stageNotes = [];
@@ -2955,7 +2965,8 @@ class UniversalSyncClient {
       id: 'sn_' + Date.now(),
       text: String(text).trim(),
       timeStr: new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
-      author: 'Jess'
+      createdAt: Date.now(),
+      author: author || 'DC'
     };
     th.stageNotes.unshift(note);
     this._commitStateChange();
@@ -2963,12 +2974,42 @@ class UniversalSyncClient {
   }
 
   deleteStageNote(noteId) {
+    if (!this._state) {
+      this._state = this._loadState() || this._createDefaultRoom(this.cleanRoom);
+    }
     if (!this._state) return;
     this._ensureTheatreStructure();
     const th = this._state.theatre;
     if (!Array.isArray(th.stageNotes)) return;
     th.stageNotes = th.stageNotes.filter(n => n.id !== noteId);
     this._commitStateChange();
+  }
+
+  createCue(data = {}) {
+    if (!this._state) {
+      this._state = this._loadState() || this._createDefaultRoom(this.cleanRoom);
+    }
+    if (!this._state) return null;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    if (!Array.isArray(th.cues)) th.cues = [];
+    const nextNum = th.cues.length + 1;
+    const cue = {
+      id: data.id || ('cue_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
+      num: data.num || `Q${nextNum}`,
+      name: data.name || `Deixa Q${nextNum}`,
+      targetText: data.targetText || '',
+      departments: Array.isArray(data.departments) && data.departments.length > 0 ? data.departments : ['Luz'],
+      notes: data.notes || '',
+      status: 'pending',
+      standbyAt: 0,
+      firedAt: 0,
+      firedTimecode: '',
+      feedbacks: []
+    };
+    th.cues.push(cue);
+    this._commitStateChange();
+    return cue;
   }
 
   setTheatrePhase(phase) {
@@ -3059,24 +3100,31 @@ class UniversalSyncClient {
   }
 
   addChecklistItem(dept, label, isOneOff = false) {
-    if (!this._state) return;
+    if (!this._state) {
+      this._state = this._loadState() || this._createDefaultRoom(this.cleanRoom);
+    }
+    if (!this._state) return null;
     this._ensureTheatreStructure();
     const resolvedDept = this._resolveDeptKey(dept);
     const th = this._state.theatre;
     if (!th.checklists) th.checklists = {};
     if (!Array.isArray(th.checklists[resolvedDept])) th.checklists[resolvedDept] = [];
-    const cleanLabel = (label || '').trim();
-    if (!cleanLabel) return;
-    th.checklists[resolvedDept].push({
+    const cleanLabel = (label || '').trim() || `Verificação de ${resolvedDept}`;
+    const item = {
       id: 'chk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
       label: cleanLabel,
       done: false,
       isOneOff: Boolean(isOneOff)
-    });
+    };
+    th.checklists[resolvedDept].push(item);
     this._commitStateChange();
+    return item;
   }
 
   removeChecklistItem(dept, itemId) {
+    if (!this._state) {
+      this._state = this._loadState() || this._createDefaultRoom(this.cleanRoom);
+    }
     if (!this._state) return;
     this._ensureTheatreStructure();
     const resolvedDept = this._resolveDeptKey(dept);

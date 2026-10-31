@@ -684,8 +684,8 @@ function renderCues() {
 }
 
 // ─── Stage Phase Render (Artistas, Alinhamento & Notas Rápidas) ───────────
-let lastArtistsSig = '';
-let lastNotesSig = '';
+let lastArtistsSig = '__INIT__';
+let lastNotesSig = '__INIT__';
 
 function renderStagePhase() {
   const timers = state?.timers || [];
@@ -754,7 +754,7 @@ function renderStagePhase() {
   }
 
   // 2. Render Stage Notes
-  const notesSig = stageNotes.map(n => `${n.id}:${n.text}:${n.createdAt}`).join('|');
+  const notesSig = stageNotes.map(n => `${n.id}:${n.text}:${n.timeStr || n.createdAt}`).join('|');
   if (notesSig !== lastNotesSig && $stageNotesList) {
     lastNotesSig = notesSig;
     if (stageNotes.length === 0) {
@@ -766,7 +766,7 @@ function renderStagePhase() {
       `;
     } else {
       $stageNotesList.innerHTML = stageNotes.map(n => {
-        const timeStr = n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const timeStr = n.timeStr || (n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '');
         return `
           <div class="dc-note-item" data-note-id="${escapeHtml(n.id)}">
             <div style="flex: 1;">
@@ -1053,16 +1053,22 @@ document.addEventListener('change', (e) => {
 });
 
 // Add Task Button
+function handleAddChecklistTask() {
+  const dept = $taskDeptSelect?.value || 'Luz';
+  const rawLabel = ($taskLabelInput?.value || '').trim();
+  const label = rawLabel || `Verificação de ${dept}`;
+  const isOneOff = Boolean($taskOneOffCheck?.checked);
+  client.addChecklistItem(dept, label, isOneOff);
+  if ($taskLabelInput) $taskLabelInput.value = '';
+  if ($taskOneOffCheck) $taskOneOffCheck.checked = false;
+}
+
 if ($taskAddBtn) {
-  $taskAddBtn.addEventListener('click', () => {
-    const dept = $taskDeptSelect?.value || 'Luz';
-    const label = ($taskLabelInput?.value || '').trim();
-    const isOneOff = Boolean($taskOneOffCheck?.checked);
-    if (label) {
-      client.addChecklistItem(dept, label, isOneOff);
-      if ($taskLabelInput) $taskLabelInput.value = '';
-      if ($taskOneOffCheck) $taskOneOffCheck.checked = false;
-    }
+  $taskAddBtn.addEventListener('click', handleAddChecklistTask);
+}
+if ($taskLabelInput) {
+  $taskLabelInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleAddChecklistTask();
   });
 }
 
@@ -1167,7 +1173,10 @@ if ($btnSkipCue) {
 // Notas Rápidas de Palco
 function handleAddStageNote() {
   const text = ($stageNoteInput?.value || '').trim();
-  if (!text) return;
+  if (!text) {
+    if ($stageNoteInput) $stageNoteInput.focus();
+    return;
+  }
   client.addStageNote(text, 'DC');
   if ($stageNoteInput) $stageNoteInput.value = '';
 }
@@ -1183,9 +1192,10 @@ if ($stageNoteInput) {
 
 // Adicionar Artista / Ato de Palco diretamente no Modo DC
 function handleAddStageArtist() {
-  const name = ($stageArtistNameInput?.value || '').trim();
-  if (!name) return;
-  const durMins = parseFloat($stageArtistDurInput?.value || '15') || 15;
+  const nextIdx = (state?.timers?.length || 0) + 1;
+  const rawName = ($stageArtistNameInput?.value || '').trim();
+  const durMins = parseFloat($stageArtistDurInput?.value || '20') || 20;
+  const name = rawName || `Artista / Ato #${nextIdx}`;
   client.createTimer({
     name: name,
     mode: 'countdown',
@@ -1235,16 +1245,7 @@ if ($btnToggleTelemetry) {
 
 // Stage Prep Card Buttons
 if ($btnPrepAddCue) {
-  $btnPrepAddCue.addEventListener('click', () => {
-    if ($modalNewCue) {
-      $modalNewCue.style.display = 'flex';
-      if ($newCueNum) {
-        const nextNum = (state?.theatre?.cues || []).length + 1;
-        $newCueNum.value = `Q${nextNum}`;
-      }
-      if ($newCueName) $newCueName.focus();
-    }
-  });
+  $btnPrepAddCue.addEventListener('click', openNewCueModal);
 }
 
 if ($btnPrepImportCues && $modalImportCues) {
@@ -1540,52 +1541,63 @@ if ($cuesImportConfirm) {
 }
 
 // Modal New Cue
-if ($btnAddCue && $modalNewCue) {
-  $btnAddCue.addEventListener('click', () => {
-    $modalNewCue.style.display = 'flex';
-    const nextNum = (state?.theatre?.cues?.length || 0) + 1;
-    if ($newCueNum) $newCueNum.value = `Q${nextNum}`;
-    if ($newCueName) $newCueName.value = '';
-    if ($newCueTarget) $newCueTarget.value = '';
-    if ($newCueNotes) $newCueNotes.value = '';
+function openNewCueModal() {
+  if (!$modalNewCue) return;
+  $modalNewCue.style.display = 'flex';
+  const cues = state?.theatre?.cues || [];
+  const nextNum = cues.length + 1;
+  if ($newCueNum) $newCueNum.value = `Q${nextNum}`;
+  if ($newCueName) {
+    $newCueName.value = '';
+    $newCueName.focus();
+  }
+  if ($newCueTarget) $newCueTarget.value = '';
+  if ($newCueNotes) $newCueNotes.value = '';
+}
+
+function handleCreateNewCue() {
+  const cues = Array.isArray(state?.theatre?.cues) ? state.theatre.cues : [];
+  const nextNum = cues.length + 1;
+  const num = ($newCueNum?.value || '').trim() || `Q${nextNum}`;
+  const rawName = ($newCueName?.value || '').trim();
+  const name = rawName || `Deixa ${num}`;
+  const target = ($newCueTarget?.value || '').trim();
+  const notes = ($newCueNotes?.value || '').trim();
+
+  const depts = [];
+  document.querySelectorAll('input[name="dc-dept"]:checked').forEach(chk => {
+    depts.push(chk.value);
   });
+
+  client.createCue({
+    num: num,
+    name: name,
+    targetText: target,
+    departments: depts.length > 0 ? depts : ['Luz'],
+    notes: notes,
+    status: 'pending'
+  });
+
+  if ($modalNewCue) $modalNewCue.style.display = 'none';
+}
+
+if ($btnAddCue) {
+  $btnAddCue.addEventListener('click', openNewCueModal);
 }
 
 if ($newCueConfirm) {
-  $newCueConfirm.addEventListener('click', () => {
-    const num = ($newCueNum?.value || '').trim();
-    const name = ($newCueName?.value || '').trim();
-    const target = ($newCueTarget?.value || '').trim();
-    const notes = ($newCueNotes?.value || '').trim();
+  $newCueConfirm.addEventListener('click', handleCreateNewCue);
+}
 
-    const depts = [];
-    document.querySelectorAll('input[name="dc-dept"]:checked').forEach(chk => {
-      depts.push(chk.value);
-    });
+if ($newCueName) {
+  $newCueName.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleCreateNewCue();
+  });
+}
 
-    if (!num || !name) {
-      alert('Por favor introduza o número e o nome da deixa.');
-      return;
-    }
-
-    const th = state?.theatre;
-    const cues = Array.isArray(th?.cues) ? [...th.cues] : [];
-    cues.push({
-      id: 'cue_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-      num: num,
-      name: name,
-      targetText: target,
-      departments: depts.length > 0 ? depts : ['Luz'],
-      notes: notes,
-      status: 'pending',
-      standbyAt: 0,
-      firedAt: 0,
-      firedTimecode: '',
-      feedbacks: []
-    });
-
-    client.updateTheatreCues(cues);
-    $modalNewCue.style.display = 'none';
+if ($newCueTarget) {
+  $newCueTarget.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleCreateNewCue();
   });
 }
 
@@ -2001,10 +2013,17 @@ function moveArtist(artistId, direction) {
 // ─── Stage Artist Header Buttons ─────────────────────────────────────
 if ($btnStageAddArtist) {
   $btnStageAddArtist.addEventListener('click', () => {
-    if ($stageArtistNameInput) {
-      $stageArtistNameInput.focus();
-      $stageArtistNameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    const nextIdx = (state?.timers?.length || 0) + 1;
+    const inputVal = ($stageArtistNameInput?.value || '').trim();
+    const durVal = parseFloat($stageArtistDurInput?.value || '20') || 20;
+    const nameToUse = inputVal || `Artista / Ato #${nextIdx}`;
+    client.createTimer({
+      name: nameToUse,
+      mode: 'countdown',
+      duration: Math.round(durVal * 60 * 1000)
+    });
+    if ($stageArtistNameInput) $stageArtistNameInput.value = '';
+    if ($stageArtistDurInput) $stageArtistDurInput.value = '';
   });
 }
 
