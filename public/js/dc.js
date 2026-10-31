@@ -899,12 +899,18 @@ function renderTelemetry() {
 function render() {
   if (!state) return;
 
+  if (!state.theatre || typeof state.theatre !== 'object') {
+    if (client && typeof client._createDefaultTheatreState === 'function') {
+      state.theatre = client._createDefaultTheatreState();
+    } else {
+      state.theatre = { showState: 'pre', phase: 'prep', cues: [], script: [], checklists: {}, stageNotes: [] };
+    }
+  }
   const th = state.theatre;
-  if (!th) return;
 
   // Show status UI
   if ($showStatusBadge && $showStatusText) {
-    $showStatusBadge.className = `dc-show-status-pill ${th.showState}`;
+    $showStatusBadge.className = `dc-show-status-pill ${th.showState || 'pre'}`;
     if (th.showState === 'running') {
       $showStatusText.textContent = 'ESPETÁCULO EM CURSO';
       $btnStartShow.style.display = 'none';
@@ -941,12 +947,12 @@ function render() {
     }
   }
 
-  renderScript();
-  renderCues();
-  renderChecklists();
-  renderTelemetry();
-  renderSavedReports();
-  renderPhase(th);
+  try { renderScript(); } catch (e) { console.error('Error in renderScript:', e); }
+  try { renderCues(); } catch (e) { console.error('Error in renderCues:', e); }
+  try { renderChecklists(); } catch (e) { console.error('Error in renderChecklists:', e); }
+  try { renderTelemetry(); } catch (e) { console.error('Error in renderTelemetry:', e); }
+  try { renderSavedReports(); } catch (e) { console.error('Error in renderSavedReports:', e); }
+  try { renderPhase(th); } catch (e) { console.error('Error in renderPhase:', e); }
 }
 
 // ─── Click Delegation for Cues & Tasks ──────────────────────────────
@@ -1177,8 +1183,15 @@ function handleAddStageNote() {
     if ($stageNoteInput) $stageNoteInput.focus();
     return;
   }
-  client.addStageNote(text, 'DC');
+  const note = client.addStageNote(text, 'DC');
   if ($stageNoteInput) $stageNoteInput.value = '';
+  if (state?.theatre) {
+    if (!Array.isArray(state.theatre.stageNotes)) state.theatre.stageNotes = [];
+    if (note && !state.theatre.stageNotes.some(n => n.id === note.id)) {
+      state.theatre.stageNotes.unshift(note);
+    }
+  }
+  renderStagePhase();
 }
 
 if ($stageNoteAddBtn) {
@@ -1196,13 +1209,22 @@ function handleAddStageArtist() {
   const rawName = ($stageArtistNameInput?.value || '').trim();
   const durMins = parseFloat($stageArtistDurInput?.value || '20') || 20;
   const name = rawName || `Artista / Ato #${nextIdx}`;
-  client.createTimer({
+  const created = client.createTimer({
     name: name,
     mode: 'countdown',
     duration: Math.round(durMins * 60 * 1000)
   });
   if ($stageArtistNameInput) $stageArtistNameInput.value = '';
   if ($stageArtistDurInput) $stageArtistDurInput.value = '';
+
+  if (state && created) {
+    if (!Array.isArray(state.timers)) state.timers = [];
+    if (!state.timers.some(t => t.id === created.id)) {
+      state.timers.push(created);
+    }
+    if (!state.activeTimerId) state.activeTimerId = created.id;
+  }
+  renderStagePhase();
 }
 
 if ($stageArtistAddBtn) {
@@ -2017,13 +2039,22 @@ if ($btnStageAddArtist) {
     const inputVal = ($stageArtistNameInput?.value || '').trim();
     const durVal = parseFloat($stageArtistDurInput?.value || '20') || 20;
     const nameToUse = inputVal || `Artista / Ato #${nextIdx}`;
-    client.createTimer({
+    const created = client.createTimer({
       name: nameToUse,
       mode: 'countdown',
       duration: Math.round(durVal * 60 * 1000)
     });
     if ($stageArtistNameInput) $stageArtistNameInput.value = '';
     if ($stageArtistDurInput) $stageArtistDurInput.value = '';
+
+    if (state && created) {
+      if (!Array.isArray(state.timers)) state.timers = [];
+      if (!state.timers.some(t => t.id === created.id)) {
+        state.timers.push(created);
+      }
+      if (!state.activeTimerId) state.activeTimerId = created.id;
+    }
+    renderStagePhase();
   });
 }
 
@@ -2267,7 +2298,15 @@ if ($stageContainer && $stageSelect) {
 
 // ─── Client Event Handlers ──────────────────────────────────────────
 client.on('room-state', (newState) => {
+  if (!newState) return;
   state = newState;
+  if (!state.theatre || typeof state.theatre !== 'object') {
+    if (client && typeof client._createDefaultTheatreState === 'function') {
+      state.theatre = client._createDefaultTheatreState();
+    } else {
+      state.theatre = { showState: 'pre', phase: 'prep', cues: [], script: [], checklists: {}, stageNotes: [] };
+    }
+  }
   updateStageUI();
   render();
 });

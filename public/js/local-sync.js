@@ -294,6 +294,19 @@ class UniversalSyncClient {
     return `${prefix}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
 
+  _loadState() {
+    try {
+      const saved = localStorage.getItem(this.storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed.timers)) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
+
   connect() {
     this.syncServerTime();
     setInterval(() => this.syncServerTime(), 60000);
