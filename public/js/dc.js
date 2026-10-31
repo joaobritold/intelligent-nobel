@@ -134,6 +134,37 @@ const $modalEditScriptText = document.getElementById('dc-modal-edit-script-text'
 const $fullScriptTextarea = document.getElementById('dc-full-script-textarea');
 const $fullScriptSave = document.getElementById('dc-full-script-save');
 
+// Views: Stage (Fase 1) vs Cues (Fase 2)
+const $viewStage = document.getElementById('dc-view-stage');
+const $viewCues = document.getElementById('dc-view-cues');
+const $btnStartShowPrep = document.getElementById('dc-btn-start-show-prep');
+const $btnReturnStage = document.getElementById('dc-btn-return-stage');
+
+// Stage Prep Elements
+const $stageArtistsList = document.getElementById('dc-stage-artists-list');
+const $stageArtistsCount = document.getElementById('dc-stage-artists-count');
+const $stageNotesList = document.getElementById('dc-stage-notes-list');
+const $stageNoteInput = document.getElementById('dc-stage-note-input');
+const $stageNoteAddBtn = document.getElementById('dc-stage-note-add-btn');
+const $prepCuesCount = document.getElementById('dc-prep-cues-count');
+const $btnPrepAddCue = document.getElementById('dc-btn-prep-add-cue');
+const $btnPrepViewScript = document.getElementById('dc-btn-prep-view-script');
+
+// Hero Cue Elements (Opção A)
+const $heroCueNum = document.getElementById('dc-hero-cue-num');
+const $heroCueName = document.getElementById('dc-hero-cue-name');
+const $heroCueDepts = document.getElementById('dc-hero-cue-depts');
+const $heroCueTarget = document.getElementById('dc-hero-cue-target');
+const $heroCueNotes = document.getElementById('dc-hero-cue-notes');
+const $btnUndoCue = document.getElementById('dc-btn-undo-cue');
+const $btnSkipCue = document.getElementById('dc-btn-skip-cue');
+
+// Script Modal & Telemetry Drawer
+const $modalViewScript = document.getElementById('dc-modal-view-script');
+const $btnToggleScriptModal = document.getElementById('dc-btn-toggle-script-modal');
+const $btnToggleTelemetry = document.getElementById('dc-btn-toggle-telemetry');
+const $telemetryDrawer = document.getElementById('dc-telemetry-drawer');
+
 // ─── Helpers ────────────────────────────────────────────────────────
 function escapeHtml(str) {
   const d = document.createElement('div');
@@ -504,10 +535,55 @@ function renderCues() {
   const cues = th?.cues || [];
 
   if ($cuesCountBadge) $cuesCountBadge.textContent = cues.length;
+  if ($prepCuesCount) $prepCuesCount.textContent = `${cues.length} Deixa${cues.length === 1 ? '' : 's'}`;
 
-  // Next cue summary
+  // Active Standby / Pending Cue for Hero Box (Opção A)
   const standbyCue = cues.find(c => c.status === 'standby');
   const nextPendingCue = cues.find(c => c.status === 'pending');
+  const activeCue = standbyCue || nextPendingCue;
+
+  if ($heroCueNum) {
+    if (activeCue) {
+      $heroCueNum.textContent = activeCue.num;
+      $heroCueNum.style.color = standbyCue ? 'var(--dc-gold)' : '#55efc4';
+    } else {
+      $heroCueNum.textContent = '--';
+      $heroCueNum.style.color = 'var(--dc-muted)';
+    }
+  }
+
+  if ($heroCueName) {
+    if (activeCue) {
+      $heroCueName.textContent = activeCue.name;
+    } else {
+      $heroCueName.textContent = cues.length > 0 ? 'Todas as deixas disparadas' : 'Nenhuma deixa registada';
+    }
+  }
+
+  if ($heroCueDepts) {
+    if (activeCue && Array.isArray(activeCue.departments) && activeCue.departments.length > 0) {
+      $heroCueDepts.innerHTML = activeCue.departments.map(d => {
+        const dClean = String(d || '').toLowerCase();
+        let cls = 'luz';
+        if (dClean.includes('som')) cls = 'som';
+        else if (dClean.includes('maq')) cls = 'maquinaria';
+        else if (dClean.includes('vid')) cls = 'video';
+        else if (dClean.includes('cox')) cls = 'coxias';
+        return `<span class="dc-dept-tag ${cls}">${escapeHtml(d)}</span>`;
+      }).join('');
+    } else {
+      $heroCueDepts.innerHTML = '';
+    }
+  }
+
+  if ($heroCueTarget) {
+    $heroCueTarget.textContent = activeCue?.targetText || (activeCue ? 'Ponto indicado no guião' : '--');
+  }
+
+  if ($heroCueNotes) {
+    $heroCueNotes.textContent = activeCue?.notes || (activeCue ? 'Sem notas adicionais' : '--');
+  }
+
   if ($nextCueSummary) {
     if (standbyCue) {
       $nextCueSummary.textContent = `🟡 STANDBY: ${standbyCue.num} (${standbyCue.name})`;
@@ -526,7 +602,7 @@ function renderCues() {
   lastCuesSig = sig;
 
   if (cues.length === 0) {
-    $cuesList.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--dc-muted);">Nenhuma deixa registada. Clique em "+ Nova Deixa" para começar.</div>`;
+    $cuesList.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--dc-muted);">Nenhuma deixa registada. Clique em "+ Nova Deixa" ou importe em PDF/Excel para começar.</div>`;
     return;
   }
 
@@ -535,7 +611,7 @@ function renderCues() {
     const isFired = cue.status === 'fired';
     const isCompleted = cue.status === 'completed';
 
-    let rowClass = 'dc-cue-row';
+    let rowClass = 'dc-cue-row-full';
     if (isStandby) rowClass += ' is-standby';
     else if (isFired) rowClass += ' is-fired';
     else if (isCompleted) rowClass += ' is-completed';
@@ -556,14 +632,18 @@ function renderCues() {
 
     return `
       <div class="${rowClass}" data-cue-id="${escapeHtml(cue.id)}">
-        <div class="dc-cue-num-col">${escapeHtml(cue.num)}</div>
-        <div class="dc-cue-info-col">
-          <div class="dc-cue-name">${escapeHtml(cue.name)}</div>
-          <div class="dc-cue-target">${escapeHtml(cue.targetText || cue.notes || '')}</div>
-          <div class="dc-cue-depts">${deptsHtml} ${feedbacksHtml}</div>
+        <div class="dc-cue-num-col" style="font-family: var(--font-mono); font-weight: 900; font-size: 1.35rem; color: ${isStandby ? 'var(--dc-gold)' : (isFired ? '#00b894' : '#fff')}; min-width: 55px;">
+          ${escapeHtml(cue.num)}
         </div>
-        <div class="dc-cue-actions-col">
-          ${cue.firedTimecode ? `<span style="font-family: var(--font-mono); font-size: 0.8rem; color: #00ffb3; font-weight: 800;">${escapeHtml(cue.firedTimecode)}</span>` : ''}
+        <div class="dc-cue-info-col" style="flex: 1; min-width: 0;">
+          <div style="font-weight: 800; font-size: 1.05rem; color: #fff;">${escapeHtml(cue.name)}</div>
+          ${(cue.targetText || cue.notes) ? `<div style="font-size: 0.82rem; color: #cbd5e1; margin-top: 2px;">${escapeHtml(cue.targetText || cue.notes)}</div>` : ''}
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+            ${deptsHtml} ${feedbacksHtml}
+          </div>
+        </div>
+        <div class="dc-cue-actions-col" style="display: flex; align-items: center; gap: 8px;">
+          ${cue.firedTimecode ? `<span style="font-family: var(--font-mono); font-size: 0.82rem; color: #00ffb3; font-weight: 800;">${escapeHtml(cue.firedTimecode)}</span>` : ''}
           <span class="dc-status-pill ${escapeHtml(cue.status)}">${escapeHtml(cue.status)}</span>
           <button type="button" class="dc-cue-btn" data-cue-action="standby" data-id="${escapeHtml(cue.id)}" title="Standby">🟡</button>
           <button type="button" class="dc-cue-btn" data-cue-action="go" data-id="${escapeHtml(cue.id)}" title="Disparar GO">🟢</button>
@@ -574,6 +654,88 @@ function renderCues() {
       </div>
     `;
   }).join('');
+}
+
+// ─── Stage Phase Render (Artistas, Alinhamento & Notas Rápidas) ───────────
+let lastArtistsSig = '';
+let lastNotesSig = '';
+
+function renderStagePhase() {
+  const timers = state?.timers || [];
+  const th = state?.theatre;
+  const stageNotes = th?.stageNotes || [];
+
+  if ($stageArtistsCount) {
+    $stageArtistsCount.textContent = `${timers.length} Artista${timers.length === 1 ? '' : 's'} / Atos`;
+  }
+
+  // 1. Render Artists / Lineup
+  const activeIdx = timers.findIndex(t => t.id === state?.activeTimerId);
+  const artistsSig = timers.map((t, idx) => `${t.id}:${t.name}:${t.duration}:${t.state}:${idx === activeIdx}`).join('|');
+
+  if (artistsSig !== lastArtistsSig && $stageArtistsList) {
+    lastArtistsSig = artistsSig;
+    if (timers.length === 0) {
+      $stageArtistsList.innerHTML = `
+        <div style="text-align: center; padding: 24px 16px; color: var(--dc-muted); font-size: 0.85rem;">
+          Nenhum artista ou ato adicionado na grelha de tempos.<br>
+          <span style="font-size: 0.78rem;">Os artistas e alinhamento configurados no Controlador aparecem aqui automaticamente.</span>
+        </div>
+      `;
+    } else {
+      $stageArtistsList.innerHTML = timers.map((t, idx) => {
+        const isActive = idx === activeIdx;
+        const isFinished = t.state === 'finished' || (activeIdx >= 0 && idx < activeIdx);
+        const isNext = activeIdx >= 0 && idx === activeIdx + 1;
+
+        let statusBadge = '<span class="dc-artist-badge waiting">Aguardando</span>';
+        if (isActive) statusBadge = '<span class="dc-artist-badge active">🔴 AO VIVO</span>';
+        else if (isNext) statusBadge = '<span class="dc-artist-badge next">🟡 A SEGUIR</span>';
+        else if (isFinished) statusBadge = '<span class="dc-artist-badge done">✓ Terminado</span>';
+
+        const durMin = Math.round((t.duration || 0) / 60);
+        const timeLabel = t.startTime ? t.startTime : (durMin > 0 ? `${durMin} min` : '--');
+
+        return `
+          <div class="dc-artist-item ${isActive ? 'is-active' : ''}">
+            <div class="dc-artist-time">${escapeHtml(timeLabel)}</div>
+            <div class="dc-artist-info">
+              <div class="dc-artist-name">${escapeHtml(t.name || 'Sem nome')}</div>
+              ${t.notes ? `<div class="dc-artist-notes">${escapeHtml(t.notes)}</div>` : ''}
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // 2. Render Stage Notes
+  const notesSig = stageNotes.map(n => `${n.id}:${n.text}:${n.createdAt}`).join('|');
+  if (notesSig !== lastNotesSig && $stageNotesList) {
+    lastNotesSig = notesSig;
+    if (stageNotes.length === 0) {
+      $stageNotesList.innerHTML = `
+        <div style="text-align: center; padding: 20px; color: var(--dc-muted); font-size: 0.82rem; font-style: italic;">
+          Sem notas de palco registadas para esta récita.<br>
+          Adicione notas de camarim, avisos de adereços ou entradas de atores acima.
+        </div>
+      `;
+    } else {
+      $stageNotesList.innerHTML = stageNotes.map(n => {
+        const timeStr = n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        return `
+          <div class="dc-note-item" data-note-id="${escapeHtml(n.id)}">
+            <div style="flex: 1;">
+              <div class="dc-note-text">${escapeHtml(n.text)}</div>
+              <div class="dc-note-meta">${escapeHtml(n.author || 'DC')} • ${escapeHtml(timeStr)}</div>
+            </div>
+            <button type="button" class="dc-note-del-btn" data-delete-stage-note="${escapeHtml(n.id)}" title="Remover anotação">✕</button>
+          </div>
+        `;
+      }).join('');
+    }
+  }
 }
 
 function renderChecklists() {
@@ -740,11 +902,19 @@ document.addEventListener('click', (e) => {
     const cueId = jumpBtn.dataset.jumpCue;
     if (cueId) {
       client.standbyCue(cueId);
-      // Switch to cues tab if not active
-      const cuesTabBtn = document.querySelector('[data-tab="tab-cues"]');
-      if (cuesTabBtn) cuesTabBtn.click();
+      if (state?.theatre?.phase !== 'live') client.setTheatrePhase('live');
+      if ($modalViewScript) $modalViewScript.style.display = 'none';
       const cueRow = $cuesList?.querySelector(`[data-cue-id="${cueId}"]`);
       if (cueRow) cueRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  // Click on cue row in list to focus / put in standby
+  const cueRowEl = e.target.closest('.dc-cue-row-full');
+  if (cueRowEl && !e.target.closest('button')) {
+    const cueId = cueRowEl.dataset.cueId;
+    if (cueId) {
+      client.standbyCue(cueId);
     }
   }
 
@@ -774,6 +944,17 @@ document.addEventListener('click', (e) => {
     if (confirm('Eliminar esta tarefa da checklist?')) {
       client.removeChecklistItem(dept, itemId);
     }
+    return;
+  }
+
+  // Delete stage note
+  const delNoteBtn = e.target.closest('[data-delete-stage-note]');
+  if (delNoteBtn) {
+    const noteId = delNoteBtn.dataset.deleteStageNote;
+    if (confirm('Eliminar esta anotação de palco?')) {
+      client.deleteStageNote(noteId);
+    }
+    return;
   }
 });
 
@@ -815,7 +996,6 @@ function renderPhase(th) {
   const phase = th?.phase || 'prep';
   const $phaseBtnPrep = document.getElementById('dc-phase-btn-prep');
   const $phaseBtnLive = document.getElementById('dc-phase-btn-live');
-  const $prepBanner = document.getElementById('dc-prep-banner');
   const $phasePrepBadge = document.getElementById('dc-phase-prep-badge');
   const $phaseLiveBadge = document.getElementById('dc-phase-live-badge');
 
@@ -837,22 +1017,25 @@ function renderPhase(th) {
     $phaseLiveBadge.textContent = th?.showState === 'running' ? 'EM CENA / LIVE' : 'A POSTOS';
   }
 
-  if (phase === 'live') {
+  if (phase === 'live' || th?.showState === 'running') {
     $phaseBtnPrep?.classList.remove('active');
     $phaseBtnLive?.classList.add('active', 'live');
-    if ($prepBanner) $prepBanner.style.display = 'none';
+    if ($viewStage) $viewStage.style.display = 'none';
+    if ($viewCues) $viewCues.style.display = 'block';
   } else {
     $phaseBtnPrep?.classList.add('active');
     $phaseBtnLive?.classList.remove('active', 'live');
-    if ($prepBanner) $prepBanner.style.display = 'flex';
+    if ($viewStage) $viewStage.style.display = 'block';
+    if ($viewCues) $viewCues.style.display = 'none';
   }
+
+  renderStagePhase();
 }
 
 const $phaseBtnPrep = document.getElementById('dc-phase-btn-prep');
 const $phaseBtnLive = document.getElementById('dc-phase-btn-live');
 const $btnPrepGoLive = document.getElementById('dc-btn-prep-go-live');
 const $btnPrepImportScript = document.getElementById('dc-btn-prep-import-script');
-const $btnPrepImportCues = document.getElementById('dc-btn-prep-import-cues');
 
 if ($phaseBtnPrep) {
   $phaseBtnPrep.addEventListener('click', () => {
@@ -867,18 +1050,100 @@ if ($phaseBtnLive) {
 if ($btnPrepGoLive) {
   $btnPrepGoLive.addEventListener('click', () => {
     client.setTheatrePhase('live');
-    const tabCuesBtn = document.querySelector('[data-tab="tab-cues"]');
-    if (tabCuesBtn) tabCuesBtn.click();
   });
 }
-if ($btnPrepImportScript && $modalImportScript) {
-  $btnPrepImportScript.addEventListener('click', () => {
-    $modalImportScript.style.display = 'flex';
+
+// Fase 1: Botão de Arranque de Espetáculo
+if ($btnStartShowPrep) {
+  $btnStartShowPrep.addEventListener('click', () => {
+    client.startTheatreShow();
   });
 }
+
+// Fase 2: Botão para consultar trabalhos de palco
+if ($btnReturnStage) {
+  $btnReturnStage.addEventListener('click', () => {
+    client.setTheatrePhase('prep');
+  });
+}
+
+// Fase 2: Hero Undo Cue & Skip Cue
+if ($btnUndoCue) {
+  $btnUndoCue.addEventListener('click', () => {
+    client.undoLastCue();
+  });
+}
+
+if ($btnSkipCue) {
+  $btnSkipCue.addEventListener('click', () => {
+    client.skipNextCue();
+  });
+}
+
+// Notas Rápidas de Palco
+function handleAddStageNote() {
+  const text = ($stageNoteInput?.value || '').trim();
+  if (!text) return;
+  client.addStageNote(text, 'DC');
+  if ($stageNoteInput) $stageNoteInput.value = '';
+}
+
+if ($stageNoteAddBtn) {
+  $stageNoteAddBtn.addEventListener('click', handleAddStageNote);
+}
+if ($stageNoteInput) {
+  $stageNoteInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleAddStageNote();
+  });
+}
+
+// Toggle Script Modal & Telemetry Drawer
+if ($btnToggleScriptModal) {
+  $btnToggleScriptModal.addEventListener('click', () => {
+    if ($modalViewScript) $modalViewScript.style.display = 'flex';
+  });
+}
+if ($btnPrepViewScript) {
+  $btnPrepViewScript.addEventListener('click', () => {
+    if ($modalViewScript) $modalViewScript.style.display = 'flex';
+  });
+}
+
+if ($btnToggleTelemetry) {
+  $btnToggleTelemetry.addEventListener('click', () => {
+    if ($telemetryDrawer) {
+      const isHidden = $telemetryDrawer.style.display === 'none';
+      $telemetryDrawer.style.display = isHidden ? 'block' : 'none';
+      if (isHidden) {
+        $telemetryDrawer.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  });
+}
+
+// Stage Prep Card Buttons
+if ($btnPrepAddCue) {
+  $btnPrepAddCue.addEventListener('click', () => {
+    if ($modalNewCue) {
+      $modalNewCue.style.display = 'flex';
+      if ($newCueNum) {
+        const nextNum = (state?.theatre?.cues || []).length + 1;
+        $newCueNum.value = `Q${nextNum}`;
+      }
+      if ($newCueName) $newCueName.focus();
+    }
+  });
+}
+
 if ($btnPrepImportCues && $modalImportCues) {
   $btnPrepImportCues.addEventListener('click', () => {
     $modalImportCues.style.display = 'flex';
+  });
+}
+
+if ($btnPrepImportScript && $modalImportScript) {
+  $btnPrepImportScript.addEventListener('click', () => {
+    $modalImportScript.style.display = 'flex';
   });
 }
 

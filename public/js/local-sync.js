@@ -1043,6 +1043,7 @@ class UniversalSyncClient {
       }
       if (!Array.isArray(this._state.theatre.telemetry)) this._state.theatre.telemetry = [];
       if (!Array.isArray(this._state.theatre.reports)) this._state.theatre.reports = [];
+      if (!Array.isArray(this._state.theatre.stageNotes)) this._state.theatre.stageNotes = [];
       if (!this._state.theatre.urgentNotice || typeof this._state.theatre.urgentNotice !== 'object') {
         this._state.theatre.urgentNotice = { text: '', level: 'warn', visible: false, sentAt: 0 };
       }
@@ -1066,6 +1067,7 @@ class UniversalSyncClient {
       cues: this._createDefaultCues(),
       script: this._createDefaultScript(),
       checklists: this._createDefaultChecklists(),
+      stageNotes: [],
       telemetry: [],
       reports: []
     };
@@ -2883,6 +2885,89 @@ class UniversalSyncClient {
     target.feedbacks = [];
     if (th.standbyCueId === cueId) th.standbyCueId = null;
     if (th.activeCueId === cueId) th.activeCueId = null;
+    this._commitStateChange();
+  }
+
+  undoLastCue() {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    if (!Array.isArray(th.cues)) return;
+
+    // Find the most recently fired or completed cue
+    const lastFired = th.cues.slice().reverse().find(c => c.status === 'fired' || c.status === 'completed');
+    if (!lastFired) {
+      // If there is an active standby, put it back to pending
+      const currentStandby = th.cues.find(c => c.status === 'standby');
+      if (currentStandby) {
+        currentStandby.status = 'pending';
+        currentStandby.standbyAt = 0;
+        th.standbyCueId = null;
+        this._commitStateChange();
+      }
+      return;
+    }
+
+    // Reset this cue back to standby so DC can trigger it again
+    lastFired.status = 'standby';
+    lastFired.firedAt = 0;
+    lastFired.firedTimecode = '';
+    th.activeCueId = null;
+    th.standbyCueId = lastFired.id;
+
+    // Remove from telemetry
+    if (Array.isArray(th.telemetry)) {
+      const idx = th.telemetry.findIndex(t => t.cueId === lastFired.id);
+      if (idx >= 0) th.telemetry.splice(idx, 1);
+    }
+
+    this._commitStateChange();
+  }
+
+  skipNextCue() {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    if (!Array.isArray(th.cues)) return;
+
+    // Mark current standby as completed/skipped if any
+    const currentStandby = th.cues.find(c => c.status === 'standby');
+    if (currentStandby) {
+      currentStandby.status = 'completed';
+      th.standbyCueId = null;
+    }
+    // Put next pending cue into standby
+    const nextPending = th.cues.find(c => c.status === 'pending');
+    if (nextPending) {
+      nextPending.status = 'standby';
+      nextPending.standbyAt = Date.now();
+      th.standbyCueId = nextPending.id;
+    }
+    this._commitStateChange();
+  }
+
+  addStageNote(text) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    if (!Array.isArray(th.stageNotes)) th.stageNotes = [];
+    const note = {
+      id: 'sn_' + Date.now(),
+      text: String(text).trim(),
+      timeStr: new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }),
+      author: 'Jess'
+    };
+    th.stageNotes.unshift(note);
+    this._commitStateChange();
+    return note;
+  }
+
+  deleteStageNote(noteId) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    if (!Array.isArray(th.stageNotes)) return;
+    th.stageNotes = th.stageNotes.filter(n => n.id !== noteId);
     this._commitStateChange();
   }
 

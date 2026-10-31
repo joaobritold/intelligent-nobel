@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -53,8 +53,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Modo Jess (Diretora de Cena)</title>
-  <link rel="stylesheet" href="css/common.css?v=82">
-  <link rel="stylesheet" href="css/dc.css?v=82">
+  <link rel="stylesheet" href="css/common.css?v=83">
+  <link rel="stylesheet" href="css/dc.css?v=83">
 </head>
 <body>
   <div id="dc-screen" class="dc-screen">
@@ -69,7 +69,7 @@
             <div class="dc-brand-title">MODO JESS</div>
             <div class="dc-brand-sub">Diretora de Cena</div>
           </div>
-          <span class="badge dc-version-badge">v82</span>
+          <span class="badge dc-version-badge">v83</span>
         </a>
 
         <!-- Stage / Room Pill -->
@@ -141,24 +141,24 @@
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- FASE DO ESPETÁCULO: PREPARAÇÃO/AFINAÇÕES vs DECORRER DO SHOW    -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
-    <nav id="dc-phase-bar" class="dc-phase-bar" aria-label="Fase do Espetáculo" style="margin-bottom: 10px;">
-      <button id="dc-phase-btn-prep" type="button" class="dc-phase-btn active" data-phase="prep" title="Fase 1: Preparação, afinações de equipas, checklists de postos e importação de guiões">
+    <nav id="dc-phase-bar" class="dc-phase-bar" aria-label="Fase do Espetáculo" style="margin-bottom: 12px;">
+      <button id="dc-phase-btn-prep" type="button" class="dc-phase-btn active" data-phase="prep" title="Fase 1: Preparação de Palco, Elenco/Artistas, Notas e Checklists">
         <div class="dc-phase-btn-left">
           <span style="font-size: 1.3rem;">🛠️</span>
           <div>
-            <div class="dc-phase-title">FASE 1: PREPARAÇÃO & AFINAÇÕES</div>
-            <div class="dc-phase-desc">Checklists de postos, verificação de presets e importação universal de ficheiros</div>
+            <div class="dc-phase-title">FASE 1: TRABALHOS DE PALCO & AFINAÇÕES</div>
+            <div class="dc-phase-desc">Artistas, alinhamento, notas de palco e verificação de equipamentos</div>
           </div>
         </div>
         <span id="dc-phase-prep-badge" class="dc-phase-pill prep">PRONTIDÃO 0%</span>
       </button>
 
-      <button id="dc-phase-btn-live" type="button" class="dc-phase-btn" data-phase="live" title="Fase 2: Espetáculo ao Vivo com Disparo de Deixas (STANDBY e GO) e Teleprompter">
+      <button id="dc-phase-btn-live" type="button" class="dc-phase-btn" data-phase="live" title="Fase 2: Espetáculo ao Vivo com Disparo de Deixas (STANDBY e GO)">
         <div class="dc-phase-btn-left">
           <span style="font-size: 1.3rem;">🎭</span>
           <div>
-            <div class="dc-phase-title">FASE 2: DECORRER DO ESPETÁCULO</div>
-            <div class="dc-phase-desc">Execução em direto: Standby/GO, fala ativa, teleprompter e timecodes</div>
+            <div class="dc-phase-title">FASE 2: MODO DEIXAS (EM CENA / LIVE)</div>
+            <div class="dc-phase-desc">Execução em direto: Standby, GO (Barra de Espaço), Recuar Deixa e Timecodes</div>
           </div>
         </div>
         <span id="dc-phase-live-badge" class="dc-phase-pill live">EM CENA</span>
@@ -166,146 +166,96 @@
     </nav>
 
     <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- PREPARATION HUB BANNER (FASE 1)                                -->
+    <!-- VIEW 1: FASE DE PALCO & PRÉ-SHOW                                -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
-    <div id="dc-prep-banner" class="dc-prep-banner" style="display: flex; margin-bottom: 12px; background: linear-gradient(135deg, rgba(253, 203, 110, 0.12), rgba(20, 20, 36, 0.85)); border: 1.5px solid rgba(253, 203, 110, 0.35); border-radius: 12px; padding: 12px 18px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-      <div style="display: flex; align-items: center; gap: 14px;">
-        <div style="font-size: 2rem; line-height: 1;">🛠️</div>
-        <div>
-          <div style="font-weight: 800; font-size: 1.02rem; color: #ffeaa7;">AFINAÇÕES & PRONTIDÃO DE PALCO (PRÉ-SHOW)</div>
-          <div style="font-size: 0.8rem; color: #cbd5e1;">Importe ficheiros (PDF, Excel, Word, Docs, TXT) e valide as checklists de cada equipa antes de iniciar a récita.</div>
+    <div id="dc-view-stage" class="dc-stage-view">
+      <!-- Stage Hero Banner -->
+      <div class="dc-stage-header-banner">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="font-size: 2.3rem; line-height: 1;">🛠️</div>
+          <div>
+            <div style="font-weight: 900; font-size: 1.15rem; color: #ffeaa7;">TRABALHOS DE PALCO, ARTISTAS & AFINAÇÕES</div>
+            <div style="font-size: 0.82rem; color: #cbd5e1;">Acompanhe o elenco e horários, aponte notas de palco e confirme as afinações de cada posto técnico.</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <button id="dc-btn-start-show-prep" type="button" class="dc-hero-start-btn">
+            🎬 DAR ARRANQUE AO ESPETÁCULO ▶
+          </button>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <button id="dc-btn-prep-import-script" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.22); color: #fff; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer;">
-          📥 Importar Guião
-        </button>
-        <button id="dc-btn-prep-import-cues" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.22); color: #fff; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer;">
-          📥 Importar Deixas
-        </button>
-        <button id="dc-btn-prep-go-live" type="button" class="btn btn-sm" style="background: #00b894; border: 1.5px solid #00b894; color: #000; font-weight: 800; padding: 8px 16px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 184, 148, 0.4);">
-          🎬 TUDO AFINADO? ENTRAR EM CENA ▶
-        </button>
-      </div>
-    </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- 2. MAIN 50/50 SPLIT: GUIÃO (ESQUERDA) | DEIXAS & CUES (DIREITA) -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <div class="dc-main-grid">
-      <!-- ─── PAINEL ESQUERDO: TEXTO / GUIÃO DA PEÇA ─────────────────── -->
-      <section class="dc-pane dc-script-pane">
-        <div class="dc-pane-header">
-          <div class="dc-pane-title">
-            <span>📖</span>
-            <span>GUIÃO DA PEÇA & TEXTO</span>
-          </div>
-
-          <div class="dc-pane-tools">
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <button id="dc-script-font-minus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Diminuir tamanho de letra">A−</button>
-              <button id="dc-script-font-plus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Aumentar tamanho de letra">A+</button>
+      <!-- Stage Grid: Left (Artistas & Notas) | Right (Checklists) -->
+      <div class="dc-stage-grid">
+        <!-- Coluna Esquerda: Artistas & Notas de Palco -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <!-- Card Artistas / Elenco -->
+          <div class="dc-stage-card">
+            <div class="dc-stage-card-title">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>🎭</span>
+                <span>Artistas / Elenco e Alinhamento de Palco</span>
+              </div>
+              <span id="dc-stage-artists-count" style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--dc-muted);">0 Artistas</span>
             </div>
-            <button id="dc-script-scroll-toggle" type="button" class="dc-tool-btn" title="Iniciar ou pausar rolagem contínua de leitura (Teleprompter)">
-              ▶ Rolar Texto
-            </button>
-            <select id="dc-script-scroll-speed" class="dc-tool-btn" style="padding: 4px 6px; font-size: 0.72rem; outline: none; background: rgba(255,255,255,0.06); color: #fff;" title="Velocidade de rolagem">
-              <option value="1">Lento</option>
-              <option value="2" selected>Médio</option>
-              <option value="3">Rápido</option>
-            </select>
-            <button id="dc-btn-edit-script-text" type="button" class="dc-tool-btn" title="Editar ou colar o texto completo da peça">
-              ✏️ Editar Texto
-            </button>
-            <button id="dc-btn-import-script" type="button" class="dc-tool-btn" title="Carregar guião via ficheiro ou texto">
-              📥 Importar
-            </button>
-          </div>
-        </div>
-
-        <div id="dc-script-feed" class="dc-script-feed">
-          <!-- Injected dynamically by dc.js -->
-        </div>
-      </section>
-
-      <!-- ─── PAINEL DIREITO: DEIXAS, CHECKLISTS & TELEMETRIA ─────────── -->
-      <section class="dc-pane dc-cues-pane">
-        <!-- Navigation Tabs -->
-        <nav class="dc-tab-bar" aria-label="Navegação da Mesa de Deixas">
-          <button type="button" class="dc-tab-btn active" data-tab="tab-cues">
-            <span>⚡</span>
-            <span>Deixas Sequenciais</span>
-            <span id="dc-cues-count-badge" class="dc-count-badge">0</span>
-          </button>
-          <button type="button" class="dc-tab-btn" data-tab="tab-checklists">
-            <span>📋</span>
-            <span>Checklists Equipas</span>
-            <span id="dc-checklists-progress-badge" class="dc-count-badge">0%</span>
-          </button>
-          <button type="button" class="dc-tab-btn" data-tab="tab-telemetry">
-            <span>📊</span>
-            <span>Telemetria & Relatório</span>
-          </button>
-        </nav>
-
-        <!-- ── TAB 1: DEIXAS SEQUENCIAIS (STANDBY & GO) ── -->
-        <div id="tab-cues" class="dc-tab-content active">
-          <!-- Giant Action Box -->
-          <div class="dc-action-box">
-            <div class="dc-action-meta">
-              <span class="dc-action-hint">PRÓXIMA DEIXA A DISPARAR:</span>
-              <span id="dc-next-cue-summary" class="dc-next-cue-summary">--</span>
-            </div>
-
-            <div class="dc-action-btn-row">
-              <button id="dc-btn-standby" type="button" class="dc-hero-btn dc-btn-standby" title="Colocar a próxima deixa em Standby (Sinal Amarelo)">
-                <span class="dc-hero-icon">🟡</span>
-                <span class="dc-hero-text">STANDBY</span>
-              </button>
-              <button id="dc-btn-go" type="button" class="dc-hero-btn dc-btn-go" title="Executar deixa ativa (Sinal Verde). Atalho: BARRA DE ESPAÇO">
-                <span class="dc-hero-icon">🟢</span>
-                <span class="dc-hero-text">GO (ESPAÇO)</span>
-              </button>
-            </div>
-
-            <div class="dc-action-subtools">
-              <button id="dc-btn-add-cue" type="button" class="dc-mini-btn" title="Adicionar deixa personalizada">
-                ➕ Nova Deixa
-              </button>
-              <button id="dc-btn-import-cues" type="button" class="dc-mini-btn" title="Importar lista de deixas via CSV/Texto">
-                📥 Importar Deixas
-              </button>
-              <button id="dc-btn-reset-cues" type="button" class="dc-mini-btn" title="Voltar todas as deixas a pendente">
-                ↩️ Reset Deixas
-              </button>
-              <button id="dc-btn-clear-cues" type="button" class="dc-mini-btn" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4);" title="Eliminar todas as deixas da lista">
-                🗑️ Limpar Deixas
-              </button>
-            </div>
-          </div>
-
-          <!-- Cues List -->
-          <div id="dc-cues-list" class="dc-cues-list">
-            <!-- Injected by dc.js -->
-          </div>
-        </div>
-
-        <!-- ── TAB 2: CHECKLISTS DE AFINAÇÃO ── -->
-        <div id="tab-checklists" class="dc-tab-content">
-          <!-- Readiness Overview -->
-          <div class="dc-checklists-overview">
-            <div class="dc-overview-header">
-              <span class="dc-overview-title">ESTADO GERAL DE AFINAÇÕES ANTES DA RÉCITA</span>
-              <span id="dc-readiness-percent" class="dc-readiness-pill">0% PRONTO</span>
-            </div>
-            <div class="dc-progress-bar-bg">
-              <div id="dc-readiness-bar" class="dc-progress-bar-fill" style="width: 0%;"></div>
-            </div>
-
-            <!-- Mini Dept Gauges -->
-            <div id="dc-dept-gauges" class="dc-dept-gauges">
+            <div id="dc-stage-artists-list" class="dc-artists-list">
               <!-- Injected by dc.js -->
             </div>
+          </div>
+
+          <!-- Card Notas Rápidas de Palco -->
+          <div class="dc-stage-card">
+            <div class="dc-stage-card-title">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>📝</span>
+                <span>Notas Rápidas de Palco & Camarins</span>
+              </div>
+              <span style="font-size: 0.72rem; color: var(--dc-muted);">Visíveis na régie</span>
+            </div>
+            <div id="dc-stage-notes-list" class="dc-notes-list">
+              <!-- Injected by dc.js -->
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 6px;">
+              <input id="dc-stage-note-input" class="dc-input-sm" style="flex: 1;" placeholder="Nota de palco (ex: Atriz X entra com capa vermelha pela coxia esquerda)...">
+              <button id="dc-stage-note-add-btn" type="button" class="dc-btn-primary dc-btn-sm" style="white-space: nowrap;">➕ Adicionar</button>
+            </div>
+          </div>
+
+          <!-- Card Pré-Deixas -->
+          <div class="dc-stage-card" style="border-color: rgba(253, 203, 110, 0.3);">
+            <div class="dc-stage-card-title">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>⚡</span>
+                <span>Folha de Deixas do Espetáculo</span>
+              </div>
+              <span id="dc-prep-cues-count" style="font-size: 0.75rem; font-family: var(--font-mono); color: #ffeaa7;">0 Deixas</span>
+            </div>
+            <p style="font-size: 0.8rem; color: #cbd5e1; margin: 0;">Pode importar a folha de deixas em PDF, Excel, Word ou texto antes de arrancar.</p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+              <button id="dc-btn-prep-import-cues" type="button" class="dc-btn-primary dc-btn-sm">📥 Importar Folha de Deixas</button>
+              <button id="dc-btn-prep-add-cue" type="button" class="dc-tool-btn">➕ Nova Deixa</button>
+              <button id="dc-btn-prep-view-script" type="button" class="dc-tool-btn">📖 Guião / Texto</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coluna Direita: Checklists de Palco por Equipas -->
+        <div class="dc-stage-card">
+          <div class="dc-stage-card-title">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>📋</span>
+              <span>Checklists de Equipas & Presets</span>
+            </div>
+            <span id="dc-readiness-percent" class="dc-readiness-pill">0% PRONTO</span>
+          </div>
+
+          <div class="dc-progress-bar-bg" style="margin-top: 4px;">
+            <div id="dc-readiness-bar" class="dc-progress-bar-fill" style="width: 0%;"></div>
+          </div>
+
+          <!-- Mini Dept Gauges -->
+          <div id="dc-dept-gauges" class="dc-dept-gauges">
+            <!-- Injected by dc.js -->
           </div>
 
           <!-- Add Item Bar -->
@@ -317,7 +267,7 @@
               <option value="Vídeo">🎥 Vídeo</option>
               <option value="Coxias">🎭 Coxias</option>
             </select>
-            <input id="dc-task-label-input" class="dc-input-sm" placeholder="Nova tarefa (ex: Afinar vara 3, Testar microfone 2)...">
+            <input id="dc-task-label-input" class="dc-input-sm" placeholder="Nova verificação de equipa...">
             <label class="dc-checkbox-label" title="Marcar como tarefa pontual que só se aplica a esta récita">
               <input type="checkbox" id="dc-task-oneoff-check">
               <span>Só Hoje</span>
@@ -326,67 +276,193 @@
           </div>
 
           <!-- Multi-Department Lists Container -->
-          <div id="dc-checklists-container" class="dc-checklists-container">
+          <div id="dc-checklists-container" class="dc-checklists-container" style="max-height: 440px; overflow-y: auto;">
             <!-- Injected by dc.js -->
           </div>
         </div>
+      </div>
+    </div>
 
-        <!-- ── TAB 3: TELEMETRIA & RELATÓRIO DE RÉGIE ── -->
-        <div id="tab-telemetry" class="dc-tab-content">
-          <div class="dc-telemetry-header">
-            <div class="dc-telemetry-stats">
-              <div class="dc-stat-box">
-                <span class="dc-stat-label">DEIXAS DISPARADAS</span>
-                <span id="dc-telemetry-fired-count" class="dc-stat-val">0</span>
-              </div>
-              <div class="dc-stat-box">
-                <span class="dc-stat-label">DURAÇÃO TOTAL</span>
-                <span id="dc-telemetry-duration" class="dc-stat-val">00:00:00</span>
-              </div>
-              <div class="dc-stat-box">
-                <span class="dc-stat-label">FEEDBACKS TÉCNICOS</span>
-                <span id="dc-telemetry-feedback-count" class="dc-stat-val">0</span>
-              </div>
-            </div>
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- VIEW 2: MODO DEIXAS (EM CENA / LIVE) — OPÇÃO A IMPECÁVEL        -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div id="dc-view-cues" class="dc-cues-view" style="display: none;">
+      <!-- Live Status & Sub-navigation Bar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(20,20,36,0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px 16px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 1.1rem; color: #00b894;">●</span>
+          <strong style="color: #fff; font-size: 0.95rem; letter-spacing: 0.04em;">MODO DEIXAS EM CENA</strong>
+          <span style="font-size: 0.75rem; color: var(--dc-muted);">Disparo ao milissegundo • Ecrã total sem distrações</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <button id="dc-btn-return-stage" type="button" class="dc-tool-btn" title="Consultar elenco de artistas, notas ou afinações de palco">
+            🛠️ Ver Trabalhos de Palco
+          </button>
+          <button id="dc-btn-toggle-script-modal" type="button" class="dc-tool-btn" title="Abrir guião de leitura em janela dedicada">
+            📖 Guião da Peça
+          </button>
+          <button id="dc-btn-toggle-telemetry" type="button" class="dc-tool-btn" title="Ver telemetria e relatórios gravados">
+            📊 Relatórios & Histórico
+          </button>
+        </div>
+      </div>
 
-            <div class="dc-telemetry-actions">
-              <button id="dc-btn-save-report" type="button" class="btn btn-sm" style="background: #00b894; border: 1.5px solid #00b894; color: #000; font-weight: 800; padding: 7px 12px; border-radius: 8px; cursor: pointer;" title="Guardar este relatório permanentemente no histórico do evento">
-                💾 Guardar no Evento
-              </button>
-              <button id="dc-btn-copy-report" type="button" class="dc-btn-primary dc-btn-sm" title="Copiar relatório completo para a área de transferência">
-                📋 Copiar Relatório
-              </button>
-              <button id="dc-btn-download-report" type="button" class="dc-tool-btn" title="Descarregar ficheiro de texto do relatório">
-                📥 Descarregar TXT
-              </button>
-            </div>
-          </div>
-
-          <!-- Saved Reports History Section -->
-          <div class="dc-saved-reports-section" style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.15rem;">📜</span>
-                <span style="font-weight: 800; font-size: 0.95rem; color: #ffeaa7;">Relatórios Gravados deste Evento (<span id="dc-saved-reports-count">0</span>)</span>
-              </div>
-              <span style="font-size: 0.72rem; color: var(--dc-muted);">Gravados no evento até serem eliminados</span>
-            </div>
-            <div id="dc-saved-reports-list" class="dc-saved-reports-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px;">
-              <!-- Injected by dc.js -->
+      <!-- Giant Hero Cue Action Box (Opção A) -->
+      <div class="dc-action-box" style="padding: 18px 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <span class="dc-action-hint">⚡ DEIXA ATUAL A DISPARAR:</span>
+            <div style="display: flex; align-items: baseline; gap: 14px; margin-top: 4px;">
+              <span id="dc-hero-cue-num" style="font-family: var(--font-mono); font-size: 2.4rem; font-weight: 900; color: #55efc4; line-height: 1;">Q1</span>
+              <span id="dc-hero-cue-name" style="font-size: 1.35rem; font-weight: 800; color: #fff;">Abertura de Sala</span>
             </div>
           </div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <strong style="font-size: 0.88rem; color: #fff;">⚡ Telemetria da Sessão Ativa</strong>
-            <span style="font-size: 0.72rem; color: var(--dc-muted);">Timecodes e feedback em direto</span>
-          </div>
-
-          <!-- Telemetry Feed -->
-          <div id="dc-telemetry-list" class="dc-telemetry-list">
-            <!-- Injected by dc.js -->
+          <div id="dc-hero-cue-depts" style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <span class="dc-dept-tag luz">Luz</span>
+            <span class="dc-dept-tag som">Som</span>
           </div>
         </div>
-      </section>
+
+        <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; margin: 4px 0;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span style="font-size: 0.74rem; font-weight: 800; color: #ffeaa7;">PONTO DE DISPARO / FALA:</span>
+            <span id="dc-hero-cue-target" style="font-size: 0.95rem; color: #fff; font-weight: 700;">No 3º Sinal da Sala</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--dc-muted);">
+            <strong style="color: #cbd5e1;">Notas:</strong> <span id="dc-hero-cue-notes">Fade in suave de 4 segundos</span>
+          </div>
+        </div>
+
+        <!-- Giant Buttons Row -->
+        <div class="dc-action-btn-row" style="margin-top: 4px;">
+          <button id="dc-btn-standby" type="button" class="dc-hero-btn dc-btn-standby" style="flex: 1; padding: 20px 14px; font-size: 1.15rem;" title="Colocar a próxima deixa em Standby (Sinal Amarelo no telemóvel dos técnicos)">
+            <span class="dc-hero-icon" style="font-size: 1.6rem;">🟡</span>
+            <span class="dc-hero-text" style="font-size: 1.25rem;">STANDBY</span>
+          </button>
+          <button id="dc-btn-go" type="button" class="dc-hero-btn dc-btn-go" style="flex: 1.4; padding: 20px 14px; font-size: 1.25rem;" title="Executar deixa ativa (Sinal Verde). Atalho: BARRA DE ESPAÇO">
+            <span class="dc-hero-icon" style="font-size: 1.8rem;">🟢</span>
+            <span class="dc-hero-text" style="font-size: 1.35rem;">GO (BARRA DE ESPAÇO)</span>
+          </button>
+        </div>
+
+        <!-- Safety, Navigation & Control Row -->
+        <div class="dc-action-subtools" style="margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button id="dc-btn-undo-cue" type="button" class="dc-mini-btn" style="background: rgba(255, 118, 117, 0.15); border-color: rgba(255, 118, 117, 0.4); color: #ff7675; font-weight: 800;" title="Desfazer último GO e voltar a colocar a deixa anterior em Standby">
+              ↩️ Recuar Deixa (Desfazer)
+            </button>
+            <button id="dc-btn-skip-cue" type="button" class="dc-mini-btn" title="Saltar deixa sem disparar">
+              ⏭️ Saltar Deixa
+            </button>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button id="dc-btn-add-cue" type="button" class="dc-mini-btn" title="Adicionar nova deixa">
+              ➕ Nova Deixa
+            </button>
+            <button id="dc-btn-import-cues" type="button" class="dc-mini-btn" title="Importar lista de deixas via PDF, Excel, Word ou CSV">
+              📥 Importar Deixas
+            </button>
+            <button id="dc-btn-reset-cues" type="button" class="dc-mini-btn" title="Voltar todas as deixas a pendente">
+              🔄 Reset Deixas
+            </button>
+            <button id="dc-btn-clear-cues" type="button" class="dc-mini-btn" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4);" title="Eliminar todas as deixas">
+              🗑️ Limpar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full-Width Sequential Cues List -->
+      <div class="dc-stage-card" style="padding: 16px 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <strong style="color: #fff; font-size: 1.05rem; letter-spacing: 0.02em;">📋 Fila de Deixas do Espetáculo (<span id="dc-cues-count-badge">0</span>)</strong>
+            <div style="font-size: 0.74rem; color: var(--dc-muted);">Clique em qualquer deixa para a focar ou colocar em Standby manual.</div>
+          </div>
+          <div id="dc-next-cue-summary" style="font-family: var(--font-mono); font-weight: 800; font-size: 0.88rem; color: #ffeaa7;">
+            --
+          </div>
+        </div>
+
+        <div id="dc-cues-list" class="dc-cues-full-list">
+          <!-- Injected dynamically by dc.js -->
+        </div>
+      </div>
+
+      <!-- Telemetry and Reports Drawer (Collapsible) -->
+      <div id="dc-telemetry-drawer" class="dc-stage-card" style="display: none; border-color: rgba(108, 92, 231, 0.35);">
+        <div class="dc-telemetry-header">
+          <div class="dc-telemetry-stats">
+            <div class="dc-stat-box">
+              <span class="dc-stat-label">DEIXAS DISPARADAS</span>
+              <span id="dc-telemetry-fired-count" class="dc-stat-val">0</span>
+            </div>
+            <div class="dc-stat-box">
+              <span class="dc-stat-label">DURAÇÃO TOTAL</span>
+              <span id="dc-telemetry-duration" class="dc-stat-val">00:00:00</span>
+            </div>
+            <div class="dc-stat-box">
+              <span class="dc-stat-label">FEEDBACKS TÉCNICOS</span>
+              <span id="dc-telemetry-feedback-count" class="dc-stat-val">0</span>
+            </div>
+          </div>
+
+          <div class="dc-telemetry-actions">
+            <button id="dc-btn-save-report" type="button" class="btn btn-sm" style="background: #00b894; border: 1.5px solid #00b894; color: #000; font-weight: 800; padding: 7px 12px; border-radius: 8px; cursor: pointer;">
+              💾 Guardar no Evento
+            </button>
+            <button id="dc-btn-copy-report" type="button" class="dc-btn-primary dc-btn-sm">
+              📋 Copiar Relatório
+            </button>
+            <button id="dc-btn-download-report" type="button" class="dc-tool-btn">
+              📥 Descarregar TXT
+            </button>
+          </div>
+        </div>
+
+        <!-- Saved Reports History Section -->
+        <div class="dc-saved-reports-section" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <strong style="font-size: 0.9rem; color: #ffeaa7;">📜 Relatórios Gravados deste Evento (<span id="dc-saved-reports-count">0</span>)</strong>
+          </div>
+          <div id="dc-saved-reports-list" class="dc-saved-reports-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;"></div>
+        </div>
+
+        <!-- Live Telemetry List -->
+        <div>
+          <strong style="font-size: 0.85rem; color: #fff;">⚡ Telemetria da Sessão em Direto</strong>
+          <div id="dc-telemetry-list" class="dc-telemetry-list" style="margin-top: 8px;"></div>
+        </div>
+      </div>
+    </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- MODAL: GUIÃO DA PEÇA & LEITURA (TELEPROMPTER)                   -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div id="dc-modal-view-script" class="dc-modal" style="display: none;">
+    <div class="dc-modal-content" style="max-width: 840px; width: 94%;">
+      <div class="dc-modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dc-border); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.25rem;">📖</span>
+          <h3 style="margin: 0; font-size: 1.15rem; color: #ffeaa7;">Guião da Peça & Acompanhamento de Texto</h3>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <button id="dc-script-font-minus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Diminuir letra">A−</button>
+          <button id="dc-script-font-plus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Aumentar letra">A+</button>
+          <button id="dc-script-scroll-toggle" type="button" class="dc-tool-btn" title="Iniciar/pausar rolagem contínua">▶ Rolar Texto</button>
+          <select id="dc-script-scroll-speed" class="dc-tool-btn" style="padding: 4px 6px; font-size: 0.72rem; outline: none; background: rgba(255,255,255,0.06); color: #fff;">
+            <option value="1">Lento</option>
+            <option value="2" selected>Médio</option>
+            <option value="3">Rápido</option>
+          </select>
+          <button id="dc-btn-edit-script-text" type="button" class="dc-tool-btn">✏️ Editar</button>
+          <button id="dc-btn-import-script" type="button" class="dc-tool-btn">📥 Importar</button>
+          <button type="button" class="dc-modal-close" data-close-modal="dc-modal-view-script" style="margin-left: 8px;">✕</button>
+        </div>
+      </div>
+      <div class="dc-modal-body" style="padding: 0;">
+        <div id="dc-script-feed" class="dc-script-feed" style="max-height: 480px; overflow-y: auto; padding: 12px;"></div>
+      </div>
     </div>
   </div>
 
@@ -634,9 +710,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/theatre-importer.js?v=82"></script>
-  <script src="js/pwa.js?v=82"></script>
-  <script src="js/local-sync.js?v=82"></script>
-  <script src="js/dc.js?v=82"></script>
+  <script src="js/theatre-importer.js?v=83"></script>
+  <script src="js/pwa.js?v=83"></script>
+  <script src="js/local-sync.js?v=83"></script>
+  <script src="js/dc.js?v=83"></script>
 </body>
 </html>
