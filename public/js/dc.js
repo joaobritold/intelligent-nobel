@@ -143,7 +143,9 @@ const $btnReturnStage = document.getElementById('dc-btn-return-stage');
 // Stage Prep Elements
 const $stageArtistsList = document.getElementById('dc-stage-artists-list');
 const $stageArtistsCount = document.getElementById('dc-stage-artists-count');
-const $btnOpenConfigurator = document.getElementById('dc-btn-open-configurator');
+const $btnStageAddArtist = document.getElementById('dc-btn-stage-add-artist');
+const $btnStageImportSchedule = document.getElementById('dc-btn-stage-import-schedule');
+const $btnStageClearSchedule = document.getElementById('dc-btn-stage-clear-schedule');
 const $stageArtistNameInput = document.getElementById('dc-stage-artist-name-input');
 const $stageArtistDurInput = document.getElementById('dc-stage-artist-dur-input');
 const $stageArtistAddBtn = document.getElementById('dc-stage-artist-add-btn');
@@ -154,9 +156,26 @@ const $prepCuesCount = document.getElementById('dc-prep-cues-count');
 const $btnPrepAddCue = document.getElementById('dc-btn-prep-add-cue');
 const $btnPrepViewScript = document.getElementById('dc-btn-prep-view-script');
 
-if ($btnOpenConfigurator) {
-  $btnOpenConfigurator.href = `controller.html?room=${encodeURIComponent(roomId)}`;
-}
+// Modal Importar Alinhamento
+const $modalImportSchedule = document.getElementById('dc-modal-import-schedule');
+const $schedDropzone = document.getElementById('dc-sched-dropzone');
+const $schedFileInput = document.getElementById('dc-sched-file-input');
+const $schedImportTextarea = document.getElementById('dc-sched-import-textarea');
+const $schedPreviewContainer = document.getElementById('dc-sched-preview-container');
+const $schedPreviewCount = document.getElementById('dc-sched-preview-count');
+const $schedPreviewFileInfo = document.getElementById('dc-sched-preview-file-info');
+const $schedPreviewBox = document.getElementById('dc-sched-preview-box');
+const $schedImportConfirm = document.getElementById('dc-sched-import-confirm');
+
+// Modal Editar Artista
+const $modalEditArtist = document.getElementById('dc-modal-edit-artist');
+const $editArtistId = document.getElementById('dc-edit-artist-id');
+const $editArtistName = document.getElementById('dc-edit-artist-name');
+const $editArtistDur = document.getElementById('dc-edit-artist-dur');
+const $editArtistStart = document.getElementById('dc-edit-artist-start');
+const $editArtistNotes = document.getElementById('dc-edit-artist-notes');
+const $editArtistDeleteBtn = document.getElementById('dc-edit-artist-delete-btn');
+const $editArtistConfirm = document.getElementById('dc-edit-artist-confirm');
 
 // Hero Cue Elements (Opção A)
 const $heroCueNum = document.getElementById('dc-hero-cue-num');
@@ -685,35 +704,48 @@ function renderStagePhase() {
     lastArtistsSig = artistsSig;
     if (timers.length === 0) {
       $stageArtistsList.innerHTML = `
-        <div style="text-align: center; padding: 24px 16px; color: var(--dc-muted); font-size: 0.85rem;">
-          Nenhum artista ou ato adicionado na grelha de tempos.<br>
-          <span style="font-size: 0.78rem;">Os artistas e alinhamento configurados no Controlador aparecem aqui automaticamente.</span>
+        <div style="text-align: center; padding: 26px 16px; border: 1.5px dashed rgba(255,255,255,0.12); border-radius: 10px; margin: 6px 0;">
+          <div style="font-size: 2rem; margin-bottom: 6px;">🎭</div>
+          <div style="font-weight: 800; font-size: 0.95rem; color: #fff; margin-bottom: 4px;">Nenhum artista ou ato no alinhamento de palco</div>
+          <div style="font-size: 0.78rem; color: var(--dc-muted); margin-bottom: 12px;">Crie a sua lista de palco diretamente aqui ou carregue uma folha de horários.</div>
+          <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+            <button id="dc-btn-stage-empty-demo" type="button" class="dc-tool-btn" style="color: #ffeaa7; border-color: rgba(253, 203, 110, 0.5); font-weight: 800;">✨ Carregar Exemplo de Peça</button>
+            <button id="dc-btn-stage-empty-import" type="button" class="dc-tool-btn">📂 Importar Ficheiro</button>
+          </div>
         </div>
       `;
+      document.getElementById('dc-btn-stage-empty-demo')?.addEventListener('click', loadDemoTheatreData);
+      document.getElementById('dc-btn-stage-empty-import')?.addEventListener('click', () => {
+        if ($modalImportSchedule) $modalImportSchedule.style.display = 'flex';
+      });
     } else {
       $stageArtistsList.innerHTML = timers.map((t, idx) => {
         const isActive = idx === activeIdx;
         const isFinished = t.state === 'finished' || (activeIdx >= 0 && idx < activeIdx);
         const isNext = activeIdx >= 0 && idx === activeIdx + 1;
 
-        let statusBadge = '<span class="dc-artist-badge waiting">Aguardando</span>';
+        let statusBadge = '<span class="dc-artist-badge waiting">Espera</span>';
         if (isActive) statusBadge = '<span class="dc-artist-badge active">🔴 AO VIVO</span>';
         else if (isNext) statusBadge = '<span class="dc-artist-badge next">🟡 A SEGUIR</span>';
         else if (isFinished) statusBadge = '<span class="dc-artist-badge done">✓ Terminado</span>';
 
-        const durMin = Math.round((t.duration || 0) / 60);
+        const durMin = Math.round((t.duration || 0) / 60000);
         const timeLabel = t.startTime ? t.startTime : (durMin > 0 ? `${durMin} min` : '--');
 
         return `
-          <div class="dc-artist-item ${isActive ? 'is-active' : ''}">
+          <div class="dc-artist-item ${isActive ? 'is-active' : ''}" data-artist-id="${escapeHtml(t.id)}">
+            <span class="dc-artist-order">#${idx + 1}</span>
             <div class="dc-artist-time">${escapeHtml(timeLabel)}</div>
             <div class="dc-artist-info">
               <div class="dc-artist-name">${escapeHtml(t.name || 'Sem nome')}</div>
               ${t.notes ? `<div class="dc-artist-notes">${escapeHtml(t.notes)}</div>` : ''}
             </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
+            <div class="dc-artist-actions">
               ${statusBadge}
-              <button type="button" class="dc-note-del-btn" data-delete-artist="${escapeHtml(t.id)}" title="Remover da lista">🗑️</button>
+              ${idx > 0 ? `<button type="button" class="dc-tool-btn" data-move-artist="up" data-id="${escapeHtml(t.id)}" title="Mover para cima">▲</button>` : ''}
+              ${idx < timers.length - 1 ? `<button type="button" class="dc-tool-btn" data-move-artist="down" data-id="${escapeHtml(t.id)}" title="Mover para baixo">▼</button>` : ''}
+              <button type="button" class="dc-tool-btn" data-edit-artist="${escapeHtml(t.id)}" title="Editar Artista">✏️</button>
+              <button type="button" class="dc-tool-btn" data-delete-artist="${escapeHtml(t.id)}" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4);" title="Eliminar Artista">🗑️</button>
             </div>
           </div>
         `;
@@ -749,9 +781,21 @@ function renderStagePhase() {
   }
 }
 
+let lastChecklistSig = '__INIT__';
+
 function renderChecklists() {
-  const checklists = state?.theatre?.checklists || {};
-  const depts = Object.keys(checklists);
+  const defaultDepts = ['Luz', 'Som', 'Maquinaria', 'Vídeo', 'Coxias'];
+  let checklists = state?.theatre?.checklists;
+  if (!checklists || typeof checklists !== 'object' || Object.keys(checklists).length === 0) {
+    if (client && typeof client._createDefaultChecklists === 'function') {
+      checklists = client._createDefaultChecklists();
+      if (state?.theatre) state.theatre.checklists = checklists;
+    } else {
+      checklists = {};
+    }
+  }
+
+  const depts = Array.from(new Set([...defaultDepts, ...Object.keys(checklists)]));
 
   let totalItems = 0;
   let doneItems = 0;
@@ -965,6 +1009,23 @@ document.addEventListener('click', (e) => {
     if (confirm('Eliminar esta anotação de palco?')) {
       client.deleteStageNote(noteId);
     }
+    return;
+  }
+
+  // Move artist up / down
+  const moveArtistBtn = e.target.closest('[data-move-artist]');
+  if (moveArtistBtn) {
+    const id = moveArtistBtn.dataset.id;
+    const dir = moveArtistBtn.dataset.moveArtist;
+    moveArtist(id, dir);
+    return;
+  }
+
+  // Edit artist modal
+  const editArtistBtn = e.target.closest('[data-edit-artist]');
+  if (editArtistBtn) {
+    const id = editArtistBtn.dataset.editArtist;
+    openEditArtistModal(id);
     return;
   }
 
@@ -1863,6 +1924,290 @@ if ($modalViewReportDownload) {
     a.download = `Relatorio_${(state?.name || roomId).replace(/\s+/g, '_')}_${viewingReport.id}.txt`;
     a.click();
     URL.revokeObjectURL(url);
+  });
+}
+
+// ─── Modal Edit Artist / Ato ─────────────────────────────────────────
+function openEditArtistModal(artistId) {
+  const artist = state?.timers?.find(t => t.id === artistId);
+  if (!artist || !$modalEditArtist) return;
+
+  if ($editArtistId) $editArtistId.value = artist.id;
+  if ($editArtistName) $editArtistName.value = artist.name || '';
+  const mins = Math.round((artist.duration || 0) / 60000);
+  if ($editArtistDur) $editArtistDur.value = mins > 0 ? mins : 15;
+  if ($editArtistStart) $editArtistStart.value = artist.startTime || '';
+  if ($editArtistNotes) $editArtistNotes.value = artist.notes || '';
+
+  $modalEditArtist.style.display = 'flex';
+  if ($editArtistName) $editArtistName.focus();
+}
+
+if ($editArtistConfirm) {
+  $editArtistConfirm.addEventListener('click', () => {
+    const artistId = $editArtistId?.value;
+    if (!artistId) return;
+
+    const name = ($editArtistName?.value || '').trim();
+    const durMins = parseFloat($editArtistDur?.value || '15') || 15;
+    const startTime = ($editArtistStart?.value || '').trim();
+    const notes = ($editArtistNotes?.value || '').trim();
+
+    if (!name) {
+      alert('Por favor introduza o nome do artista ou ato.');
+      return;
+    }
+
+    client.updateTimer(artistId, {
+      name: name,
+      duration: Math.round(durMins * 60000),
+      startTime: startTime,
+      notes: notes
+    });
+
+    $modalEditArtist.style.display = 'none';
+  });
+}
+
+if ($editArtistDeleteBtn) {
+  $editArtistDeleteBtn.addEventListener('click', () => {
+    const artistId = $editArtistId?.value;
+    if (!artistId) return;
+    const artist = state?.timers?.find(t => t.id === artistId);
+    const label = artist?.name || 'este artista/ato';
+    if (confirm(`Eliminar permanentemente "${label}"?`)) {
+      client.deleteTimer(artistId);
+      $modalEditArtist.style.display = 'none';
+    }
+  });
+}
+
+function moveArtist(artistId, direction) {
+  const timers = state?.timers || [];
+  const idx = timers.findIndex(t => t.id === artistId);
+  if (idx < 0) return;
+
+  const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (targetIdx < 0 || targetIdx >= timers.length) return;
+
+  const newOrder = timers.map(t => t.id);
+  const temp = newOrder[idx];
+  newOrder[idx] = newOrder[targetIdx];
+  newOrder[targetIdx] = temp;
+
+  client.reorderTimers(newOrder);
+}
+
+// ─── Stage Artist Header Buttons ─────────────────────────────────────
+if ($btnStageAddArtist) {
+  $btnStageAddArtist.addEventListener('click', () => {
+    if ($stageArtistNameInput) {
+      $stageArtistNameInput.focus();
+      $stageArtistNameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+}
+
+if ($btnStageImportSchedule && $modalImportSchedule) {
+  $btnStageImportSchedule.addEventListener('click', () => {
+    $modalImportSchedule.style.display = 'flex';
+  });
+}
+
+if ($btnStageClearSchedule) {
+  $btnStageClearSchedule.addEventListener('click', () => {
+    const total = state?.timers?.length || 0;
+    if (total === 0) {
+      alert('O alinhamento já está vazio.');
+      return;
+    }
+    if (confirm(`Atenção: Deseja eliminar TODOS os ${total} artistas/atos do alinhamento de palco?\nEsta ação limpará permanentemente a lista desta sala.`)) {
+      client.clearAllTimers();
+    }
+  });
+}
+
+// ─── Demo Data: Carregar Exemplo de Peça ──────────────────────────────
+function loadDemoTheatreData() {
+  if (confirm('Carregar exemplo de peça de teatro com alinhamento de atos e deixas de teste?')) {
+    client.clearAllTimers();
+    const demoTimers = [
+      { name: 'Abertura de Sala & Chegada de Público', duration: 15 * 60000, startTime: '21:00', notes: 'Música ambiente e sala a 80%' },
+      { name: 'Ato 1: O Começo da Peça', duration: 35 * 60000, startTime: '21:15', notes: 'Entrada de 3 atores em cena' },
+      { name: 'Intervalo de Palco', duration: 15 * 60000, startTime: '21:50', notes: 'Mudança de cenário e adereços' },
+      { name: 'Ato 2: O Desfecho & Agradecimentos', duration: 40 * 60000, startTime: '22:05', notes: 'Cena final e aplausos' }
+    ];
+    demoTimers.forEach(t => client.createTimer({ ...t, mode: 'countdown' }));
+
+    const demoCues = [
+      { id: 'cue_1', num: 'Q1', name: 'Abertura de Sala', departments: ['Luz', 'Som'], targetText: 'No 3º sinal da sala', notes: 'Sala a 80%, trilha suave', status: 'pending' },
+      { id: 'cue_2', num: 'Q2', name: 'Blackout & Cortina', departments: ['Luz', 'Maquinaria'], targetText: 'Silêncio na sala', notes: 'Fade 3s, abrir cortina de boca', status: 'pending' },
+      { id: 'cue_3', num: 'Q3', name: 'Foco Ator Principal', departments: ['Luz'], targetText: 'Na fala "aqui estamos nós"', notes: 'Foco quente centro', status: 'pending' },
+      { id: 'cue_4', num: 'Q4', name: 'Apoteose Final & Pano', departments: ['Luz', 'Som', 'Maquinaria'], targetText: 'Última fala do espetáculo', notes: 'Luz geral, música de fecho e baixar cortina', status: 'pending' }
+    ];
+    client.updateTheatreCues(demoCues);
+  }
+}
+
+// ─── Universal Importer: Alinhamento de Palco (Excel, PDF, CSV, TXT) ──
+let stagedScheduleTimers = [];
+
+// Tab switcher in schedule import modal
+document.querySelectorAll('.dc-import-sched-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dc-import-sched-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const targetId = btn.dataset.tabPanel;
+    document.querySelectorAll('#dc-modal-import-schedule .dc-import-panel').forEach(p => p.style.display = 'none');
+    const targetPanel = document.getElementById(targetId);
+    if (targetPanel) targetPanel.style.display = 'block';
+  });
+});
+
+function renderSchedulePreview(timers, fileInfo = '') {
+  stagedScheduleTimers = timers;
+  if ($schedPreviewCount) $schedPreviewCount.textContent = timers.length;
+  if ($schedPreviewFileInfo) $schedPreviewFileInfo.textContent = fileInfo;
+  if ($schedPreviewContainer) $schedPreviewContainer.style.display = timers.length > 0 ? 'block' : 'none';
+
+  if ($schedPreviewBox) {
+    if (timers.length === 0) {
+      $schedPreviewBox.innerHTML = '<div style="color: var(--dc-muted); text-align: center; padding: 12px;">Nenhum artista ou horário válido detetado.</div>';
+      return;
+    }
+    $schedPreviewBox.innerHTML = timers.map(t => {
+      const durMins = Math.round((t.duration || 0) / 60000);
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.82rem;">
+          <div>
+            <strong style="color: #fff;">${escapeHtml(t.name)}</strong>
+            ${t.notes ? `<span style="color: var(--dc-muted); margin-left: 6px;">(${escapeHtml(t.notes)})</span>` : ''}
+          </div>
+          <div style="font-family: var(--font-mono); color: #ffeaa7;">
+            ${t.startTime ? escapeHtml(t.startTime) + ' • ' : ''}${durMins} min
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+async function handleScheduleFile(file) {
+  if (!file) return;
+  try {
+    const titleEl = $schedDropzone?.querySelector('.dc-import-dropzone-title');
+    if (titleEl) titleEl.textContent = '⏳ A processar ficheiro de horários...';
+
+    let text = '';
+    if (typeof TheatreImporter !== 'undefined' && typeof TheatreImporter.extractTextFromFile === 'function') {
+      text = await TheatreImporter.extractTextFromFile(file);
+    }
+
+    let parsedTimers = [];
+    if (typeof ScheduleImporter !== 'undefined' && typeof ScheduleImporter.parseTextToTimers === 'function') {
+      parsedTimers = ScheduleImporter.parseTextToTimers(text);
+    }
+
+    if (!parsedTimers || parsedTimers.length === 0) {
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      parsedTimers = lines.map(line => {
+        const timeMatch = line.match(/(\d{1,2}[:.h]\d{2})/i);
+        const durMatch = line.match(/(\d{1,3})\s*(?:m|min|minutos)/i);
+        const nameClean = line.replace(/(\d{1,2}[:.h]\d{2})/g, '').replace(/(\d{1,3})\s*(?:m|min|minutos)/gi, '').replace(/^[-—–|;>]\s*/, '').replace(/\s*[-—–|;>]\s*$/, '').trim();
+        return {
+          name: nameClean || line,
+          startTime: timeMatch ? timeMatch[1].replace('h', ':').replace('.', ':') : '',
+          duration: durMatch ? parseInt(durMatch[1], 10) * 60000 : 20 * 60000,
+          mode: 'countdown'
+        };
+      });
+    }
+
+    if ($schedImportTextarea) $schedImportTextarea.value = text;
+    renderSchedulePreview(parsedTimers, `${file.name} (${Math.round(file.size / 1024)} KB)`);
+    if (titleEl) titleEl.textContent = `✓ ${file.name} carregado com sucesso`;
+  } catch (err) {
+    console.error('Error importing schedule file:', err);
+    alert('Erro ao processar ficheiro de horários: ' + (err.message || err));
+    const titleEl = $schedDropzone?.querySelector('.dc-import-dropzone-title');
+    if (titleEl) titleEl.textContent = 'Clique ou arraste um ficheiro com o alinhamento de palco';
+  }
+}
+
+if ($schedDropzone && $schedFileInput) {
+  $schedDropzone.addEventListener('click', () => $schedFileInput.click());
+  $schedFileInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleScheduleFile(file);
+  });
+
+  $schedDropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    $schedDropzone.classList.add('dragover');
+  });
+  $schedDropzone.addEventListener('dragleave', () => $schedDropzone.classList.remove('dragover'));
+  $schedDropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    $schedDropzone.classList.remove('dragover');
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleScheduleFile(file);
+  });
+}
+
+if ($schedImportTextarea) {
+  $schedImportTextarea.addEventListener('input', () => {
+    const val = $schedImportTextarea.value || '';
+    if (!val.trim()) {
+      renderSchedulePreview([]);
+      return;
+    }
+    let parsed = [];
+    if (typeof ScheduleImporter !== 'undefined' && typeof ScheduleImporter.parseTextToTimers === 'function') {
+      parsed = ScheduleImporter.parseTextToTimers(val);
+    }
+    if (!parsed || parsed.length === 0) {
+      const lines = val.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      parsed = lines.map(line => {
+        const timeMatch = line.match(/(\d{1,2}[:.h]\d{2})/i);
+        const durMatch = line.match(/(\d{1,3})\s*(?:m|min|minutos)/i);
+        const nameClean = line.replace(/(\d{1,2}[:.h]\d{2})/g, '').replace(/(\d{1,3})\s*(?:m|min|minutos)/gi, '').replace(/^[-—–|;>]\s*/, '').trim();
+        return {
+          name: nameClean || line,
+          startTime: timeMatch ? timeMatch[1].replace('h', ':').replace('.', ':') : '',
+          duration: durMatch ? parseInt(durMatch[1], 10) * 60000 : 20 * 60000,
+          mode: 'countdown'
+        };
+      });
+    }
+    renderSchedulePreview(parsed, 'Texto colado');
+  });
+}
+
+if ($schedImportConfirm) {
+  $schedImportConfirm.addEventListener('click', () => {
+    if (!stagedScheduleTimers || stagedScheduleTimers.length === 0) {
+      alert('Nenhum artista detetado para importar.');
+      return;
+    }
+
+    const modeRadio = document.querySelector('input[name="dc-sched-import-mode"]:checked');
+    const mode = modeRadio?.value || 'replace';
+
+    if (mode === 'replace') {
+      client.clearAllTimers();
+    }
+
+    stagedScheduleTimers.forEach(t => {
+      client.createTimer({
+        name: t.name,
+        duration: t.duration || 20 * 60000,
+        startTime: t.startTime || '',
+        notes: t.notes || '',
+        mode: 'countdown'
+      });
+    });
+
+    $modalImportSchedule.style.display = 'none';
   });
 }
 

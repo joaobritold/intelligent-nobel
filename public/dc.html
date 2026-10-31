@@ -194,18 +194,24 @@
             <div class="dc-stage-card-title">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span>🎭</span>
-                <span>Artistas / Elenco e Alinhamento de Palco</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>Alinhamento & Artistas de Palco</span>
                 <span id="dc-stage-artists-count" style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--dc-muted);">0 Artistas</span>
-                <a id="dc-btn-open-configurator" href="controller.html" class="dc-tool-btn" style="text-decoration: none; padding: 3px 8px; font-size: 0.72rem; color: #a29bfe; border-color: rgba(162, 155, 254, 0.4);" title="Abrir o Modo Configurador completo para editar durações, ordens e horários">⚙️ Modo Configurador</a>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <button id="dc-btn-stage-add-artist" type="button" class="dc-tool-btn" style="color: #55efc4; border-color: rgba(0, 184, 148, 0.4);">➕ Novo Artista</button>
+                <button id="dc-btn-stage-import-schedule" type="button" class="dc-tool-btn">📂 Importar Ficheiro</button>
+                <button id="dc-btn-stage-clear-schedule" type="button" class="dc-tool-btn" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.3);">🧹 Limpar</button>
               </div>
             </div>
-            <div id="dc-stage-artists-list" class="dc-artists-list">
+
+            <!-- Artists List Container -->
+            <div id="dc-stage-artists-list" class="dc-artists-list" style="max-height: 320px; overflow-y: auto;">
               <!-- Injected by dc.js -->
             </div>
+
+            <!-- Quick Add Line -->
             <div style="display: flex; gap: 8px; margin-top: 6px;">
-              <input id="dc-stage-artist-name-input" class="dc-input-sm" style="flex: 1;" placeholder="Nome do artista / ato (ex: Banda de Abertura)...">
+              <input id="dc-stage-artist-name-input" class="dc-input-sm" style="flex: 1;" placeholder="Nome do artista / ato (ex: Orquestra de Abertura)...">
               <input id="dc-stage-artist-dur-input" class="dc-input-sm" type="number" min="1" max="300" style="width: 82px;" placeholder="Min (ex: 20)">
               <button id="dc-stage-artist-add-btn" type="button" class="dc-btn-primary dc-btn-sm" style="white-space: nowrap;">➕ Adicionar</button>
             </div>
@@ -713,11 +719,104 @@
     </div>
   </div>
 
+  <!-- Modal Importar Alinhamento de Palco (Excel, PDF, Word, CSV, Texto) -->
+  <div id="dc-modal-import-schedule" class="dc-modal" style="display: none;">
+    <div class="dc-modal-content" style="max-width: 760px; width: 94%;">
+      <div class="dc-modal-header">
+        <h3>📂 Importar Alinhamento de Palco (Artistas & Horários)</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-schedule">✕</button>
+      </div>
+      <div class="dc-modal-body">
+        <div class="dc-import-tabs">
+          <button type="button" class="dc-import-sched-tab-btn active" data-tab-panel="sched-import-file-panel">📁 Ficheiro (Excel, PDF, Word, CSV)</button>
+          <button type="button" class="dc-import-sched-tab-btn" data-tab-panel="sched-import-paste-panel">✏️ Colar Texto / Horários</button>
+        </div>
+
+        <div id="sched-import-file-panel" class="dc-import-panel">
+          <div id="dc-sched-dropzone" class="dc-import-dropzone">
+            <div class="dc-import-dropzone-icon">📋</div>
+            <div class="dc-import-dropzone-title">Clique ou arraste um ficheiro com o alinhamento de palco</div>
+            <div class="dc-import-dropzone-sub">Suporta <strong>Excel (.xlsx, .xls, .csv)</strong>, <strong>PDF (.pdf)</strong>, <strong>Word (.docx)</strong> ou <strong>Texto (.txt)</strong></div>
+            <input type="file" id="dc-sched-file-input" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc,.txt" style="display: none;">
+          </div>
+        </div>
+
+        <div id="sched-import-paste-panel" class="dc-import-panel" style="display: none;">
+          <p class="dc-modal-desc">Cole as linhas com os horários e nomes dos artistas (ex: <code>21:00 - Abertura de Sala - 15m</code> ou <code>21h30 Banda Principal 45 min</code>):</p>
+          <textarea id="dc-sched-import-textarea" class="dc-textarea" placeholder="21:00 - Chegada e Abertura de Portas (15 min)&#10;21:15 - Ato 1: O Começo (30 min)&#10;21:45 - Intervalo de Palco (10 min)&#10;21:55 - Ato 2: O Desfecho (40 min)"></textarea>
+        </div>
+
+        <!-- Preview Box -->
+        <div id="dc-sched-preview-container" style="display: none; margin-top: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <strong style="font-size: 0.82rem; color: #ffeaa7;">Pré-visualização (<span id="dc-sched-preview-count">0</span> artistas/atos detetados)</strong>
+            <span id="dc-sched-preview-file-info" style="font-size: 0.72rem; color: var(--dc-muted);"></span>
+          </div>
+          <div id="dc-sched-preview-box" class="dc-import-preview-box"></div>
+        </div>
+
+        <div style="display: flex; gap: 16px; margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer;">
+            <input type="radio" name="dc-sched-import-mode" value="replace" checked>
+            <span>Substituir alinhamento atual</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer;">
+            <input type="radio" name="dc-sched-import-mode" value="append">
+            <span>Acrescentar ao alinhamento existente</span>
+          </label>
+        </div>
+      </div>
+      <div class="dc-modal-footer">
+        <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-import-schedule">Cancelar</button>
+        <button id="dc-sched-import-confirm" type="button" class="dc-btn-primary">Carregar no Alinhamento</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Editar Artista / Ato -->
+  <div id="dc-modal-edit-artist" class="dc-modal" style="display: none;">
+    <div class="dc-modal-content" style="max-width: 520px;">
+      <div class="dc-modal-header">
+        <h3>✏️ Editar Artista / Ato de Palco</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-artist">✕</button>
+      </div>
+      <div class="dc-modal-body">
+        <input type="hidden" id="dc-edit-artist-id">
+        <div class="dc-form-group">
+          <label>Nome do Artista / Ato / Intervenção:</label>
+          <input id="dc-edit-artist-name" class="dc-input" placeholder="ex: Banda de Abertura / Ato 1">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="dc-form-group">
+            <label>Duração Prevista (Minutos):</label>
+            <input id="dc-edit-artist-dur" class="dc-input" type="number" min="1" max="600" placeholder="ex: 20">
+          </div>
+          <div class="dc-form-group">
+            <label>Hora de Início (opcional):</label>
+            <input id="dc-edit-artist-start" class="dc-input" placeholder="ex: 21:00">
+          </div>
+        </div>
+        <div class="dc-form-group">
+          <label>Notas de Palco / Camarim / Microfones:</label>
+          <input id="dc-edit-artist-notes" class="dc-input" placeholder="ex: Microfone sem fios 1; entra pela esquerda">
+        </div>
+      </div>
+      <div class="dc-modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <button id="dc-edit-artist-delete-btn" type="button" class="dc-btn-secondary" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4); font-weight: 700;">🗑️ Eliminar</button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-edit-artist">Cancelar</button>
+          <button id="dc-edit-artist-confirm" type="button" class="dc-btn-primary">Guardar Alterações</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="js/schedule-importer.js?v=83"></script>
   <script src="js/theatre-importer.js?v=83"></script>
   <script src="js/pwa.js?v=83"></script>
   <script src="js/local-sync.js?v=83"></script>
