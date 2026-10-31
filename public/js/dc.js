@@ -605,7 +605,6 @@ function highlightScriptForCue(cueId) {
 
 let lastScriptSig = '';
 let lastCuesSig = '';
-let lastChecklistSig = '';
 let lastTelemetrySig = '';
 
 function renderScript() {
@@ -1738,6 +1737,7 @@ if ($btnPrepAddCue) {
   $btnPrepAddCue.addEventListener('click', openNewCueModal);
 }
 
+const $btnPrepImportCues = document.getElementById('dc-btn-prep-import-cues');
 if ($btnPrepImportCues && $modalImportCues) {
   $btnPrepImportCues.addEventListener('click', () => {
     $modalImportCues.style.display = 'flex';
