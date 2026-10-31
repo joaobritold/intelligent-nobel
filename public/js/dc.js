@@ -143,12 +143,20 @@ const $btnReturnStage = document.getElementById('dc-btn-return-stage');
 // Stage Prep Elements
 const $stageArtistsList = document.getElementById('dc-stage-artists-list');
 const $stageArtistsCount = document.getElementById('dc-stage-artists-count');
+const $btnOpenConfigurator = document.getElementById('dc-btn-open-configurator');
+const $stageArtistNameInput = document.getElementById('dc-stage-artist-name-input');
+const $stageArtistDurInput = document.getElementById('dc-stage-artist-dur-input');
+const $stageArtistAddBtn = document.getElementById('dc-stage-artist-add-btn');
 const $stageNotesList = document.getElementById('dc-stage-notes-list');
 const $stageNoteInput = document.getElementById('dc-stage-note-input');
 const $stageNoteAddBtn = document.getElementById('dc-stage-note-add-btn');
 const $prepCuesCount = document.getElementById('dc-prep-cues-count');
 const $btnPrepAddCue = document.getElementById('dc-btn-prep-add-cue');
 const $btnPrepViewScript = document.getElementById('dc-btn-prep-view-script');
+
+if ($btnOpenConfigurator) {
+  $btnOpenConfigurator.href = `controller.html?room=${encodeURIComponent(roomId)}`;
+}
 
 // Hero Cue Elements (Opção A)
 const $heroCueNum = document.getElementById('dc-hero-cue-num');
@@ -703,7 +711,10 @@ function renderStagePhase() {
               <div class="dc-artist-name">${escapeHtml(t.name || 'Sem nome')}</div>
               ${t.notes ? `<div class="dc-artist-notes">${escapeHtml(t.notes)}</div>` : ''}
             </div>
-            <div>${statusBadge}</div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              ${statusBadge}
+              <button type="button" class="dc-note-del-btn" data-delete-artist="${escapeHtml(t.id)}" title="Remover da lista">🗑️</button>
+            </div>
           </div>
         `;
       }).join('');
@@ -956,6 +967,18 @@ document.addEventListener('click', (e) => {
     }
     return;
   }
+
+  // Delete artist / act
+  const delArtistBtn = e.target.closest('[data-delete-artist]');
+  if (delArtistBtn) {
+    const id = delArtistBtn.dataset.deleteArtist;
+    const item = state?.timers?.find(t => t.id === id);
+    const label = item?.name || 'este artista/ato';
+    if (confirm(`Eliminar "${label}" da lista de palco?`)) {
+      client.deleteTimer(id);
+    }
+    return;
+  }
 });
 
 // Checklist item toggle change
@@ -1094,6 +1117,34 @@ if ($stageNoteAddBtn) {
 if ($stageNoteInput) {
   $stageNoteInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') handleAddStageNote();
+  });
+}
+
+// Adicionar Artista / Ato de Palco diretamente no Modo DC
+function handleAddStageArtist() {
+  const name = ($stageArtistNameInput?.value || '').trim();
+  if (!name) return;
+  const durMins = parseFloat($stageArtistDurInput?.value || '15') || 15;
+  client.createTimer({
+    name: name,
+    mode: 'countdown',
+    duration: Math.round(durMins * 60 * 1000)
+  });
+  if ($stageArtistNameInput) $stageArtistNameInput.value = '';
+  if ($stageArtistDurInput) $stageArtistDurInput.value = '';
+}
+
+if ($stageArtistAddBtn) {
+  $stageArtistAddBtn.addEventListener('click', handleAddStageArtist);
+}
+if ($stageArtistNameInput) {
+  $stageArtistNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleAddStageArtist();
+  });
+}
+if ($stageArtistDurInput) {
+  $stageArtistDurInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleAddStageArtist();
   });
 }
 

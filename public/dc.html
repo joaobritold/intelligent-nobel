@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -196,10 +196,18 @@
                 <span>🎭</span>
                 <span>Artistas / Elenco e Alinhamento de Palco</span>
               </div>
-              <span id="dc-stage-artists-count" style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--dc-muted);">0 Artistas</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="dc-stage-artists-count" style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--dc-muted);">0 Artistas</span>
+                <a id="dc-btn-open-configurator" href="controller.html" class="dc-tool-btn" style="text-decoration: none; padding: 3px 8px; font-size: 0.72rem; color: #a29bfe; border-color: rgba(162, 155, 254, 0.4);" title="Abrir o Modo Configurador completo para editar durações, ordens e horários">⚙️ Modo Configurador</a>
+              </div>
             </div>
             <div id="dc-stage-artists-list" class="dc-artists-list">
               <!-- Injected by dc.js -->
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 6px;">
+              <input id="dc-stage-artist-name-input" class="dc-input-sm" style="flex: 1;" placeholder="Nome do artista / ato (ex: Banda de Abertura)...">
+              <input id="dc-stage-artist-dur-input" class="dc-input-sm" type="number" min="1" max="300" style="width: 82px;" placeholder="Min (ex: 20)">
+              <button id="dc-stage-artist-add-btn" type="button" class="dc-btn-primary dc-btn-sm" style="white-space: nowrap;">➕ Adicionar</button>
             </div>
           </div>
 
