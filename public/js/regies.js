@@ -93,6 +93,7 @@ const $msgAckBtn = document.getElementById('regie-msg-ack-btn');
 
 const $mobileTabs = document.getElementById('regie-mobile-tabs');
 const $mainBody = document.getElementById('regie-main-body');
+const $regieHeaderTimer = document.getElementById('regie-header-timer');
 
 // Web Audio API Synthesizer for Intercom Call Chime
 let audioCtx = null;
@@ -808,6 +809,22 @@ function render() {
   const activeTimer = StageTimerClient.getActiveTimer(state);
   const activeIdx = state.timers.findIndex(t => t.id === (activeTimer?.id || state.activeTimerId));
   const slots = computeScheduleSlots(state.timers, activeIdx);
+
+  // Update Header Stage Timer
+  if ($regieHeaderTimer) {
+    if (!activeTimer) {
+      $regieHeaderTimer.textContent = '--:--';
+      $regieHeaderTimer.style.color = '#94a3b8';
+    } else {
+      const displayVal = getTimerDisplayValue(activeTimer);
+      const color = getTimerColor(activeTimer);
+      $regieHeaderTimer.textContent = displayVal;
+      if (color === 'danger') $regieHeaderTimer.style.color = '#ff6b6b';
+      else if (color === 'warn') $regieHeaderTimer.style.color = '#ffeaa7';
+      else if (color === 'finished') $regieHeaderTimer.style.color = '#ff4757';
+      else $regieHeaderTimer.style.color = '#00ffb3';
+    }
+  }
 
   // Left card: Active Artist
   if (!activeTimer) {

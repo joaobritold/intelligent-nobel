@@ -196,6 +196,11 @@
   border-radius: 6px;
 }
 
+.regie-header-timer-box {
+  background: rgba(108, 92, 231, 0.15);
+  border-color: rgba(108, 92, 231, 0.4);
+}
+
 .regie-meta-label {
   font-size: 0.6rem;
   font-weight: 700;

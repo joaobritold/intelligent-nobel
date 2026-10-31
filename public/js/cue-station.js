@@ -87,6 +87,28 @@ const $audioText = document.getElementById('cs-audio-text');
 const $clockElapsed = document.getElementById('cs-clock-elapsed');
 const $clockReal = document.getElementById('cs-clock-real');
 
+// Live Stage Timer DOM Elements
+const $hudTimerCard = document.getElementById('cs-hud-timer-card');
+const $hudTimerLabel = document.getElementById('cs-hud-timer-label');
+const $hudTimerVal = document.getElementById('cs-hud-timer-val');
+const $stBar = document.getElementById('cs-stage-timer-bar');
+const $stStatusBadge = document.getElementById('cs-st-status-badge');
+const $stTimeSlot = document.getElementById('cs-st-time-slot');
+const $stActName = document.getElementById('cs-st-act-name');
+const $stNotes = document.getElementById('cs-st-notes');
+const $stTimer = document.getElementById('cs-st-timer');
+const $stNextAct = document.getElementById('cs-st-next-act');
+const $tabTimerPreview = document.getElementById('cs-tab-timer-preview');
+const $eventEndBadge = document.getElementById('cs-event-end-badge');
+const $rhStatusBadge = document.getElementById('cs-rh-status-badge');
+const $rhSlot = document.getElementById('cs-rh-slot');
+const $rhName = document.getElementById('cs-rh-name');
+const $rhTimer = document.getElementById('cs-rh-timer');
+const $rhProgressBar = document.getElementById('cs-rh-progress-bar');
+const $rhNotes = document.getElementById('cs-rh-notes');
+const $rhNext = document.getElementById('cs-rh-next');
+const $rundownActsList = document.getElementById('cs-rundown-acts-list');
+
 // Urgent Banner
 const $urgentBanner = document.getElementById('cs-urgent-banner');
 const $urgentMessageText = document.getElementById('cs-urgent-message-text');
@@ -299,6 +321,8 @@ function updateClocks() {
   if ($clockReal) {
     $clockReal.textContent = StageTimerClient.getTrueTimeString(true);
   }
+
+  renderStageTimer();
 
   const th = state?.theatre;
   if (!th) return;
@@ -650,11 +674,301 @@ function syncPhaseTab(phase, showState) {
   }
 }
 
+// ─── Stage Timer Helpers & Logic ────────────────────────────────────
+function formatTime(ms) {
+  if (typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.formatTime === 'function') {
+    return StageTimerClient.formatTime(ms);
+  }
+  const totalSecs = Math.max(0, Math.floor(ms / 1000));
+  const mm = String(Math.floor(totalSecs / 60)).padStart(2, '0');
+  const ss = String(totalSecs % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
+}
+
+function getTimerElapsed(timer) {
+  if (typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.getTimerElapsed === 'function') {
+    return StageTimerClient.getTimerElapsed(timer);
+  }
+  if (!timer) return 0;
+  if (timer.state === 'running') {
+    return Math.max(0, Date.now() - (timer.startedAt || Date.now()) + (timer.elapsed || 0));
+  }
+  return timer.elapsed || 0;
+}
+
+function getTimerColor(timer) {
+  if (!timer) return 'safe';
+  if (timer.state === 'finished') return 'finished';
+  const elapsed = getTimerElapsed(timer);
+  if (timer.mode === 'countdown') {
+    const remaining = timer.duration - elapsed;
+    if (remaining <= 0) return 'finished';
+    if (timer.duration > 0) {
+      const pct = (elapsed / timer.duration) * 100;
+      if (pct > 95) return 'danger';
+      if (pct > 80) return 'warn';
+      return 'safe';
+    }
+    if (remaining <= (timer.dangerAt || 60000)) return 'danger';
+    if (remaining <= (timer.warnAt || 180000)) return 'warn';
+    return 'safe';
+  }
+  return 'safe';
+}
+
+function getTimerDisplayValue(timer) {
+  if (!timer) return '--:--';
+  if (timer.mode === 'clock') {
+    return StageTimerClient.getTrueTimeString();
+  }
+  const elapsed = getTimerElapsed(timer);
+  if (timer.mode === 'countdown') {
+    const remaining = timer.duration - elapsed;
+    return formatTime(remaining);
+  }
+  return formatTime(elapsed);
+}
+
+function getTimerProgress(timer) {
+  if (!timer || timer.mode !== 'countdown' || !timer.duration) return 0;
+  const elapsed = getTimerElapsed(timer);
+  return Math.min(100, Math.max(0, (elapsed / timer.duration) * 100));
+}
+
+let lastRundownSig = '';
+
+function renderStageTimer() {
+  if (!state) return;
+  const timers = Array.isArray(state.timers) ? state.timers : [];
+  const activeTimer = typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.getActiveTimer === 'function'
+    ? StageTimerClient.getActiveTimer(state)
+    : (timers.find(t => t.id === state.activeTimerId) || null);
+
+  const activeIdx = timers.findIndex(t => t.id === (activeTimer?.id || state.activeTimerId));
+  const nextTimer = activeIdx >= 0 && activeIdx + 1 < timers.length ? timers[activeIdx + 1] : null;
+
+  // Schedule / Slots calculation
+  let slots = [];
+  if (typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.computeCascadeSchedule === 'function') {
+    const cascade = StageTimerClient.computeCascadeSchedule(state);
+    if (cascade && Array.isArray(cascade.slots) && cascade.slots.length > 0) {
+      slots = timers.map(t => {
+        const s = cascade.slots.find(slot => slot.id === t.id);
+        return s ? s.slotRange : (t.startTime ? t.startTime.trim() : '--:--');
+      });
+    }
+  }
+
+  // End of event badge
+  if ($eventEndBadge && typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.computeEventEndTime === 'function') {
+    const endStr = StageTimerClient.computeEventEndTime(state);
+    $eventEndBadge.textContent = `🏁 Fim: ${endStr}`;
+  }
+
+  if (!activeTimer) {
+    // No active timer
+    if ($hudTimerVal) {
+      $hudTimerVal.textContent = '--:--';
+      $hudTimerVal.className = 'cs-clock-value cs-timer-val';
+    }
+    if ($tabTimerPreview) {
+      $tabTimerPreview.textContent = '--:--';
+    }
+    if ($stStatusBadge) {
+      $stStatusBadge.className = 'cs-st-badge pre';
+      $stStatusBadge.textContent = '● AGUARDA';
+    }
+    if ($stTimeSlot) $stTimeSlot.textContent = '';
+    if ($stActName) $stActName.textContent = 'Sem ato / artista ativo em palco';
+    if ($stNotes) $stNotes.style.display = 'none';
+    if ($stTimer) {
+      $stTimer.textContent = '--:--';
+      $stTimer.className = 'cs-st-timer';
+    }
+    if ($stNextAct) {
+      if (timers.length > 0) {
+        $stNextAct.textContent = `A SEGUIR: ${timers[0].name} (${formatTime(timers[0].duration)})`;
+        $stNextAct.style.display = 'block';
+      } else {
+        $stNextAct.style.display = 'none';
+      }
+    }
+
+    // Hero Card in Tab 3
+    if ($rhStatusBadge) {
+      $rhStatusBadge.className = 'cs-st-badge pre';
+      $rhStatusBadge.textContent = '● AGUARDA';
+    }
+    if ($rhSlot) $rhSlot.textContent = '';
+    if ($rhName) $rhName.textContent = timers.length > 0 ? 'Aguardando Início do 1º Ato' : 'Sem atos configurados no alinhamento';
+    if ($rhTimer) {
+      $rhTimer.textContent = '--:--';
+      $rhTimer.className = 'cs-rh-timer';
+    }
+    if ($rhProgressBar) $rhProgressBar.style.width = '0%';
+    if ($rhNotes) $rhNotes.style.display = 'none';
+    if ($rhNext) {
+      if (timers.length > 0) {
+        $rhNext.textContent = `⏭️ A SEGUIR: ${timers[0].name} (${formatTime(timers[0].duration)})`;
+        $rhNext.style.display = 'block';
+      } else {
+        $rhNext.style.display = 'none';
+      }
+    }
+  } else {
+    // Active timer exists!
+    const displayVal = getTimerDisplayValue(activeTimer);
+    const color = getTimerColor(activeTimer);
+    const isRunning = activeTimer.state === 'running';
+    const statusText = isRunning ? '● EM CENA' : '● PREPARADO';
+    const badgeClass = isRunning ? 'cs-st-badge live' : 'cs-st-badge pre';
+
+    // HUD Timer
+    if ($hudTimerVal) {
+      $hudTimerVal.textContent = displayVal;
+      $hudTimerVal.className = `cs-clock-value cs-timer-val is-${color}`;
+    }
+    if ($tabTimerPreview) {
+      $tabTimerPreview.textContent = displayVal;
+    }
+
+    // Live Stage Timer Bar
+    if ($stStatusBadge) {
+      $stStatusBadge.className = badgeClass;
+      $stStatusBadge.textContent = statusText;
+    }
+    const slotStr = slots[activeIdx] || (activeTimer.startTime ? `Horário: ${activeTimer.startTime}` : `Duração: ${formatTime(activeTimer.duration)}`);
+    if ($stTimeSlot) {
+      $stTimeSlot.textContent = slotStr ? `[${slotStr}]` : '';
+    }
+    if ($stActName) {
+      $stActName.textContent = activeTimer.name;
+    }
+    if ($stNotes) {
+      if (activeTimer.notes && activeTimer.notes.trim()) {
+        $stNotes.textContent = `📝 ${activeTimer.notes.trim()}`;
+        $stNotes.style.display = 'block';
+      } else {
+        $stNotes.style.display = 'none';
+      }
+    }
+    if ($stTimer) {
+      $stTimer.textContent = displayVal;
+      $stTimer.className = `cs-st-timer is-${color}`;
+    }
+    if ($stNextAct) {
+      if (nextTimer) {
+        $stNextAct.textContent = `A SEGUIR: ${nextTimer.name} (${formatTime(nextTimer.duration)})`;
+        $stNextAct.style.display = 'block';
+      } else {
+        $stNextAct.style.display = 'none';
+      }
+    }
+
+    // Hero Card in Tab 3
+    if ($rhStatusBadge) {
+      $rhStatusBadge.className = badgeClass;
+      $rhStatusBadge.textContent = statusText;
+    }
+    if ($rhSlot) {
+      $rhSlot.textContent = slotStr;
+    }
+    if ($rhName) {
+      $rhName.textContent = activeTimer.name;
+    }
+    if ($rhTimer) {
+      $rhTimer.textContent = displayVal;
+      $rhTimer.className = `cs-rh-timer is-${color}`;
+    }
+    if ($rhProgressBar) {
+      const progress = getTimerProgress(activeTimer);
+      $rhProgressBar.style.width = `${progress}%`;
+      if (color === 'danger' || color === 'finished') {
+        $rhProgressBar.style.background = '#ff4757';
+      } else if (color === 'warn') {
+        $rhProgressBar.style.background = '#fdcb6e';
+      } else {
+        $rhProgressBar.style.background = '#00b894';
+      }
+    }
+    if ($rhNotes) {
+      if (activeTimer.notes && activeTimer.notes.trim()) {
+        $rhNotes.textContent = `Notas: ${activeTimer.notes.trim()}`;
+        $rhNotes.style.display = 'block';
+      } else {
+        $rhNotes.style.display = 'none';
+      }
+    }
+    if ($rhNext) {
+      if (nextTimer) {
+        $rhNext.textContent = `⏭️ A SEGUIR: ${nextTimer.name} (${formatTime(nextTimer.duration)})`;
+        $rhNext.style.display = 'block';
+      } else {
+        $rhNext.style.display = 'none';
+      }
+    }
+  }
+
+  // Render Rundown Acts List in Tab 3
+  if ($rundownActsList) {
+    const rundownSig = timers.map((t, i) => `${t.id}:${t.name}:${t.duration}:${t.state}:${i === activeIdx}:${slots[i] || ''}`).join('|');
+    if (rundownSig !== lastRundownSig) {
+      lastRundownSig = rundownSig;
+      if (timers.length === 0) {
+        $rundownActsList.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--cs-muted);">Sem atos configurados no alinhamento de palco.</div>`;
+      } else {
+        $rundownActsList.innerHTML = timers.map((t, idx) => {
+          const isActive = idx === activeIdx;
+          const isNext = activeIdx >= 0 && idx === activeIdx + 1;
+          const isDone = (activeIdx >= 0 && idx < activeIdx) || t.state === 'finished';
+
+          let itemClass = 'cs-act-item';
+          let badgeText = 'AGUARDA';
+          let badgeStyle = 'background: rgba(255,255,255,0.08); color: #cbd5e1;';
+
+          if (isActive) {
+            itemClass += ' is-active';
+            badgeText = t.state === 'running' ? '● EM CENA' : '● EM PALCO';
+            badgeStyle = 'background: #00b894; color: #000; font-weight: 800;';
+          } else if (isNext) {
+            itemClass += ' is-next';
+            badgeText = 'A SEGUIR';
+            badgeStyle = 'background: #fdcb6e; color: #000; font-weight: 800;';
+          } else if (isDone) {
+            itemClass += ' is-done';
+            badgeText = '✓ TERMINADO';
+            badgeStyle = 'background: rgba(255,255,255,0.05); color: #64748b;';
+          }
+
+          const slotInfo = slots[idx] || (t.startTime ? t.startTime : formatTime(t.duration));
+
+          return `
+            <div class="${itemClass}">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="cs-act-num">#${idx + 1}</span>
+                <div>
+                  <div class="cs-act-name">${escapeHtml(t.name)}</div>
+                  <div class="cs-act-slot">${escapeHtml(slotInfo)}${t.notes ? ` • ${escapeHtml(t.notes)}` : ''}</div>
+                </div>
+              </div>
+              <div>
+                <span class="badge" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; ${badgeStyle}">${badgeText}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+  }
+}
+
 // ─── Main Render ────────────────────────────────────────────────────
 function render() {
   updateDeptUI();
 
   if (!state) return;
+
+  renderStageTimer();
 
   const th = state.theatre;
   if (!th) return;
