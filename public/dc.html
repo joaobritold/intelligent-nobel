@@ -53,8 +53,9 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Modo Jess (Diretora de Cena)</title>
-  <link rel="stylesheet" href="css/common.css?v=86">
-  <link rel="stylesheet" href="css/dc.css?v=86">
+  <link rel="stylesheet" href="css/common.css?v=87">
+  <link rel="stylesheet" href="css/controller.css?v=87">
+  <link rel="stylesheet" href="css/dc.css?v=87">
 </head>
 <body>
   <div id="dc-screen" class="dc-screen">
@@ -69,7 +70,7 @@
             <div class="dc-brand-title">MODO JESS</div>
             <div class="dc-brand-sub">Diretora de Cena</div>
           </div>
-          <span class="badge dc-version-badge">v86</span>
+          <span class="badge dc-version-badge">v87</span>
         </a>
 
         <!-- Stage / Room Pill -->
@@ -189,7 +190,7 @@
       <div class="dc-stage-grid">
         <!-- Coluna Esquerda: Artistas & Notas de Palco -->
         <div style="display: flex; flex-direction: column; gap: 16px;">
-          <!-- Card Artistas / Elenco -->
+          <!-- Card Artistas / Elenco & Timers Rundown (Exact Configurator Experience) -->
           <div class="dc-stage-card">
             <div class="dc-stage-card-title">
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -198,22 +199,22 @@
                 <span id="dc-stage-artists-count" style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--dc-muted);">0 Artistas</span>
               </div>
               <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                <button id="dc-btn-stage-add-artist" type="button" class="dc-tool-btn" style="color: #55efc4; border-color: rgba(0, 184, 148, 0.4);">➕ Novo Artista</button>
-                <button id="dc-btn-stage-import-schedule" type="button" class="dc-tool-btn">📂 Importar Ficheiro</button>
-                <button id="dc-btn-stage-clear-schedule" type="button" class="dc-tool-btn" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.3);">🧹 Limpar</button>
+                <button id="dc-btn-stage-add-artist" type="button" class="btn btn-primary btn-sm btn-add-main" style="font-weight: 800; font-size: 0.8rem; padding: 4px 12px; box-shadow: 0 2px 8px rgba(108, 92, 231, 0.4);">+ Add Timer</button>
+                <button id="dc-btn-stage-import-schedule" type="button" class="btn btn-sm btn-import-outline" style="font-size: 0.75rem; padding: 4px 10px;">📂 Importar</button>
+                <button id="dc-btn-stage-clear-schedule" type="button" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 10px;">🧹 Limpar</button>
               </div>
             </div>
 
-            <!-- Artists List Container -->
-            <div id="dc-stage-artists-list" class="dc-artists-list" style="max-height: 320px; overflow-y: auto;">
+            <!-- Artists List Container: Full interactive Rundown identical to controller -->
+            <div id="dc-stage-artists-list" class="timer-list" style="max-height: 480px; overflow-y: auto; padding-right: 4px;">
               <!-- Injected by dc.js -->
             </div>
 
-            <!-- Quick Add Line -->
-            <div style="display: flex; gap: 8px; margin-top: 6px;">
-              <input id="dc-stage-artist-name-input" class="dc-input-sm" style="flex: 1;" placeholder="Nome do artista / ato (ex: Orquestra de Abertura)...">
-              <input id="dc-stage-artist-dur-input" class="dc-input-sm" type="number" min="1" max="300" style="width: 82px;" placeholder="Min (ex: 20)">
-              <button id="dc-stage-artist-add-btn" type="button" class="dc-btn-primary dc-btn-sm" style="white-space: nowrap;">➕ Adicionar</button>
+            <!-- Quick Add Line (Complementary) -->
+            <div style="display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); align-items: center;">
+              <input id="dc-stage-artist-name-input" class="input input-sm" style="flex: 1; font-size: 0.85rem;" placeholder="Ou adicione rápido: Nome do artista / ato...">
+              <input id="dc-stage-artist-dur-input" class="input input-mono input-sm" type="number" min="1" max="300" style="width: 84px; text-align: center;" placeholder="Minutos">
+              <button id="dc-stage-artist-add-btn" type="button" class="btn btn-primary btn-sm" style="white-space: nowrap; font-weight: 700;">➕ Adicionar</button>
             </div>
           </div>
 
@@ -811,15 +812,43 @@
     </div>
   </div>
 
+  <!-- Edit Timer Modal (Warnings / Alertas) -->
+  <div id="edit-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Configurar Alertas do Timer</h3>
+      </div>
+      <input type="hidden" id="modal-timer-id">
+      
+      <div class="modal-scroll-content">
+        <div class="modal-row">
+          <div class="modal-field">
+            <label class="modal-label" for="modal-warn-at">Aviso Amarelo (restante)</label>
+            <input id="modal-warn-at" class="input input-mono" placeholder="1:00">
+          </div>
+          <div class="modal-field">
+            <label class="modal-label" for="modal-danger-at">Perigo Vermelho (restante)</label>
+            <input id="modal-danger-at" class="input input-mono" placeholder="0:10">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions modal-actions-sticky">
+        <button id="modal-cancel" type="button" class="btn">Cancelar</button>
+        <button id="modal-save" type="button" class="btn btn-primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=86"></script>
-  <script src="js/theatre-importer.js?v=86"></script>
-  <script src="js/pwa.js?v=86"></script>
-  <script src="js/local-sync.js?v=86"></script>
-  <script src="js/dc.js?v=86"></script>
+  <script src="js/schedule-importer.js?v=87"></script>
+  <script src="js/theatre-importer.js?v=87"></script>
+  <script src="js/pwa.js?v=87"></script>
+  <script src="js/local-sync.js?v=87"></script>
+  <script src="js/dc.js?v=87"></script>
 </body>
 </html>

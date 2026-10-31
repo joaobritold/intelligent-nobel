@@ -192,6 +192,14 @@ const $btnToggleScriptModal = document.getElementById('dc-btn-toggle-script-moda
 const $btnToggleTelemetry = document.getElementById('dc-btn-toggle-telemetry');
 const $telemetryDrawer = document.getElementById('dc-telemetry-drawer');
 
+// Edit Warnings Modal Elements
+const $editModal = document.getElementById('edit-modal');
+const $modalTimerId = document.getElementById('modal-timer-id');
+const $modalWarnAt = document.getElementById('modal-warn-at');
+const $modalDangerAt = document.getElementById('modal-danger-at');
+const $modalCancel = document.getElementById('modal-cancel');
+const $modalSave = document.getElementById('modal-save');
+
 // ─── Helpers ────────────────────────────────────────────────────────
 function escapeHtml(str) {
   const d = document.createElement('div');
@@ -205,6 +213,94 @@ function formatElapsed(ms) {
   const mm = String(Math.floor((totalSecs % 3600) / 60)).padStart(2, '0');
   const ss = String(totalSecs % 60).padStart(2, '0');
   return `+${hh}:${mm}:${ss}`;
+}
+
+function formatTime(ms) {
+  if (ms == null || isNaN(ms)) return '0:00';
+  const totalSecs = Math.max(0, Math.floor(ms / 1000));
+  const hh = Math.floor(totalSecs / 3600);
+  const mm = Math.floor((totalSecs % 3600) / 60);
+  const ss = totalSecs % 60;
+  if (hh > 0) {
+    return `${hh}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+  }
+  return `${mm}:${String(ss).padStart(2, '0')}`;
+}
+
+function getTimerElapsed(timer) {
+  if (!timer) return 0;
+  if (timer.liveElapsed != null) return timer.liveElapsed;
+  if (timer.state === 'running' && timer.startedAt) {
+    const anchor = timer.serverStartedAt || timer.startedAt;
+    const now = (client && typeof client.getTrueTime === 'function') ? client.getTrueTime() : Date.now();
+    return (timer.elapsed || 0) + Math.max(0, now - anchor);
+  }
+  return timer.elapsed || 0;
+}
+
+function getTimerRemaining(timer) {
+  return Math.max(0, (timer?.duration || 0) - getTimerElapsed(timer));
+}
+
+function getTimerColor(timer) {
+  if (!timer) return 'white';
+  if (timer.mode === 'clock') return 'white';
+  const elapsed = getTimerElapsed(timer);
+  const rem = (timer.duration || 0) - elapsed;
+  if (rem <= 0) return 'overtime';
+  if (rem <= (timer.dangerAt ?? 10000)) return 'danger';
+  if (rem <= (timer.warnAt ?? 60000)) return 'warn';
+  return 'green';
+}
+
+function getTimerDisplayValue(timer) {
+  if (!timer) return '0:00';
+  if (timer.mode === 'clock') {
+    return StageTimerClient.getTrueTimeString ? StageTimerClient.getTrueTimeString(true) : new Date().toLocaleTimeString('pt-PT');
+  }
+  if (timer.mode === 'countup') {
+    return formatTime(getTimerElapsed(timer));
+  }
+  const rem = (timer.duration || 0) - getTimerElapsed(timer);
+  if (rem < 0) {
+    return `-${formatTime(Math.abs(rem))}`;
+  }
+  return formatTime(rem);
+}
+
+function getTimerProgress(timer) {
+  if (!timer || !timer.duration || timer.duration <= 0) return 0;
+  return Math.min(1, Math.max(0, getTimerElapsed(timer) / timer.duration));
+}
+
+function getEstimatedEndTime(timer) {
+  if (!timer || !state?.timers) return '--:--';
+  const schedule = (window.StageTimerClient && StageTimerClient.computeCascadeSchedule) ? StageTimerClient.computeCascadeSchedule(state) : null;
+  if (schedule && schedule.slots) {
+    const slot = schedule.slots.find(s => s.id === timer.id);
+    if (slot && slot.endStr) return slot.endStr;
+  }
+  return '--:--';
+}
+
+function parseTimeInput(input) {
+  if (!input) return null;
+  const s = String(input).trim();
+  if (/^\d+$/.test(s)) {
+    return parseInt(s, 10) * 60 * 1000;
+  }
+  const dotMatch = s.match(/^(\d+)[.,](\d{1,2})$/);
+  if (dotMatch) {
+    const hrs = parseInt(dotMatch[1], 10);
+    const mins = parseInt(dotMatch[2].padEnd(2, '0'), 10);
+    return (hrs * 60 + mins) * 60 * 1000;
+  }
+  const colons = s.split(':').map(Number);
+  if (colons.some(isNaN)) return null;
+  if (colons.length === 1) return colons[0] * 60 * 1000;
+  if (colons.length === 2) return (colons[0] * 60 + colons[1]) * 1000;
+  if (colons.length === 3) return (colons[0] * 3600 + colons[1] * 60 + colons[2]) * 1000;
+  return null;
 }
 
 // ─── Clocks & Time Loop ─────────────────────────────────────────────
@@ -684,7 +780,8 @@ function renderCues() {
 }
 
 // ─── Stage Phase Render (Artistas, Alinhamento & Notas Rápidas) ───────────
-let lastArtistsSig = '__INIT__';
+let lastRenderedStructureSig = '';
+let draggedId = null;
 let lastNotesSig = '__INIT__';
 
 function renderStagePhase() {
@@ -693,63 +790,209 @@ function renderStagePhase() {
   const stageNotes = th?.stageNotes || [];
 
   if ($stageArtistsCount) {
-    $stageArtistsCount.textContent = `${timers.length} Artista${timers.length === 1 ? '' : 's'} / Atos`;
+    const count = timers.length;
+    $stageArtistsCount.textContent = `${count} ${count === 1 ? 'Artista / Timer' : 'Artistas / Timers'}`;
   }
 
-  // 1. Render Artists / Lineup
-  const activeIdx = timers.findIndex(t => t.id === state?.activeTimerId);
-  const artistsSig = timers.map((t, idx) => `${t.id}:${t.name}:${t.duration}:${t.state}:${idx === activeIdx}`).join('|');
+  // 1. Render Rundown / Artists (Exact Configurator Experience)
+  if (!$stageArtistsList) return;
 
-  if (artistsSig !== lastArtistsSig && $stageArtistsList) {
-    lastArtistsSig = artistsSig;
-    if (timers.length === 0) {
-      $stageArtistsList.innerHTML = `
-        <div style="text-align: center; padding: 26px 16px; border: 1.5px dashed rgba(255,255,255,0.12); border-radius: 10px; margin: 6px 0;">
-          <div style="font-size: 2rem; margin-bottom: 6px;">🎭</div>
-          <div style="font-weight: 800; font-size: 0.95rem; color: #fff; margin-bottom: 4px;">Nenhum artista ou ato no alinhamento de palco</div>
-          <div style="font-size: 0.78rem; color: var(--dc-muted); margin-bottom: 12px;">Crie a sua lista de palco diretamente aqui ou carregue uma folha de horários.</div>
-          <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
-            <button id="dc-btn-stage-empty-demo" type="button" class="dc-tool-btn" style="color: #ffeaa7; border-color: rgba(253, 203, 110, 0.5); font-weight: 800;">✨ Carregar Exemplo de Peça</button>
-            <button id="dc-btn-stage-empty-import" type="button" class="dc-tool-btn">📂 Importar Ficheiro</button>
-          </div>
+  if (timers.length === 0) {
+    lastRenderedStructureSig = 'EMPTY';
+    $stageArtistsList.innerHTML = `
+      <div class="empty-state" style="padding: 28px 16px; border: 1.5px dashed rgba(255,255,255,0.15); border-radius: 12px; text-align: center; background: rgba(255,255,255,0.02); margin: 6px 0;">
+        <div class="empty-state-icon" style="font-size: 2.2rem; margin-bottom: 6px;">⏱️</div>
+        <div class="empty-state-text" style="font-weight: 800; font-size: 1rem; color: #fff; margin-bottom: 4px;">Nenhum artista ou timer no alinhamento</div>
+        <div class="empty-state-sub" style="font-size: 0.8rem; color: var(--dc-muted); margin-bottom: 14px;">Clique em "+ Add Timer" para começar ou carregue um mapa de horários.</div>
+        <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+          <button id="dc-empty-add-timer-btn" type="button" class="btn btn-primary btn-sm" style="font-weight: 800;">+ Add Timer</button>
+          <button id="dc-btn-stage-empty-demo" type="button" class="btn btn-sm" style="color: #ffeaa7; border-color: rgba(253, 203, 110, 0.4);">✨ Carregar Exemplo</button>
+          <button id="dc-btn-stage-empty-import" type="button" class="btn btn-sm btn-import-outline">📂 Importar Ficheiro</button>
         </div>
-      `;
-      document.getElementById('dc-btn-stage-empty-demo')?.addEventListener('click', loadDemoTheatreData);
-      document.getElementById('dc-btn-stage-empty-import')?.addEventListener('click', () => {
-        if ($modalImportSchedule) $modalImportSchedule.style.display = 'flex';
+      </div>
+    `;
+    document.getElementById('dc-empty-add-timer-btn')?.addEventListener('click', () => $btnStageAddArtist?.click());
+    document.getElementById('dc-btn-stage-empty-demo')?.addEventListener('click', loadDemoTheatreData);
+    document.getElementById('dc-btn-stage-empty-import')?.addEventListener('click', () => {
+      if ($modalImportSchedule) $modalImportSchedule.style.display = 'flex';
+    });
+  } else {
+    const structureSig = timers.map(t => `${t.id}:${t.name}:${t.notes || ''}:${t.id === state.activeTimerId}:${t.state}:${t.mode}:${t.startTime || ''}:${t.duration}`).join('|');
+    const isEditing = document.activeElement && $stageArtistsList.contains(document.activeElement);
+
+    if (structureSig === lastRenderedStructureSig || isEditing || draggedId) {
+      // In-place updates to keep focus & typing pristine
+      timers.forEach(timer => {
+        const card = $stageArtistsList.querySelector(`[data-timer-id="${timer.id}"]`);
+        if (card) {
+          const display = card.querySelector('.timer-display');
+          const color = getTimerColor(timer);
+          if (display && document.activeElement !== display) {
+            display.value = getTimerDisplayValue(timer);
+            display.className = `timer-display timer-${color}`;
+          }
+          const endBadge = card.querySelector('.timer-end-badge');
+          if (endBadge) {
+            endBadge.textContent = `🏁 Fim previsto: ${getEstimatedEndTime(timer)}`;
+          }
+          const bar = card.querySelector('.timer-progress-bar');
+          if (bar && timer.mode === 'countdown') {
+            const progress = getTimerProgress(timer);
+            bar.style.width = `${progress * 100}%`;
+            bar.className = `timer-progress-bar ${color}`;
+          }
+        }
       });
     } else {
-      $stageArtistsList.innerHTML = timers.map((t, idx) => {
-        const isActive = idx === activeIdx;
-        const isFinished = t.state === 'finished' || (activeIdx >= 0 && idx < activeIdx);
-        const isNext = activeIdx >= 0 && idx === activeIdx + 1;
+      lastRenderedStructureSig = structureSig;
 
-        let statusBadge = '<span class="dc-artist-badge waiting">Espera</span>';
-        if (isActive) statusBadge = '<span class="dc-artist-badge active">🔴 AO VIVO</span>';
-        else if (isNext) statusBadge = '<span class="dc-artist-badge next">🟡 A SEGUIR</span>';
-        else if (isFinished) statusBadge = '<span class="dc-artist-badge done">✓ Terminado</span>';
+      const html = timers.map((timer, idx) => {
+        const color = getTimerColor(timer);
+        const display = getTimerDisplayValue(timer);
+        const progress = getTimerProgress(timer);
+        const isActive = timer.id === state.activeTimerId;
+        const isRunning = timer.state === 'running';
+        const isFinished = timer.state === 'finished';
+        const endTimeStr = getEstimatedEndTime(timer);
 
-        const durMin = Math.round((t.duration || 0) / 60000);
-        const timeLabel = t.startTime ? t.startTime : (durMin > 0 ? `${durMin} min` : '--');
+        const cardClasses = [
+          'timer-card',
+          isActive ? 'active' : '',
+          isRunning ? 'running' : '',
+          isFinished ? 'finished' : '',
+        ].filter(Boolean).join(' ');
 
         return `
-          <div class="dc-artist-item ${isActive ? 'is-active' : ''}" data-artist-id="${escapeHtml(t.id)}">
-            <span class="dc-artist-order">#${idx + 1}</span>
-            <div class="dc-artist-time">${escapeHtml(timeLabel)}</div>
-            <div class="dc-artist-info">
-              <div class="dc-artist-name">${escapeHtml(t.name || 'Sem nome')}</div>
-              ${t.notes ? `<div class="dc-artist-notes">${escapeHtml(t.notes)}</div>` : ''}
+          <div class="${cardClasses}" data-timer-id="${timer.id}" draggable="false" style="margin-bottom: 10px;">
+            <div class="timer-card-top">
+              <span class="drag-handle" title="Arraste para reorganizar a ordem">⠿</span>
+              <input
+                class="timer-name-input"
+                value="${escapeHtml(timer.name)}"
+                data-timer-id="${timer.id}"
+                data-field="name"
+                placeholder="Nome do Artista / Ato..."
+                spellcheck="false"
+              />
+              <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+                <button
+                  class="btn btn-sm btn-success timer-fire-direct-btn"
+                  data-action="fire-direct"
+                  data-timer-id="${timer.id}"
+                  title="Disparar direto: coloca no ar e arranca imediatamente o contador"
+                  style="font-weight: 800; padding: 4px 10px; box-shadow: 0 2px 6px rgba(0, 184, 148, 0.4);"
+                >
+                  🚀 Disparar
+                </button>
+                <button
+                  class="btn btn-sm timer-active-btn ${isActive ? 'is-active' : ''}"
+                  data-action="set-active"
+                  data-timer-id="${timer.id}"
+                  title="Colocar como timer ativo no palco (sem arrancar)"
+                >
+                  ${isActive ? '● NO AR' : 'SET LIVE'}
+                </button>
+              </div>
             </div>
-            <div class="dc-artist-actions">
-              ${statusBadge}
-              ${idx > 0 ? `<button type="button" class="dc-tool-btn" data-move-artist="up" data-id="${escapeHtml(t.id)}" title="Mover para cima">▲</button>` : ''}
-              ${idx < timers.length - 1 ? `<button type="button" class="dc-tool-btn" data-move-artist="down" data-id="${escapeHtml(t.id)}" title="Mover para baixo">▼</button>` : ''}
-              <button type="button" class="dc-tool-btn" data-edit-artist="${escapeHtml(t.id)}" title="Editar Artista">✏️</button>
-              <button type="button" class="dc-tool-btn" data-delete-artist="${escapeHtml(t.id)}" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4);" title="Eliminar Artista">🗑️</button>
+
+            <div class="timer-card-middle">
+              <input
+                class="timer-display timer-${color}"
+                value="${display}"
+                data-timer-id="${timer.id}"
+                data-field="duration"
+                ${timer.mode === 'clock' ? 'readonly' : ''}
+                title="${timer.mode === 'clock' ? 'Hora Atual (Modo Relógio)' : 'Duração / Contagem (ex: 60 = 60m, 1.3 = 1h30m, 45, 1:30)'}"
+                spellcheck="false"
+              />
+              <div class="timer-meta">
+                <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
+                  <select class="input timer-mode-select" data-timer-id="${timer.id}" data-field="mode">
+                    <option value="countdown" ${timer.mode === 'countdown' ? 'selected' : ''}>⏬ Countdown</option>
+                    <option value="countup" ${timer.mode === 'countup' ? 'selected' : ''}>⏫ Count Up</option>
+                    <option value="clock" ${timer.mode === 'clock' ? 'selected' : ''}>🕐 Clock</option>
+                  </select>
+                  ${timer.mode !== 'clock' ? `
+                    <span class="timer-end-badge" title="Hora prevista de término">🏁 Fim previsto: ${endTimeStr}</span>
+                  ` : ''}
+                </div>
+                ${timer.mode !== 'clock' ? `
+                  <div class="timer-duration-row" style="flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px;">
+                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Duração:</span>
+                    <input
+                      class="input input-mono timer-duration-input"
+                      style="width: 78px; padding: 2px 6px; font-size: 0.8rem; text-align: center;"
+                      value="${formatTime(timer.duration)}"
+                      data-timer-id="${timer.id}"
+                      data-field="duration"
+                      title="Editar duração total (ex: 60 = 60m, 1.3 = 1h30m, 45, 1:30)"
+                      spellcheck="false"
+                    />
+                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Horário:</span>
+                    <input
+                      class="input input-mono timer-duration-input"
+                      style="width: 125px; padding: 2px 6px; font-size: 0.8rem; text-align: center;"
+                      placeholder="23:00 – 00:15"
+                      value="${escapeHtml(timer.startTime || '')}"
+                      data-timer-id="${timer.id}"
+                      data-field="startTime"
+                      title="Horário programado (ex: 21:00 ou 21:00 – 22:30)"
+                      spellcheck="false"
+                    />
+                  </div>
+                ` : ''}
+              </div>
             </div>
+
+            <div class="timer-card-notes" style="margin-bottom: 10px;">
+              <input
+                class="input timer-notes-input"
+                style="width: 100%; font-size: 0.8rem; padding: 6px 10px;"
+                placeholder="📝 Notas de palco para este artista (aparece debaixo do relógio)..."
+                value="${escapeHtml(timer.notes || '')}"
+                data-timer-id="${timer.id}"
+                data-field="notes"
+              />
+            </div>
+
+            <div class="timer-card-bottom">
+              <div class="timer-controls">
+                <button class="btn btn-icon btn-sm ${isRunning ? 'btn-success' : ''}" data-action="toggle" data-timer-id="${timer.id}" title="${isRunning ? 'Pause' : 'Start'}">
+                  ${isRunning ? '⏸' : '▶'}
+                </button>
+                <button class="btn btn-icon btn-sm" data-action="reset" data-timer-id="${timer.id}" title="Reset">
+                  ⏹
+                </button>
+                <button class="btn btn-sm" data-action="minus1m" data-timer-id="${timer.id}" title="Retirar 1 minuto" style="padding: 2px 7px; font-size: 0.72rem;">-1m</button>
+                <button class="btn btn-sm" data-action="plus1m" data-timer-id="${timer.id}" title="Adicionar 1 minuto" style="padding: 2px 7px; font-size: 0.72rem;">+1m</button>
+                <button class="btn btn-sm" data-action="plus5m" data-timer-id="${timer.id}" title="Adicionar 5 minutos" style="padding: 2px 7px; font-size: 0.72rem;">+5m</button>
+              </div>
+              <div class="timer-settings">
+                <button class="btn btn-icon btn-sm" data-action="move-up" data-timer-id="${timer.id}" title="Mover para cima" ${idx === 0 ? 'disabled style="opacity:0.35"' : ''}>
+                  ↑
+                </button>
+                <button class="btn btn-icon btn-sm" data-action="move-down" data-timer-id="${timer.id}" title="Mover para baixo" ${idx === timers.length - 1 ? 'disabled style="opacity:0.35"' : ''}>
+                  ↓
+                </button>
+                <button class="btn btn-icon btn-sm" data-action="edit" data-timer-id="${timer.id}" title="Configurar Alertas">
+                  ⚙️
+                </button>
+                <button class="btn btn-icon btn-sm btn-danger" data-action="delete" data-timer-id="${timer.id}" title="Eliminar Artista">
+                  🗑️
+                </button>
+              </div>
+            </div>
+
+            ${timer.mode === 'countdown' ? `
+              <div class="timer-progress">
+                <div class="timer-progress-bar ${color}" style="width: ${progress * 100}%"></div>
+              </div>
+            ` : ''}
           </div>
         `;
       }).join('');
+
+      $stageArtistsList.innerHTML = html;
     }
   }
 
@@ -1203,27 +1446,252 @@ if ($stageNoteInput) {
   });
 }
 
-// Adicionar Artista / Ato de Palco diretamente no Modo DC
+// ─── Rundown Event Listeners & Delegation (Identical to Configurator) ────
+if ($stageArtistsList) {
+  // Click actions: toggle, reset, fire-direct, set-active, minus1m, plus1m, plus5m, move-up, move-down, delete, edit
+  $stageArtistsList.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const timerId = btn.dataset.timerId;
+    if (!timerId) return;
+
+    switch (action) {
+      case 'toggle':
+        client.timerAction(timerId, 'toggle');
+        break;
+      case 'reset':
+        client.timerAction(timerId, 'reset');
+        break;
+      case 'minus1m':
+        client.adjustTime(timerId, -60000);
+        break;
+      case 'plus1m':
+        client.adjustTime(timerId, 60000);
+        break;
+      case 'plus5m':
+        client.adjustTime(timerId, 300000);
+        break;
+      case 'fire-direct':
+        client.timerAction(timerId, 'start');
+        break;
+      case 'set-active':
+        client.setActiveTimer(timerId);
+        break;
+      case 'delete': {
+        const t = state?.timers?.find(item => item.id === timerId);
+        const name = t ? t.name : 'este artista';
+        if (confirm(`Eliminar "${name}" do alinhamento?`)) {
+          client.deleteTimer(timerId);
+        }
+        break;
+      }
+      case 'edit':
+        openEditModal(timerId);
+        break;
+      case 'move-up': {
+        const order = (state?.timers || []).map(t => t.id);
+        const idx = order.indexOf(timerId);
+        if (idx > 0) {
+          [order[idx - 1], order[idx]] = [order[idx], order[idx - 1]];
+          client.reorderTimers(order);
+        }
+        break;
+      }
+      case 'move-down': {
+        const order = (state?.timers || []).map(t => t.id);
+        const idx = order.indexOf(timerId);
+        if (idx >= 0 && idx < order.length - 1) {
+          [order[idx], order[idx + 1]] = [order[idx + 1], order[idx]];
+          client.reorderTimers(order);
+        }
+        break;
+      }
+    }
+  });
+
+  // Focus handling for live duration editing
+  $stageArtistsList.addEventListener('focusin', (e) => {
+    const input = e.target;
+    if (input.classList.contains('timer-display') && input.dataset.timerId) {
+      const t = state?.timers?.find(item => item.id === input.dataset.timerId);
+      if (t && t.mode !== 'clock') {
+        input.dataset.editing = 'true';
+        input.value = formatTime(t.duration);
+      }
+    }
+  });
+
+  $stageArtistsList.addEventListener('focusout', (e) => {
+    const input = e.target;
+    if (input.classList.contains('timer-display') && input.dataset.timerId) {
+      input.dataset.editing = 'false';
+      const t = state?.timers?.find(item => item.id === input.dataset.timerId);
+      if (t) {
+        input.value = getTimerDisplayValue(t);
+      }
+    }
+  });
+
+  // Change event for inputs and selects
+  $stageArtistsList.addEventListener('change', (e) => {
+    const input = e.target;
+    const timerId = input.dataset.timerId;
+    const field = input.dataset.field;
+    if (!timerId || !field) return;
+
+    if (field === 'name') {
+      client.updateTimer(timerId, { name: input.value });
+    } else if (field === 'notes') {
+      client.updateTimer(timerId, { notes: input.value });
+    } else if (field === 'startTime') {
+      client.updateTimer(timerId, { startTime: input.value });
+    } else if (field === 'mode') {
+      client.updateTimer(timerId, { mode: input.value });
+    } else if (field === 'duration') {
+      const ms = parseTimeInput(input.value);
+      const t = state?.timers?.find(item => item.id === timerId);
+      if (ms && ms > 0 && t && ms !== t.duration) {
+        client.updateTimer(timerId, { duration: ms });
+      }
+    }
+  });
+
+  // Live update notes while typing
+  $stageArtistsList.addEventListener('input', (e) => {
+    const input = e.target;
+    if (input.dataset?.field === 'notes' && input.dataset?.timerId) {
+      client.updateTimer(input.dataset.timerId, { notes: input.value });
+    }
+  });
+
+  // Enter key blurs to trigger save
+  $stageArtistsList.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.matches('.timer-name-input, .timer-duration-input, .timer-display')) {
+      e.target.blur();
+    }
+  });
+
+  // Drag & Drop Reordering
+  $stageArtistsList.addEventListener('mousedown', (e) => {
+    const card = e.target.closest('.timer-card');
+    if (!card) return;
+    if (e.target.matches('input, select, textarea, button')) {
+      card.setAttribute('draggable', 'false');
+    } else {
+      card.setAttribute('draggable', 'true');
+    }
+  });
+
+  $stageArtistsList.addEventListener('mouseup', (e) => {
+    const card = e.target.closest('.timer-card');
+    if (card) card.removeAttribute('draggable');
+  });
+
+  $stageArtistsList.addEventListener('dragstart', (e) => {
+    const card = e.target.closest('.timer-card');
+    if (!card) return;
+    draggedId = card.dataset.timerId;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', draggedId);
+  });
+
+  $stageArtistsList.addEventListener('dragend', () => {
+    $stageArtistsList.querySelectorAll('.timer-card').forEach(c => {
+      c.classList.remove('dragging', 'drag-over');
+      c.removeAttribute('draggable');
+    });
+    draggedId = null;
+  });
+
+  $stageArtistsList.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const target = e.target.closest('.timer-card');
+    $stageArtistsList.querySelectorAll('.timer-card').forEach(c => {
+      c.classList.toggle('drag-over', c === target && c.dataset.timerId !== draggedId);
+    });
+  });
+
+  $stageArtistsList.addEventListener('dragleave', (e) => {
+    const target = e.target.closest('.timer-card');
+    if (target && !target.contains(e.relatedTarget)) {
+      target.classList.remove('drag-over');
+    }
+  });
+
+  $stageArtistsList.addEventListener('drop', (e) => {
+    e.preventDefault();
+    $stageArtistsList.querySelectorAll('.timer-card').forEach(c => c.classList.remove('drag-over', 'dragging'));
+    if (!draggedId || !state?.timers) return;
+
+    const target = e.target.closest('.timer-card');
+    const currentDraggedId = draggedId;
+    draggedId = null;
+
+    if (target && target.dataset.timerId !== currentDraggedId) {
+      const targetId = target.dataset.timerId;
+      const order = state.timers.map(t => t.id);
+      const fromIdx = order.indexOf(currentDraggedId);
+      const toIdx = order.indexOf(targetId);
+
+      if (fromIdx !== -1 && toIdx !== -1) {
+        order.splice(fromIdx, 1);
+        order.splice(toIdx, 0, currentDraggedId);
+        client.reorderTimers(order);
+      }
+    }
+  });
+}
+
+// ─── Modal Edit Warnings (Alertas) ───────────────────────────────────
+function openEditModal(timerId) {
+  const timer = state?.timers?.find(t => t.id === timerId);
+  if (!timer || !$editModal) return;
+
+  if ($modalTimerId) $modalTimerId.value = timerId;
+  if ($modalWarnAt) $modalWarnAt.value = formatTime(timer.warnAt ?? 60000);
+  if ($modalDangerAt) $modalDangerAt.value = formatTime(timer.dangerAt ?? 10000);
+
+  $editModal.classList.add('visible');
+}
+
+if ($modalSave) {
+  $modalSave.addEventListener('click', () => {
+    const timerId = $modalTimerId?.value;
+    const warnAt = parseTimeInput($modalWarnAt?.value);
+    const dangerAt = parseTimeInput($modalDangerAt?.value);
+
+    if (timerId && warnAt != null && dangerAt != null) {
+      client.updateTimer(timerId, { warnAt, dangerAt });
+    }
+    if ($editModal) $editModal.classList.remove('visible');
+  });
+}
+
+if ($modalCancel) {
+  $modalCancel.addEventListener('click', () => {
+    if ($editModal) $editModal.classList.remove('visible');
+  });
+}
+
+// ─── Adicionar Artista / Timer de Palco diretamente no Modo DC ───────
 function handleAddStageArtist() {
   const nextIdx = (state?.timers?.length || 0) + 1;
   const rawName = ($stageArtistNameInput?.value || '').trim();
   const durMins = parseFloat($stageArtistDurInput?.value || '20') || 20;
   const name = rawName || `Artista / Ato #${nextIdx}`;
-  const created = client.createTimer({
+  client.createTimer({
     name: name,
     mode: 'countdown',
-    duration: Math.round(durMins * 60 * 1000)
+    duration: Math.round(durMins * 60 * 1000),
+    setActive: ((state?.timers?.length || 0) === 0)
   });
   if ($stageArtistNameInput) $stageArtistNameInput.value = '';
   if ($stageArtistDurInput) $stageArtistDurInput.value = '';
 
-  if (state && created) {
-    if (!Array.isArray(state.timers)) state.timers = [];
-    if (!state.timers.some(t => t.id === created.id)) {
-      state.timers.push(created);
-    }
-    if (!state.activeTimerId) state.activeTimerId = created.id;
-  }
+  lastRenderedStructureSig = '__FORCE__';
   renderStagePhase();
 }
 
@@ -2036,25 +2504,22 @@ function moveArtist(artistId, direction) {
 if ($btnStageAddArtist) {
   $btnStageAddArtist.addEventListener('click', () => {
     const nextIdx = (state?.timers?.length || 0) + 1;
-    const inputVal = ($stageArtistNameInput?.value || '').trim();
-    const durVal = parseFloat($stageArtistDurInput?.value || '20') || 20;
-    const nameToUse = inputVal || `Artista / Ato #${nextIdx}`;
     const created = client.createTimer({
-      name: nameToUse,
+      name: `Artista / Ato #${nextIdx}`,
       mode: 'countdown',
-      duration: Math.round(durVal * 60 * 1000)
+      duration: 20 * 60 * 1000,
+      setActive: ((state?.timers?.length || 0) === 0)
     });
-    if ($stageArtistNameInput) $stageArtistNameInput.value = '';
-    if ($stageArtistDurInput) $stageArtistDurInput.value = '';
-
-    if (state && created) {
-      if (!Array.isArray(state.timers)) state.timers = [];
-      if (!state.timers.some(t => t.id === created.id)) {
-        state.timers.push(created);
-      }
-      if (!state.activeTimerId) state.activeTimerId = created.id;
-    }
+    lastRenderedStructureSig = '__FORCE__';
     renderStagePhase();
+    setTimeout(() => {
+      const card = $stageArtistsList?.querySelector(`[data-timer-id="${created?.id}"]`);
+      const nameInput = card?.querySelector('.timer-name-input');
+      if (nameInput) {
+        nameInput.focus();
+        nameInput.select();
+      }
+    }, 50);
   });
 }
 
