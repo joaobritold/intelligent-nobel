@@ -675,7 +675,7 @@ function render() {
       return `
         <div class="op-queue-item ${isAct ? 'active' : ''}" data-id="${t.id}">
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
-            <span class="op-queue-name" style="flex: 1; min-width: 0; overflow-wrap: break-word;"><span style="color:var(--text-muted); margin-right:6px;">⠿</span>${escapeHtml(t.name)}</span>
+            <div style="display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0;"><span style="color:var(--text-muted); margin-right:2px; cursor: grab;">⠿</span><input class="input op-queue-name-input" data-name-id="${t.id}" value="${escapeHtml(t.name)}" style="font-weight: 800; font-size: 0.98rem; color: #fff; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 2px 4px; flex: 1; min-width: 0;" placeholder="Nome do Artista..."></div>
             <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
               <button type="button" class="op-btn-fire ${isAct ? 'is-active' : ''}" data-fire-id="${t.id}" title="Disparar direto: coloca no ar e arranca imediatamente o contador">
                 ${isAct && isRunning ? '● NO AR' : (isAct ? '▶ ARRANCA' : '🚀 DISPARAR')}
@@ -690,9 +690,13 @@ function render() {
             <span>⏱ ${formatTime(t.duration)}</span>
             ${endTimeStr ? `<span class="op-end-time" data-end-id="${t.id}" style="color:#55efc4; font-weight:700;">🏁 Fim: ${endTimeStr}</span>` : ''}
           </div>
-          <div style="display: flex; gap: 6px; width: 100%;" onclick="event.stopPropagation()">
-            <input class="input" data-time-id="${t.id}" value="${escapeHtml(t.startTime || '')}" placeholder="23:00 – 00:15" style="padding: 6px 8px; font-size: 16px !important; width: 132px; text-align:center; flex-shrink: 0;">
-            <input class="input op-item-notes" data-note-id="${t.id}" value="${escapeHtml(t.notes || '')}" placeholder="📝 Notas deste artista..." style="padding: 6px 8px; font-size: 16px !important; flex: 1; min-width: 0;">
+          <div style="display: flex; gap: 6px; width: 100%; align-items: center;" onclick="event.stopPropagation()">
+            <input class="input" data-time-id="${t.id}" value="${escapeHtml(t.startTime || '')}" placeholder="23:00 – 00:15" style="padding: 6px 8px; font-size: 15px !important; width: 116px; text-align:center; flex-shrink: 0;" title="Horário de atuação">
+            <div style="display: flex; align-items: center; gap: 2px; flex-shrink: 0; background: rgba(0, 184, 148, 0.12); border: 1px solid rgba(0, 184, 148, 0.35); border-radius: 8px; padding: 2px 6px;" title="Editar tempo da atuação (ex: 45, 1:30, 60m)">
+              <span style="font-size: 0.72rem; color: #55efc4; font-weight: 800;">⏱️</span>
+              <input class="input input-mono op-item-dur" data-dur-id="${t.id}" value="${formatTime(t.duration)}" style="background: transparent; border: none; padding: 4px 2px; font-size: 15px !important; width: 68px; text-align: center; color: #55efc4; font-weight: 800; outline: none;" placeholder="30:00" spellcheck="false">
+            </div>
+            <input class="input op-item-notes" data-note-id="${t.id}" value="${escapeHtml(t.notes || '')}" placeholder="📝 Notas deste artista..." style="padding: 6px 8px; font-size: 15px !important; flex: 1; min-width: 0;">
           </div>
         </div>
       `;
@@ -1138,6 +1142,14 @@ $queueList.addEventListener('drop', (e) => {
 });
 
 $queueList.addEventListener('change', (e) => {
+  const durInput = e.target.closest('[data-dur-id]');
+  if (durInput) {
+    const newDur = parseTimeInput(durInput.value);
+    client.updateTimer(durInput.dataset.durId, { duration: newDur });
+    durInput.value = formatTime(newDur);
+    lastQueueSignature = '';
+    render();
+  }
   const noteInput = e.target.closest('[data-note-id]');
   if (noteInput) {
     client.updateTimer(noteInput.dataset.noteId, { notes: noteInput.value });
@@ -1145,5 +1157,15 @@ $queueList.addEventListener('change', (e) => {
   const timeInput = e.target.closest('[data-time-id]');
   if (timeInput) {
     client.updateTimer(timeInput.dataset.timeId, { startTime: timeInput.value });
+  }
+  const nameInput = e.target.closest('[data-name-id]');
+  if (nameInput) {
+    client.updateTimer(nameInput.dataset.nameId, { name: nameInput.value.trim() || 'Artista' });
+  }
+});
+
+$queueList.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.target.blur();
   }
 });

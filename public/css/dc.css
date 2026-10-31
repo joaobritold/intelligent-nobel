@@ -1597,3 +1597,269 @@ body {
     justify-content: space-between;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* LIVE STAGE HERO TIMER & OPERATOR-STYLE QUEUE (MODO JESS)            */
+/* ═══════════════════════════════════════════════════════════════════ */
+
+.dc-hero-timer-box {
+  padding: 16px 14px;
+  border-radius: 14px;
+  background: #000;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  margin-bottom: 12px;
+}
+
+.dc-hero-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  margin-bottom: 4px;
+}
+
+.dc-hero-timer-box.running .dc-hero-badge {
+  background: rgba(0, 184, 148, 0.2);
+  color: #00b894;
+}
+
+.dc-hero-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 2px;
+  text-align: center;
+}
+
+.dc-hero-time {
+  font-family: var(--font-mono, monospace);
+  font-size: clamp(2.8rem, 8vw, 4.2rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.04em;
+  color: #00b894;
+  margin: 2px 0 8px;
+}
+
+.dc-hero-time.warn { color: #fdcb6e; }
+.dc-hero-time.danger { color: #ff7675; }
+.dc-hero-time.finished {
+  color: #ff7675;
+  animation: dc-hero-flash 0.8s ease-in-out infinite;
+}
+
+@keyframes dc-hero-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.dc-hero-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dc-hero-progress-bar {
+  height: 100%;
+  background: #00b894;
+  transition: width 0.15s linear;
+}
+
+.dc-hero-progress-bar.warn { background: #fdcb6e; }
+.dc-hero-progress-bar.danger { background: #ff7675; }
+
+.dc-hero-primary-controls {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+  margin-top: 4px;
+}
+
+.dc-hero-btn-giant {
+  min-height: 48px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.12s ease;
+}
+
+.dc-hero-btn-play {
+  background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+  color: #000;
+}
+
+.dc-hero-btn-play.is-running {
+  background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+  color: #000;
+}
+
+.dc-hero-btn-reset {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+}
+
+.dc-hero-adjust-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  width: 100%;
+  max-width: 420px;
+  margin-top: 6px;
+}
+
+.dc-hero-btn-nudge {
+  padding: 6px 2px;
+  font-size: 0.78rem;
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.12s ease;
+}
+
+.dc-hero-btn-nudge:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.dc-hero-btn-nudge.plus {
+  color: #55efc4;
+  border-color: rgba(85, 239, 196, 0.35);
+  background: rgba(0, 184, 148, 0.1);
+}
+
+.dc-hero-btn-nudge.minus {
+  color: #ff7675;
+  border-color: rgba(255, 118, 117, 0.35);
+  background: rgba(214, 48, 49, 0.1);
+}
+
+/* ─── Queue List Items (Exact Operator Mode Experience) ─────────── */
+.op-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.op-queue-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(20, 20, 36, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  touch-action: manipulation;
+  cursor: default;
+  transition: all 0.15s ease;
+}
+
+.op-queue-item.active {
+  border-color: #6c5ce7;
+  background: rgba(108, 92, 231, 0.18);
+  box-shadow: 0 0 16px rgba(108, 92, 231, 0.3);
+}
+
+.op-queue-item.dragging {
+  opacity: 0.45;
+  border-color: #6c5ce7;
+}
+
+.op-queue-item.drag-over {
+  border-top: 3px solid #6c5ce7;
+}
+
+.op-btn-fire {
+  background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+  border: 1px solid rgba(0, 184, 148, 0.7);
+  color: #000;
+  font-weight: 800;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 184, 148, 0.35);
+  transition: all 0.12s ease;
+}
+
+.op-btn-fire.is-active {
+  background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
+  border-color: #d63031;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(214, 48, 49, 0.5);
+}
+
+.op-move-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  border-radius: 6px;
+  padding: 4px 7px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: all 0.12s ease;
+}
+
+.op-move-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.op-queue-del {
+  background: rgba(214, 48, 49, 0.15);
+  border: 1px solid rgba(214, 48, 49, 0.4);
+  color: #ff7675;
+  border-radius: 6px;
+  padding: 4px 7px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.op-queue-del:hover {
+  background: rgba(214, 48, 49, 0.3);
+}
+
+/* Mini Stage Timer Bar in Live Cue View */
+.dc-cue-stage-timer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1.5px solid rgba(0, 184, 148, 0.35);
+  border-radius: 10px;
+  padding: 8px 14px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}

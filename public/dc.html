@@ -53,9 +53,9 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Modo Jess (Diretora de Cena)</title>
-  <link rel="stylesheet" href="css/common.css?v=91">
-  <link rel="stylesheet" href="css/controller.css?v=91">
-  <link rel="stylesheet" href="css/dc.css?v=91">
+  <link rel="stylesheet" href="css/common.css?v=92">
+  <link rel="stylesheet" href="css/controller.css?v=92">
+  <link rel="stylesheet" href="css/dc.css?v=92">
 </head>
 <body>
   <div id="dc-screen" class="dc-screen">
@@ -70,7 +70,7 @@
             <div class="dc-brand-title">MODO JESS</div>
             <div class="dc-brand-sub">Diretora de Cena</div>
           </div>
-          <span class="badge dc-version-badge">v91</span>
+          <span class="badge dc-version-badge">v92</span>
         </a>
 
         <!-- Stage / Room Pill -->
@@ -205,8 +205,53 @@
               </div>
             </div>
 
-            <!-- Artists List Container: Full interactive Rundown identical to controller -->
-            <div id="dc-stage-artists-list" class="timer-list" style="max-height: 480px; overflow-y: auto; padding-right: 4px;">
+                        <!-- Live Stage Hero Timer Monitor (Card Estilo Modo Operador) -->
+            <div id="dc-hero-timer-card" class="dc-hero-timer-box" style="margin-top: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px; width: 100%; justify-content: space-between;">
+                <div id="dc-hero-badge" class="dc-hero-badge">PARADO</div>
+                <div id="dc-hero-endtime" style="font-size: 0.78rem; color: #55efc4; font-family: var(--font-mono); font-weight: 700;">&#127937; Fim: --:--</div>
+              </div>
+              <div id="dc-hero-name" class="dc-hero-name">Sem artista ativo</div>
+              <div id="dc-hero-time" class="dc-hero-time">00:00</div>
+              <div id="dc-hero-next" style="font-size: 0.74rem; color: #a29bfe; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 4px;"></div>
+              <div id="dc-hero-notes" style="font-size: 0.78rem; color: #cbd5e1; text-align: center; margin-bottom: 6px;"></div>
+
+              <!-- Giant Touch Controls -->
+              <div class="dc-hero-primary-controls">
+                <button id="dc-hero-btn-toggle" type="button" class="dc-hero-btn-giant dc-hero-btn-play">
+                  &#9654; INICIAR
+                </button>
+                <button id="dc-hero-btn-reset" type="button" class="dc-hero-btn-giant dc-hero-btn-reset">
+                  &#9209; RESET
+                </button>
+              </div>
+
+              <!-- Passar para tras e para a frente -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; max-width: 420px; margin-top: 6px;">
+                <button id="dc-hero-btn-prev" type="button" class="op-move-btn" style="padding: 8px; font-weight: 700; font-size: 0.85rem; border-radius: 8px;">
+                  &#9198; Anterior
+                </button>
+                <button id="dc-hero-btn-next" type="button" class="op-move-btn" style="padding: 8px; font-weight: 700; font-size: 0.85rem; border-radius: 8px;">
+                  Pr&oacute;ximo &#9197;
+                </button>
+              </div>
+
+              <!-- Nudge buttons -->
+              <div class="dc-hero-adjust-grid">
+                <button type="button" class="dc-hero-btn-nudge minus" data-dc-nudge="-5">-5m</button>
+                <button type="button" class="dc-hero-btn-nudge minus" data-dc-nudge="-1">-1m</button>
+                <button type="button" class="dc-hero-btn-nudge plus" data-dc-nudge="1">+1m</button>
+                <button type="button" class="dc-hero-btn-nudge plus" data-dc-nudge="5">+5m</button>
+                <button type="button" class="dc-hero-btn-nudge plus" data-dc-nudge="10">+10m</button>
+              </div>
+
+              <div class="dc-hero-progress">
+                <div id="dc-hero-bar" class="dc-hero-progress-bar" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <!-- Artists List Container: Sleek operator-style queue -->
+            <div id="dc-stage-artists-list" class="op-queue-list" style="max-height: 480px; overflow-y: auto; padding-right: 4px;">
               <!-- Injected by dc.js -->
             </div>
 
@@ -323,6 +368,21 @@
       </div>
 
       <!-- Giant Hero Cue Action Box (Opção A) -->
+            <!-- Mini Live Stage Timer Bar in Cue View -->
+      <div id="dc-cue-stage-timer-bar" class="dc-cue-stage-timer-bar" style="display: flex;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.1rem;">&#9201;&#65039;</span>
+          <span style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase;">PALCO ATIVO:</span>
+          <strong id="dc-cue-timer-name" style="color: #fff; font-size: 0.95rem;">--</strong>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span id="dc-cue-timer-clock" style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 800; color: #55efc4;">00:00</span>
+          <span id="dc-cue-timer-end" style="font-size: 0.78rem; font-family: var(--font-mono); color: #cbd5e1;">&#127937; --:--</span>
+          <button id="dc-cue-timer-toggle" type="button" class="btn btn-sm btn-success" style="font-size: 0.75rem; padding: 3px 8px;">&#9654;</button>
+          <button id="dc-cue-timer-reset" type="button" class="btn btn-sm" style="font-size: 0.75rem; padding: 3px 8px;">&#9209;</button>
+        </div>
+      </div>
+
       <div class="dc-action-box" style="padding: 18px 20px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
           <div>
@@ -845,10 +905,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=91"></script>
-  <script src="js/theatre-importer.js?v=91"></script>
-  <script src="js/pwa.js?v=91"></script>
-  <script src="js/local-sync.js?v=91"></script>
-  <script src="js/dc.js?v=91"></script>
+  <script src="js/schedule-importer.js?v=92"></script>
+  <script src="js/theatre-importer.js?v=92"></script>
+  <script src="js/pwa.js?v=92"></script>
+  <script src="js/local-sync.js?v=92"></script>
+  <script src="js/dc.js?v=92"></script>
 </body>
 </html>

@@ -177,6 +177,28 @@ const $editArtistNotes = document.getElementById('dc-edit-artist-notes');
 const $editArtistDeleteBtn = document.getElementById('dc-edit-artist-delete-btn');
 const $editArtistConfirm = document.getElementById('dc-edit-artist-confirm');
 
+// Live Stage Hero Timer Monitor (Modo Jess - Estilo Modo Operador)
+const $dcHeroTimerCard = document.getElementById('dc-hero-timer-card');
+const $dcHeroBadge = document.getElementById('dc-hero-badge');
+const $dcHeroEndtime = document.getElementById('dc-hero-endtime');
+const $dcHeroName = document.getElementById('dc-hero-name');
+const $dcHeroTime = document.getElementById('dc-hero-time');
+const $dcHeroNext = document.getElementById('dc-hero-next');
+const $dcHeroNotes = document.getElementById('dc-hero-notes');
+const $dcHeroBar = document.getElementById('dc-hero-bar');
+const $dcHeroBtnToggle = document.getElementById('dc-hero-btn-toggle');
+const $dcHeroBtnReset = document.getElementById('dc-hero-btn-reset');
+const $dcHeroBtnPrev = document.getElementById('dc-hero-btn-prev');
+const $dcHeroBtnNext = document.getElementById('dc-hero-btn-next');
+
+// Mini Stage Timer Bar in Live Cue View
+const $dcCueStageTimerBar = document.getElementById('dc-cue-stage-timer-bar');
+const $dcCueTimerName = document.getElementById('dc-cue-timer-name');
+const $dcCueTimerClock = document.getElementById('dc-cue-timer-clock');
+const $dcCueTimerEnd = document.getElementById('dc-cue-timer-end');
+const $dcCueTimerToggle = document.getElementById('dc-cue-timer-toggle');
+const $dcCueTimerReset = document.getElementById('dc-cue-timer-reset');
+
 // Hero Cue Elements (Opção A)
 const $heroCueNum = document.getElementById('dc-hero-cue-num');
 const $heroCueName = document.getElementById('dc-hero-cue-name');
@@ -304,7 +326,112 @@ function parseTimeInput(input) {
 }
 
 // ─── Clocks & Time Loop ─────────────────────────────────────────────
+function updateHeroTimerDisplay() {
+  if (!state?.timers) return;
+  const active = StageTimerClient.getActiveTimer(state);
+
+  // 1. Stage Phase Hero Card
+  if ($dcHeroTimerCard) {
+    if (!active) {
+      if ($dcHeroBadge) $dcHeroBadge.textContent = 'PARADO';
+      if ($dcHeroName) $dcHeroName.textContent = 'Sem artista ativo';
+      if ($dcHeroTime) {
+        $dcHeroTime.textContent = '00:00';
+        $dcHeroTime.className = 'dc-hero-time';
+      }
+      if ($dcHeroEndtime) $dcHeroEndtime.textContent = '\uD83C\uDFC1 Fim: --:--';
+      if ($dcHeroNext) $dcHeroNext.textContent = '';
+      if ($dcHeroNotes) $dcHeroNotes.textContent = '';
+      if ($dcHeroBar) $dcHeroBar.style.width = '0%';
+      if ($dcHeroBtnToggle) {
+        $dcHeroBtnToggle.innerHTML = '\u25B6 INICIAR';
+        $dcHeroBtnToggle.classList.remove('is-running');
+      }
+      $dcHeroTimerCard.classList.remove('running');
+    } else {
+      const isRunning = active.state === 'running';
+      const color = getTimerColor(active);
+      const displayVal = getTimerDisplayValue(active);
+
+      if ($dcHeroBadge) {
+        $dcHeroBadge.textContent = isRunning ? 'EM CENA / LIVE' : (active.state === 'finished' ? 'TERMINADO' : 'PARADO');
+      }
+      if ($dcHeroName) $dcHeroName.textContent = active.name || 'Sem Nome';
+      if ($dcHeroTime) {
+        $dcHeroTime.textContent = displayVal;
+        $dcHeroTime.className = 'dc-hero-time ' + color;
+      }
+      if ($dcHeroEndtime) {
+        const endStr = getEstimatedEndTime(active);
+        $dcHeroEndtime.textContent = endStr ? '\uD83C\uDFC1 Fim previsto: ' + endStr : '';
+      }
+      if ($dcHeroNotes) {
+        $dcHeroNotes.textContent = active.notes ? '\uD83D\uDCDD ' + active.notes : '';
+      }
+
+      if ($dcHeroNext) {
+        const idx = state.timers.findIndex(t => t.id === active.id);
+        const nextT = (idx >= 0 && idx + 1 < state.timers.length) ? state.timers[idx + 1] : null;
+        $dcHeroNext.textContent = nextT ? 'NEXT: ' + nextT.name : '';
+      }
+
+      if ($dcHeroBar) {
+        if (active.mode === 'countdown' && active.duration > 0) {
+          const progress = getTimerProgress(active);
+          $dcHeroBar.style.width = Math.min(100, progress * 100) + '%';
+          $dcHeroBar.className = 'dc-hero-progress-bar ' + color;
+        } else {
+          $dcHeroBar.style.width = '0%';
+        }
+      }
+
+      if ($dcHeroBtnToggle) {
+        if (isRunning) {
+          $dcHeroBtnToggle.innerHTML = '\u23F8 PAUSAR';
+          $dcHeroBtnToggle.classList.add('is-running');
+        } else {
+          $dcHeroBtnToggle.innerHTML = '\u25B6 INICIAR';
+          $dcHeroBtnToggle.classList.remove('is-running');
+        }
+      }
+
+      if (isRunning) {
+        $dcHeroTimerCard.classList.add('running');
+      } else {
+        $dcHeroTimerCard.classList.remove('running');
+      }
+    }
+  }
+
+  // 2. Cue View Mini Stage Timer Bar
+  if ($dcCueStageTimerBar) {
+    if (!active) {
+      if ($dcCueTimerName) $dcCueTimerName.textContent = 'Nenhum timer ativo';
+      if ($dcCueTimerClock) $dcCueTimerClock.textContent = '00:00';
+      if ($dcCueTimerEnd) $dcCueTimerEnd.textContent = '\uD83C\uDFC1 --:--';
+      if ($dcCueTimerToggle) $dcCueTimerToggle.textContent = '\u25B6';
+    } else {
+      const isRunning = active.state === 'running';
+      const color = getTimerColor(active);
+      if ($dcCueTimerName) $dcCueTimerName.textContent = active.name || 'Sem Nome';
+      if ($dcCueTimerClock) {
+        $dcCueTimerClock.textContent = getTimerDisplayValue(active);
+        $dcCueTimerClock.style.color = color === 'warn' ? '#fdcb6e' : (color === 'danger' || color === 'finished') ? '#ff7675' : '#55efc4';
+      }
+      if ($dcCueTimerEnd) {
+        const endStr = getEstimatedEndTime(active);
+        $dcCueTimerEnd.textContent = endStr ? '\uD83C\uDFC1 ' + endStr : '';
+      }
+      if ($dcCueTimerToggle) {
+        $dcCueTimerToggle.textContent = isRunning ? '\u23F8' : '\u25B6';
+        $dcCueTimerToggle.className = isRunning ? 'btn btn-sm btn-warn' : 'btn btn-sm btn-success';
+      }
+    }
+  }
+}
+
 function updateClocks() {
+  updateHeroTimerDisplay();
   if ($clockReal) {
     $clockReal.textContent = StageTimerClient.getTrueTimeString(true);
   }
@@ -793,20 +920,21 @@ function renderStagePhase() {
     $stageArtistsCount.textContent = `${count} ${count === 1 ? 'Artista / Timer' : 'Artistas / Timers'}`;
   }
 
-  // 1. Render Rundown / Artists (Exact Configurator Experience)
+  // 1. Render Live Hero Timer and Operator-Style Queue
+  updateHeroTimerDisplay();
   if (!$stageArtistsList) return;
 
   if (timers.length === 0) {
     lastRenderedStructureSig = 'EMPTY';
     $stageArtistsList.innerHTML = `
       <div class="empty-state" style="padding: 28px 16px; border: 1.5px dashed rgba(255,255,255,0.15); border-radius: 12px; text-align: center; background: rgba(255,255,255,0.02); margin: 6px 0;">
-        <div class="empty-state-icon" style="font-size: 2.2rem; margin-bottom: 6px;">⏱️</div>
+        <div class="empty-state-icon" style="font-size: 2.2rem; margin-bottom: 6px;">\u23F1\uFE0F</div>
         <div class="empty-state-text" style="font-weight: 800; font-size: 1rem; color: #fff; margin-bottom: 4px;">Nenhum artista ou timer no alinhamento</div>
-        <div class="empty-state-sub" style="font-size: 0.8rem; color: var(--dc-muted); margin-bottom: 14px;">Clique em "+ Add Timer" para começar ou carregue um mapa de horários.</div>
+        <div class="empty-state-sub" style="font-size: 0.8rem; color: var(--dc-muted); margin-bottom: 14px;">Clique em "+ Add Timer" para comeÃ§ar ou carregue um mapa de horÃ¡rios.</div>
         <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
           <button id="dc-empty-add-timer-btn" type="button" class="btn btn-primary btn-sm" style="font-weight: 800;">+ Add Timer</button>
-          <button id="dc-btn-stage-empty-demo" type="button" class="btn btn-sm" style="color: #ffeaa7; border-color: rgba(253, 203, 110, 0.4);">✨ Carregar Exemplo</button>
-          <button id="dc-btn-stage-empty-import" type="button" class="btn btn-sm btn-import-outline">📂 Importar Ficheiro</button>
+          <button id="dc-btn-stage-empty-demo" type="button" class="btn btn-sm" style="color: #ffeaa7; border-color: rgba(253, 203, 110, 0.4);">\u2728 Carregar Exemplo</button>
+          <button id="dc-btn-stage-empty-import" type="button" class="btn btn-sm btn-import-outline">\uD83D\uDCC2 Importar Ficheiro</button>
         </div>
       </div>
     `;
@@ -816,177 +944,58 @@ function renderStagePhase() {
       if ($modalImportSchedule) $modalImportSchedule.style.display = 'flex';
     });
   } else {
-    const structureSig = timers.map(t => `${t.id}:${t.name}:${t.notes || ''}:${t.id === state.activeTimerId}:${t.state}:${t.mode}:${t.startTime || ''}:${t.duration}`).join('|');
+    const structureSig = timers.map(t => t.id + ':' + t.name + ':' + (t.notes || '') + ':' + (t.id === state.activeTimerId) + ':' + t.state + ':' + t.mode + ':' + (t.startTime || '') + ':' + t.duration).join('|');
     const isEditing = document.activeElement && $stageArtistsList.contains(document.activeElement);
 
     if (structureSig === lastRenderedStructureSig || isEditing || draggedId) {
-      // In-place updates to keep focus & typing pristine
       timers.forEach(timer => {
-        const card = $stageArtistsList.querySelector(`[data-timer-id="${timer.id}"]`);
-        if (card) {
-          const display = card.querySelector('.timer-display');
-          const color = getTimerColor(timer);
-          if (display && document.activeElement !== display) {
-            display.value = getTimerDisplayValue(timer);
-            display.className = `timer-display timer-${color}`;
-          }
-          const endBadge = card.querySelector('.timer-end-badge');
-          if (endBadge) {
-            endBadge.textContent = `🏁 Fim previsto: ${getEstimatedEndTime(timer)}`;
-          }
-          const bar = card.querySelector('.timer-progress-bar');
-          if (bar && timer.mode === 'countdown') {
-            const progress = getTimerProgress(timer);
-            bar.style.width = `${progress * 100}%`;
-            bar.className = `timer-progress-bar ${color}`;
-          }
+        const endEl = $stageArtistsList.querySelector('[data-end-id="' + timer.id + '"]');
+        if (endEl) {
+          const endStr = getEstimatedEndTime(timer);
+          endEl.textContent = endStr ? '\uD83C\uDFC1 Fim: ' + endStr : '';
         }
       });
     } else {
       lastRenderedStructureSig = structureSig;
 
       const html = timers.map((timer, idx) => {
-        const color = getTimerColor(timer);
-        const display = getTimerDisplayValue(timer);
-        const progress = getTimerProgress(timer);
-        const isActive = timer.id === state.activeTimerId;
+        const isAct = timer.id === state.activeTimerId;
         const isRunning = timer.state === 'running';
-        const isFinished = timer.state === 'finished';
         const endTimeStr = getEstimatedEndTime(timer);
 
-        const cardClasses = [
-          'timer-card',
-          isActive ? 'active' : '',
-          isRunning ? 'running' : '',
-          isFinished ? 'finished' : '',
-        ].filter(Boolean).join(' ');
-
         return `
-          <div class="${cardClasses}" data-timer-id="${timer.id}" draggable="false" style="margin-bottom: 10px;">
-            <div class="timer-card-top">
-              <span class="drag-handle" title="Arraste para reorganizar a ordem">⠿</span>
-              <input
-                class="timer-name-input"
-                value="${escapeHtml(timer.name)}"
-                data-timer-id="${timer.id}"
-                data-field="name"
-                placeholder="Nome do Artista / Ato..."
-                spellcheck="false"
-              />
-              <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-                <button
-                  class="btn btn-sm btn-success timer-fire-direct-btn"
-                  data-action="fire-direct"
-                  data-timer-id="${timer.id}"
-                  title="Disparar direto: coloca no ar e arranca imediatamente o contador"
-                  style="font-weight: 800; padding: 4px 10px; box-shadow: 0 2px 6px rgba(0, 184, 148, 0.4);"
-                >
-                  🚀 Disparar
+          <div class="op-queue-item ${isAct ? 'active' : ''}" data-id="${timer.id}" data-timer-id="${timer.id}">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
+              <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;">
+                <span style="color:var(--dc-muted, #94a3b8); cursor: grab; font-size: 1rem;">\u283F</span>
+                <span style="font-family: var(--font-mono, monospace); font-size: 0.82rem; font-weight: 800; color: #a29bfe; min-width: 24px;">#${idx + 1}</span>
+                <input class="input op-queue-name-input" data-name-id="${timer.id}" data-field="name" data-timer-id="${timer.id}" value="${escapeHtml(timer.name)}" style="font-weight: 800; font-size: 0.95rem; color: #fff; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 2px 6px; flex: 1; min-width: 0;" placeholder="Nome do Artista...">
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                <button type="button" class="op-btn-fire ${isAct ? 'is-active' : ''}" data-fire-id="${timer.id}" data-action="fire-direct" data-timer-id="${timer.id}" title="Disparar direto: coloca no ar e arranca imediatamente o contador">
+                  ${isAct && isRunning ? '\u25CF NO AR' : (isAct ? '\u25B6 ARRANCA' : '\uD83D\uDE80 DISPARAR')}
                 </button>
-                <button
-                  class="btn btn-sm timer-active-btn ${isActive ? 'is-active' : ''}"
-                  data-action="set-active"
-                  data-timer-id="${timer.id}"
-                  title="Colocar como timer ativo no palco (sem arrancar)"
-                >
-                  ${isActive ? '● NO AR' : 'SET LIVE'}
+                <button type="button" class="op-move-btn" data-set-live="${timer.id}" data-action="set-active" data-timer-id="${timer.id}" title="Colocar em palco como ativo (sem arrancar)">
+                  ${isAct ? '\u2713 ATIVO' : 'SET LIVE'}
                 </button>
+                <button type="button" class="op-move-btn" data-move-up="${timer.id}" data-action="move-up" data-timer-id="${timer.id}" title="Subir" ${idx === 0 ? 'disabled style="opacity:0.35"' : ''}>\u2191</button>
+                <button type="button" class="op-move-btn" data-move-down="${timer.id}" data-action="move-down" data-timer-id="${timer.id}" title="Descer" ${idx === timers.length - 1 ? 'disabled style="opacity:0.35"' : ''}>\u2193</button>
+                <button type="button" class="op-queue-del" data-del-id="${timer.id}" data-action="delete" data-timer-id="${timer.id}" title="Apagar">\uD83D\uDDD1\uFE0F</button>
               </div>
             </div>
-
-            <div class="timer-card-middle">
-              <input
-                class="timer-display timer-${color}"
-                value="${display}"
-                data-timer-id="${timer.id}"
-                data-field="duration"
-                ${timer.mode === 'clock' ? 'readonly' : ''}
-                title="${timer.mode === 'clock' ? 'Hora Atual (Modo Relógio)' : 'Duração / Contagem (ex: 60 = 60m, 1.3 = 1h30m, 45, 1:30)'}"
-                spellcheck="false"
-              />
-              <div class="timer-meta">
-                <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
-                  <select class="input timer-mode-select" data-timer-id="${timer.id}" data-field="mode">
-                    <option value="countdown" ${timer.mode === 'countdown' ? 'selected' : ''}>⏬ Countdown</option>
-                    <option value="countup" ${timer.mode === 'countup' ? 'selected' : ''}>⏫ Count Up</option>
-                    <option value="clock" ${timer.mode === 'clock' ? 'selected' : ''}>🕐 Clock</option>
-                  </select>
-                  ${timer.mode !== 'clock' ? `
-                    <span class="timer-end-badge" title="Hora prevista de término">🏁 Fim previsto: ${endTimeStr}</span>
-                  ` : ''}
-                </div>
-                ${timer.mode !== 'clock' ? `
-                  <div class="timer-duration-row" style="flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px;">
-                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Duração:</span>
-                    <input
-                      class="input input-mono timer-duration-input"
-                      style="width: 78px; padding: 2px 6px; font-size: 0.8rem; text-align: center;"
-                      value="${formatTime(timer.duration)}"
-                      data-timer-id="${timer.id}"
-                      data-field="duration"
-                      title="Editar duração total (ex: 60 = 60m, 1.3 = 1h30m, 45, 1:30)"
-                      spellcheck="false"
-                    />
-                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Horário:</span>
-                    <input
-                      class="input input-mono timer-duration-input"
-                      style="width: 125px; padding: 2px 6px; font-size: 0.8rem; text-align: center;"
-                      placeholder="23:00 – 00:15"
-                      value="${escapeHtml(timer.startTime || '')}"
-                      data-timer-id="${timer.id}"
-                      data-field="startTime"
-                      title="Horário programado (ex: 21:00 ou 21:00 – 22:30)"
-                      spellcheck="false"
-                    />
-                  </div>
-                ` : ''}
-              </div>
+            <div class="op-queue-meta" style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.8rem;">
+              ${timer.startTime ? '<strong style="color:var(--accent, #6c5ce7)">[' + escapeHtml(timer.startTime) + ']</strong>' : ''}
+              <span style="color: #cbd5e1;">\u23F1 ' + formatTime(timer.duration) + '</span>
+              ${endTimeStr ? '<span class="op-end-time" data-end-id="' + timer.id + '" style="color:#55efc4; font-weight:700;">\uD83C\uDFC1 Fim: ' + endTimeStr + '</span>' : ''}
             </div>
-
-            <div class="timer-card-notes" style="margin-bottom: 10px;">
-              <input
-                class="input timer-notes-input"
-                style="width: 100%; font-size: 0.8rem; padding: 6px 10px;"
-                placeholder="📝 Notas de palco para este artista (aparece debaixo do relógio)..."
-                value="${escapeHtml(timer.notes || '')}"
-                data-timer-id="${timer.id}"
-                data-field="notes"
-              />
+            <div style="display: flex; gap: 6px; width: 100%; align-items: center;" onclick="event.stopPropagation()">
+              <input class="input" data-time-id="${timer.id}" data-field="startTime" data-timer-id="${timer.id}" value="${escapeHtml(timer.startTime || '')}" placeholder="23:00 \u2013 00:15" style="padding: 6px 8px; font-size: 14px; width: 120px; text-align:center; flex-shrink: 0;" title="HorÃ¡rio de atuaÃ§Ã£o">
+              <div style="display: flex; align-items: center; gap: 2px; flex-shrink: 0; background: rgba(0, 184, 148, 0.12); border: 1px solid rgba(0, 184, 148, 0.35); border-radius: 8px; padding: 2px 6px;" title="Editar tempo da atuaÃ§Ã£o (ex: 45, 1:30, 60m)">
+                <span style="font-size: 0.72rem; color: #55efc4; font-weight: 800;">\u23F1\uFE0F</span>
+                <input class="input input-mono op-item-dur" data-dur-id="${timer.id}" data-field="duration" data-timer-id="${timer.id}" value="${formatTime(timer.duration)}" style="background: transparent; border: none; padding: 4px 2px; font-size: 14px; width: 68px; text-align: center; color: #55efc4; font-weight: 800; outline: none;" placeholder="30:00" spellcheck="false">
+              </div>
+              <input class="input op-item-notes" data-note-id="${timer.id}" data-field="notes" data-timer-id="${timer.id}" value="${escapeHtml(timer.notes || '')}" placeholder="\uD83D\uDCDD Notas deste artista..." style="padding: 6px 8px; font-size: 14px; flex: 1; min-width: 0;">
             </div>
-
-            <div class="timer-card-bottom">
-              <div class="timer-controls">
-                <button class="btn btn-icon btn-sm ${isRunning ? 'btn-success' : ''}" data-action="toggle" data-timer-id="${timer.id}" title="${isRunning ? 'Pause' : 'Start'}">
-                  ${isRunning ? '⏸' : '▶'}
-                </button>
-                <button class="btn btn-icon btn-sm" data-action="reset" data-timer-id="${timer.id}" title="Reset">
-                  ⏹
-                </button>
-                <button class="btn btn-sm" data-action="minus1m" data-timer-id="${timer.id}" title="Retirar 1 minuto" style="padding: 2px 7px; font-size: 0.72rem;">-1m</button>
-                <button class="btn btn-sm" data-action="plus1m" data-timer-id="${timer.id}" title="Adicionar 1 minuto" style="padding: 2px 7px; font-size: 0.72rem;">+1m</button>
-                <button class="btn btn-sm" data-action="plus5m" data-timer-id="${timer.id}" title="Adicionar 5 minutos" style="padding: 2px 7px; font-size: 0.72rem;">+5m</button>
-              </div>
-              <div class="timer-settings">
-                <button class="btn btn-icon btn-sm" data-action="move-up" data-timer-id="${timer.id}" title="Mover para cima" ${idx === 0 ? 'disabled style="opacity:0.35"' : ''}>
-                  ↑
-                </button>
-                <button class="btn btn-icon btn-sm" data-action="move-down" data-timer-id="${timer.id}" title="Mover para baixo" ${idx === timers.length - 1 ? 'disabled style="opacity:0.35"' : ''}>
-                  ↓
-                </button>
-                <button class="btn btn-icon btn-sm" data-action="edit" data-timer-id="${timer.id}" title="Configurar Alertas">
-                  ⚙️
-                </button>
-                <button class="btn btn-icon btn-sm btn-danger" data-action="delete" data-timer-id="${timer.id}" title="Eliminar Artista">
-                  🗑️
-                </button>
-              </div>
-            </div>
-
-            ${timer.mode === 'countdown' ? `
-              <div class="timer-progress">
-                <div class="timer-progress-bar ${color}" style="width: ${progress * 100}%"></div>
-              </div>
-            ` : ''}
           </div>
         `;
       }).join('');
@@ -994,7 +1003,6 @@ function renderStagePhase() {
       $stageArtistsList.innerHTML = html;
     }
   }
-
   // 2. Render Stage Notes
   const notesSig = stageNotes.map(n => `${n.id}:${n.text}:${n.timeStr || n.createdAt}`).join('|');
   if (notesSig !== lastNotesSig && $stageNotesList) {
@@ -1445,205 +1453,224 @@ if ($stageNoteInput) {
   });
 }
 
-// ─── Rundown Event Listeners & Delegation (Identical to Configurator) ────
+// â”€â”€â”€ Rundown Event Listeners & Delegation (Estilo Modo Operador) â”€â”€â”€â”€â”€â”€â”€
 if ($stageArtistsList) {
-  // Click actions: toggle, reset, fire-direct, set-active, minus1m, plus1m, plus5m, move-up, move-down, delete, edit
+  // Click delegation: fire, set-live, move-up, move-down, delete
   $stageArtistsList.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-action]');
-    if (!btn) return;
-    const action = btn.dataset.action;
-    const timerId = btn.dataset.timerId;
-    if (!timerId) return;
+    const fireBtn = e.target.closest('[data-fire-id]') || e.target.closest('[data-action="fire-direct"]');
+    if (fireBtn) {
+      e.stopPropagation();
+      const id = fireBtn.dataset.fireId || fireBtn.dataset.timerId;
+      if (state && Array.isArray(state.timers)) {
+        state.activeTimerId = id;
+        state.timers.forEach(t => {
+          if (t.id === id) t.state = 'running';
+          else if (t.state === 'running') t.state = 'stopped';
+        });
+      }
+      client.timerAction(id, 'start');
+      lastRenderedStructureSig = '__FORCE__';
+      renderStagePhase();
+      return;
+    }
 
-    switch (action) {
-      case 'toggle':
-        client.timerAction(timerId, 'toggle');
-        break;
-      case 'reset':
-        client.timerAction(timerId, 'reset');
-        break;
-      case 'minus1m':
-        client.adjustTime(timerId, -60000);
-        break;
-      case 'plus1m':
-        client.adjustTime(timerId, 60000);
-        break;
-      case 'plus5m':
-        client.adjustTime(timerId, 300000);
-        break;
-      case 'fire-direct':
-        client.timerAction(timerId, 'start');
-        break;
-      case 'set-active':
-        client.setActiveTimer(timerId);
-        break;
-      case 'delete': {
-        const t = state?.timers?.find(item => item.id === timerId);
-        const name = t ? t.name : 'este artista';
-        if (confirm(`Eliminar "${name}" do alinhamento?`)) {
-          client.deleteTimer(timerId);
-        }
-        break;
+    const setLiveBtn = e.target.closest('[data-set-live]') || e.target.closest('[data-action="set-active"]');
+    if (setLiveBtn) {
+      e.stopPropagation();
+      const id = setLiveBtn.dataset.setLive || setLiveBtn.dataset.timerId;
+      client.setActiveTimer(id);
+      lastRenderedStructureSig = '__FORCE__';
+      renderStagePhase();
+      return;
+    }
+
+    const moveUpBtn = e.target.closest('[data-move-up]') || e.target.closest('[data-action="move-up"]');
+    if (moveUpBtn) {
+      e.stopPropagation();
+      const id = moveUpBtn.dataset.moveUp || moveUpBtn.dataset.timerId;
+      const order = (state?.timers || []).map(t => t.id);
+      const idx = order.indexOf(id);
+      if (idx > 0) {
+        [order[idx - 1], order[idx]] = [order[idx], order[idx - 1]];
+        client.reorderTimers(order);
       }
-      case 'edit':
-        openEditModal(timerId);
-        break;
-      case 'move-up': {
-        const order = (state?.timers || []).map(t => t.id);
-        const idx = order.indexOf(timerId);
-        if (idx > 0) {
-          [order[idx - 1], order[idx]] = [order[idx], order[idx - 1]];
-          client.reorderTimers(order);
-        }
-        break;
+      return;
+    }
+
+    const moveDownBtn = e.target.closest('[data-move-down]') || e.target.closest('[data-action="move-down"]');
+    if (moveDownBtn) {
+      e.stopPropagation();
+      const id = moveDownBtn.dataset.moveDown || moveDownBtn.dataset.timerId;
+      const order = (state?.timers || []).map(t => t.id);
+      const idx = order.indexOf(id);
+      if (idx >= 0 && idx < order.length - 1) {
+        [order[idx], order[idx + 1]] = [order[idx + 1], order[idx]];
+        client.reorderTimers(order);
       }
-      case 'move-down': {
-        const order = (state?.timers || []).map(t => t.id);
-        const idx = order.indexOf(timerId);
-        if (idx >= 0 && idx < order.length - 1) {
-          [order[idx], order[idx + 1]] = [order[idx + 1], order[idx]];
-          client.reorderTimers(order);
-        }
-        break;
+      return;
+    }
+
+    const delBtn = e.target.closest('[data-del-id]') || e.target.closest('[data-action="delete"]');
+    if (delBtn) {
+      e.stopPropagation();
+      const id = delBtn.dataset.delId || delBtn.dataset.timerId;
+      const t = state?.timers?.find(item => item.id === id);
+      const name = t ? t.name : 'este artista';
+      if (confirm(`Eliminar "${name}" do alinhamento?`)) {
+        client.deleteTimer(id);
       }
+      return;
     }
   });
 
-  // Focus handling for live duration editing
-  $stageArtistsList.addEventListener('focusin', (e) => {
-    const input = e.target;
-    if (input.classList.contains('timer-display') && input.dataset.timerId) {
-      const t = state?.timers?.find(item => item.id === input.dataset.timerId);
-      if (t && t.mode !== 'clock') {
-        input.dataset.editing = 'true';
-        input.value = formatTime(t.duration);
-      }
-    }
-  });
-
-  $stageArtistsList.addEventListener('focusout', (e) => {
-    const input = e.target;
-    if (input.classList.contains('timer-display') && input.dataset.timerId) {
-      input.dataset.editing = 'false';
-      const t = state?.timers?.find(item => item.id === input.dataset.timerId);
-      if (t) {
-        input.value = getTimerDisplayValue(t);
-      }
-    }
-  });
-
-  // Change event for inputs and selects
+  // Change delegation: duration, name, start time, notes
   $stageArtistsList.addEventListener('change', (e) => {
-    const input = e.target;
-    const timerId = input.dataset.timerId;
-    const field = input.dataset.field;
-    if (!timerId || !field) return;
-
-    if (field === 'name') {
-      client.updateTimer(timerId, { name: input.value });
-    } else if (field === 'notes') {
-      client.updateTimer(timerId, { notes: input.value });
-    } else if (field === 'startTime') {
-      client.updateTimer(timerId, { startTime: input.value });
-    } else if (field === 'mode') {
-      client.updateTimer(timerId, { mode: input.value });
-    } else if (field === 'duration') {
-      const ms = parseTimeInput(input.value);
-      const t = state?.timers?.find(item => item.id === timerId);
-      if (ms && ms > 0 && t && ms !== t.duration) {
-        client.updateTimer(timerId, { duration: ms });
+    const durInput = e.target.closest('[data-dur-id]') || (e.target.dataset?.field === 'duration' ? e.target : null);
+    if (durInput) {
+      const id = durInput.dataset.durId || durInput.dataset.timerId;
+      const newDur = parseTimeInput(durInput.value);
+      if (newDur && newDur > 0) {
+        client.updateTimer(id, { duration: newDur });
+        durInput.value = formatTime(newDur);
+        lastRenderedStructureSig = '';
+        renderStagePhase();
       }
+      return;
+    }
+
+    const nameInput = e.target.closest('[data-name-id]') || (e.target.dataset?.field === 'name' ? e.target : null);
+    if (nameInput) {
+      const id = nameInput.dataset.nameId || nameInput.dataset.timerId;
+      client.updateTimer(id, { name: nameInput.value });
+      return;
+    }
+
+    const timeInput = e.target.closest('[data-time-id]') || (e.target.dataset?.field === 'startTime' ? e.target : null);
+    if (timeInput) {
+      const id = timeInput.dataset.timeId || timeInput.dataset.timerId;
+      client.updateTimer(id, { startTime: timeInput.value });
+      return;
+    }
+
+    const noteInput = e.target.closest('[data-note-id]') || (e.target.dataset?.field === 'notes' ? e.target : null);
+    if (noteInput) {
+      const id = noteInput.dataset.noteId || noteInput.dataset.timerId;
+      client.updateTimer(id, { notes: noteInput.value });
+      return;
     }
   });
 
-  // Live update notes while typing
-  $stageArtistsList.addEventListener('input', (e) => {
-    const input = e.target;
-    if (input.dataset?.field === 'notes' && input.dataset?.timerId) {
-      client.updateTimer(input.dataset.timerId, { notes: input.value });
-    }
-  });
-
-  // Enter key blurs to trigger save
+  // Enter key on inputs triggers blur to finish editing
   $stageArtistsList.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && e.target.matches('.timer-name-input, .timer-duration-input, .timer-display')) {
+    if (e.key === 'Enter') {
       e.target.blur();
     }
   });
 
-  // Drag & Drop Reordering
-  $stageArtistsList.addEventListener('mousedown', (e) => {
-    const card = e.target.closest('.timer-card');
-    if (!card) return;
-    if (e.target.matches('input, select, textarea, button')) {
-      card.setAttribute('draggable', 'false');
-    } else {
-      card.setAttribute('draggable', 'true');
-    }
-  });
-
-  $stageArtistsList.addEventListener('mouseup', (e) => {
-    const card = e.target.closest('.timer-card');
-    if (card) card.removeAttribute('draggable');
-  });
-
+  // Drag & drop reordering
   $stageArtistsList.addEventListener('dragstart', (e) => {
-    const card = e.target.closest('.timer-card');
-    if (!card) return;
-    draggedId = card.dataset.timerId;
-    card.classList.add('dragging');
+    const item = e.target.closest('.op-queue-item');
+    if (!item) return;
+    draggedId = item.dataset.id || item.dataset.timerId;
+    item.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', draggedId);
   });
 
   $stageArtistsList.addEventListener('dragend', () => {
-    $stageArtistsList.querySelectorAll('.timer-card').forEach(c => {
-      c.classList.remove('dragging', 'drag-over');
-      c.removeAttribute('draggable');
-    });
+    $stageArtistsList.querySelectorAll('.op-queue-item').forEach(el => el.classList.remove('dragging', 'drag-over'));
     draggedId = null;
   });
 
   $stageArtistsList.addEventListener('dragover', (e) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    const target = e.target.closest('.timer-card');
-    $stageArtistsList.querySelectorAll('.timer-card').forEach(c => {
-      c.classList.toggle('drag-over', c === target && c.dataset.timerId !== draggedId);
+    const target = e.target.closest('.op-queue-item');
+    $stageArtistsList.querySelectorAll('.op-queue-item').forEach(el => {
+      el.classList.toggle('drag-over', el === target && (el.dataset.id !== draggedId));
     });
-  });
-
-  $stageArtistsList.addEventListener('dragleave', (e) => {
-    const target = e.target.closest('.timer-card');
-    if (target && !target.contains(e.relatedTarget)) {
-      target.classList.remove('drag-over');
-    }
   });
 
   $stageArtistsList.addEventListener('drop', (e) => {
     e.preventDefault();
-    $stageArtistsList.querySelectorAll('.timer-card').forEach(c => c.classList.remove('drag-over', 'dragging'));
+    $stageArtistsList.querySelectorAll('.op-queue-item').forEach(el => el.classList.remove('dragging', 'drag-over'));
     if (!draggedId || !state?.timers) return;
-
-    const target = e.target.closest('.timer-card');
-    const currentDraggedId = draggedId;
+    const target = e.target.closest('.op-queue-item');
+    const fromId = draggedId;
     draggedId = null;
+    if (!target) return;
+    const toId = target.dataset.id || target.dataset.timerId;
+    if (fromId === toId) return;
 
-    if (target && target.dataset.timerId !== currentDraggedId) {
-      const targetId = target.dataset.timerId;
-      const order = state.timers.map(t => t.id);
-      const fromIdx = order.indexOf(currentDraggedId);
-      const toIdx = order.indexOf(targetId);
+    const order = state.timers.map(t => t.id);
+    const fromIdx = order.indexOf(fromId);
+    const toIdx = order.indexOf(toId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    order.splice(fromIdx, 1);
+    order.splice(toIdx, 0, fromId);
+    client.reorderTimers(order);
+  });
+}
 
-      if (fromIdx !== -1 && toIdx !== -1) {
-        order.splice(fromIdx, 1);
-        order.splice(toIdx, 0, currentDraggedId);
-        client.reorderTimers(order);
-      }
+// Hero Timer Controls (Modo Jess)
+if ($dcHeroBtnToggle) {
+  $dcHeroBtnToggle.addEventListener('click', () => {
+    if (state?.activeTimerId) {
+      client.timerAction(state.activeTimerId, 'toggle');
     }
   });
 }
 
+if ($dcHeroBtnReset) {
+  $dcHeroBtnReset.addEventListener('click', () => {
+    if (state?.activeTimerId) {
+      client.timerAction(state.activeTimerId, 'reset');
+    }
+  });
+}
+
+if ($dcHeroBtnPrev) {
+  $dcHeroBtnPrev.addEventListener('click', () => {
+    const timers = state?.timers || [];
+    if (timers.length === 0) return;
+    const curIdx = timers.findIndex(t => t.id === state.activeTimerId);
+    const newIdx = curIdx > 0 ? curIdx - 1 : 0;
+    client.setActiveTimer(timers[newIdx].id);
+  });
+}
+
+if ($dcHeroBtnNext) {
+  $dcHeroBtnNext.addEventListener('click', () => {
+    const timers = state?.timers || [];
+    if (timers.length === 0) return;
+    const curIdx = timers.findIndex(t => t.id === state.activeTimerId);
+    const newIdx = (curIdx >= 0 && curIdx < timers.length - 1) ? curIdx + 1 : timers.length - 1;
+    client.setActiveTimer(timers[newIdx].id);
+  });
+}
+
+document.querySelectorAll('[data-dc-nudge]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const mins = parseInt(btn.dataset.dcNudge, 10);
+    if (!isNaN(mins) && state?.activeTimerId) {
+      client.adjustTime(state.activeTimerId, mins * 60000);
+    }
+  });
+});
+
+if ($dcCueTimerToggle) {
+  $dcCueTimerToggle.addEventListener('click', () => {
+    if (state?.activeTimerId) {
+      client.timerAction(state.activeTimerId, 'toggle');
+    }
+  });
+}
+
+if ($dcCueTimerReset) {
+  $dcCueTimerReset.addEventListener('click', () => {
+    if (state?.activeTimerId) {
+      client.timerAction(state.activeTimerId, 'reset');
+    }
+  });
+}
 // ─── Modal Edit Warnings (Alertas) ───────────────────────────────────
 function openEditModal(timerId) {
   const timer = state?.timers?.find(t => t.id === timerId);
