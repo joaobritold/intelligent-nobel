@@ -1339,3 +1339,293 @@ button, a, input, select, textarea {
     padding: 8px 10px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* REFINED MOBILE PHONE EXPERIENCE (TELEMOVEL: <= 600px)               */
+/* ═══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 600px) {
+  .header {
+    padding: 8px 10px calc(8px + var(--safe-top, 0px));
+    gap: 6px;
+  }
+
+  .header-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 6px;
+  }
+
+  .logo {
+    font-size: 1.1rem;
+    gap: 6px;
+  }
+
+  .logo-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .room-info {
+    padding: 2px 8px;
+    font-size: 0.75rem;
+  }
+
+  #ctrl-stage-badge {
+    font-size: 0.78rem !important;
+    padding: 3px 8px !important;
+  }
+
+  .top-nav-modes {
+    padding: 2px 0 4px 0;
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .top-nav-modes .btn {
+    padding: 5px 10px;
+    font-size: 0.74rem;
+    min-height: 36px;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .header-right {
+    padding-top: 4px;
+    gap: 6px;
+  }
+
+  .clock-display {
+    padding: 2px 8px;
+    font-size: 0.92rem;
+  }
+
+  .theme-selector label {
+    display: none; /* Hide 'Stage Bg:' label on narrow phones, keep color picker */
+  }
+
+  .connection-badge {
+    padding: 3px 8px;
+    font-size: 0.68rem;
+  }
+
+  /* Timer Panel */
+  .timer-panel {
+    padding: 8px 8px 16px;
+  }
+
+  .panel-header {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .panel-header-title-row {
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+  }
+
+  .event-end-badge {
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .event-end-badge .end-label {
+    font-size: 0.65rem;
+  }
+  .event-end-badge strong {
+    font-size: 0.95rem;
+  }
+
+  .panel-header-actions-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .panel-header-btn-group.nav-group .btn,
+  .panel-header-btn-group.util-group .btn {
+    min-height: 40px;
+    font-size: 0.76rem;
+  }
+
+  .btn-add-main {
+    min-height: 44px;
+    font-size: 0.92rem;
+  }
+
+  /* Mobile Timer Card Layout */
+  .timer-card {
+    padding: 10px 10px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  }
+
+  .timer-card-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .drag-handle {
+    font-size: 1.2rem;
+    padding: 4px 2px;
+  }
+
+  .timer-name-input {
+    flex: 1 1 140px;
+    min-width: 0;
+    font-size: 16px !important;
+    font-weight: 800;
+    padding: 4px 6px;
+  }
+
+  .timer-card-top > div:last-child {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .timer-fire-direct-btn {
+    min-height: 38px;
+    padding: 4px 10px !important;
+    font-size: 0.76rem !important;
+    font-weight: 800;
+  }
+
+  .timer-active-btn {
+    min-height: 38px;
+    padding: 4px 8px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700;
+  }
+
+  .timer-display {
+    font-size: clamp(2rem, 9vw, 2.7rem);
+    padding: 6px 0;
+    letter-spacing: 0.04em;
+    min-height: 52px;
+  }
+
+  .timer-meta {
+    gap: 6px;
+  }
+
+  .timer-mode-select {
+    font-size: 16px !important;
+    padding: 6px 8px;
+    min-height: 38px;
+    max-width: 130px;
+  }
+
+  .timer-end-badge {
+    font-size: 0.72rem;
+    padding: 3px 6px;
+  }
+
+  .timer-duration-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    width: 100% !important;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 4px 8px;
+  }
+
+  .timer-duration-row span {
+    font-size: 0.7rem !important;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .timer-duration-input {
+    min-width: 0 !important;
+    flex: 1 !important;
+    min-height: 34px;
+    font-size: 16px !important;
+    padding: 3px 6px !important;
+    text-align: center;
+    border-radius: 6px;
+  }
+
+  .timer-notes-input {
+    font-size: 16px !important;
+    padding: 7px 9px;
+    min-height: 38px;
+    border-radius: 8px;
+  }
+
+  .timer-controls {
+    display: grid !important;
+    grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
+    gap: 4px !important;
+    width: 100%;
+  }
+
+  .timer-controls .btn {
+    min-height: 42px;
+    padding: 4px 2px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 8px;
+  }
+
+  .timer-settings {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr 1.2fr;
+    gap: 4px !important;
+    width: 100%;
+  }
+
+  .timer-settings .btn {
+    min-height: 40px;
+    font-size: 0.95rem;
+    border-radius: 8px;
+  }
+
+  /* Sidebar Mobile Tweaks */
+  .sidebar {
+    padding: 12px 10px calc(24px + var(--safe-bottom, 0px));
+  }
+
+  .preview-section,
+  .message-section,
+  .links-section {
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+
+  .preview-transport-bar .btn {
+    min-height: 40px;
+    font-size: 0.8rem;
+    padding: 6px 10px !important;
+  }
+
+  .message-actions {
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 4px !important;
+  }
+
+  .message-actions .btn {
+    min-height: 44px;
+    font-size: 0.78rem;
+    padding: 6px 4px;
+  }
+}

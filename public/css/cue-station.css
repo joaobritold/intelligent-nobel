@@ -1063,3 +1063,341 @@ body {
   border-radius: 6px;
   padding: 7px 10px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* REFINED MOBILE PHONE EXPERIENCE (MODO TÉCNICO: <= 680px)           */
+/* ═══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 680px) {
+  .cs-screen {
+    padding: calc(6px + var(--safe-top, 0px)) 8px calc(14px + var(--safe-bottom, 0px));
+    gap: 8px;
+  }
+
+  /* HUD Compact Mobile Layout */
+  .cs-hud {
+    padding: 8px 10px;
+    gap: 6px;
+    border-radius: 12px;
+  }
+
+  .cs-hud-left {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 6px;
+  }
+
+  .cs-brand-link {
+    gap: 6px;
+  }
+
+  .cs-brand-title {
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+  }
+
+  .cs-brand-sub {
+    font-size: 0.6rem;
+  }
+
+  .cs-dept-current-badge {
+    padding: 3px 8px;
+    gap: 6px;
+    border-radius: 8px;
+  }
+
+  #cs-hud-dept-name {
+    font-size: 0.8rem !important;
+  }
+
+  #cs-btn-change-dept {
+    font-size: 0.68rem !important;
+    padding: 3px 6px !important;
+  }
+
+  .cs-hud-right {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 4px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .cs-hud-tool-btn {
+    padding: 5px 8px;
+    font-size: 0.72rem;
+    min-height: 34px;
+    border-radius: 6px;
+  }
+
+  .cs-clock-card {
+    padding: 3px 6px;
+    border-radius: 6px;
+    min-width: 0;
+    align-items: center;
+  }
+
+  .cs-clock-label {
+    font-size: 0.5rem;
+  }
+
+  .cs-clock-value {
+    font-size: 0.88rem;
+  }
+
+  .cs-clock-value.cs-timer-val {
+    font-size: 0.95rem;
+  }
+
+  /* Urgent Banner */
+  .cs-urgent-banner {
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .cs-urgent-message {
+    font-size: 1.05rem;
+  }
+
+  .cs-urgent-ack-btn {
+    width: 100%;
+    min-height: 42px;
+    font-size: 0.85rem;
+  }
+
+  /* Stage Timer Bar (Countdown of Live Act) */
+  .cs-stage-timer-bar {
+    padding: 8px 12px;
+    border-radius: 10px;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .cs-st-info {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .cs-st-badge {
+    font-size: 0.6rem;
+    padding: 1px 5px;
+  }
+
+  .cs-st-slot {
+    font-size: 0.68rem;
+  }
+
+  .cs-st-act-name {
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cs-st-notes {
+    font-size: 0.72rem;
+  }
+
+  .cs-st-counter-box {
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  .cs-st-timer {
+    font-size: 1.85rem;
+  }
+
+  .cs-st-next {
+    font-size: 0.65rem;
+  }
+
+  /* Hero Cue Light */
+  .cs-hero-cue-box {
+    padding: 14px 12px;
+    border-radius: 16px;
+    gap: 8px;
+  }
+
+  .cs-hero-indicator {
+    font-size: 0.72rem;
+    padding: 3px 9px;
+  }
+
+  .cs-hero-dept-badge {
+    font-size: 0.65rem;
+  }
+
+  .cs-hero-body {
+    padding: 6px 2px;
+    gap: 3px;
+  }
+
+  .cs-hero-num {
+    font-size: clamp(2.4rem, 11vw, 3.2rem);
+  }
+
+  .cs-hero-name {
+    font-size: clamp(1.25rem, 5.2vw, 1.7rem);
+  }
+
+  .cs-hero-target {
+    font-size: 0.92rem;
+    line-height: 1.35;
+    margin-top: 2px;
+  }
+
+  /* Feedback 2x2 Grid for Thumbs */
+  .cs-feedback-bar {
+    padding: 8px 10px;
+    gap: 6px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cs-feedback-label {
+    text-align: center;
+    font-size: 0.68rem;
+  }
+
+  .cs-feedback-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .cs-fb-btn {
+    min-height: 44px;
+    padding: 6px 4px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  /* Main Tabs Card */
+  .cs-main-tabs-card {
+    padding: 10px 8px;
+    border-radius: 14px;
+    gap: 8px;
+  }
+
+  .cs-tab-bar {
+    gap: 3px;
+    padding: 2px;
+  }
+
+  .cs-tab-btn {
+    padding: 6px 2px;
+    font-size: 0.7rem;
+    min-height: 48px;
+    gap: 2px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .cs-tab-btn span:first-child {
+    font-size: 1rem;
+  }
+
+  .cs-badge {
+    font-size: 0.62rem;
+    padding: 1px 5px;
+  }
+
+  /* Tab 1: Stage hero & rundown */
+  .cs-rundown-hero-card {
+    padding: 12px 10px;
+    gap: 8px;
+  }
+
+  .cs-rh-name {
+    font-size: 1.15rem;
+  }
+
+  .cs-rh-timer {
+    font-size: clamp(2.5rem, 9vw, 3.4rem);
+  }
+
+  .cs-act-item {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .cs-act-num {
+    font-size: 0.78rem;
+    padding: 2px 6px;
+  }
+
+  .cs-act-name {
+    font-size: 0.88rem;
+  }
+
+  .cs-act-slot {
+    font-size: 0.68rem;
+  }
+
+  /* Tab 2: Cue Cards on Mobile */
+  .cs-cue-card {
+    grid-template-columns: 46px 1fr auto;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+
+  .cs-cue-num {
+    font-size: 1rem;
+  }
+
+  .cs-cue-title {
+    font-size: 0.88rem;
+  }
+
+  .cs-cue-desc {
+    font-size: 0.72rem;
+  }
+
+  /* Tab 3: Checklists on Mobile */
+  .cs-chk-row {
+    padding: 8px 10px;
+    gap: 8px;
+    min-height: 44px; /* comfortable tap zone */
+  }
+
+  .cs-chk-box {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+
+  /* Department Modal Bottom Sheet */
+  .cs-dept-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .cs-dept-modal-box {
+    border-radius: 20px 20px 0 0;
+    max-width: 100%;
+    padding: 18px 14px calc(14px + var(--safe-bottom, 0px));
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .cs-modal-dept-btn {
+    min-height: 48px;
+    font-size: 0.95rem;
+    padding: 10px 14px;
+    border-radius: 10px;
+  }
+}

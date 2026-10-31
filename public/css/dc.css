@@ -1863,3 +1863,66 @@ body {
   margin-bottom: 12px;
   flex-wrap: wrap;
 }
+
+/* ─── Refined Mobile Phone Experience (Modo Jess: <= 680px) ───────── */
+@media (max-width: 680px) {
+  .dc-app {
+    padding: calc(6px + var(--safe-top, 0px)) 8px calc(14px + var(--safe-bottom, 0px));
+  }
+
+  .dc-hud {
+    padding: 8px 10px;
+    gap: 6px;
+    border-radius: 12px;
+  }
+
+  .dc-hud-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .dc-hud-right {
+    width: 100%;
+    justify-content: space-between;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .dc-clock-card {
+    padding: 3px 6px;
+    min-width: 0;
+  }
+
+  .dc-clock-value {
+    font-size: 0.95rem;
+  }
+
+  .dc-action-btn-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .dc-hero-btn {
+    min-height: 54px;
+    width: 100%;
+    padding: 14px 10px;
+  }
+
+  .dc-hero-timer-box {
+    padding: 12px 10px;
+  }
+
+  .dc-hero-time {
+    font-size: clamp(2.4rem, 10vw, 3.4rem);
+  }
+
+  .dc-hero-btn-giant {
+    min-height: 48px;
+    font-size: 0.95rem;
+  }
+
+  .op-queue-item {
+    padding: 10px 8px;
+    gap: 6px;
+  }
+}
