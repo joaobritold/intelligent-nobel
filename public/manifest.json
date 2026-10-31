@@ -2,13 +2,13 @@
   "id": "stagetimer-pfp-app",
   "name": "StageTimer PFP — Controlo de Palco",
   "short_name": "StageTimer",
-  "description": "App leve de controlo de tempos de palco, alinhamento de artistas e mensagens em tempo real.",
+  "description": "App leve de controlo de tempos de palco, alinhamento de artistas, deixas técnicas e régie em tempo real.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0f0f1a",
-  "theme_color": "#0f0f1a",
+  "background_color": "#0c1017",
+  "theme_color": "#0c1017",
   "categories": ["productivity", "utilities", "music"],
   "icons": [
     {
@@ -16,36 +16,55 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
+    {
+      "name": "🎭 Modo Jess (DC)",
+      "short_name": "Modo Jess",
+      "description": "Diretora de Cena, Palco & Deixas",
+      "url": "./dc.html",
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
+    },
     {
       "name": "📱 Modo Operador",
       "short_name": "Operador",
       "description": "Abrir controlo rápido para telemóvel",
       "url": "./operator.html",
-      "icons": [{ "src": "./icon.svg", "sizes": "any" }]
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "🎛️ Modo Controlador",
       "short_name": "Controlador",
       "description": "Abrir painel completo de controlo",
       "url": "./controller.html",
-      "icons": [{ "src": "./icon.svg", "sizes": "any" }]
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "📺 Modo de Palco",
       "short_name": "Palco",
       "description": "Abrir ecrã de palco",
       "url": "./viewer.html",
-      "icons": [{ "src": "./icon.svg", "sizes": "any" }]
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "📋 Modo Lista",
       "short_name": "Lista",
       "description": "Abrir tabela de horários e alinhamento",
       "url": "./lineup.html",
-      "icons": [{ "src": "./icon.svg", "sizes": "any" }]
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

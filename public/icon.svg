@@ -1,25 +1,214 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1a1a2e"/>
-      <stop offset="100%" stop-color="#0a0a14"/>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGlow" cx="50%" cy="52%" r="65%">
+      <stop offset="0%" stop-color="#141c2b"/>
+      <stop offset="45%" stop-color="#0a0e17"/>
+      <stop offset="100%" stop-color="#05070b"/>
+    </radialGradient>
+
+    <!-- App Squircle Background -->
+    <radialGradient id="squircleBg" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#111724"/>
+      <stop offset="70%" stop-color="#080c14"/>
+      <stop offset="100%" stop-color="#04060a"/>
+    </radialGradient>
+
+    <!-- Bezel Metal Gradients -->
+    <linearGradient id="metalCrown" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4a5568"/>
+      <stop offset="25%" stop-color="#a0aec0"/>
+      <stop offset="50%" stop-color="#edf2f7"/>
+      <stop offset="75%" stop-color="#a0aec0"/>
+      <stop offset="100%" stop-color="#2d3748"/>
     </linearGradient>
-    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#6c5ce7"/>
-      <stop offset="100%" stop-color="#00b894"/>
+
+    <linearGradient id="metalBezel" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#718096"/>
+      <stop offset="30%" stop-color="#cbd5e1"/>
+      <stop offset="50%" stop-color="#475569"/>
+      <stop offset="70%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#1e293b"/>
     </linearGradient>
+
+    <radialGradient id="dialInner" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="65%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#05070c"/>
+    </radialGradient>
+
+    <!-- Glow Gradients -->
+    <linearGradient id="sGradient" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="35%" stop-color="#34d399"/>
+      <stop offset="65%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+
+    <linearGradient id="sCore" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#d1fae5"/>
+      <stop offset="40%" stop-color="#ffffff"/>
+      <stop offset="70%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#fef3c7"/>
+    </linearGradient>
+
+    <!-- Glow Filters -->
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="glowAmber" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="glowCenterS" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="9" result="blur1"/>
+      <feGaussianBlur stdDeviation="4" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <rect x="24" y="24" width="464" height="464" rx="92" fill="none" stroke="url(#accent)" stroke-width="10" opacity="0.85"/>
-  <!-- Top stage status pill -->
-  <rect x="156" y="76" width="200" height="38" rx="19" fill="#6c5ce7" opacity="0.25"/>
-  <circle cx="186" cy="95" r="8" fill="#00b894"/>
-  <text x="270" y="102" font-family="system-ui, sans-serif" font-size="20" font-weight="800" fill="#e8e8e8" text-anchor="middle" letter-spacing="2">ON STAGE</text>
-  <!-- Big digital countdown -->
-  <text x="256" y="295" font-family="monospace" font-size="136" font-weight="800" fill="#00b894" text-anchor="middle">05:00</text>
-  <!-- Bottom linear progress bar -->
-  <rect x="68" y="380" width="376" height="22" rx="11" fill="#16213e"/>
-  <rect x="68" y="380" width="260" height="22" rx="11" fill="url(#accent)"/>
-  <!-- Brand label -->
-  <text x="256" y="446" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#8892a4" text-anchor="middle" letter-spacing="4">STAGETIMER PFP</text>
+
+  <!-- 1. Squircle App Icon Base -->
+  <rect width="512" height="512" rx="112" fill="url(#squircleBg)"/>
+  <rect width="512" height="512" rx="112" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2"/>
+
+  <!-- 2. Mechanical Stopwatch Top Crown (12 O'Clock) -->
+  <!-- Neck -->
+  <rect x="243" y="58" width="26" height="18" rx="3" fill="#2d3748" stroke="#4a5568" stroke-width="1.5"/>
+  <!-- Knurled Crown Body -->
+  <rect x="232" y="59" width="48" height="28" rx="6" fill="url(#metalCrown)" stroke="#718096" stroke-width="1.5"/>
+  <!-- Crown Ridges -->
+  <line x1="239" y1="62" x2="239" y2="84" stroke="#475569" stroke-width="2"/>
+  <line x1="244" y1="62" x2="244" y2="84" stroke="#475569" stroke-width="2"/>
+  <line x1="249" y1="62" x2="249" y2="84" stroke="#475569" stroke-width="2"/>
+  <line x1="254" y1="62" x2="254" y2="84" stroke="#475569" stroke-width="2"/>
+  <line x1="259" y1="62" x2="259" y2="84" stroke="#475569" stroke-width="2"/>
+  <line x1="264" y1="62" x2="264" y2="84" stroke="#475569" stroke-width="2"/>
+  <line x1="269" y1="62" x2="269" y2="84" stroke="#475569" stroke-width="2"/>
+  <line x1="274" y1="62" x2="274" y2="84" stroke="#475569" stroke-width="2"/>
+
+  <!-- 3. Stopwatch Housing & Bezel (Center: 256, 276) -->
+  <!-- Outer Bezel Shadow -->
+  <circle cx="256" cy="276" r="172" fill="#030508" opacity="0.9"/>
+  <!-- Outer Metallic Bezel Ring -->
+  <circle cx="256" cy="276" r="168" fill="none" stroke="url(#metalBezel)" stroke-width="10"/>
+  <!-- Dark Bezel Step -->
+  <circle cx="256" cy="276" r="162" fill="none" stroke="#0a0f18" stroke-width="3"/>
+  <circle cx="256" cy="276" r="160" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+  <!-- Dial Face -->
+  <circle cx="256" cy="276" r="158" fill="url(#dialInner)"/>
+
+  <!-- 4. Stopwatch Dial Tick Marks (Center: 256, 276) -->
+  <g id="dialTicks" opacity="0.85">
+    <!-- 12, 3, 6, 9 Cardinal Ticks (Bright White-Cyan) -->
+    <line x1="256" y1="126" x2="256" y2="139" stroke="#e0f2fe" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="396" y1="276" x2="409" y2="276" stroke="#e0f2fe" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="256" y1="413" x2="256" y2="426" stroke="#e0f2fe" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="103" y1="276" x2="116" y2="276" stroke="#e0f2fe" stroke-width="3.5" stroke-linecap="round"/>
+
+    <!-- Green Ticks (Right Side / GO) -->
+    <line x1="287" y1="129" x2="284" y2="137" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="318" y1="139" x2="313" y2="146" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="346" y1="154" x2="339" y2="160" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="370" y1="175" x2="361" y2="180" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="389" y1="200" x2="379" y2="203" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="400" y1="228" x2="390" y2="229" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="404" y1="257" x2="394" y2="256" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+
+    <line x1="404" y1="295" x2="394" y2="296" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="400" y1="324" x2="390" y2="323" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="389" y1="352" x2="379" y2="349" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="370" y1="377" x2="361" y2="372" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="346" y1="398" x2="339" y2="392" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="318" y1="413" x2="313" y2="406" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="287" y1="423" x2="284" y2="415" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+
+    <!-- Amber Ticks (Left Side / STANDBY) -->
+    <line x1="225" y1="129" x2="228" y2="137" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="194" y1="139" x2="199" y2="146" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="166" y1="154" x2="173" y2="160" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="142" y1="175" x2="151" y2="180" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="123" y1="200" x2="133" y2="203" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="112" y1="228" x2="122" y2="229" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="108" y1="257" x2="118" y2="256" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+
+    <line x1="108" y1="295" x2="118" y2="296" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="112" y1="324" x2="122" y2="323" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="123" y1="352" x2="133" y2="349" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="142" y1="377" x2="151" y2="372" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="166" y1="398" x2="173" y2="392" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="194" y1="413" x2="199" y2="406" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="225" y1="423" x2="228" y2="415" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+
+  <!-- 5. Bipartite LED Neon Ring (Radius: 126, Center: 256, 276) -->
+  <!-- Left Side: Warm Amber (Standby) -->
+  <!-- Arc path from (250, 150) down to (250, 402) -->
+  <g id="amberNeonRing" filter="url(#glowAmber)">
+    <!-- Outer Glow -->
+    <path d="M 248 150 A 126 126 0 0 0 248 402" fill="none" stroke="#f59e0b" stroke-width="15" stroke-linecap="round" opacity="0.45"/>
+    <!-- Intense Mid Tube -->
+    <path d="M 248 150 A 126 126 0 0 0 248 402" fill="none" stroke="#fbbf24" stroke-width="9" stroke-linecap="round" opacity="0.9"/>
+    <!-- Core Bright Wire -->
+    <path d="M 248 150 A 126 126 0 0 0 248 402" fill="none" stroke="#fffbeb" stroke-width="4.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Right Side: Emerald Green (GO) -->
+  <!-- Arc path from (264, 150) down to (264, 402) -->
+  <g id="greenNeonRing" filter="url(#glowGreen)">
+    <!-- Outer Glow -->
+    <path d="M 264 150 A 126 126 0 0 1 264 402" fill="none" stroke="#10b981" stroke-width="15" stroke-linecap="round" opacity="0.45"/>
+    <!-- Intense Mid Tube -->
+    <path d="M 264 150 A 126 126 0 0 1 264 402" fill="none" stroke="#34d399" stroke-width="9" stroke-linecap="round" opacity="0.9"/>
+    <!-- Core Bright Wire -->
+    <path d="M 264 150 A 126 126 0 0 1 264 402" fill="none" stroke="#ecfdf5" stroke-width="4.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- 6. Central Stylized Neon "S" (Center: 256, 276) -->
+  <!-- Beautiful organic tubular neon S shape -->
+  <g id="centerNeonS" filter="url(#glowCenterS)">
+    <!-- Outer ambient neon glow -->
+    <path d="M 308 221
+             C 308 200 292 188 266 188
+             C 238 188 222 202 222 225
+             C 222 249 240 262 268 274
+             C 297 286 314 300 314 326
+             C 314 353 294 368 262 368
+             C 230 368 214 352 214 331"
+          fill="none" stroke="url(#sGradient)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+
+    <!-- Mid intense neon tube -->
+    <path d="M 308 221
+             C 308 200 292 188 266 188
+             C 238 188 222 202 222 225
+             C 222 249 240 262 268 274
+             C 297 286 314 300 314 326
+             C 314 353 294 368 262 368
+             C 230 368 214 352 214 331"
+          fill="none" stroke="url(#sGradient)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
+
+    <!-- Sharp white/mint phosphor core -->
+    <path d="M 308 221
+             C 308 200 292 188 266 188
+             C 238 188 222 202 222 225
+             C 222 249 240 262 268 274
+             C 297 286 314 300 314 326
+             C 314 353 294 368 262 368
+             C 230 368 214 352 214 331"
+          fill="none" stroke="url(#sCore)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
 </svg>

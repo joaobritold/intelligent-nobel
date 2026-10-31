@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'stagetimer-pfp-v85';
+const CACHE_NAME = 'stagetimer-pfp-v86';
 const ASSETS = [
   './',
   './index.html',
@@ -12,6 +12,11 @@ const ASSETS = [
   './master.html',
   './manifest.json',
   './icon.svg',
+  './icon.png',
+  './icon-192.png',
+  './icon-512.png',
+  './apple-touch-icon.png',
+  './favicon-32x32.png',
   './css/common.css',
   './css/controller.css',
   './css/operator.css',
