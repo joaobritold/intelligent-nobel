@@ -1019,3 +1019,47 @@ body {
 .cs-act-item.is-done {
   opacity: 0.55;
 }
+
+.cs-act-num {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #00ffb3;
+  background: rgba(0, 255, 179, 0.12);
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 255, 179, 0.25);
+  display: inline-block;
+}
+
+.cs-act-name {
+  font-weight: 800;
+  font-size: 0.98rem;
+  color: #fff;
+}
+
+.cs-act-slot {
+  font-size: 0.74rem;
+  color: var(--cs-muted);
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+
+.cs-stage-notes-box {
+  margin-top: 14px;
+  background: rgba(253, 203, 110, 0.08);
+  border: 1px solid rgba(253, 203, 110, 0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.cs-stage-note-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(253, 203, 110, 0.2);
+  border-radius: 6px;
+  padding: 7px 10px;
+}

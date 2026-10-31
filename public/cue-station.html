@@ -53,8 +53,8 @@
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>StageTimer — Posto Técnico (Cue Station)</title>
-  <link rel="stylesheet" href="css/common.css?v=90">
-  <link rel="stylesheet" href="css/cue-station.css?v=90">
+  <link rel="stylesheet" href="css/common.css?v=91">
+  <link rel="stylesheet" href="css/cue-station.css?v=91">
 </head>
 <body>
   <div id="cue-screen" class="cs-screen">
@@ -69,7 +69,7 @@
             <div class="cs-brand-title">POSTO TÉCNICO</div>
             <div class="cs-brand-sub" id="cs-hud-dept-subtitle">Técnico</div>
           </div>
-          <span class="badge cs-version-badge">v90</span>
+          <span class="badge cs-version-badge">v91</span>
         </a>
 
         <!-- Department Locked Badge & Switch Button -->
@@ -173,25 +173,78 @@
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <div class="cs-main-tabs-card">
       <nav class="cs-tab-bar" aria-label="Navegação do Técnico">
-        <button type="button" class="cs-tab-btn active" data-tab="tab-my-cues">
-          <span>⚡</span>
-          <span>Deixas do Espetáculo</span>
-          <span id="cs-my-cues-count" class="cs-badge">0</span>
-        </button>
-        <button type="button" class="cs-tab-btn" data-tab="tab-stage-timer">
-          <span>⏱️</span>
-          <span>Contador & Palco</span>
+        <button type="button" class="cs-tab-btn active" data-tab="tab-stage-timer">
+          <span>🎭</span>
+          <span>Visualizador & Palco</span>
           <span id="cs-tab-timer-preview" class="cs-badge">--:--</span>
+        </button>
+        <button type="button" class="cs-tab-btn" data-tab="tab-my-cues">
+          <span>⚡</span>
+          <span>Deixas do Posto</span>
+          <span id="cs-my-cues-count" class="cs-badge">0</span>
         </button>
         <button type="button" class="cs-tab-btn" data-tab="tab-my-checklist">
           <span>📋</span>
-          <span>Checklist do Posto & Preset</span>
+          <span>Checklist do Posto</span>
           <span id="cs-my-checklist-count" class="cs-badge">0%</span>
         </button>
       </nav>
 
-      <!-- TAB 1: LISTA DE DEIXAS EXCLUSIVA DO POSTO TÉCNICO -->
-      <div id="tab-my-cues" class="cs-tab-content active">
+      <!-- TAB 1: VISUALIZADOR DE PALCO & ALINHAMENTO DE ATOS -->
+      <div id="tab-stage-timer" class="cs-tab-content active">
+        <div class="cs-rundown-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap; gap: 6px;">
+          <div>
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #fff;">🎭 Visualizador de Palco & Alinhamento de Atos</h3>
+            <span style="font-size: 0.74rem; color: var(--cs-muted);">Acompanhamento em tempo real do elenco, atos e notas da Diretora de Cena</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="cs-pre-show-badge" class="badge" style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; font-size: 0.75rem; padding: 4px 10px; font-weight: 700;">⏳ PRÉ-SHOW</span>
+            <span id="cs-event-end-badge" class="cs-badge" style="background: rgba(0, 184, 148, 0.2); color: #55efc4; font-size: 0.8rem; padding: 4px 10px; font-weight: 700;">🏁 Fim: --:--</span>
+          </div>
+        </div>
+
+        <!-- Big Hero Card for Technician (Stage Monitor) -->
+        <div class="cs-rundown-hero-card">
+          <div class="cs-rh-top">
+            <span id="cs-rh-status-badge" class="cs-st-badge pre">● PREPARAÇÃO</span>
+            <span id="cs-rh-slot" style="font-size: 0.78rem; color: var(--cs-muted); font-family: var(--font-mono);"></span>
+          </div>
+          <div id="cs-rh-name" class="cs-rh-name">Aguardando Início do Espetáculo</div>
+          <div id="cs-rh-timer" class="cs-rh-timer">--:--</div>
+          <div class="cs-rh-progress-bg">
+            <div id="cs-rh-progress-bar" class="cs-rh-progress-bar" style="width: 0%;"></div>
+          </div>
+          <div id="cs-rh-notes" class="cs-rh-notes" style="display: none;"></div>
+          <div id="cs-rh-next" class="cs-rh-next" style="display: none;"></div>
+        </div>
+
+        <!-- Live DC Stage Notes for the Technicians -->
+        <div id="cs-stage-notes-box" class="cs-stage-notes-box">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.82rem; font-weight: 800; color: #ffeaa7; display: flex; align-items: center; gap: 6px;">
+              <span>📝</span> <span>Notas Rápidas de Palco & Camarins (Modo Jess)</span>
+            </span>
+            <span id="cs-stage-notes-count" class="badge" style="background: rgba(253, 203, 110, 0.2); color: #ffeaa7; font-size: 0.68rem;">0</span>
+          </div>
+          <div id="cs-stage-notes-list" style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 0.78rem; color: var(--cs-muted);">Sem notas da Diretora de Cena de momento.</div>
+          </div>
+        </div>
+
+        <!-- Full Lineup / Schedule of Acts for Technician (A lista antes do show começar) -->
+        <div style="margin-top: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h4 style="font-size: 0.82rem; color: #ffeaa7; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; font-weight: 800;">📜 Alinhamento Completo de Palco (Ordem do Espetáculo)</h4>
+            <span id="cs-acts-count-badge" class="badge" style="background: rgba(255,255,255,0.08); color: #cbd5e1; font-size: 0.68rem;">0 Atos</span>
+          </div>
+          <div id="cs-rundown-acts-list" class="cs-rundown-acts-list">
+            <!-- Injected dynamically by cue-station.js -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: LISTA DE DEIXAS EXCLUSIVA DO POSTO TÉCNICO -->
+      <div id="tab-my-cues" class="cs-tab-content">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap; gap: 6px;">
           <span style="font-weight: 800; font-size: 0.88rem; color: #fff;">⚡ Deixas da Tua Equipa (<span id="cs-count-my-cues">0</span>)</span>
           <span style="font-size: 0.74rem; color: var(--cs-muted);">Canal isolado • Sem cruzamento de equipas</span>
@@ -220,40 +273,6 @@
         <div style="display: flex; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); align-items: center;">
           <input id="cs-new-task-input" class="cs-input" placeholder="+ Adicionar verificação / tarefa no meu posto..." style="flex: 1; padding: 9px 12px; font-size: 0.85rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; color: #fff; outline: none;">
           <button id="cs-new-task-btn" type="button" class="btn btn-sm btn-primary" style="padding: 9px 16px; font-weight: 800; background: #00b894; border-color: #00b894; white-space: nowrap;">➕ Adicionar</button>
-        </div>
-      </div>
-
-      <!-- TAB 3: CONTADOR & ALINHAMENTO DE PALCO PARA O TÉCNICO -->
-      <div id="tab-stage-timer" class="cs-tab-content">
-        <div class="cs-rundown-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap; gap: 6px;">
-          <div>
-            <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #fff;">⏱️ Contador de Palco & Alinhamento de Atos</h3>
-            <span style="font-size: 0.74rem; color: var(--cs-muted);">Acompanhamento em tempo real do tempo de cena</span>
-          </div>
-          <span id="cs-event-end-badge" class="cs-badge" style="background: rgba(0, 184, 148, 0.2); color: #55efc4; font-size: 0.8rem; padding: 4px 10px; font-weight: 700;">🏁 Fim: --:--</span>
-        </div>
-
-        <!-- Big Hero Card for Technician -->
-        <div class="cs-rundown-hero-card">
-          <div class="cs-rh-top">
-            <span id="cs-rh-status-badge" class="cs-st-badge pre">● PREPARAÇÃO</span>
-            <span id="cs-rh-slot" style="font-size: 0.78rem; color: var(--cs-muted); font-family: var(--font-mono);"></span>
-          </div>
-          <div id="cs-rh-name" class="cs-rh-name">Sem ato ativo</div>
-          <div id="cs-rh-timer" class="cs-rh-timer">--:--</div>
-          <div class="cs-rh-progress-bg">
-            <div id="cs-rh-progress-bar" class="cs-rh-progress-bar" style="width: 0%;"></div>
-          </div>
-          <div id="cs-rh-notes" class="cs-rh-notes" style="display: none;"></div>
-          <div id="cs-rh-next" class="cs-rh-next" style="display: none;"></div>
-        </div>
-
-        <!-- Full Lineup / Schedule of Acts for Technician -->
-        <div style="margin-top: 16px;">
-          <h4 style="font-size: 0.82rem; color: #ffeaa7; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 8px 0; font-weight: 800;">Alinhamento Completo de Palco</h4>
-          <div id="cs-rundown-acts-list" class="cs-rundown-acts-list">
-            <!-- Injected dynamically by cue-station.js -->
-          </div>
         </div>
       </div>
     </div>
@@ -316,8 +335,8 @@
 
   <!-- Scripts -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=90"></script>
-  <script src="js/local-sync.js?v=90"></script>
-  <script src="js/cue-station.js?v=90"></script>
+  <script src="js/pwa.js?v=91"></script>
+  <script src="js/local-sync.js?v=91"></script>
+  <script src="js/cue-station.js?v=91"></script>
 </body>
 </html>

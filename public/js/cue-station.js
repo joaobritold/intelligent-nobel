@@ -108,6 +108,11 @@ const $rhProgressBar = document.getElementById('cs-rh-progress-bar');
 const $rhNotes = document.getElementById('cs-rh-notes');
 const $rhNext = document.getElementById('cs-rh-next');
 const $rundownActsList = document.getElementById('cs-rundown-acts-list');
+const $preShowBadge = document.getElementById('cs-pre-show-badge');
+const $actsCountBadge = document.getElementById('cs-acts-count-badge');
+const $stageNotesBox = document.getElementById('cs-stage-notes-box');
+const $stageNotesList = document.getElementById('cs-stage-notes-list');
+const $stageNotesCount = document.getElementById('cs-stage-notes-count');
 
 // Urgent Banner
 const $urgentBanner = document.getElementById('cs-urgent-banner');
@@ -451,10 +456,17 @@ function renderHeroLight() {
     activeFeedbackCueId = null;
     $heroLight.className = 'cs-hero-cue-box is-idle';
     if (th?.phase === 'prep' && th.showState !== 'running') {
-      $heroIndicator.textContent = '🛠️ FASE DE PREPARAÇÃO';
-      $heroCueNum.textContent = 'PREP';
-      $heroCueName.textContent = 'Afinações & Testes do Posto';
-      $heroCueTarget.textContent = 'Consulte e valide os itens da sua equipa na aba "Checklist do Posto & Preset".';
+      const timers = Array.isArray(state?.timers) ? state.timers : [];
+      const firstTimer = timers.length > 0 ? timers[0] : null;
+      $heroIndicator.textContent = '🎭 PRÉ-SHOW • ALINHAMENTO DE PALCO';
+      $heroCueNum.textContent = firstTimer ? '#1' : 'PRÉ';
+      if (firstTimer) {
+        $heroCueName.textContent = `Ato 1: ${firstTimer.name}`;
+        $heroCueTarget.textContent = `Duração: ${formatTime(firstTimer.duration)} • Consulte a lista de atos e notas na aba "Visualizador & Palco".`;
+      } else {
+        $heroCueName.textContent = 'Espetáculo em Preparação';
+        $heroCueTarget.textContent = 'Consulte o alinhamento de palco e as notas da Diretora de Cena na aba "Visualizador & Palco".';
+      }
     } else {
       $heroIndicator.textContent = '● REPOUSO';
       $heroCueNum.textContent = '--';
@@ -667,9 +679,9 @@ function syncPhaseTab(phase, showState) {
       cuesTabBtn.click();
     }
   } else if (phase === 'prep' && showState !== 'running') {
-    const chkTabBtn = document.querySelector('[data-tab="tab-my-checklist"]');
-    if (chkTabBtn && !chkTabBtn.classList.contains('active')) {
-      chkTabBtn.click();
+    const stageTabBtn = document.querySelector('[data-tab="tab-stage-timer"]');
+    if (stageTabBtn && !stageTabBtn.classList.contains('active')) {
+      stageTabBtn.click();
     }
   }
 }
@@ -763,6 +775,38 @@ function renderStageTimer() {
   if ($eventEndBadge && typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.computeEventEndTime === 'function') {
     const endStr = StageTimerClient.computeEventEndTime(state);
     $eventEndBadge.textContent = `🏁 Fim: ${endStr}`;
+  }
+
+  if ($preShowBadge) {
+    const isLive = state?.theatre?.showState === 'running' || state?.theatre?.phase === 'live';
+    if (isLive) {
+      $preShowBadge.textContent = '● EM CENA';
+      $preShowBadge.style.background = 'rgba(0, 184, 148, 0.2)';
+      $preShowBadge.style.color = '#55efc4';
+    } else {
+      $preShowBadge.textContent = '⏳ PRÉ-SHOW';
+      $preShowBadge.style.background = 'rgba(108, 92, 231, 0.2)';
+      $preShowBadge.style.color = '#c4b5fd';
+    }
+  }
+
+  if ($actsCountBadge) {
+    $actsCountBadge.textContent = `${timers.length} ${timers.length === 1 ? 'Ato' : 'Atos'}`;
+  }
+
+  if ($stageNotesList) {
+    const stageNotes = state?.theatre?.stageNotes || [];
+    if ($stageNotesCount) $stageNotesCount.textContent = stageNotes.length;
+    if (stageNotes.length === 0) {
+      $stageNotesList.innerHTML = `<div style="font-size: 0.78rem; color: var(--cs-muted); padding: 4px 0;">Sem notas da Diretora de Cena de momento.</div>`;
+    } else {
+      $stageNotesList.innerHTML = stageNotes.map(n => `
+        <div class="cs-stage-note-item">
+          <div style="font-size: 0.84rem; color: #fff; font-weight: 600;">${escapeHtml(n.text)}</div>
+          <div style="font-size: 0.7rem; color: #ffeaa7; font-family: var(--font-mono); white-space: nowrap;">${escapeHtml(n.timeStr || '')}</div>
+        </div>
+      `).join('');
+    }
   }
 
   if (!activeTimer) {
