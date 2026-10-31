@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -52,41 +52,41 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
-  <title>StageTimer â€” Posto TÃ©cnico (Cue Station)</title>
-  <link rel="stylesheet" href="css/common.css?v=89">
-  <link rel="stylesheet" href="css/cue-station.css?v=89">
+  <title>StageTimer — Posto Técnico (Cue Station)</title>
+  <link rel="stylesheet" href="css/common.css?v=90">
+  <link rel="stylesheet" href="css/cue-station.css?v=90">
 </head>
 <body>
   <div id="cue-screen" class="cs-screen">
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-    <!-- 1. FIXED TOP HUD: Departamento, Estado de EspetÃ¡culo & RelÃ³gio  -->
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 1. FIXED TOP HUD: Departamento, Estado de Espetáculo & Relógio  -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <header class="cs-hud">
       <div class="cs-hud-left">
-        <a href="index.html" class="cs-brand-link" title="Voltar ao InÃ­cio">
-          <span style="font-size: 1.4rem;">ðŸš¦</span>
+        <a href="index.html" class="cs-brand-link" title="Voltar ao Início">
+          <span style="font-size: 1.4rem;">🚦</span>
           <div>
-            <div class="cs-brand-title">POSTO TÃ‰CNICO</div>
-            <div class="cs-brand-sub" id="cs-hud-dept-subtitle">TÃ©cnico</div>
+            <div class="cs-brand-title">POSTO TÉCNICO</div>
+            <div class="cs-brand-sub" id="cs-hud-dept-subtitle">Técnico</div>
           </div>
-          <span class="badge cs-version-badge">v89</span>
+          <span class="badge cs-version-badge">v90</span>
         </a>
 
         <!-- Department Locked Badge & Switch Button -->
         <div class="cs-dept-current-badge">
-          <span id="cs-hud-dept-icon" style="font-size: 1.3rem;">ðŸ”Š</span>
+          <span id="cs-hud-dept-icon" style="font-size: 1.3rem;">🔊</span>
           <div style="display: flex; flex-direction: column;">
             <span id="cs-hud-dept-name" style="font-weight: 800; font-size: 0.9rem; color: #fff; letter-spacing: 0.02em;">POSTO SOM</span>
             <span style="font-size: 0.68rem; color: var(--cs-muted);">Canal Exclusivo</span>
           </div>
-          <button id="cs-btn-change-dept" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: var(--text-secondary); font-size: 0.72rem; padding: 4px 9px; border-radius: 6px; margin-left: 6px;">ðŸ”„ Trocar</button>
+          <button id="cs-btn-change-dept" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: var(--text-secondary); font-size: 0.72rem; padding: 4px 9px; border-radius: 6px; margin-left: 6px;">🔄 Trocar</button>
         </div>
       </div>
 
       <!-- Right HUD Controls & Clocks -->
       <div class="cs-hud-right">
         <button id="cs-audio-btn" class="cs-hud-tool-btn enabled" type="button" title="Ativar ou desativar aviso sonoro de deixas">
-          <span id="cs-audio-icon">ðŸ””</span>
+          <span id="cs-audio-icon">🔔</span>
           <span id="cs-audio-text">Som Ativo</span>
         </button>
 
@@ -97,7 +97,7 @@
         </div>
 
         <div class="cs-clock-card">
-          <span class="cs-clock-label">ESPETÃCULO</span>
+          <span class="cs-clock-label">ESPETÁCULO</span>
           <span id="cs-clock-elapsed" class="cs-clock-value elapsed">+00:00:00</span>
         </div>
 
@@ -108,30 +108,30 @@
       </div>
     </header>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- URGENT NOTICE FROM DC BANNER                                    -->
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <section id="cs-urgent-banner" class="cs-urgent-banner" style="display: none;">
       <div class="cs-urgent-content">
-        <span class="cs-urgent-icon">ðŸš¨</span>
+        <span class="cs-urgent-icon">🚨</span>
         <div class="cs-urgent-text-box">
           <div class="cs-urgent-title">AVISO URGENTE DO MODO JESS:</div>
           <div id="cs-urgent-message-text" class="cs-urgent-message">--</div>
         </div>
       </div>
-      <button id="cs-urgent-ack-btn" class="cs-urgent-ack-btn" type="button">âœ“ CIENTE / CONFIRMADO</button>
+      <button id="cs-urgent-ack-btn" class="cs-urgent-ack-btn" type="button">✓ CIENTE / CONFIRMADO</button>
     </section>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- LIVE STAGE COUNTER (CONTADOR DE PALCO & ATO EM CENA)           -->
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <section id="cs-stage-timer-bar" class="cs-stage-timer-bar">
       <div class="cs-st-info">
         <div class="cs-st-meta-row">
-          <span id="cs-st-status-badge" class="cs-st-badge pre">â— PREPARAÃ‡ÃƒO</span>
+          <span id="cs-st-status-badge" class="cs-st-badge pre">● PREPARAÇÃO</span>
           <span id="cs-st-time-slot" class="cs-st-slot"></span>
         </div>
-        <div id="cs-st-act-name" class="cs-st-act-name">Aguardando InÃ­cio do EspetÃ¡culo</div>
+        <div id="cs-st-act-name" class="cs-st-act-name">Aguardando Início do Espetáculo</div>
         <div id="cs-st-notes" class="cs-st-notes" style="display: none;"></div>
       </div>
       <div class="cs-st-counter-box">
@@ -140,61 +140,61 @@
       </div>
     </section>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- 2. HERO CUE LIGHT: SINALIZADOR LUMINOSO GIGANTE (STANDBY / GO) -->
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <section id="cs-hero-light" class="cs-hero-cue-box is-idle">
       <div class="cs-hero-header">
-        <span id="cs-hero-indicator" class="cs-hero-indicator">â— REPOUSO</span>
+        <span id="cs-hero-indicator" class="cs-hero-indicator">● REPOUSO</span>
         <span id="cs-hero-dept-badge" class="cs-hero-dept-badge">DEPARTAMENTO: LUZ</span>
       </div>
 
       <div class="cs-hero-body">
         <div id="cs-hero-cue-num" class="cs-hero-num">--</div>
-        <div id="cs-hero-cue-name" class="cs-hero-name">Aguardando PrÃ³xima Deixa...</div>
-        <div id="cs-hero-cue-target" class="cs-hero-target">O sinal de Standby (Amarelo) acenderÃ¡ automaticamente quando a fala se aproximar.</div>
+        <div id="cs-hero-cue-name" class="cs-hero-name">Aguardando Próxima Deixa...</div>
+        <div id="cs-hero-cue-target" class="cs-hero-target">O sinal de Standby (Amarelo) acenderá automaticamente quando a fala se aproximar.</div>
       </div>
 
       <!-- Quick Feedback Buttons (Shown when Standby or Fired) -->
       <div id="cs-feedback-bar" class="cs-feedback-bar" style="display: none;">
         <span class="cs-feedback-label">FEEDBACK DA DEIXA:</span>
         <div class="cs-feedback-buttons">
-          <button type="button" class="cs-fb-btn fb-good" data-fb-type="on_time">âœ“ No Tempo</button>
-          <button type="button" class="cs-fb-btn fb-late" data-fb-type="late">ðŸ¢ Tarde</button>
-          <button type="button" class="cs-fb-btn fb-early" data-fb-type="early">ðŸ‡ Cedo</button>
-          <button type="button" class="cs-fb-btn fb-issue" data-fb-type="issue">âš ï¸ Mudar / AtenÃ§Ã£o</button>
+          <button type="button" class="cs-fb-btn fb-good" data-fb-type="on_time">✓ No Tempo</button>
+          <button type="button" class="cs-fb-btn fb-late" data-fb-type="late">🐢 Tarde</button>
+          <button type="button" class="cs-fb-btn fb-early" data-fb-type="early">🐇 Cedo</button>
+          <button type="button" class="cs-fb-btn fb-issue" data-fb-type="issue">⚠️ Mudar / Atenção</button>
         </div>
-        <span id="cs-feedback-status" class="cs-feedback-sent-tag" style="display: none;">âœ“ Enviado para o Modo Jess</span>
+        <span id="cs-feedback-status" class="cs-feedback-sent-tag" style="display: none;">✓ Enviado para o Modo Jess</span>
       </div>
     </section>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- 3. TABS: MINHAS DEIXAS | MINHA CHECKLIST DE MONTAGEM           -->
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <div class="cs-main-tabs-card">
-      <nav class="cs-tab-bar" aria-label="NavegaÃ§Ã£o do TÃ©cnico">
+      <nav class="cs-tab-bar" aria-label="Navegação do Técnico">
         <button type="button" class="cs-tab-btn active" data-tab="tab-my-cues">
-          <span>âš¡</span>
-          <span>Deixas do Posto</span>
+          <span>⚡</span>
+          <span>Deixas do Espetáculo</span>
           <span id="cs-my-cues-count" class="cs-badge">0</span>
         </button>
         <button type="button" class="cs-tab-btn" data-tab="tab-stage-timer">
-          <span>â±ï¸</span>
+          <span>⏱️</span>
           <span>Contador & Palco</span>
           <span id="cs-tab-timer-preview" class="cs-badge">--:--</span>
         </button>
         <button type="button" class="cs-tab-btn" data-tab="tab-my-checklist">
-          <span>ðŸ“‹</span>
-          <span>Checklist do Posto</span>
+          <span>📋</span>
+          <span>Checklist do Posto & Preset</span>
           <span id="cs-my-checklist-count" class="cs-badge">0%</span>
         </button>
       </nav>
 
-      <!-- TAB 1: LISTA DE DEIXAS EXCLUSIVA DO POSTO TÃ‰CNICO -->
+      <!-- TAB 1: LISTA DE DEIXAS EXCLUSIVA DO POSTO TÉCNICO -->
       <div id="tab-my-cues" class="cs-tab-content active">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap; gap: 6px;">
-          <span style="font-weight: 800; font-size: 0.88rem; color: #fff;">âš¡ Deixas da Tua Equipa (<span id="cs-count-my-cues">0</span>)</span>
-          <span style="font-size: 0.74rem; color: var(--cs-muted);">Canal isolado â€¢ Sem cruzamento de equipas</span>
+          <span style="font-weight: 800; font-size: 0.88rem; color: #fff;">⚡ Deixas da Tua Equipa (<span id="cs-count-my-cues">0</span>)</span>
+          <span style="font-size: 0.74rem; color: var(--cs-muted);">Canal isolado • Sem cruzamento de equipas</span>
         </div>
 
         <div id="cs-cues-list" class="cs-cues-list">
@@ -206,10 +206,10 @@
       <div id="tab-my-checklist" class="cs-tab-content">
         <div class="cs-checklist-header">
           <div>
-            <h3 id="cs-checklist-dept-title" style="margin: 0; font-size: 1rem; font-weight: 800; color: #fff;">ValidaÃ§Ã£o de Equipamentos & Presets</h3>
+            <h3 id="cs-checklist-dept-title" style="margin: 0; font-size: 1rem; font-weight: 800; color: #fff;">Validação de Equipamentos & Presets</h3>
             <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: var(--text-secondary);">Marque as tarefas da sua equipa. O progresso sincroniza em tempo real com o Modo Jess.</p>
           </div>
-          <div id="cs-checklist-progress-pill" class="cs-readiness-pill">0% ConcluÃ­do</div>
+          <div id="cs-checklist-progress-pill" class="cs-readiness-pill">0% Concluído</div>
         </div>
 
         <div id="cs-my-checklist-items" class="cs-checklist-items" style="margin-top: 10px;">
@@ -218,25 +218,25 @@
 
         <!-- Add Task Bar -->
         <div style="display: flex; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); align-items: center;">
-          <input id="cs-new-task-input" class="cs-input" placeholder="+ Adicionar verificaÃ§Ã£o / tarefa no meu posto..." style="flex: 1; padding: 9px 12px; font-size: 0.85rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; color: #fff; outline: none;">
-          <button id="cs-new-task-btn" type="button" class="btn btn-sm btn-primary" style="padding: 9px 16px; font-weight: 800; background: #00b894; border-color: #00b894; white-space: nowrap;">âž• Adicionar</button>
+          <input id="cs-new-task-input" class="cs-input" placeholder="+ Adicionar verificação / tarefa no meu posto..." style="flex: 1; padding: 9px 12px; font-size: 0.85rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; color: #fff; outline: none;">
+          <button id="cs-new-task-btn" type="button" class="btn btn-sm btn-primary" style="padding: 9px 16px; font-weight: 800; background: #00b894; border-color: #00b894; white-space: nowrap;">➕ Adicionar</button>
         </div>
       </div>
 
-      <!-- TAB 3: CONTADOR & ALINHAMENTO DE PALCO PARA O TÃ‰CNICO -->
+      <!-- TAB 3: CONTADOR & ALINHAMENTO DE PALCO PARA O TÉCNICO -->
       <div id="tab-stage-timer" class="cs-tab-content">
         <div class="cs-rundown-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap; gap: 6px;">
           <div>
-            <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #fff;">â±ï¸ Contador de Palco & Alinhamento de Atos</h3>
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #fff;">⏱️ Contador de Palco & Alinhamento de Atos</h3>
             <span style="font-size: 0.74rem; color: var(--cs-muted);">Acompanhamento em tempo real do tempo de cena</span>
           </div>
-          <span id="cs-event-end-badge" class="cs-badge" style="background: rgba(0, 184, 148, 0.2); color: #55efc4; font-size: 0.8rem; padding: 4px 10px; font-weight: 700;">ðŸ Fim: --:--</span>
+          <span id="cs-event-end-badge" class="cs-badge" style="background: rgba(0, 184, 148, 0.2); color: #55efc4; font-size: 0.8rem; padding: 4px 10px; font-weight: 700;">🏁 Fim: --:--</span>
         </div>
 
         <!-- Big Hero Card for Technician -->
         <div class="cs-rundown-hero-card">
           <div class="cs-rh-top">
-            <span id="cs-rh-status-badge" class="cs-st-badge pre">â— PREPARAÃ‡ÃƒO</span>
+            <span id="cs-rh-status-badge" class="cs-st-badge pre">● PREPARAÇÃO</span>
             <span id="cs-rh-slot" style="font-size: 0.78rem; color: var(--cs-muted); font-family: var(--font-mono);"></span>
           </div>
           <div id="cs-rh-name" class="cs-rh-name">Sem ato ativo</div>
@@ -258,18 +258,18 @@
       </div>
     </div>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-    <!-- MODAL: SELETOR DE POSTO TÃ‰CNICO                                  -->
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- MODAL: SELETOR DE POSTO TÉCNICO                                  -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <div id="cs-dept-modal" class="cs-dept-modal" style="display: none;">
       <div class="cs-dept-modal-box">
-        <div style="font-size: 2.2rem; margin-bottom: 6px;">ðŸŽ­</div>
-        <h2 style="margin: 0; color: #fff; font-size: 1.25rem; font-weight: 800;">Seleciona o teu Posto TÃ©cnico</h2>
-        <p style="color: var(--text-secondary); font-size: 0.82rem; margin: 6px 0 18px 0;">Cada equipa tem canal reservado e exclusivo. A equipa de Som nÃ£o vÃª Luz e vice-versa.</p>
+        <div style="font-size: 2.2rem; margin-bottom: 6px;">🎭</div>
+        <h2 style="margin: 0; color: #fff; font-size: 1.25rem; font-weight: 800;">Seleciona o teu Posto Técnico</h2>
+        <p style="color: var(--text-secondary); font-size: 0.82rem; margin: 6px 0 18px 0;">Cada equipa tem canal reservado e exclusivo. A equipa de Som não vê Luz e vice-versa.</p>
         
         <div class="cs-dept-modal-grid">
           <button type="button" class="cs-modal-dept-btn" data-modal-dept="Som">
-            <span style="font-size: 1.6rem;">ðŸ”Š</span>
+            <span style="font-size: 1.6rem;">🔊</span>
             <div style="text-align: left;">
               <strong style="display: block; font-size: 0.95rem; color: #74b9ff;">Posto de Som</strong>
               <small style="color: var(--cs-muted); font-size: 0.72rem;">Microfones, Playback, Trilha, PA</small>
@@ -277,7 +277,7 @@
           </button>
 
           <button type="button" class="cs-modal-dept-btn" data-modal-dept="Luz">
-            <span style="font-size: 1.6rem;">ðŸ’¡</span>
+            <span style="font-size: 1.6rem;">💡</span>
             <div style="text-align: left;">
               <strong style="display: block; font-size: 0.95rem; color: #ffeaa7;">Posto de Luz</strong>
               <small style="color: var(--cs-muted); font-size: 0.72rem;">Varas, Dimmers, Focos, Presets</small>
@@ -285,26 +285,26 @@
           </button>
 
           <button type="button" class="cs-modal-dept-btn" data-modal-dept="Maquinaria">
-            <span style="font-size: 1.6rem;">âš™ï¸</span>
+            <span style="font-size: 1.6rem;">⚙️</span>
             <div style="text-align: left;">
               <strong style="display: block; font-size: 0.95rem; color: #fab1a0;">Posto de Maquinaria</strong>
-              <small style="color: var(--cs-muted); font-size: 0.72rem;">Cortina, Varas de CenÃ¡rio, Motores</small>
+              <small style="color: var(--cs-muted); font-size: 0.72rem;">Cortina, Varas de Cenário, Motores</small>
             </div>
           </button>
 
-          <button type="button" class="cs-modal-dept-btn" data-modal-dept="VÃ­deo">
-            <span style="font-size: 1.6rem;">ðŸŽ¥</span>
+          <button type="button" class="cs-modal-dept-btn" data-modal-dept="Vídeo">
+            <span style="font-size: 1.6rem;">🎥</span>
             <div style="text-align: left;">
-              <strong style="display: block; font-size: 0.95rem; color: #55efc4;">Posto de VÃ­deo</strong>
+              <strong style="display: block; font-size: 0.95rem; color: #55efc4;">Posto de Vídeo</strong>
               <small style="color: var(--cs-muted); font-size: 0.72rem;">Projetores, Shutter, HDMI, Telas</small>
             </div>
           </button>
 
           <button type="button" class="cs-modal-dept-btn" data-modal-dept="Coxias">
-            <span style="font-size: 1.6rem;">ðŸŽ­</span>
+            <span style="font-size: 1.6rem;">🎭</span>
             <div style="text-align: left;">
-              <strong style="display: block; font-size: 0.95rem; color: #fd79a8;">Posto de Coxias / AdereÃ§os</strong>
-              <small style="color: var(--cs-muted); font-size: 0.72rem;">Atores, AdereÃ§os, Entradas laterais</small>
+              <strong style="display: block; font-size: 0.95rem; color: #fd79a8;">Posto de Coxias / Adereços</strong>
+              <small style="color: var(--cs-muted); font-size: 0.72rem;">Atores, Adereços, Entradas laterais</small>
             </div>
           </button>
         </div>
@@ -316,8 +316,8 @@
 
   <!-- Scripts -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=89"></script>
-  <script src="js/local-sync.js?v=89"></script>
-  <script src="js/cue-station.js?v=89"></script>
+  <script src="js/pwa.js?v=90"></script>
+  <script src="js/local-sync.js?v=90"></script>
+  <script src="js/cue-station.js?v=90"></script>
 </body>
 </html>

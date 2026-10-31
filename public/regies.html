@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -47,14 +47,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="StageTimer RÃ©gies">
+  <meta name="apple-mobile-web-app-title" content="StageTimer Régies">
   <meta name="theme-color" content="#080811">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
-  <title>StageTimer â€” Modo RÃ©gies (FOH & Palco)</title>
-  <link rel="stylesheet" href="css/common.css?v=89">
-  <link rel="stylesheet" href="css/regies.css?v=89">
+  <title>StageTimer — Modo Régies (FOH & Palco)</title>
+  <link rel="stylesheet" href="css/common.css?v=90">
+  <link rel="stylesheet" href="css/regies.css?v=90">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
@@ -62,30 +62,30 @@
     <header class="regie-header">
       <div class="regie-header-left">
         <!-- Home / Brand -->
-        <a href="index.html" class="regie-home-link" title="Voltar ao InÃ­cio">
-          <span style="font-size: 1.4rem;">ðŸ“Ÿ</span>
-          <span class="regie-header-title">RÃ‰GIES</span>
-          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v89</span>
+        <a href="index.html" class="regie-home-link" title="Voltar ao Início">
+          <span style="font-size: 1.4rem;">📟</span>
+          <span class="regie-header-title">RÉGIES</span>
+          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v90</span>
         </a>
 
         <!-- Stage Selector Pill -->
         <div class="regie-stage-pill-box">
-          <span style="font-size: 0.85rem;">ðŸŽª</span>
+          <span style="font-size: 0.85rem;">🎪</span>
           <span id="lineup-stage-badge" class="regie-stage-badge-text" title="Tocar para trocar de palco">Palco</span>
-          <select id="lineup-event-select" class="master-stage-select" style="display: none;" title="ðŸ‘‘ Trocar Palco"></select>
+          <select id="lineup-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco"></select>
         </div>
         <div id="lineup-stage-pills" class="stage-pills-bar" style="display: none;"></div>
 
-        <!-- Sleek Station Toggle (FOH vs Palco vs TÃ©cnico) -->
+        <!-- Sleek Station Toggle (FOH vs Palco vs Técnico) -->
         <div class="regie-station-pill">
-          <button id="regie-btn-foh" class="regie-station-toggle-btn active" type="button" title="Modo RÃ©gie de Frente">
-            ðŸŽšï¸ FOH
+          <button id="regie-btn-foh" class="regie-station-toggle-btn active" type="button" title="Modo Régie de Frente">
+            🎚️ FOH
           </button>
-          <button id="regie-btn-stage" class="regie-station-toggle-btn" type="button" title="Modo RÃ©gie de Palco">
-            ðŸŽ›ï¸ Palco
+          <button id="regie-btn-stage" class="regie-station-toggle-btn" type="button" title="Modo Régie de Palco">
+            🎛️ Palco
           </button>
-          <button id="regie-btn-tech" class="regie-station-toggle-btn" type="button" title="Modo TÃ©cnico Mobile (Avisos de SM e Palco sem chamadas sonoras)">
-            ðŸ”§ TÃ©cnico
+          <button id="regie-btn-tech" class="regie-station-toggle-btn" type="button" title="Modo Técnico Mobile (Avisos de SM e Palco sem chamadas sonoras)">
+            🔧 Técnico
           </button>
         </div>
       </div>
@@ -93,10 +93,10 @@
       <!-- Center Hero Call Button (5s Burst) -->
       <div class="regie-header-center">
         <button id="regie-call-btn" class="regie-hero-call-btn" type="button" title="Acionar aviso de 5 segundos no Intercom">
-          <span>ðŸš¨</span> <span id="regie-call-btn-text">CALL PALCO</span>
+          <span>🚨</span> <span id="regie-call-btn-text">CALL PALCO</span>
         </button>
         <button id="regie-audio-btn" class="regie-mini-audio-btn enabled" type="button" title="Ativar ou desativar aviso sonoro">
-          <span id="regie-audio-icon">ðŸ””</span>
+          <span id="regie-audio-icon">🔔</span>
         </button>
       </div>
 
@@ -120,14 +120,14 @@
     <!-- Massive Flashing Incoming Call Alert -->
     <section id="regie-incoming-alert" class="regie-incoming-alert">
       <div class="regie-incoming-text-box">
-        <div class="regie-incoming-icon">ðŸš¨</div>
+        <div class="regie-incoming-icon">🚨</div>
         <div>
           <div id="regie-incoming-title" class="regie-incoming-title">CHAMADA INTERCOM!</div>
-          <div id="regie-incoming-sub" class="regie-incoming-sub">A outra rÃ©gie estÃ¡ a chamar. Por favor verifique o intercomunicador.</div>
+          <div id="regie-incoming-sub" class="regie-incoming-sub">A outra régie está a chamar. Por favor verifique o intercomunicador.</div>
         </div>
       </div>
       <button id="regie-incoming-ack-btn" class="regie-ack-btn" type="button">
-        âœ“ CIENTE / ATENDIDO
+        ✓ CIENTE / ATENDIDO
       </button>
     </section>
 
@@ -135,28 +135,28 @@
     <section id="regie-msg-banner" class="regie-msg-banner">
       <div class="regie-msg-content">
         <div class="regie-msg-header">
-          <span>ðŸ“¢ MENSAGEM DO STAGE MANAGER</span>
+          <span>📢 MENSAGEM DO STAGE MANAGER</span>
           <span id="regie-msg-time" style="opacity: 0.8; font-family: var(--font-mono);"></span>
         </div>
         <div id="regie-msg-text" class="regie-msg-text">--</div>
         <div id="regie-msg-receipts" class="regie-msg-receipts">
-          <span id="regie-receipt-foh" class="regie-msg-receipt-pill">ðŸŽšï¸ FOH: Aguarda</span>
-          <span id="regie-receipt-stage" class="regie-msg-receipt-pill">ðŸŽ›ï¸ Palco: Aguarda</span>
-          <span id="regie-receipt-tech" class="regie-msg-receipt-pill">ðŸ”§ TÃ©cnico: Aguarda</span>
+          <span id="regie-receipt-foh" class="regie-msg-receipt-pill">🎚️ FOH: Aguarda</span>
+          <span id="regie-receipt-stage" class="regie-msg-receipt-pill">🎛️ Palco: Aguarda</span>
+          <span id="regie-receipt-tech" class="regie-msg-receipt-pill">🔧 Técnico: Aguarda</span>
         </div>
       </div>
       <button id="regie-msg-ack-btn" class="regie-msg-ack-btn" type="button">
-        âœ“ CONFIRMAR LEITURA
+        ✓ CONFIRMAR LEITURA
       </button>
     </section>
 
-    <!-- Mobile Segment Switcher (VisÃ­vel em TelemÃ³veis e Tablets) -->
-    <nav id="regie-mobile-tabs" class="regie-mobile-tab-bar" aria-label="NavegaÃ§Ã£o RÃ©gie Mobile">
+    <!-- Mobile Segment Switcher (Visível em Telemóveis e Tablets) -->
+    <nav id="regie-mobile-tabs" class="regie-mobile-tab-bar" aria-label="Navegação Régie Mobile">
       <button type="button" class="regie-mobile-tab-btn active" data-regie-view="now">
-        <span>âš¡</span> <span>Em Palco & Avisos</span>
+        <span>⚡</span> <span>Em Palco & Avisos</span>
       </button>
       <button type="button" class="regie-mobile-tab-btn" data-regie-view="lineup">
-        <span>ðŸ“‹</span> <span>Alinhamento & HorÃ¡rios</span>
+        <span>📋</span> <span>Alinhamento & Horários</span>
       </button>
     </nav>
 
@@ -166,7 +166,7 @@
       <div class="regie-left-col">
         <!-- Card 1: Currently on Stage -->
         <aside id="lineup-now-card" class="lineup-now-card">
-          <div id="lineup-now-badge" class="lineup-now-badge">â— EM PALCO AGORA</div>
+          <div id="lineup-now-badge" class="lineup-now-badge">● EM PALCO AGORA</div>
           <div id="lineup-now-name" class="lineup-now-name">--</div>
           <div id="lineup-now-slot" class="lineup-now-slot"></div>
           <div id="lineup-now-timer" class="lineup-now-timer">--:--</div>
@@ -177,13 +177,13 @@
         <aside id="regie-history-card" class="regie-history-card">
           <div class="regie-history-header">
             <div class="regie-history-title">
-              <span>ðŸ“‹</span>
-              <span>HISTÃ“RICO DE AVISOS & CHAMADAS</span>
+              <span>📋</span>
+              <span>HISTÓRICO DE AVISOS & CHAMADAS</span>
             </div>
             <span id="regie-history-count" class="regie-history-count-badge">0</span>
           </div>
           <div id="regie-history-list" class="regie-history-list">
-            <div class="regie-history-empty">Sem avisos ou chamadas registados nesta sessÃ£o.</div>
+            <div class="regie-history-empty">Sem avisos ou chamadas registados nesta sessão.</div>
           </div>
         </aside>
       </div>
@@ -201,8 +201,8 @@
 
   <!-- Cloud MQTT over WSS -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=89"></script>
-  <script src="js/local-sync.js?v=89"></script>
-  <script src="js/regies.js?v=89"></script>
+  <script src="js/pwa.js?v=90"></script>
+  <script src="js/local-sync.js?v=90"></script>
+  <script src="js/regies.js?v=90"></script>
 </body>
 </html>
