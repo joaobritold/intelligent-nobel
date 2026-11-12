@@ -1741,11 +1741,7 @@ class UniversalSyncClient {
       .substring(0, 14);
     if (!baseCode) baseCode = 'EVT-' + Math.floor(100 + Math.random() * 900);
 
-    let resolvedEventType = eventType === 'theatre' ? 'theatre' : 'concert';
-    const lowerTitle = cleanTitle.toLowerCase();
-    if (lowerTitle.includes('teatro') || lowerTitle.includes('peça') || lowerTitle.includes('peca') || lowerTitle.includes('cena') || lowerTitle.includes('espetaculo') || lowerTitle.includes('espetáculo')) {
-      resolvedEventType = 'theatre';
-    }
+    const resolvedEventType = eventType === 'theatre' ? 'theatre' : 'concert';
 
     // Unmark baseCode from deleted list if it was previously deleted
     this._unmarkDeletedEvent(baseCode);

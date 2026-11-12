@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Painel Master (Super Régie)</title>
-  <link rel="stylesheet" href="css/master.css?v=94">
-  <script src="js/auth.js?v=94"></script>
+  <link rel="stylesheet" href="css/master.css?v=95">
+  <script src="js/auth.js?v=95"></script>
 </head>
 <body>
   <div class="master-container">
@@ -70,7 +70,7 @@
             <h1 class="master-header-title">
               Painel Master
               <span class="badge">Super Régie</span>
-              <span class="badge" style="background: rgba(253, 203, 110, 0.18); color: #fdcb6e; border-color: #fdcb6e; font-family: var(--font-mono); font-weight: 700;">v94</span>
+              <span class="badge" style="background: rgba(253, 203, 110, 0.18); color: #fdcb6e; border-color: #fdcb6e; font-family: var(--font-mono); font-weight: 700;">v95</span>
             </h1>
             <div class="master-header-sub">
               Gestão Central de Ecrãs e Palcos
@@ -88,13 +88,16 @@
             <div class="st-nav-dropdown">
               <button type="button" class="st-nav-trigger">🧭 Ecrãs ▾</button>
               <div class="st-nav-menu">
-                <div class="st-nav-group-label">Controlo & Operação</div>
-                <a href="controller.html" class="st-nav-item master-nav-btn">🎛️ Configurador</a>
-                <a href="operator.html" class="st-nav-item master-nav-btn">📱 Modo Operador</a>
-                <div class="st-nav-group-label">Palco & Equipa</div>
-                <a href="viewer.html" class="st-nav-item master-nav-btn">📺 Modo Palco</a>
-                <a href="lineup.html" class="st-nav-item master-nav-btn">📋 Modo Lista</a>
-                <a href="regies.html" class="st-nav-item master-nav-btn">📟 Modo Régies</a>
+                <div class="st-nav-group-label" data-suite="concert">Controlo & Operação</div>
+                <a href="controller.html" class="st-nav-item master-nav-btn" data-suite="concert">🎛️ Configurador</a>
+                <a href="operator.html" class="st-nav-item master-nav-btn" data-suite="concert">📱 Modo Operador</a>
+                <div class="st-nav-group-label" data-suite="concert">Palco & Equipa</div>
+                <a href="viewer.html" class="st-nav-item master-nav-btn" data-suite="concert">📺 Modo Palco</a>
+                <a href="lineup.html" class="st-nav-item master-nav-btn" data-suite="concert">📋 Modo Lista</a>
+                <a href="regies.html" class="st-nav-item master-nav-btn" data-suite="concert">📟 Modo Régies</a>
+                <div class="st-nav-group-label" data-suite="theatre" style="display: none;">Teatro & Artes Cénicas</div>
+                <a href="dc.html" class="st-nav-item master-nav-btn" data-suite="theatre" style="display: none;">🎭 Modo Jess (DC)</a>
+                <a href="cue-station.html" class="st-nav-item master-nav-btn" data-suite="theatre" style="display: none;">🚦 Posto Técnico (Cue)</a>
               </div>
             </div>
           </div>
@@ -312,14 +315,14 @@
 
     <!-- Footer Version Indicator -->
     <footer style="text-align: center; padding: 24px 0 12px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-      StageTimer Super Régie Master • <span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(253, 203, 110, 0.4); font-weight: 700;">v94</span>
+      StageTimer Super Régie Master • <span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(253, 203, 110, 0.4); font-weight: 700;">v95</span>
     </footer>
 
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=94"></script>
-  <script src="js/local-sync.js?v=94"></script>
-  <script src="js/master.js?v=94"></script>
+  <script src="js/pwa.js?v=95"></script>
+  <script src="js/local-sync.js?v=95"></script>
+  <script src="js/master.js?v=95"></script>
 </body>
 </html>

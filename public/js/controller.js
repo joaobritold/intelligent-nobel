@@ -169,7 +169,8 @@ let lastCtrlSelectSig = '';
 
 function renderEventSelector(force = false) {
   const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
-  const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+  const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+  const list = rawList.filter(e => e.eventType !== 'theatre');
   
   let name = currentCode;
   let currentEvent = null;
@@ -259,10 +260,11 @@ function renderEventSelector(force = false) {
     }
   }
 
-  // Quick stages pills (rendered next to Day tabs - show all stages if multiple exist)
+  // Quick stages pills (rendered next to Day tabs - show stages of current event)
   if ($ctrlStagePills) {
     const allStages = [];
-    list.forEach(ev => {
+    const pillEvents = currentEvent ? [currentEvent] : list;
+    pillEvents.forEach(ev => {
       const evTitle = ev.title || ev.code;
       const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: evTitle }];
       stages.forEach(st => {
@@ -283,7 +285,7 @@ function renderEventSelector(force = false) {
         lastCtrlStagePillsSig = pillsSig;
         $ctrlStagePills.innerHTML = allStages.map(st => {
           const isAct = st.isCurrent;
-          const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
+          const label = pillEvents.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
             ? `${st.eventTitle} • ${st.name}`
             : st.name;
           return `

@@ -460,6 +460,25 @@
     const defaultFirstStage = (events[0] && Array.isArray(events[0].stages) && events[0].stages.length > 0 && events[0].stages[0].code) ? events[0].stages[0].code : (events[0]?.code || 'PALCO1');
     const activeCode = (sessionStorage.getItem('stagetimer_active_room') || localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || defaultFirstStage).toUpperCase();
     const q = `?room=${encodeURIComponent(activeCode)}`;
+
+    const activeEvent = events.find(ev => {
+      if ((ev.code || '').toUpperCase() === activeCode) return true;
+      if (Array.isArray(ev.stages)) {
+        return ev.stages.some(st => (st.code || st.id || '').toUpperCase() === activeCode);
+      }
+      return false;
+    });
+    const isTheatre = activeEvent?.eventType === 'theatre';
+
+    document.querySelectorAll('[data-suite]').forEach(el => {
+      const suite = el.getAttribute('data-suite');
+      if (suite === 'theatre') {
+        el.style.display = isTheatre ? '' : 'none';
+      } else if (suite === 'concert') {
+        el.style.display = isTheatre ? 'none' : '';
+      }
+    });
+
     document.querySelectorAll('.master-nav-btn').forEach(btn => {
       const href = btn.getAttribute('href');
       if (href && !href.startsWith('index.html')) {

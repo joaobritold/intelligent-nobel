@@ -59,7 +59,7 @@
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="./index.html">
   <title>StageTimer PFP — Timer de Palco & Lineup</title>
-  <link rel="stylesheet" href="css/common.css?v=94">
+  <link rel="stylesheet" href="css/common.css?v=95">
   <style>
     body {
       display: flex;
@@ -321,7 +321,7 @@
     <div id="view-portal">
       <!-- Portal Header -->
       <div class="hub-header">
-        <button type="button" class="hub-logo-btn" id="portal-secret-clock-btn" style="background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 8px; line-height: 1; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation;" title="Acesso Master"><img src="icon.svg?v=94" alt="StageTimer PFP Logo" width="72" height="72" style="filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6)); border-radius: 18px; display: inline-block;"></button>
+        <button type="button" class="hub-logo-btn" id="portal-secret-clock-btn" style="background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 8px; line-height: 1; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation;" title="Acesso Master"><img src="icon.svg?v=95" alt="StageTimer PFP Logo" width="72" height="72" style="filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6)); border-radius: 18px; display: inline-block;"></button>
         <h1 class="hub-title">StageTimer Portal</h1>
         <p class="hub-sub">Selecione o seu Evento para aceder aos palcos</p>
       </div>
@@ -367,7 +367,7 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 10px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v94</span>
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v95</span>
       </footer>
     </div>
 
@@ -378,7 +378,7 @@
         <h3 id="pin-modal-event-title" style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 4px;">Nome do Evento</h3>
         <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 18px;">Introduza o PIN de 4 dígitos atribuído pela Régie:</p>
         
-        <input id="pin-modal-input" type="tel" maxlength="4" pattern="[0-9]*" placeholder="••••" autocomplete="off" style="width: 180px; text-align: center; font-size: 2rem; font-weight: 800; letter-spacing: 0.35em; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 2px solid var(--accent); border-radius: 12px; color: #fff; margin-bottom: 12px; outline: none;">
+        <input id="pin-modal-input" type="tel" inputmode="numeric" maxlength="4" pattern="[0-9]*" placeholder="••••" autocomplete="one-time-code" style="width: 180px; text-align: center; font-size: 2rem; font-weight: 800; letter-spacing: 0.35em; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 2px solid var(--accent); border-radius: 12px; color: #fff; margin-bottom: 12px; outline: none;">
         
         <div id="pin-modal-error" style="display: none; color: #ff7675; font-size: 0.8rem; font-weight: 700; margin-bottom: 14px;">❌ PIN de 4 dígitos incorreto. Tente novamente.</div>
         
@@ -487,9 +487,10 @@
         <button id="hub-back-to-portal-btn" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: #c4b5fd; font-weight: 700; display: flex; align-items: center; gap: 6px;">
           <span>←</span> Escolher Outro Evento
         </button>
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Evento:</span>
           <span id="hub-current-event-name" style="font-size: 0.95rem; font-weight: 800; color: #55efc4;"></span>
+          <span id="hub-event-type-badge" style="font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;"></span>
           <span id="hub-current-stage-badge" class="event-code-pill" style="display: none;"></span>
           <a id="hub-master-link-top" href="master.html" class="btn btn-sm" style="display: none; background: rgba(253, 203, 110, 0.18); border: 1.5px solid #fdcb6e; color: #fdcb6e; font-weight: 800; text-decoration: none;">👑 Super Régie</a>
         </div>
@@ -497,7 +498,7 @@
 
       <!-- Header Principal -->
       <div class="hub-header" style="margin-bottom: 16px;">
-        <button type="button" class="hub-logo-btn" id="hub-secret-clock-btn" style="background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 8px; line-height: 1; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation;" title="Acesso Master"><img src="icon.svg?v=94" alt="StageTimer PFP Logo" width="72" height="72" style="filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6)); border-radius: 18px; display: inline-block;"></button>
+        <button type="button" class="hub-logo-btn" id="hub-secret-clock-btn" style="background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 8px; line-height: 1; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation;" title="Acesso Master"><img src="icon.svg?v=95" alt="StageTimer PFP Logo" width="72" height="72" style="filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6)); border-radius: 18px; display: inline-block;"></button>
         <h1 class="hub-title" id="hub-title-display">StageTimer</h1>
         <p class="hub-sub">Sincronização em Tempo Real para Eventos & Palcos</p>
       </div>
@@ -526,16 +527,6 @@
       </div>
 
       <input id="hub-room" type="hidden" value="PALCO1">
-
-      <!-- Alternador de Suite oculto: o tipo do evento (Concerto vs Teatro) já define os modos automaticamente sem os misturar -->
-      <div class="hub-suite-bar" style="display: none;">
-        <button id="hub-suite-concert-btn" type="button" class="btn">
-          <span>🎪</span> <span>Concerto & Ao Vivo</span>
-        </button>
-        <button id="hub-suite-theatre-btn" type="button" class="btn">
-          <span>🎭</span> <span>Teatro & Artes Cénicas</span>
-        </button>
-      </div>
 
       <!-- Container 1: Modos de Concerto & Espetáculo ao Vivo -->
       <div id="hub-grid-concert" class="modes-grid">
@@ -674,15 +665,15 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v94</span>
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v95</span>
       </footer>
     </div>
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/auth.js?v=94"></script>
-  <script src="js/pwa.js?v=94"></script>
-  <script src="js/local-sync.js?v=94"></script>
+  <script src="js/auth.js?v=95"></script>
+  <script src="js/pwa.js?v=95"></script>
+  <script src="js/local-sync.js?v=95"></script>
   <script>
     const hubClient = new StageTimerClient({
       role: 'viewer',
@@ -978,12 +969,24 @@
         $hubCurrentEventName.textContent = unlockedEv.title || unlockedEv.code;
       }
 
-      // Automatically select the correct suite matching the event nature
-      if (unlockedEv.eventType === 'theatre') {
-        setHubSuite('theatre');
-      } else {
-        setHubSuite('concert');
+      const isTheatreEv = unlockedEv.eventType === 'theatre';
+      const $typeBadge = document.getElementById('hub-event-type-badge');
+      if ($typeBadge) {
+        if (isTheatreEv) {
+          $typeBadge.textContent = '🎭 Modo Teatro';
+          $typeBadge.style.background = 'rgba(253, 203, 110, 0.2)';
+          $typeBadge.style.color = '#fdcb6e';
+          $typeBadge.style.border = '1px solid rgba(253, 203, 110, 0.45)';
+        } else {
+          $typeBadge.textContent = '🎪 Modo Concerto';
+          $typeBadge.style.background = 'rgba(108, 92, 231, 0.2)';
+          $typeBadge.style.color = '#c4b5fd';
+          $typeBadge.style.border = '1px solid rgba(108, 92, 231, 0.45)';
+        }
       }
+
+      // Show exclusively the mode defined when the event was created (Concert vs Theatre)
+      setHubSuite(isTheatreEv ? 'theatre' : 'concert');
 
       const stages = Array.isArray(unlockedEv.stages) && unlockedEv.stages.length > 0
         ? unlockedEv.stages
@@ -1172,7 +1175,7 @@
           return;
         }
 
-        // Normal user: open PIN modal
+        // Normal user: open PIN modal and immediately trigger numeric keypad
         const allEvents = hubClient.getEventsList();
         const ev = allEvents.find(item => item.code === code);
         if (!ev) return;
@@ -1180,8 +1183,20 @@
         if ($pinModalTitle) $pinModalTitle.textContent = ev.title || ev.code;
         if ($pinModalInput) $pinModalInput.value = '';
         if ($pinModalError) $pinModalError.style.display = 'none';
-        if ($pinModal) $pinModal.style.display = 'flex';
-        setTimeout(() => { if ($pinModalInput) $pinModalInput.focus(); }, 100);
+        if ($pinModal) {
+          $pinModal.style.display = 'flex';
+          void $pinModal.offsetWidth;
+        }
+        if ($pinModalInput) {
+          // Synchronous focus inside user click gesture so iOS/Android opens numeric keypad immediately
+          try {
+            $pinModalInput.focus();
+            $pinModalInput.click();
+          } catch (_) {}
+          requestAnimationFrame(() => {
+            try { $pinModalInput.focus(); } catch (_) {}
+          });
+        }
       });
     }
 
@@ -1219,6 +1234,16 @@
       $pinModalConfirm.addEventListener('click', submitPinModal);
     }
     if ($pinModalInput) {
+      $pinModalInput.addEventListener('input', () => {
+        const digitsOnly = ($pinModalInput.value || '').replace(/\D/g, '').slice(0, 4);
+        if ($pinModalInput.value !== digitsOnly) {
+          $pinModalInput.value = digitsOnly;
+        }
+        if ($pinModalError) $pinModalError.style.display = 'none';
+        if (digitsOnly.length === 4) {
+          submitPinModal();
+        }
+      });
       $pinModalInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -1234,8 +1259,16 @@
       } else {
         if ($masterModalInput) $masterModalInput.value = '';
         if ($masterModalError) $masterModalError.style.display = 'none';
-        if ($masterModal) $masterModal.style.display = 'flex';
-        setTimeout(() => { if ($masterModalInput) $masterModalInput.focus(); }, 100);
+        if ($masterModal) {
+          $masterModal.style.display = 'flex';
+          void $masterModal.offsetWidth;
+        }
+        if ($masterModalInput) {
+          try { $masterModalInput.focus(); } catch (_) {}
+          requestAnimationFrame(() => {
+            try { $masterModalInput.focus(); } catch (_) {}
+          });
+        }
       }
     }
 

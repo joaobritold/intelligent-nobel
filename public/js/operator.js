@@ -51,7 +51,8 @@ let lastOpSelectSig = '';
 
 function renderOpStageBadge(force = false) {
   const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
-  const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+  const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+  const list = rawList.filter(e => e.eventType !== 'theatre');
   let currentEvent = null;
 
   for (const ev of list) {
@@ -83,10 +84,11 @@ function renderOpStageBadge(force = false) {
     }
   }
 
-  // Quick Stage Pills for Operator (Show all stages if multiple exist)
+  // Quick Stage Pills for Operator (Show stages of current event)
   if ($opStagePills) {
     const allStages = [];
-    list.forEach(ev => {
+    const pillEvents = currentEvent ? [currentEvent] : list;
+    pillEvents.forEach(ev => {
       const evTitle = ev.title || ev.code;
       const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: evTitle }];
       stages.forEach(st => {
@@ -107,7 +109,7 @@ function renderOpStageBadge(force = false) {
         lastOpStagePillsSig = pillsSig;
         $opStagePills.innerHTML = allStages.map(st => {
           const isAct = st.isCurrent;
-          const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
+          const label = pillEvents.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
             ? `${st.eventTitle} • ${st.name}`
             : st.name;
           return `

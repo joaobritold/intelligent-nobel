@@ -58,7 +58,8 @@ let lastLineupSelectSig = '';
 
 function renderLineupEventSelector(force = false) {
   const currentCode = (state?.id || roomId).toUpperCase();
-  const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+  const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+  const list = rawList.filter(e => e.eventType !== 'theatre');
   let currentEvent = null;
 
   for (const ev of list) {
@@ -90,10 +91,11 @@ function renderLineupEventSelector(force = false) {
     }
   }
 
-  // Quick Stage Pills for Lineup (Show all stages if multiple exist)
+  // Quick Stage Pills for Lineup (Show stages of current event)
   if ($lineupStagePills) {
     const allStages = [];
-    list.forEach(ev => {
+    const pillEvents = currentEvent ? [currentEvent] : list;
+    pillEvents.forEach(ev => {
       const evTitle = ev.title || ev.code;
       const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: evTitle }];
       stages.forEach(st => {
@@ -113,7 +115,7 @@ function renderLineupEventSelector(force = false) {
       if (force || pillsSig !== lastLineupStagePillsSig) {
         lastLineupStagePillsSig = pillsSig;
         $lineupStagePills.innerHTML = allStages.map(st => {
-          const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
+          const label = pillEvents.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
             ? `${st.eventTitle} • ${st.name}`
             : st.name;
           return `

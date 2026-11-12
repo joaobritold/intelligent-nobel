@@ -332,7 +332,8 @@
           type="password"
           id="st-auth-pass"
           class="st-auth-input"
-          placeholder="Palavra-passe..."
+          placeholder="${isMasterPage ? 'Palavra-passe...' : 'PIN numérico...'}"
+          ${isMasterPage ? '' : 'inputmode="numeric" pattern="[0-9]*"'}
           autocomplete="current-password"
           autofocus
         />
@@ -342,13 +343,20 @@
       </form>
     `;
     document.body.appendChild(overlay);
+    void overlay.offsetWidth;
 
     const form = document.getElementById('st-auth-form');
     const input = document.getElementById('st-auth-pass');
     const err = document.getElementById('st-auth-err');
     const submitBtn = document.getElementById('st-auth-submit');
 
-    setTimeout(() => input.focus(), 60);
+    try {
+      input.focus();
+      input.click();
+    } catch (_) {}
+    requestAnimationFrame(() => {
+      try { input.focus(); } catch (_) {}
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

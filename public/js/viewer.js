@@ -68,7 +68,8 @@ let lastViewerSelectSig = '';
 
 function renderViewerEventSelector(force = false) {
   const currentCode = (state?.id || roomId).toUpperCase();
-  const list = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+  const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+  const list = rawList.filter(e => e.eventType !== 'theatre');
   let currentEvent = null;
 
   for (const ev of list) {
@@ -100,10 +101,11 @@ function renderViewerEventSelector(force = false) {
     }
   }
 
-  // Quick Stage Pills for Viewer (Show all stages if multiple exist)
+  // Quick Stage Pills for Viewer (Show stages of current event)
   if ($viewerStagePills) {
     const allStages = [];
-    list.forEach(ev => {
+    const pillEvents = currentEvent ? [currentEvent] : list;
+    pillEvents.forEach(ev => {
       const evTitle = ev.title || ev.code;
       const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: evTitle }];
       stages.forEach(st => {
@@ -124,7 +126,7 @@ function renderViewerEventSelector(force = false) {
         lastViewerStagePillsSig = pillsSig;
         $viewerStagePills.innerHTML = allStages.map(st => {
           const isAct = st.isCurrent;
-          const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
+          const label = pillEvents.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
             ? `${st.eventTitle} • ${st.name}`
             : st.name;
           return `

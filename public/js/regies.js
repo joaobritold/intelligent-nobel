@@ -501,18 +501,20 @@ let lastLineupStagePillsSig = '';
 let lastLineupSelectSig = '';
 
 function updateLineupStageUI(force = false) {
-  const list = client.getEventsList();
+  const rawList = client.getEventsList();
+  const list = rawList.filter(e => e.eventType !== 'theatre');
   const currentCode = (state?.id || roomId || '').toUpperCase();
+
+  const currentEvent = list.find(e => {
+    if (e.code === currentCode) return true;
+    if (Array.isArray(e.stages)) {
+      return e.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode);
+    }
+    return false;
+  });
 
   if ($lineupStageBadge) {
     let name = currentCode;
-    const currentEvent = list.find(e => {
-      if (e.code === currentCode) return true;
-      if (Array.isArray(e.stages)) {
-        return e.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode);
-      }
-      return false;
-    });
     if (currentEvent) {
       if (Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
         const st = currentEvent.stages.find(s => (s.code || s.id || '').toUpperCase() === currentCode);
@@ -528,7 +530,8 @@ function updateLineupStageUI(force = false) {
 
   if ($lineupStagePills) {
     const allStages = [];
-    list.forEach(ev => {
+    const pillEvents = currentEvent ? [currentEvent] : list;
+    pillEvents.forEach(ev => {
       const evTitle = ev.title || ev.code;
       const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: evTitle }];
       stages.forEach(st => {
@@ -548,7 +551,7 @@ function updateLineupStageUI(force = false) {
       if (force || pillsSig !== lastLineupStagePillsSig) {
         lastLineupStagePillsSig = pillsSig;
         $lineupStagePills.innerHTML = allStages.map(st => {
-          const label = list.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
+          const label = pillEvents.length > 1 && allStages.some(o => o.name === st.name && o.code !== st.code)
             ? `${st.eventTitle} • ${st.name}`
             : st.name;
           return `
