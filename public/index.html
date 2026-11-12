@@ -45,14 +45,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="StageTimer">
   <meta name="theme-color" content="#0f0f1a">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
-  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <meta name="description" content="StageTimer PFP - Sistema de timer, relógio de palco, lineup e controlo de eventos em tempo real.">
-  <meta name="keywords" content="stagetimer pfp, stage timer pfp, timer palco brito, stagetimer-pfp">
+  <meta name="keywords" content="stagetimer pfp, stage timer pfp, timer palco, stagetimer-pfp">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="./index.html">
   <title>StageTimer PFP — Timer de Palco & Lineup</title>
@@ -596,9 +599,9 @@
           <div class="mode-icon">👑</div>
           <div class="mode-info">
             <div class="mode-name" style="color: #fdcb6e;">Painel Master (Super Régie)</div>
-            <div class="mode-desc">Exclusivo: ver dispositivos online, mudar ecrãs remotamente, apagar palcos e multiview. (Senha: 1379brito)</div>
+            <div class="mode-desc">Exclusivo: ver dispositivos online, mudar ecrãs remotamente, apagar palcos e multiview.</div>
           </div>
-          <span class="mode-badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border-color: #fdcb6e;">Senha: 1379brito</span>
+          <span class="mode-badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border-color: #fdcb6e;">🔒 Acesso Restrito</span>
         </a>
       </div>
 
@@ -677,6 +680,7 @@
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
+  <script src="js/auth.js?v=93"></script>
   <script src="js/pwa.js?v=93"></script>
   <script src="js/local-sync.js?v=93"></script>
   <script>
@@ -1238,16 +1242,18 @@
       $hubSecretClockBtn.addEventListener('click', openMasterClockAction);
     }
 
-    function submitMasterModal() {
-      const val = ($masterModalInput ? $masterModalInput.value : '').trim().toLowerCase();
-      if (val === '1379brito' || val === '1379' || val === 'brito') {
+    async function submitMasterModal() {
+      const val = ($masterModalInput ? $masterModalInput.value : '').trim();
+      if (!val) return;
+
+      if ($masterModalConfirm) $masterModalConfirm.disabled = true;
+      const authResult = (window.StageTimerAuth && typeof window.StageTimerAuth.verifyPassword === 'function')
+        ? await window.StageTimerAuth.verifyPassword(val, 'master')
+        : { ok: false };
+      if ($masterModalConfirm) $masterModalConfirm.disabled = false;
+
+      if (authResult.ok && authResult.isMaster) {
         isMasterActive = true;
-        sessionStorage.setItem('stagetimer_master_active', '1');
-        localStorage.setItem('stagetimer_master_active', '1');
-        sessionStorage.setItem('stagetimer_master_auth_v12', 'true');
-        localStorage.setItem('stagetimer_master_auth_v12', 'true');
-        sessionStorage.setItem('stagetimer_auth_unlocked', 'true');
-        localStorage.setItem('stagetimer_auth_unlocked', 'true');
         if ($masterModal) $masterModal.style.display = 'none';
         renderView();
         if (window._openCreateAfterMaster) {
@@ -1282,12 +1288,16 @@
 
     function performMasterLogout() {
       isMasterActive = false;
-      sessionStorage.removeItem('stagetimer_master_active');
-      localStorage.removeItem('stagetimer_master_active');
-      sessionStorage.removeItem('stagetimer_master_auth_v12');
-      localStorage.removeItem('stagetimer_master_auth_v12');
-      sessionStorage.removeItem('stagetimer_auth_unlocked');
-      localStorage.removeItem('stagetimer_auth_unlocked');
+      if (window.StageTimerAuth && typeof window.StageTimerAuth.logout === 'function') {
+        window.StageTimerAuth.logout();
+      } else {
+        sessionStorage.removeItem('stagetimer_master_active');
+        localStorage.removeItem('stagetimer_master_active');
+        sessionStorage.removeItem('stagetimer_master_auth_v12');
+        localStorage.removeItem('stagetimer_master_auth_v12');
+        sessionStorage.removeItem('stagetimer_auth_unlocked');
+        localStorage.removeItem('stagetimer_auth_unlocked');
+      }
       currentUnlockedEventCode = '';
       sessionStorage.removeItem('stagetimer_unlocked_event');
       localStorage.removeItem('stagetimer_unlocked_event');
@@ -1420,8 +1430,7 @@
           const newEvent = hubClient.createEventWithStages({
             title,
             stagesCount,
-            eventType: selectedCreateType,
-            masterPass: '1379brito'
+            eventType: selectedCreateType
           });
           if ($createModal) $createModal.style.display = 'none';
           currentUnlockedEventCode = newEvent.code;
