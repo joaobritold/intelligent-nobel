@@ -519,6 +519,9 @@ client.on('room-state', (data) => {
   updateLineupNavLinks(roomId);
   renderLineupEventSelector();
   render();
+  if (typeof syncLineupVideo === 'function') {
+    syncLineupVideo();
+  }
 });
 
 setInterval(() => {
@@ -625,3 +628,435 @@ document.addEventListener('keydown', (e) => {
       break;
   }
 });
+
+// ─── Stage Video System ───────────────────────────────────────────
+
+let currentMediaStream = null;
+let currentHls = null;
+let isVideoMuted = true;
+let isVideoCollapsed = false;
+let lastVideoSig = '';
+
+const $videoContainer = document.getElementById('lineup-video-container');
+const $videoExpandBtn = document.getElementById('lineup-video-expand-btn');
+const $videoElement = document.getElementById('lineup-video-element');
+const $videoIframe = document.getElementById('lineup-video-iframe');
+const $videoPlaceholder = document.getElementById('lineup-video-placeholder');
+const $videoStatusText = document.getElementById('lineup-video-status-text');
+const $videoBadge = document.getElementById('lineup-video-badge');
+const $videoLabel = document.getElementById('lineup-video-label');
+const $videoMuteBtn = document.getElementById('lineup-video-mute-btn');
+const $videoPipBtn = document.getElementById('lineup-video-pip-btn');
+const $videoFsBtn = document.getElementById('lineup-video-fs-btn');
+const $videoCollapseBtn = document.getElementById('lineup-video-collapse-btn');
+const $videoCfgBtn = document.getElementById('lineup-video-cfg-btn');
+const $navVideoBtn = document.getElementById('ln-nav-video');
+
+const $videoModal = document.getElementById('lineup-video-modal');
+const $videoModalClose = document.getElementById('lineup-video-modal-close');
+const $videoEnableToggle = document.getElementById('video-enable-toggle');
+const $videoSourceTypeRadios = document.querySelectorAll('input[name="video-source-type"]');
+const $videoSectionCamera = document.getElementById('video-section-camera');
+const $videoSectionUrl = document.getElementById('video-section-url');
+const $videoDeviceSelect = document.getElementById('video-device-select');
+const $videoRefreshDevicesBtn = document.getElementById('video-refresh-devices-btn');
+const $videoUrlInput = document.getElementById('video-url-input');
+const $videoLabelInput = document.getElementById('video-label-input');
+const $videoSaveBtn = document.getElementById('video-save-btn');
+const $videoDisableBtn = document.getElementById('video-disable-btn');
+
+function showVideoPlaceholder(text = 'Aguardando sinal...') {
+  if ($videoPlaceholder) {
+    if ($videoStatusText) $videoStatusText.textContent = text;
+    $videoPlaceholder.style.display = 'flex';
+  }
+  if ($videoBadge) {
+    $videoBadge.className = 'video-badge offline';
+    $videoBadge.textContent = '● SEM SINAL';
+  }
+}
+
+function showVideoActive(label = 'Câmara Palco') {
+  if ($videoPlaceholder) $videoPlaceholder.style.display = 'none';
+  if ($videoBadge) {
+    $videoBadge.className = 'video-badge live';
+    $videoBadge.textContent = '● AO VIVO';
+  }
+  if ($videoLabel) {
+    $videoLabel.textContent = label || 'Câmara Palco';
+  }
+}
+
+function stopCurrentVideoStream() {
+  if (currentMediaStream) {
+    try {
+      currentMediaStream.getTracks().forEach(t => t.stop());
+    } catch (_) {}
+    currentMediaStream = null;
+  }
+  if (currentHls) {
+    try {
+      currentHls.destroy();
+    } catch (_) {}
+    currentHls = null;
+  }
+  if ($videoElement) {
+    $videoElement.removeAttribute('src');
+    $videoElement.srcObject = null;
+  }
+  if ($videoIframe) {
+    $videoIframe.src = 'about:blank';
+  }
+}
+
+function formatEmbedUrl(rawUrl) {
+  if (!rawUrl) return '';
+  const url = rawUrl.trim();
+  const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&playsinline=1`;
+  }
+  if (url.includes('vdo.ninja')) {
+    let clean = url;
+    if (!clean.includes('autoplay')) clean += (clean.includes('?') ? '&' : '?') + 'autoplay=1';
+    if (!clean.includes('cleanoutput')) clean += '&cleanoutput=1';
+    return clean;
+  }
+  return url;
+}
+
+async function enumerateVideoDevices() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+    if ($videoDeviceSelect) {
+      $videoDeviceSelect.innerHTML = '<option value="">Captura USB não suportada neste browser</option>';
+    }
+    return;
+  }
+  try {
+    let devices = await navigator.mediaDevices.enumerateDevices();
+    let videoDevices = devices.filter(d => d.kind === 'videoinput');
+
+    if (videoDevices.length > 0 && !videoDevices[0].label) {
+      try {
+        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        tempStream.getTracks().forEach(t => t.stop());
+        devices = await navigator.mediaDevices.enumerateDevices();
+        videoDevices = devices.filter(d => d.kind === 'videoinput');
+      } catch (err) {}
+    }
+
+    if ($videoDeviceSelect) {
+      if (videoDevices.length === 0) {
+        $videoDeviceSelect.innerHTML = '<option value="">Nenhuma câmara ou placa USB detetada</option>';
+      } else {
+        const savedDevId = localStorage.getItem('stagetimer_lineup_camera_device') || '';
+        $videoDeviceSelect.innerHTML = videoDevices.map((dev, idx) => {
+          const label = dev.label || `Câmara / Placa USB ${idx + 1}`;
+          const isSel = dev.deviceId === savedDevId || (idx === 0 && !savedDevId);
+          return `<option value="${escapeHtml(dev.deviceId)}" ${isSel ? 'selected' : ''}>📹 ${escapeHtml(label)}</option>`;
+        }).join('');
+      }
+    }
+  } catch (e) {
+    console.warn('Erro ao enumerar dispositivos de vídeo:', e);
+  }
+}
+
+async function syncLineupVideo(force = false) {
+  if (!$videoContainer) return;
+
+  const cfg = state?.video || (typeof client.getVideoConfig === 'function' ? client.getVideoConfig() : null);
+  const isEnabled = !!(cfg && cfg.enabled);
+  const sourceType = cfg?.sourceType || 'camera';
+  const url = (cfg?.url || '').trim();
+  const label = (cfg?.label || 'Câmara Palco').trim();
+  const localDevId = localStorage.getItem('stagetimer_lineup_camera_device') || '';
+
+  const sig = `${isEnabled}:${sourceType}:${url}:${label}:${localDevId}`;
+  if (!force && sig === lastVideoSig) return;
+  lastVideoSig = sig;
+
+  if (!isEnabled) {
+    stopCurrentVideoStream();
+    $videoContainer.style.display = 'none';
+    if ($videoExpandBtn) $videoExpandBtn.style.display = 'none';
+    return;
+  }
+
+  // Video is enabled
+  if (isVideoCollapsed) {
+    $videoContainer.style.display = 'none';
+    if ($videoExpandBtn) $videoExpandBtn.style.display = 'block';
+  } else {
+    $videoContainer.style.display = 'flex';
+    if ($videoExpandBtn) $videoExpandBtn.style.display = 'none';
+  }
+
+  showVideoActive(label);
+
+  if (sourceType === 'camera') {
+    // ── Mode: Local USB / Camera / HDMI Capture Card ──
+    stopCurrentVideoStream();
+    if ($videoIframe) $videoIframe.style.display = 'none';
+    if ($videoElement) $videoElement.style.display = 'block';
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showVideoPlaceholder('Captura USB não suportada pelo browser');
+      return;
+    }
+
+    try {
+      showVideoPlaceholder('A iniciar captura USB...');
+      const constraints = {
+        video: localDevId ? { deviceId: { exact: localDevId }, width: { ideal: 1280 }, height: { ideal: 720 } } : { width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      currentMediaStream = stream;
+      if ($videoElement) {
+        $videoElement.srcObject = stream;
+        $videoElement.muted = isVideoMuted;
+        try {
+          await $videoElement.play();
+        } catch (_) {}
+      }
+      showVideoActive(label);
+    } catch (err) {
+      console.warn('Falha ao aceder à câmara/placa USB:', err);
+      try {
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        currentMediaStream = fallbackStream;
+        if ($videoElement) {
+          $videoElement.srcObject = fallbackStream;
+          $videoElement.muted = isVideoMuted;
+          await $videoElement.play();
+        }
+        showVideoActive(label);
+      } catch (fallbackErr) {
+        showVideoPlaceholder('Dispositivo de captura inacessível ou sem permissão');
+      }
+    }
+  } else {
+    // ── Mode: Network Stream / URL / HLS / VDO.Ninja ──
+    stopCurrentVideoStream();
+
+    if (!url) {
+      showVideoPlaceholder('Nenhum URL de stream configurado');
+      return;
+    }
+
+    const isEmbed = url.includes('vdo.ninja') || url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com') || url.includes('/embed/');
+    if (isEmbed) {
+      if ($videoElement) $videoElement.style.display = 'none';
+      if ($videoIframe) {
+        $videoIframe.style.display = 'block';
+        $videoIframe.src = formatEmbedUrl(url);
+      }
+      showVideoActive(label);
+    } else {
+      if ($videoIframe) $videoIframe.style.display = 'none';
+      if ($videoElement) $videoElement.style.display = 'block';
+
+      if (url.includes('.m3u8')) {
+        if (window.Hls && Hls.isSupported()) {
+          const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+          currentHls = hls;
+          hls.loadSource(url);
+          hls.attachMedia($videoElement);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            $videoElement.play().catch(() => {});
+            showVideoActive(label);
+          });
+          hls.on(Hls.Events.ERROR, (event, data) => {
+            if (data.fatal) {
+              showVideoPlaceholder('Erro ao carregar stream HLS');
+            }
+          });
+        } else if ($videoElement.canPlayType && $videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+          $videoElement.src = url;
+          $videoElement.play().catch(() => {});
+          showVideoActive(label);
+        } else {
+          $videoElement.src = url;
+          $videoElement.play().catch(() => {});
+          showVideoActive(label);
+        }
+      } else {
+        $videoElement.src = url;
+        $videoElement.play().catch(() => {});
+        showVideoActive(label);
+      }
+    }
+  }
+}
+
+// ── Event Handlers & Modal Logic ──
+
+function openVideoConfigModal() {
+  if (!$videoModal) return;
+  const cfg = state?.video || (typeof client.getVideoConfig === 'function' ? client.getVideoConfig() : null);
+  if ($videoEnableToggle) {
+    $videoEnableToggle.checked = !!(cfg && cfg.enabled);
+  }
+  const type = cfg?.sourceType === 'url' ? 'url' : 'camera';
+  const radio = document.querySelector(`input[name="video-source-type"][value="${type}"]`);
+  if (radio) {
+    radio.checked = true;
+    updateSourceTypeView(type);
+  }
+  if ($videoUrlInput) {
+    $videoUrlInput.value = cfg?.url || '';
+  }
+  if ($videoLabelInput) {
+    $videoLabelInput.value = cfg?.label || 'Câmara de Palco';
+  }
+  enumerateVideoDevices();
+  $videoModal.style.display = 'flex';
+}
+
+function closeVideoConfigModal() {
+  if ($videoModal) $videoModal.style.display = 'none';
+}
+
+function updateSourceTypeView(type) {
+  if ($videoSectionCamera && $videoSectionUrl) {
+    if (type === 'camera') {
+      $videoSectionCamera.style.display = 'flex';
+      $videoSectionUrl.style.display = 'none';
+      document.getElementById('pill-source-camera')?.classList.add('active');
+      document.getElementById('pill-source-url')?.classList.remove('active');
+    } else {
+      $videoSectionCamera.style.display = 'none';
+      $videoSectionUrl.style.display = 'flex';
+      document.getElementById('pill-source-camera')?.classList.remove('active');
+      document.getElementById('pill-source-url')?.classList.add('active');
+    }
+  }
+}
+
+if ($videoCfgBtn) $videoCfgBtn.addEventListener('click', openVideoConfigModal);
+if ($navVideoBtn) $navVideoBtn.addEventListener('click', openVideoConfigModal);
+if ($videoModalClose) $videoModalClose.addEventListener('click', closeVideoConfigModal);
+
+if ($videoModal) {
+  $videoModal.addEventListener('click', (e) => {
+    if (e.target === $videoModal) closeVideoConfigModal();
+  });
+}
+
+$videoSourceTypeRadios.forEach(radio => {
+  radio.addEventListener('change', () => {
+    updateSourceTypeView(radio.value);
+  });
+});
+
+if ($videoRefreshDevicesBtn) {
+  $videoRefreshDevicesBtn.addEventListener('click', () => {
+    enumerateVideoDevices();
+  });
+}
+
+if ($videoSaveBtn) {
+  $videoSaveBtn.addEventListener('click', () => {
+    const enabled = $videoEnableToggle ? $videoEnableToggle.checked : true;
+    const sourceType = document.querySelector('input[name="video-source-type"]:checked')?.value || 'camera';
+    const url = $videoUrlInput ? $videoUrlInput.value.trim() : '';
+    const label = $videoLabelInput ? ($videoLabelInput.value.trim() || 'Câmara de Palco') : 'Câmara de Palco';
+    const chosenDevice = $videoDeviceSelect ? $videoDeviceSelect.value : '';
+
+    if (chosenDevice) {
+      localStorage.setItem('stagetimer_lineup_camera_device', chosenDevice);
+    }
+
+    if (typeof client.setVideoConfig === 'function') {
+      client.setVideoConfig({
+        enabled,
+        sourceType,
+        url,
+        label,
+        muted: isVideoMuted
+      });
+    }
+
+    closeVideoConfigModal();
+    syncLineupVideo(true);
+  });
+}
+
+if ($videoDisableBtn) {
+  $videoDisableBtn.addEventListener('click', () => {
+    if (typeof client.setVideoConfig === 'function') {
+      client.setVideoConfig({ enabled: false });
+    }
+    closeVideoConfigModal();
+    syncLineupVideo(true);
+  });
+}
+
+// ── In-Player Controls ──
+
+if ($videoMuteBtn) {
+  $videoMuteBtn.addEventListener('click', () => {
+    isVideoMuted = !isVideoMuted;
+    if ($videoElement) {
+      $videoElement.muted = isVideoMuted;
+    }
+    $videoMuteBtn.textContent = isVideoMuted ? '🔇' : '🔊';
+    $videoMuteBtn.title = isVideoMuted ? 'Ligar Áudio' : 'Desligar Áudio';
+  });
+}
+
+if ($videoPipBtn) {
+  if (!document.pictureInPictureEnabled) {
+    $videoPipBtn.style.display = 'none';
+  } else {
+    $videoPipBtn.addEventListener('click', async () => {
+      try {
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture();
+        } else if ($videoElement && $videoElement.requestPictureInPicture) {
+          await $videoElement.requestPictureInPicture();
+        }
+      } catch (err) {
+        console.warn('PiP error:', err);
+      }
+    });
+  }
+}
+
+if ($videoFsBtn) {
+  $videoFsBtn.addEventListener('click', () => {
+    if ($videoElement) {
+      const fn = $videoElement.requestFullscreen ||
+                 $videoElement.webkitRequestFullscreen ||
+                 $videoElement.mozRequestFullScreen ||
+                 $videoElement.msRequestFullscreen;
+      if (fn) {
+        try {
+          fn.call($videoElement);
+        } catch (_) {}
+      }
+    }
+  });
+}
+
+if ($videoCollapseBtn) {
+  $videoCollapseBtn.addEventListener('click', () => {
+    isVideoCollapsed = true;
+    if ($videoContainer) $videoContainer.style.display = 'none';
+    if ($videoExpandBtn) $videoExpandBtn.style.display = 'block';
+  });
+}
+
+if ($videoExpandBtn) {
+  $videoExpandBtn.addEventListener('click', () => {
+    isVideoCollapsed = false;
+    if ($videoContainer) $videoContainer.style.display = 'flex';
+    if ($videoExpandBtn) $videoExpandBtn.style.display = 'none';
+  });
+}
+
+// Initial video sync on startup
+setTimeout(() => {
+  syncLineupVideo();
+}, 200);
