@@ -562,3 +562,40 @@ document.addEventListener('keydown', (e) => {
       break;
   }
 });
+
+// ─── Screen Wake Lock API (Modo de Palco Sempre Ligado) ────────────
+let viewerWakeLock = null;
+
+async function acquireViewerWakeLock() {
+  if (!('wakeLock' in navigator) || !navigator.wakeLock || typeof navigator.wakeLock.request !== 'function') {
+    return;
+  }
+  if (document.visibilityState !== 'visible') {
+    return;
+  }
+  if (viewerWakeLock && !viewerWakeLock.released) {
+    return;
+  }
+  try {
+    viewerWakeLock = await navigator.wakeLock.request('screen');
+    viewerWakeLock.addEventListener('release', () => {
+      viewerWakeLock = null;
+    });
+  } catch (_) {
+    // Silent fallback when unsupported or denied by device policy
+  }
+}
+
+acquireViewerWakeLock();
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    acquireViewerWakeLock();
+  }
+});
+
+window.addEventListener('pointerdown', () => {
+  if (!viewerWakeLock || viewerWakeLock.released) {
+    acquireViewerWakeLock();
+  }
+}, { passive: true });
