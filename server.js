@@ -8,6 +8,86 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
+app.use(express.json({ limit: '16kb' }));
+
+// ─── Authentication & Security Configuration (Env / Salted Hash) ────
+const AUTH_SALT = process.env.AUTH_SALT || 'st_pfp_v1_salt_9f8e7d6c';
+const AUTH_SECRET = process.env.AUTH_SECRET || crypto.randomBytes(32).toString('hex');
+
+function computePasswordHash(plainText) {
+  const normalized = String(plainText || '').trim().toLowerCase();
+  return crypto.createHash('sha256').update(`${AUTH_SALT}:${normalized}`).digest('hex');
+}
+
+function safeCompareHex(hashA, hashB) {
+  try {
+    const bufA = Buffer.from(String(hashA || ''), 'hex');
+    const bufB = Buffer.from(String(hashB || ''), 'hex');
+    if (bufA.length === 0 || bufA.length !== bufB.length) return false;
+    return crypto.timingSafeEqual(bufA, bufB);
+  } catch (_) {
+    return false;
+  }
+}
+
+// Hashes can be overridden via environment variables (MASTER_PASSWORD, OPERATOR_PASSWORD, or pre-hashed *_HASH)
+const MASTER_HASHES = (
+  process.env.MASTER_PASSWORD
+    ? [computePasswordHash(process.env.MASTER_PASSWORD)]
+    : (process.env.MASTER_PASSWORD_HASH ? process.env.MASTER_PASSWORD_HASH.split(',').map(s => s.trim()) : [
+        'fb2e5f099f5a42d505f0e1114d2f0e28c667852ebcecb6f7202d3fe9d955f346'
+      ])
+);
+
+const OPERATOR_HASHES = (
+  process.env.OPERATOR_PASSWORD
+    ? [computePasswordHash(process.env.OPERATOR_PASSWORD)]
+    : (process.env.OPERATOR_PASSWORD_HASH ? process.env.OPERATOR_PASSWORD_HASH.split(',').map(s => s.trim()) : [
+        'f62cd1e7b7ab0ba4e545477674d5e8788c8119d17be4e2e1367cd27b29f55972',
+        'c823786caa78b9c35b7719b058021956a1cf8406a7ac466d9b91e1cf62683a65'
+      ])
+);
+
+function createSessionToken(role, isMaster) {
+  const payload = `${role}:${isMaster ? '1' : '0'}:${Date.now()}`;
+  const sig = crypto.createHmac('sha256', AUTH_SECRET).update(payload).digest('hex');
+  return `${Buffer.from(payload).toString('base64url')}.${sig}`;
+}
+
+app.post('/api/auth/verify', (req, res) => {
+  const { password, role } = req.body || {};
+  if (!password || typeof password !== 'string') {
+    return res.status(400).json({ ok: false, error: 'Palavra-passe obrigatória.' });
+  }
+
+  const candidateHash = computePasswordHash(password);
+  const isMasterMatch = MASTER_HASHES.some(h => safeCompareHex(candidateHash, h));
+  const isOperatorMatch = OPERATOR_HASHES.some(h => safeCompareHex(candidateHash, h));
+
+  if (role === 'master') {
+    if (isMasterMatch) {
+      return res.json({
+        ok: true,
+        role: 'master',
+        isMaster: true,
+        token: createSessionToken('master', true)
+      });
+    }
+    return res.status(401).json({ ok: false, error: 'Credencial Master inválida.' });
+  }
+
+  if (isMasterMatch || isOperatorMatch) {
+    return res.json({
+      ok: true,
+      role: isMasterMatch ? 'master' : 'operator',
+      isMaster: isMasterMatch,
+      token: createSessionToken(isMasterMatch ? 'master' : 'operator', isMasterMatch)
+    });
+  }
+
+  return res.status(401).json({ ok: false, error: 'Credencial de acesso inválida.' });
+});
+
 // Serve static files with no-cache for scripts/styles so updates apply immediately
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders: (res, filePath) => {
