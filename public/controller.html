@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=93">
-  <link rel="stylesheet" href="css/controller.css?v=93">
+  <link rel="stylesheet" href="css/common.css?v=94">
+  <link rel="stylesheet" href="css/controller.css?v=94">
 </head>
 <body>
   <div class="app">
@@ -65,9 +65,9 @@
       <div class="header-left">
         <div class="header-brand-row">
           <div class="logo">
-            <img src="icon.svg?v=93" alt="StageTimer Logo" class="logo-icon" width="26" height="26" style="vertical-align: middle; border-radius: 6px; margin-right: 6px;">
+            <img src="icon.svg?v=94" alt="StageTimer Logo" class="logo-icon" width="26" height="26" style="vertical-align: middle; border-radius: 6px; margin-right: 6px;">
             <span>StageTimer</span>
-            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 4px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v93</span>
+            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 4px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v94</span>
           </div>
           <div class="room-info" style="display: flex; align-items: center; gap: 8px;">
             <span>🎪</span>
@@ -76,15 +76,22 @@
             <span id="room-id" class="room-id" title="Código desta sessão (clique para copiar)" style="display: none;">------</span>
           </div>
         </div>
-        <!-- Modes Navigation -->
-        <div class="top-nav-modes">
-          <a id="top-nav-hub" href="index.html" class="btn btn-sm" style="text-decoration: none;">🏠 Início</a>
-          <a id="top-nav-controller" href="controller.html" class="btn btn-primary btn-sm" style="text-decoration: none;">🎛️ Configurador</a>
-          <a id="top-nav-operator" href="operator.html" class="btn btn-sm" style="text-decoration: none;">📱 Modo Operador</a>
-          <a id="top-nav-viewer" href="viewer.html" class="btn btn-sm" style="text-decoration: none;">📺 Modo Palco</a>
-          <a id="top-nav-lineup" href="lineup.html" class="btn btn-sm" style="text-decoration: none;">📋 Modo Lista</a>
-          <a id="top-nav-regies" href="regies.html" class="btn btn-sm" style="text-decoration: none;">📟 Régies</a>
-          <a id="top-nav-master" href="master.html" class="btn btn-sm" style="text-decoration: none; color: #fdcb6e; border-color: rgba(253, 203, 110, 0.4);">👑 Master</a>
+        <!-- Compact Modes Navigation -->
+        <div class="top-nav-modes st-compact-nav">
+          <a id="top-nav-hub" href="index.html" class="st-nav-home-btn">🏠 Início</a>
+          <div class="st-nav-dropdown align-left">
+            <button type="button" class="st-nav-trigger">🎛️ Configurador ▾</button>
+            <div class="st-nav-menu">
+              <div class="st-nav-group-label">Controlo & Operação</div>
+              <a id="top-nav-controller" href="controller.html" class="st-nav-item active">🎛️ Configurador</a>
+              <a id="top-nav-operator" href="operator.html" class="st-nav-item">📱 Modo Operador</a>
+              <div class="st-nav-group-label">Palco & Equipa</div>
+              <a id="top-nav-viewer" href="viewer.html" class="st-nav-item">📺 Modo Palco</a>
+              <a id="top-nav-lineup" href="lineup.html" class="st-nav-item">📋 Modo Lista</a>
+              <a id="top-nav-regies" href="regies.html" class="st-nav-item">📟 Modo Régies</a>
+              <a id="top-nav-master" href="master.html" class="st-nav-item st-nav-item-master" style="display: none;">👑 Super Régie Master</a>
+            </div>
+          </div>
         </div>
       </div>
       <div class="header-right">
@@ -334,15 +341,15 @@
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=93"></script>
+  <script src="js/schedule-importer.js?v=94"></script>
 
   <!-- Access Control -->
-  <script src="js/auth.js?v=93"></script>
+  <script src="js/auth.js?v=94"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=93"></script>
-  <script src="js/local-sync.js?v=93"></script>
-  <script src="js/controller.js?v=93"></script>
+  <script src="js/pwa.js?v=94"></script>
+  <script src="js/local-sync.js?v=94"></script>
+  <script src="js/controller.js?v=94"></script>
 </body>
 </html>

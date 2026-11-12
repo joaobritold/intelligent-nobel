@@ -254,5 +254,54 @@
     document.querySelectorAll('.st-install-app-btn').forEach((btn) => {
       btn.addEventListener('click', triggerInstall);
     });
+
+    // 7. Compact Top Navigation Dropdown Logic & Master Link Visibility
+    function syncMasterNavVisibility() {
+      const isMaster = typeof window.isStageTimerMaster === 'function'
+        ? window.isStageTimerMaster()
+        : (
+            sessionStorage.getItem('stagetimer_master_active') === '1' ||
+            localStorage.getItem('stagetimer_master_active') === '1' ||
+            sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
+            localStorage.getItem('stagetimer_master_auth_v12') === 'true'
+          );
+      document.querySelectorAll('.st-nav-item-master').forEach((el) => {
+        el.style.display = isMaster ? 'flex' : 'none';
+      });
+    }
+
+    syncMasterNavVisibility();
+
+    document.addEventListener('click', (e) => {
+      const trigger = e.target.closest('.st-nav-trigger');
+      if (trigger) {
+        e.stopPropagation();
+        const dropdown = trigger.closest('.st-nav-dropdown');
+        if (!dropdown) return;
+        const wasOpen = dropdown.classList.contains('open');
+        document.querySelectorAll('.st-nav-dropdown.open').forEach((d) => {
+          d.classList.remove('open');
+        });
+        if (!wasOpen) {
+          syncMasterNavVisibility();
+          dropdown.classList.add('open');
+        }
+        return;
+      }
+
+      if (!e.target.closest('.st-nav-menu')) {
+        document.querySelectorAll('.st-nav-dropdown.open').forEach((d) => {
+          d.classList.remove('open');
+        });
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.st-nav-dropdown.open').forEach((d) => {
+          d.classList.remove('open');
+        });
+      }
+    });
   });
 })();

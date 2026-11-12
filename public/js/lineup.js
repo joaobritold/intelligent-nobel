@@ -218,6 +218,8 @@ function updateLineupNavLinks(code) {
   const q = `?room=${encodeURIComponent(current)}`;
   const keys = [
     { id: 'ln-nav-hub', page: 'index.html' },
+    { id: 'ln-nav-controller', page: 'controller.html' },
+    { id: 'ln-nav-operator', page: 'operator.html' },
     { id: 'ln-nav-viewer', page: 'viewer.html' },
     { id: 'ln-nav-lineup', page: 'lineup.html' },
     { id: 'ln-nav-regies', page: 'regies.html' },
@@ -233,7 +235,7 @@ function updateLineupNavLinks(code) {
       sessionStorage.getItem('stagetimer_master_active') === '1' ||
       localStorage.getItem('stagetimer_master_active') === '1'
     );
-    $masterPill.style.display = isMaster ? 'inline-flex' : 'none';
+    $masterPill.style.display = isMaster ? 'flex' : 'none';
   }
 }
 updateLineupNavLinks(roomId);

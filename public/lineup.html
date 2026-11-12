@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Modo Lista (Lineup & Horários)</title>
-  <link rel="stylesheet" href="css/common.css?v=93">
-  <link rel="stylesheet" href="css/lineup.css?v=93">
+  <link rel="stylesheet" href="css/common.css?v=94">
+  <link rel="stylesheet" href="css/lineup.css?v=94">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
@@ -67,7 +67,7 @@
         <div>
           <div class="lineup-title">
             Lineup & Horários
-            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 6px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v93</span>
+            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 6px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v94</span>
           </div>
         </div>
         <!-- Event / Stage Badge & Pills -->
@@ -80,7 +80,24 @@
         <span id="lineup-room-badge" class="lineup-room-badge" style="display: none;">PALCO1</span>
       </div>
 
-      <div style="display: flex; gap: 8px; align-items: center;">
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <div class="st-compact-nav">
+          <a id="ln-nav-hub" href="index.html" class="st-nav-home-btn">🏠 Início</a>
+          <button type="button" id="ln-nav-video" class="st-nav-home-btn" style="background: rgba(108, 92, 231, 0.2); border-color: rgba(108, 92, 231, 0.45); color: #c4b5fd;">📹 Vídeo</button>
+          <div class="st-nav-dropdown">
+            <button type="button" class="st-nav-trigger">📋 Ecrãs ▾</button>
+            <div class="st-nav-menu">
+              <div class="st-nav-group-label">Controlo & Operação</div>
+              <a id="ln-nav-operator" href="operator.html" class="st-nav-item">📱 Modo Operador</a>
+              <a id="ln-nav-controller" href="controller.html" class="st-nav-item">🎛️ Configurador</a>
+              <div class="st-nav-group-label">Palco & Equipa</div>
+              <a id="ln-nav-viewer" href="viewer.html" class="st-nav-item">📺 Modo Palco</a>
+              <a id="ln-nav-lineup" href="lineup.html" class="st-nav-item active">📋 Modo Lista</a>
+              <a id="ln-nav-regies" href="regies.html" class="st-nav-item">📟 Modo Régies</a>
+              <a id="ln-nav-master" href="master.html" class="st-nav-item st-nav-item-master" style="display: none;">👑 Super Régie Master</a>
+            </div>
+          </div>
+        </div>
         <div style="display: flex; flex-direction: column; align-items: flex-end; background: rgba(0, 184, 148, 0.14); border: 1px solid rgba(0, 184, 148, 0.4); padding: 4px 10px; border-radius: 8px;">
           <span style="font-size: 0.65rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase;">Fim do Evento</span>
           <span id="lineup-event-end" style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 800; color: #55efc4;">--:--</span>
@@ -92,19 +109,36 @@
       </div>
     </header>
 
-    <!-- Navigation Switcher -->
-    <nav class="lineup-nav">
-      <a id="ln-nav-hub" href="index.html" class="lineup-nav-pill">🏠 Início</a>
-      <a id="ln-nav-viewer" href="viewer.html" class="lineup-nav-pill">📺 Modo Palco</a>
-      <a id="ln-nav-lineup" href="lineup.html" class="lineup-nav-pill active">📋 Modo Lista</a>
-      <a id="ln-nav-regies" href="regies.html" class="lineup-nav-pill">📟 Modo Régies</a>
-      <a id="ln-nav-master" href="master.html" class="lineup-nav-pill" style="display: none; color: #fdcb6e; border-color: rgba(253, 203, 110, 0.4);">👑 Master</a>
-    </nav>
-
     <!-- Main Content: Active Stage + Full Artist List -->
     <div class="lineup-body">
       <!-- Left / Top: Currently on Stage -->
       <aside id="lineup-now-card" class="lineup-now-card">
+        <!-- Live Stage Video Player Container -->
+        <div id="lineup-video-container" class="lineup-video-container" style="display: none;">
+          <div class="lineup-video-header">
+            <div class="lineup-video-status">
+              <span id="lineup-video-badge" class="video-badge live">● AO VIVO</span>
+              <span id="lineup-video-label" class="lineup-video-label">Câmara Palco</span>
+            </div>
+            <div class="lineup-video-actions">
+              <button type="button" id="lineup-video-mute-btn" class="video-action-btn" title="Ligar/Desligar Áudio">🔇</button>
+              <button type="button" id="lineup-video-pip-btn" class="video-action-btn" title="Janela Flutuante (PiP)">🔲</button>
+              <button type="button" id="lineup-video-fs-btn" class="video-action-btn" title="Ecrã Completo">⛶</button>
+              <button type="button" id="lineup-video-collapse-btn" class="video-action-btn" title="Recolher Vídeo">▲</button>
+              <button type="button" id="lineup-video-cfg-btn" class="video-action-btn" title="Configurar Vídeo">⚙️</button>
+            </div>
+          </div>
+          <div class="lineup-video-screen">
+            <video id="lineup-video-element" playsinline autoplay muted></video>
+            <iframe id="lineup-video-iframe" allow="autoplay; fullscreen; picture-in-picture" style="display: none;"></iframe>
+            <div id="lineup-video-placeholder" class="lineup-video-placeholder" style="display: none;">
+              <span class="placeholder-icon">📹</span>
+              <span id="lineup-video-status-text" class="placeholder-text">Aguardando sinal...</span>
+            </div>
+          </div>
+        </div>
+        <button type="button" id="lineup-video-expand-btn" class="lineup-video-expand-pill" style="display: none;">📹 Mostrar Vídeo de Palco</button>
+
         <div id="lineup-now-badge" class="lineup-now-badge">● EM PALCO AGORA</div>
         <div id="lineup-now-name" class="lineup-now-name">--</div>
         <div id="lineup-now-slot" class="lineup-now-slot"></div>
@@ -121,10 +155,79 @@
     </div>
   </div>
 
-  <!-- Cloud MQTT over WSS -->
+  <!-- Video Setup Modal -->
+  <div id="lineup-video-modal" class="video-modal-backdrop" style="display: none;">
+    <div class="video-modal-box">
+      <div class="video-modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.3rem;">📹</span>
+          <h3 style="margin: 0; font-size: 1.15rem; color: #fff;">Configurar Vídeo de Palco</h3>
+        </div>
+        <button type="button" id="lineup-video-modal-close" class="video-modal-close-btn" aria-label="Fechar">&times;</button>
+      </div>
+      <div class="video-modal-body">
+        <div class="video-form-group">
+          <label class="video-label-toggle">
+            <input type="checkbox" id="video-enable-toggle">
+            <span>Ativar Vídeo neste Palco</span>
+          </label>
+        </div>
+
+        <div class="video-form-group">
+          <label class="video-field-title">Tipo de Fonte:</label>
+          <div class="video-source-radios">
+            <label class="video-radio-pill active" id="pill-source-camera">
+              <input type="radio" name="video-source-type" value="camera" checked>
+              <span>🎥 Câmara / Captura USB</span>
+            </label>
+            <label class="video-radio-pill" id="pill-source-url">
+              <input type="radio" name="video-source-type" value="url">
+              <span>🌐 Stream de Rede / Web</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Section: Camera / USB Capture -->
+        <div id="video-section-camera" class="video-source-section">
+          <label for="video-device-select" class="video-field-title">Dispositivo de Vídeo / Placa USB detetada:</label>
+          <div style="display: flex; gap: 8px;">
+            <select id="video-device-select" class="video-input-select" style="flex: 1;">
+              <option value="">A procurar dispositivos...</option>
+            </select>
+            <button type="button" id="video-refresh-devices-btn" class="video-btn-secondary" title="Atualizar Lista de Câmaras">🔄</button>
+          </div>
+          <p class="video-hint">
+            💡 Suporta placas HDMI USB (Cam Link, dongles USB de captura), webcams e NDI Virtual Input/OBS Virtual Camera <strong>diretamente no browser</strong> sem precisar de nenhum outro software aberto.
+          </p>
+        </div>
+
+        <!-- Section: Network URL / Stream -->
+        <div id="video-section-url" class="video-source-section" style="display: none;">
+          <label for="video-url-input" class="video-field-title">URL da Stream / Vídeo:</label>
+          <input type="url" id="video-url-input" class="video-input-text" placeholder="https://exemplo.com/stream.m3u8 ou link VDO.Ninja / YouTube">
+          <p class="video-hint">
+            💡 Suporta streams HLS (<code>.m3u8</code>), links diretos MP4/WebM, links de emissão <code>vdo.ninja/?view=...</code> ou vídeos embed.
+          </p>
+        </div>
+
+        <div class="video-form-group">
+          <label for="video-label-input" class="video-field-title">Identificação / Legenda:</label>
+          <input type="text" id="video-label-input" class="video-input-text" value="Câmara de Palco" placeholder="ex.: Palco Principal - Frontal">
+        </div>
+
+        <div class="video-modal-actions">
+          <button type="button" id="video-save-btn" class="video-btn-primary">💾 Guardar e Ativar no Palco</button>
+          <button type="button" id="video-disable-btn" class="video-btn-danger">Desativar Vídeo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cloud MQTT over WSS & HLS Engine -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=93"></script>
-  <script src="js/local-sync.js?v=93"></script>
-  <script src="js/lineup.js?v=93"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
+  <script src="js/pwa.js?v=94"></script>
+  <script src="js/local-sync.js?v=94"></script>
+  <script src="js/lineup.js?v=94"></script>
 </body>
 </html>

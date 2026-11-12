@@ -987,7 +987,7 @@ class UniversalSyncClient {
       regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null },
       regieHistory: [],
       theatre: this._createDefaultTheatreState(),
-      theatre: this._createDefaultTheatreState(),
+      video: this._createDefaultVideoState(),
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
       updatedAt: 0,
       isEmptyDefault: true
@@ -1008,6 +1008,7 @@ class UniversalSyncClient {
     }
     this._ensureRegieStructure();
     this._ensureTheatreStructure();
+    this._ensureVideoStructure();
   }
 
   _ensureRegieStructure() {
@@ -1084,6 +1085,31 @@ class UniversalSyncClient {
       telemetry: [],
       reports: []
     };
+  }
+
+  _createDefaultVideoState() {
+    return {
+      enabled: false,
+      sourceType: 'none', // 'none' | 'camera' | 'url'
+      url: '',
+      label: 'Câmara de Palco',
+      aspectRatio: '16:9',
+      muted: true
+    };
+  }
+
+  _ensureVideoStructure() {
+    if (!this._state) return;
+    if (!this._state.video || typeof this._state.video !== 'object') {
+      this._state.video = this._createDefaultVideoState();
+    } else {
+      if (typeof this._state.video.enabled !== 'boolean') this._state.video.enabled = false;
+      if (typeof this._state.video.sourceType !== 'string') this._state.video.sourceType = 'none';
+      if (typeof this._state.video.url !== 'string') this._state.video.url = '';
+      if (typeof this._state.video.label !== 'string') this._state.video.label = 'Câmara de Palco';
+      if (typeof this._state.video.muted !== 'boolean') this._state.video.muted = true;
+      if (typeof this._state.video.aspectRatio !== 'string') this._state.video.aspectRatio = '16:9';
+    }
   }
 
   _createDefaultCues() {
@@ -3309,6 +3335,26 @@ class UniversalSyncClient {
   updateTheme(theme) {
     this._state.theme = { ...(this._state.theme || {}), ...theme };
     this._commitStateChange();
+  }
+
+  setVideoConfig(config = {}) {
+    if (!this._state) {
+      this._state = this._loadState() || this._createDefaultRoom(this.cleanRoom);
+    }
+    if (!this._state) return null;
+    this._ensureVideoStructure();
+    this._state.video = {
+      ...this._state.video,
+      ...config
+    };
+    this._commitStateChange();
+    return this._state.video;
+  }
+
+  getVideoConfig() {
+    if (!this._state) return null;
+    this._ensureVideoStructure();
+    return this._state.video;
   }
 
   reorderTimers(order) {

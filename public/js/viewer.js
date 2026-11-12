@@ -218,12 +218,16 @@ function updateViewerNavLinks(code) {
   const current = (code || roomId || 'PALCO1').toUpperCase();
   const q = `?room=${encodeURIComponent(current)}`;
   const $hub = document.getElementById('viewer-nav-hub');
+  const $ctrl = document.getElementById('viewer-nav-controller');
   const $op = document.getElementById('viewer-nav-operator');
+  const $vw = document.getElementById('viewer-nav-viewer');
   const $ln = document.getElementById('viewer-lineup-btn');
   const $rg = document.getElementById('viewer-regies-btn');
   const $master = document.getElementById('viewer-nav-master');
   if ($hub) $hub.href = 'index.html';
+  if ($ctrl) $ctrl.href = `controller.html${q}`;
   if ($op) $op.href = `operator.html${q}`;
+  if ($vw) $vw.href = `viewer.html${q}`;
   if ($ln) $ln.href = `lineup.html${q}`;
   if ($rg) $rg.href = `regies.html${q}`;
   if ($master) {
@@ -232,7 +236,7 @@ function updateViewerNavLinks(code) {
       sessionStorage.getItem('stagetimer_master_active') === '1' ||
       localStorage.getItem('stagetimer_master_active') === '1'
     );
-    $master.style.display = isMaster ? 'inline-block' : 'none';
+    $master.style.display = isMaster ? 'flex' : 'none';
   }
 }
 updateViewerNavLinks(roomId);
