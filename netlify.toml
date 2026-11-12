@@ -1,5 +1,11 @@
 [build]
   publish = "public"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/auth/verify"
+  to = "/.netlify/functions/auth"
+  status = 200
 
 [[redirects]]
   from = "/public/*"
