@@ -726,6 +726,10 @@ function renderTimers() {
 
   lastRenderedStructureSig = structureSig;
 
+  const ctrlCascade = (typeof UniversalSyncClient !== 'undefined' && typeof UniversalSyncClient.computeCascadeSchedule === 'function')
+    ? UniversalSyncClient.computeCascadeSchedule(state)
+    : null;
+
   // Build HTML for each timer
   const html = state.timers.map((timer, idx) => {
     const color = getTimerColor(timer);
@@ -734,7 +738,8 @@ function renderTimers() {
     const isActive = timer.id === state.activeTimerId;
     const isRunning = timer.state === 'running';
     const isFinished = timer.state === 'finished';
-    const endTimeStr = getEstimatedEndTime(timer);
+    const slot = ctrlCascade?.slots?.find(s => s.id === timer.id);
+    const endTimeStr = slot?.real?.endStr || getEstimatedEndTime(timer);
 
     const cardClasses = [
       'timer-card',
@@ -808,17 +813,22 @@ function renderTimers() {
                   title="Editar duração total (ex: 60 = 60m, 1.3 = 1h30m, 45, 1:30)"
                   spellcheck="false"
                 />
-                <span style="font-size: 0.75rem; color: var(--text-secondary);">Horário:</span>
+                <span style="font-size: 0.75rem; color: var(--text-secondary);" title="Horário Previsto original da programação">Previsto:</span>
                 <input
                   class="input input-mono timer-duration-input"
-                  style="width: 125px; padding: 2px 6px; font-size: 0.8rem; text-align: center;"
+                  style="width: 120px; padding: 2px 6px; font-size: 0.8rem; text-align: center;"
                   placeholder="23:00 – 00:15"
                   value="${escapeHtml(timer.startTime || '')}"
                   data-timer-id="${timer.id}"
                   data-field="startTime"
-                  title="Horário programado (ex: 21:00 ou 21:00 – 22:30)"
+                  title="Horário Previsto original (ex: 21:00 ou 21:00 – 22:30) - nunca se altera sozinho"
                   spellcheck="false"
                 />
+                ${slot?.real?.slotRange ? `
+                  <span class="badge" style="font-size: 0.68rem; background: rgba(108,92,231,0.22); color: #c4b5fd; border: 1px solid rgba(108,92,231,0.45); font-weight: 700; padding: 2px 6px;" title="Horário Real estimado em tempo real para situar no dia">
+                    ⏱️ Real: ${escapeHtml(slot.real.slotRange)}${slot.isDelayed ? ` <span style="color:#fdcb6e;">(${slot.delayStr})</span>` : ''}
+                  </span>
+                ` : ''}
               </div>
             ` : ''}
           </div>

@@ -593,8 +593,15 @@ function render() {
     $heroTime.className = `op-hero-time ${color}`;
 
     if ($heroEndTime) {
-      const endStr = getEstimatedEndTime(active);
-      $heroEndTime.textContent = endStr ? `🏁 Término previsto: ${endStr}` : '';
+      const cascade = typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.computeCascadeSchedule === 'function' ? StageTimerClient.computeCascadeSchedule(state) : null;
+      const activeSlot = cascade?.slots?.find(s => s.id === active.id);
+      if (activeSlot && activeSlot.planned && activeSlot.planned.hasValue) {
+        const delayStr = activeSlot.isDelayed ? ` (${activeSlot.delayStr} atraso)` : (activeSlot.isEarly ? ` (${activeSlot.delayStr} adiantado)` : '');
+        $heroEndTime.innerHTML = `📅 Previsto: <strong>${escapeHtml(activeSlot.planned.slotRange)}</strong> • ⏱️ Real: <strong style="color:#55efc4;">${escapeHtml(activeSlot.real.slotRange)}</strong><span style="color:#fdcb6e; font-weight:800; margin-left:4px;">${escapeHtml(delayStr)}</span>`;
+      } else {
+        const endStr = getEstimatedEndTime(active);
+        $heroEndTime.textContent = endStr ? `🏁 Término Real: ${endStr}` : '';
+      }
     }
 
     if ($heroNotes) {
@@ -670,10 +677,16 @@ function render() {
   const sig = state.timers.map(t => `${t.id}:${t.name}:${t.startTime || ''}:${t.notes || ''}:${t.duration}:${t.mode}:${t.id === state.activeTimerId}:${t.state}`).join('|');
   if (sig !== lastQueueSignature && !opDraggedId) {
     lastQueueSignature = sig;
+    const opCascade = typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.computeCascadeSchedule === 'function' ? StageTimerClient.computeCascadeSchedule(state) : null;
     $queueList.innerHTML = state.timers.map((t, idx) => {
       const isAct = t.id === state.activeTimerId;
       const isRunning = t.state === 'running';
-      const endTimeStr = getEstimatedEndTime(t);
+      const slot = opCascade?.slots?.find(s => s.id === t.id);
+      const endTimeStr = slot?.real?.endStr || getEstimatedEndTime(t);
+      const plannedStr = slot?.planned?.hasValue ? slot.planned.slotRange : (t.startTime || '');
+      const realStr = slot?.real?.slotRange || '';
+      const delayBadge = slot?.isDelayed ? `<span style="color:#fdcb6e; font-weight:800; font-size:0.75rem;">(${slot.delayStr})</span>` : '';
+
       return `
         <div class="op-queue-item ${isAct ? 'active' : ''}" data-id="${t.id}">
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
@@ -688,12 +701,13 @@ function render() {
             </div>
           </div>
           <div class="op-queue-meta" style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
-            ${t.startTime ? `<strong style="color:var(--accent)">[${escapeHtml(t.startTime)}]</strong>` : ''}
+            ${plannedStr ? `<span style="color:#cbd5e1; font-weight:700;">📋 Prev: <strong>${escapeHtml(plannedStr)}</strong></span>` : ''}
+            ${realStr ? `<span style="color:#a29bfe; font-weight:700;">⏱️ Real: <strong>${escapeHtml(realStr)}</strong> ${delayBadge}</span>` : ''}
             <span>⏱ ${formatTime(t.duration)}</span>
-            ${endTimeStr ? `<span class="op-end-time" data-end-id="${t.id}" style="color:#55efc4; font-weight:700;">🏁 Fim: ${endTimeStr}</span>` : ''}
+            ${endTimeStr ? `<span class="op-end-time" data-end-id="${t.id}" style="color:#55efc4; font-weight:700;">🏁 Fim Real: ${endTimeStr}</span>` : ''}
           </div>
           <div style="display: flex; gap: 6px; width: 100%; align-items: center;" onclick="event.stopPropagation()">
-            <input class="input" data-time-id="${t.id}" value="${escapeHtml(t.startTime || '')}" placeholder="23:00 – 00:15" style="padding: 6px 8px; font-size: 15px !important; width: 116px; text-align:center; flex-shrink: 0;" title="Horário de atuação">
+            <input class="input" data-time-id="${t.id}" value="${escapeHtml(t.startTime || '')}" placeholder="23:00 – 00:15" style="padding: 6px 8px; font-size: 15px !important; width: 116px; text-align:center; flex-shrink: 0;" title="Horário Previsto de atuação (folha de serviço)">
             <div style="display: flex; align-items: center; gap: 2px; flex-shrink: 0; background: rgba(0, 184, 148, 0.12); border: 1px solid rgba(0, 184, 148, 0.35); border-radius: 8px; padding: 2px 6px;" title="Editar tempo da atuação (ex: 45, 1:30, 60m)">
               <span style="font-size: 0.72rem; color: #55efc4; font-weight: 800;">⏱️</span>
               <input class="input input-mono op-item-dur" data-dur-id="${t.id}" value="${formatTime(t.duration)}" style="background: transparent; border: none; padding: 4px 2px; font-size: 15px !important; width: 68px; text-align: center; color: #55efc4; font-weight: 800; outline: none;" placeholder="30:00" spellcheck="false">
