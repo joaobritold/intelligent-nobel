@@ -1865,8 +1865,8 @@
     try {
       const savedDevId = videoCfg.deviceId || localStorage.getItem('stagetimer_master_vcam_device') || '';
       const constraints = savedDevId
-        ? { video: { deviceId: { exact: savedDevId }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }
-        : { video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
+        ? { video: { deviceId: { exact: savedDevId }, width: { ideal: 1920, min: 1280 }, height: { ideal: 1080, min: 720 }, frameRate: { ideal: 30 } }, audio: false }
+        : { video: { width: { ideal: 1920, min: 1280 }, height: { ideal: 1080, min: 720 }, frameRate: { ideal: 30 } }, audio: false };
       let stream = null;
       try {
         stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -2018,8 +2018,8 @@
         streamId = `st_${stageSlug}_${Math.random().toString(36).substring(2, 7)}`;
       }
 
-      const viewUrl = `https://vdo.ninja/?view=${encodeURIComponent(streamId)}&autoplay=1&cleanoutput=1`;
-      const pushUrl = `https://vdo.ninja/?push=${encodeURIComponent(streamId)}&webcam`;
+      const viewUrl = `https://vdo.ninja/?view=${encodeURIComponent(streamId)}&autoplay=1&cleanoutput=1&scale=100&codec=h264`;
+      const pushUrl = `https://vdo.ninja/?push=${encodeURIComponent(streamId)}&webcam&width=1920&height=1080&fps=30&videobitrate=4000&minvideobitrate=2500&quality=0&codec=h264`;
 
       if ($mvmStreamUrl) {
         $mvmStreamUrl.value = viewUrl;

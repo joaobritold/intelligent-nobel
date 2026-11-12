@@ -718,6 +718,8 @@ function formatEmbedUrl(rawUrl) {
     let clean = url;
     if (!clean.includes('autoplay')) clean += (clean.includes('?') ? '&' : '?') + 'autoplay=1';
     if (!clean.includes('cleanoutput')) clean += '&cleanoutput=1';
+    if (!clean.includes('scale=')) clean += '&scale=100';
+    if (!clean.includes('codec=')) clean += '&codec=h264';
     return clean;
   }
   return url;
@@ -759,7 +761,7 @@ async function tryDirectLocalCamera(cfg) {
     if (!matchedDev || !matchedDev.label) return false;
 
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { deviceId: { exact: matchedDev.deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      video: { deviceId: { exact: matchedDev.deviceId }, width: { ideal: 1920, min: 1280 }, height: { ideal: 1080, min: 720 }, frameRate: { ideal: 30 } },
       audio: false
     });
 
