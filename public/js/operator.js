@@ -1169,3 +1169,40 @@ $queueList.addEventListener('keydown', (e) => {
     e.target.blur();
   }
 });
+
+// ─── Screen Wake Lock API (Modo Operador Sempre Ligado) ────────────
+let operatorWakeLock = null;
+
+async function acquireOperatorWakeLock() {
+  if (!('wakeLock' in navigator) || !navigator.wakeLock || typeof navigator.wakeLock.request !== 'function') {
+    return;
+  }
+  if (document.visibilityState !== 'visible') {
+    return;
+  }
+  if (operatorWakeLock && !operatorWakeLock.released) {
+    return;
+  }
+  try {
+    operatorWakeLock = await navigator.wakeLock.request('screen');
+    operatorWakeLock.addEventListener('release', () => {
+      operatorWakeLock = null;
+    });
+  } catch (_) {
+    // Silent fallback when unsupported or denied by device policy
+  }
+}
+
+acquireOperatorWakeLock();
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    acquireOperatorWakeLock();
+  }
+});
+
+window.addEventListener('pointerdown', () => {
+  if (!operatorWakeLock || operatorWakeLock.released) {
+    acquireOperatorWakeLock();
+  }
+}, { passive: true });
