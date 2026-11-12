@@ -2683,11 +2683,14 @@ async function handleScheduleFile(file) {
     let text = '';
 
     if (typeof ScheduleImporter !== 'undefined') {
+      const setStatus = (msg) => {
+        if (titleEl) titleEl.textContent = msg;
+      };
       if (ext === 'pdf' && typeof ScheduleImporter.extractPdfPages === 'function') {
-        extractedData = await ScheduleImporter.extractPdfPages(file);
-        text = Array.isArray(extractedData) ? extractedData.join('\n\n') : '';
+        extractedData = await ScheduleImporter.extractPdfPages(file, setStatus);
+        text = Array.isArray(extractedData?.pages) ? extractedData.pages.join('\n\n') : (Array.isArray(extractedData) ? extractedData.join('\n\n') : '');
       } else if (typeof ScheduleImporter.extractSpreadsheetOrText === 'function') {
-        extractedData = await ScheduleImporter.extractSpreadsheetOrText(file);
+        extractedData = await ScheduleImporter.extractSpreadsheetOrText(file, setStatus);
         text = Array.isArray(extractedData?.pages) ? extractedData.pages.join('\n\n') : String(extractedData || '');
       }
     }

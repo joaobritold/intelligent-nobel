@@ -1493,12 +1493,19 @@ function updateImportPreview() {
 
 async function handleProcessImportFile(file) {
   if (!file) return;
+  const setImportStatus = (msg) => {
+    if ($importPreviewBox) {
+      $importPreviewBox.style.display = 'block';
+      $importPreviewBox.innerHTML = `<div style="color: #81ecec; font-weight: 600; font-size: 0.8rem;">${escapeHtml(msg)}</div>`;
+    }
+  };
   try {
+    setImportStatus(`⏳ A ler ficheiro "${file.name}"...`);
     const ext = file.name.split('.').pop().toLowerCase();
     if (ext === 'pdf') {
-      rawExtractedData = await ScheduleImporter.extractPdfPages(file);
+      rawExtractedData = await ScheduleImporter.extractPdfPages(file, setImportStatus);
     } else {
-      rawExtractedData = await ScheduleImporter.extractSpreadsheetOrText(file);
+      rawExtractedData = await ScheduleImporter.extractSpreadsheetOrText(file, setImportStatus);
     }
 
     const opts = getImportOptions();
