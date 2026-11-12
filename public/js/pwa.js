@@ -80,18 +80,48 @@
 
   // 3. Screen Wake Lock — Keep phone/PC screen awake during concerts
   async function requestWakeLock() {
-    if ('wakeLock' in navigator) {
-      try {
-        wakeLock = await navigator.wakeLock.request('screen');
-      } catch (e) {}
+    if (!('wakeLock' in navigator) || !navigator.wakeLock || typeof navigator.wakeLock.request !== 'function') {
+      return null;
+    }
+    if (document.visibilityState !== 'visible') {
+      return wakeLock;
+    }
+    if (wakeLock && !wakeLock.released) {
+      return wakeLock;
+    }
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => {
+        wakeLock = null;
+      });
+      return wakeLock;
+    } catch (_) {
+      // Silent fallback if browser/OS battery saver or policy rejects Wake Lock
+      return null;
     }
   }
+
   requestWakeLock();
+
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       requestWakeLock();
     }
   });
+
+  // Re-attempt on user interaction for browsers that require a user gesture
+  ['pointerdown', 'touchstart', 'keydown'].forEach((evtName) => {
+    window.addEventListener(evtName, () => {
+      if (!wakeLock || wakeLock.released) {
+        requestWakeLock();
+      }
+    }, { passive: true });
+  });
+
+  window.StageTimerWakeLock = {
+    request: requestWakeLock,
+    isActive: () => !!(wakeLock && !wakeLock.released)
+  };
 
   // 4. Detect Standalone Mode & Platform
   function isStandalone() {
