@@ -1531,6 +1531,7 @@
   const $mvmVcamSelect = document.getElementById('mvm-vcam-select');
   const $mvmRefreshCamsBtn = document.getElementById('mvm-refresh-cams-btn');
   const $mvmStreamUrl = document.getElementById('mvm-stream-url');
+  const $mvmVdoLaunchBtn = document.getElementById('mvm-vdo-launch-btn');
   const $mvmPreviewVideo = document.getElementById('mvm-preview-video');
   const $mvmPreviewIframe = document.getElementById('mvm-preview-iframe');
   const $mvmPreviewPlaceholder = document.getElementById('mvm-preview-placeholder');
@@ -2002,6 +2003,39 @@
     $mvmStreamUrl.addEventListener('input', () => {
       clearTimeout(urlTimer);
       urlTimer = setTimeout(updateMvmLivePreview, 400);
+    });
+  }
+
+  if ($mvmVdoLaunchBtn) {
+    $mvmVdoLaunchBtn.addEventListener('click', () => {
+      const stageSlug = (currentVideoStageCode || 'palco1').toLowerCase().replace(/[^a-z0-9]/g, '') || 'palco1';
+      let streamId = '';
+      const existingVal = ($mvmStreamUrl?.value || '').trim();
+      const existingMatch = existingVal.match(/vdo\.ninja\/.*[?&](?:view|push)=([a-zA-Z0-9_-]+)/i);
+      if (existingMatch && existingMatch[1]) {
+        streamId = existingMatch[1];
+      } else {
+        streamId = `st_${stageSlug}_${Math.random().toString(36).substring(2, 7)}`;
+      }
+
+      const viewUrl = `https://vdo.ninja/?view=${encodeURIComponent(streamId)}&autoplay=1&cleanoutput=1`;
+      const pushUrl = `https://vdo.ninja/?push=${encodeURIComponent(streamId)}&webcam`;
+
+      if ($mvmStreamUrl) {
+        $mvmStreamUrl.value = viewUrl;
+      }
+      if ($mvmEnableToggle) {
+        $mvmEnableToggle.checked = true;
+      }
+      updateMvmLivePreview();
+
+      window.open(pushUrl, '_blank', 'noopener');
+
+      const originalText = $mvmVdoLaunchBtn.textContent;
+      $mvmVdoLaunchBtn.textContent = '✅ Link Preenchido! Inicie no VDO.Ninja';
+      setTimeout(() => {
+        $mvmVdoLaunchBtn.textContent = originalText;
+      }, 3000);
     });
   }
 
