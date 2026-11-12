@@ -43,11 +43,21 @@ flowchart TD
 
 ## 🛡️ 2. As Regras de Ouro (Inquebráveis)
 
-### Regra #0 — Consentimento Prévio Obrigatório (Regra Máxima)
-Nenhuma alteração, criação, edição ou eliminação de ficheiros de código, estilos ou configuração pode ser executada sem:
-1. Apresentar uma explicação clara do que precisa de ser feito e porquê.
-2. Apresentar o plano detalhado e os ficheiros afetados.
-3. Aguardar e obter o **consentimento explícito do utilizador** antes de mexer em qualquer ficheiro.
+### Regra #0 — Níveis de Consentimento (Alterações Básicas vs. Estruturais)
+1. **Alterações Básicas (Autónomas, sem pedir permissão)**:
+   - O agente/programador pode avançar e aplicar de imediato alterações básicas, tais como:
+     - Correções pontuais de bugs, erros de sintaxe ou digitação (typos).
+     - Ajustes visuais cosméticos de CSS e estilo.
+     - Textos, legendas, mensagens e rótulos de interface.
+     - Atualização de cache-busting (`?v=XX` e `CACHE_NAME` no `sw.js`).
+     - Atualizações de documentação e livros de regras.
+     - Modificações pontuais solicitadas diretamente pelo utilizador.
+2. **Alterações Estruturais / Críticas (Consentimento Prévio Obrigatório)**:
+   - Exigem sempre apresentação do plano e **consentimento explícito do utilizador** antes de mexer em ficheiros:
+     - Alterações à arquitetura geral ou ao motor de sincronização ([local-sync.js](public/js/local-sync.js)).
+     - Eliminação ou renomeação de ficheiros existentes.
+     - Alterações na estrutura do modelo de dados (`state`).
+     - Refatorações de grande porte que afetem múltiplos ecrãs simultaneamente.
 
 ### Regra #0.1 — Commit Git Automático e Autónomo
 Assim que qualquer conjunto de alterações for autorizado e concluído, o agente ou programador deve **executar de imediato um commit no Git de forma 100% autónoma** (sem pedir confirmação para o commit em si), garantindo um histórico limpo e rastreável de todas as modificações (`docs:`, `fix:`, `feat:`).
