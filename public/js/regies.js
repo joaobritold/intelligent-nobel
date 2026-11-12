@@ -26,6 +26,11 @@ const client = new StageTimerClient({
   room: roomId
 });
 
+const $regieNavHub = document.getElementById('regie-nav-hub');
+if ($regieNavHub) {
+  $regieNavHub.href = `index.html?room=${encodeURIComponent(roomId)}`;
+}
+
 let state = null;
 
 // Station Mode: 'foh' (Régie Frente), 'stage' (Régie Palco) or 'tech' (Modo Técnico Mobile)

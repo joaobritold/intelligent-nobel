@@ -226,7 +226,7 @@ function updateViewerNavLinks(code) {
   const $ln = document.getElementById('viewer-lineup-btn');
   const $rg = document.getElementById('viewer-regies-btn');
   const $master = document.getElementById('viewer-nav-master');
-  if ($hub) $hub.href = 'index.html';
+  if ($hub) $hub.href = `index.html${q}`;
   if ($ctrl) $ctrl.href = `controller.html${q}`;
   if ($op) $op.href = `operator.html${q}`;
   if ($vw) $vw.href = `viewer.html${q}`;

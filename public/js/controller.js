@@ -84,7 +84,7 @@ function updateTopNavLinks(code) {
   const topLineup = document.getElementById('top-nav-lineup');
   const topRegies = document.getElementById('top-nav-regies');
   const topMaster = document.getElementById('top-nav-master');
-  if (topHub) topHub.href = 'index.html';
+  if (topHub) topHub.href = `index.html${q}`;
   if (topController) topController.href = `controller.html${q}`;
   if (topOperator) topOperator.href = `operator.html${q}`;
   if (topViewer) topViewer.href = `viewer.html${q}`;

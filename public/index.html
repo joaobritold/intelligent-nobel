@@ -59,7 +59,7 @@
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="./index.html">
   <title>StageTimer PFP — Timer de Palco & Lineup</title>
-  <link rel="stylesheet" href="css/common.css?v=101">
+  <link rel="stylesheet" href="css/common.css?v=103">
   <style>
     body {
       display: flex;
@@ -367,7 +367,7 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 10px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v95</span>
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v103</span>
       </footer>
     </div>
 
@@ -665,15 +665,15 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v101</span>
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v103</span>
       </footer>
     </div>
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/auth.js?v=101"></script>
-  <script src="js/pwa.js?v=101"></script>
-  <script src="js/local-sync.js?v=101"></script>
+  <script src="js/auth.js?v=103"></script>
+  <script src="js/pwa.js?v=103"></script>
+  <script src="js/local-sync.js?v=103"></script>
   <script>
     const hubClient = new StageTimerClient({
       role: 'viewer',
@@ -843,6 +843,7 @@
       if (verifyRes.valid) {
         currentUnlockedEventCode = paramEvent;
         sessionStorage.setItem('stagetimer_unlocked_event', paramEvent);
+        localStorage.setItem('stagetimer_unlocked_event', paramEvent);
       }
     }
 
@@ -1099,9 +1100,48 @@
       }).join('');
     }
 
-    function renderView() {
+    function resolveUnlockedEvent() {
+      if (isRevoked) return null;
       const allEvents = hubClient.getEventsList();
-      const unlockedEv = allEvents.find(e => e.code === currentUnlockedEventCode);
+      if (!allEvents || allEvents.length === 0) return null;
+
+      // 1. Direct variable match
+      if (currentUnlockedEventCode) {
+        const ev = allEvents.find(e => e.code === currentUnlockedEventCode);
+        if (ev) return ev;
+      }
+
+      // 2. Saved session or local storage (survives Back navigation)
+      const savedCode = sessionStorage.getItem('stagetimer_unlocked_event') || localStorage.getItem('stagetimer_unlocked_event');
+      if (savedCode) {
+        const ev = allEvents.find(e => e.code === savedCode);
+        if (ev) {
+          currentUnlockedEventCode = ev.code;
+          return ev;
+        }
+      }
+
+      // 3. Room hint from URL param or device storage
+      const roomHint = paramRoom || localStorage.getItem('stagetimer_device_room') || sessionStorage.getItem('stagetimer_active_room') || '';
+      if (roomHint) {
+        const ev = allEvents.find(e => {
+          if (e.code === roomHint) return true;
+          if (Array.isArray(e.stages) && e.stages.some(s => s.code === roomHint)) return true;
+          return false;
+        });
+        if (ev) {
+          currentUnlockedEventCode = ev.code;
+          sessionStorage.setItem('stagetimer_unlocked_event', ev.code);
+          localStorage.setItem('stagetimer_unlocked_event', ev.code);
+          return ev;
+        }
+      }
+
+      return null;
+    }
+
+    function renderView() {
+      const unlockedEv = resolveUnlockedEvent();
 
       if (!unlockedEv) {
         currentUnlockedEventCode = '';
@@ -1110,6 +1150,7 @@
         $viewHub.style.display = 'none';
         renderPortalEvents();
       } else {
+        currentUnlockedEventCode = unlockedEv.code;
         $viewPortal.style.display = 'none';
         $viewHub.style.display = 'block';
         renderEventHub(unlockedEv);
@@ -1171,6 +1212,7 @@
           // Master can enter immediately without PIN
           currentUnlockedEventCode = code;
           sessionStorage.setItem('stagetimer_unlocked_event', code);
+          localStorage.setItem('stagetimer_unlocked_event', code);
           renderView();
           return;
         }
@@ -1215,6 +1257,7 @@
       if (res.valid) {
         currentUnlockedEventCode = pendingPinEventCode;
         sessionStorage.setItem('stagetimer_unlocked_event', pendingPinEventCode);
+        localStorage.setItem('stagetimer_unlocked_event', pendingPinEventCode);
         if ($pinModal) $pinModal.style.display = 'none';
         pendingPinEventCode = '';
         renderView();
@@ -1472,6 +1515,7 @@
           if ($createModal) $createModal.style.display = 'none';
           currentUnlockedEventCode = newEvent.code;
           sessionStorage.setItem('stagetimer_unlocked_event', newEvent.code);
+          localStorage.setItem('stagetimer_unlocked_event', newEvent.code);
           const targetStages = Array.isArray(newEvent.stages) && newEvent.stages.length > 0 ? newEvent.stages : [{ code: newEvent.code }];
           selectedRoom = targetStages[0].code;
           try {
@@ -1511,6 +1555,7 @@
             if (targetEv) {
               currentUnlockedEventCode = targetCode;
               sessionStorage.setItem('stagetimer_unlocked_event', targetCode);
+              localStorage.setItem('stagetimer_unlocked_event', targetCode);
               const targetStages = Array.isArray(targetEv.stages) && targetEv.stages.length > 0 ? targetEv.stages : [{ code: targetEv.code }];
               selectedRoom = targetStages[0].code;
               $room.value = selectedRoom;

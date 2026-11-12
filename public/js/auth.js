@@ -18,14 +18,24 @@
     'c823786caa78b9c35b7719b058021956a1cf8406a7ac466d9b91e1cf62683a65'
   ]);
 
+  // Régies Mode digests (accepts '0000' and Master '1379brito')
+  const REGIES_DIGESTS = Object.freeze([
+    '08db75a469b66d3614c20f1dda8366634e22d549d46bdfdf0c75dc72657a1d73', // 0000
+    'fb2e5f099f5a42d505f0e1114d2f0e28c667852ebcecb6f7202d3fe9d955f346'  // 1379brito
+  ]);
+
   const pathname = typeof location !== 'undefined' ? location.pathname.toLowerCase() : '';
   const isMasterPage = pathname.includes('master');
+  const isRegiesPage = pathname.includes('regies');
   const isProtectedPage =
     isMasterPage ||
+    isRegiesPage ||
     pathname.includes('controller') ||
     pathname.includes('operator');
 
-  const AUTH_KEY = isMasterPage ? 'stagetimer_master_auth_v12' : 'stagetimer_auth_unlocked';
+  const AUTH_KEY = isMasterPage
+    ? 'stagetimer_master_auth_v12'
+    : (isRegiesPage ? 'stagetimer_regies_unlocked' : 'stagetimer_auth_unlocked');
 
   async function sha256SaltedHex(input) {
     const clean = String(input || '').trim().toLowerCase();
@@ -74,6 +84,20 @@
     }
   }
 
+  function isRegiesSessionActive() {
+    try {
+      return (
+        isMasterSessionActive() ||
+        sessionStorage.getItem('stagetimer_regies_unlocked') === 'true' ||
+        localStorage.getItem('stagetimer_regies_unlocked') === 'true' ||
+        sessionStorage.getItem('stagetimer_auth_unlocked') === 'true' ||
+        localStorage.getItem('stagetimer_auth_unlocked') === 'true'
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
   function activateMasterSession(token) {
     try {
       sessionStorage.setItem('stagetimer_master_active', '1');
@@ -82,6 +106,8 @@
       localStorage.setItem('stagetimer_master_auth_v12', 'true');
       sessionStorage.setItem('stagetimer_auth_unlocked', 'true');
       localStorage.setItem('stagetimer_auth_unlocked', 'true');
+      sessionStorage.setItem('stagetimer_regies_unlocked', 'true');
+      localStorage.setItem('stagetimer_regies_unlocked', 'true');
       if (token) {
         sessionStorage.setItem('stagetimer_auth_token', token);
       }
@@ -92,6 +118,18 @@
     try {
       sessionStorage.setItem('stagetimer_auth_unlocked', 'true');
       localStorage.setItem('stagetimer_auth_unlocked', 'true');
+      sessionStorage.setItem('stagetimer_regies_unlocked', 'true');
+      localStorage.setItem('stagetimer_regies_unlocked', 'true');
+      if (token) {
+        sessionStorage.setItem('stagetimer_auth_token', token);
+      }
+    } catch (_) {}
+  }
+
+  function activateRegiesSession(token) {
+    try {
+      sessionStorage.setItem('stagetimer_regies_unlocked', 'true');
+      localStorage.setItem('stagetimer_regies_unlocked', 'true');
       if (token) {
         sessionStorage.setItem('stagetimer_auth_token', token);
       }
@@ -106,6 +144,8 @@
       localStorage.removeItem('stagetimer_master_auth_v12');
       sessionStorage.removeItem('stagetimer_auth_unlocked');
       localStorage.removeItem('stagetimer_auth_unlocked');
+      sessionStorage.removeItem('stagetimer_regies_unlocked');
+      localStorage.removeItem('stagetimer_regies_unlocked');
       sessionStorage.removeItem('stagetimer_auth_token');
     } catch (_) {}
   }
@@ -134,13 +174,15 @@
         if (res.ok && data && data.ok) {
           if (data.isMaster) {
             activateMasterSession(data.token);
+          } else if (requiredRole === 'regies') {
+            activateRegiesSession(data.token);
           } else {
             activateOperatorSession(data.token);
           }
           return {
             ok: true,
             isMaster: !!data.isMaster,
-            role: data.role || (data.isMaster ? 'master' : 'operator'),
+            role: data.role || (data.isMaster ? 'master' : (requiredRole === 'regies' ? 'regies' : 'operator')),
             token: data.token
           };
         }
@@ -160,11 +202,28 @@
 
     const isMasterMatch = MASTER_DIGESTS.some(h => constantTimeEqual(digest, h));
     const isOperatorMatch = OPERATOR_DIGESTS.some(h => constantTimeEqual(digest, h));
+    const isRegiesMatch = REGIES_DIGESTS.some(h => constantTimeEqual(digest, h));
 
     if (requiredRole === 'master') {
       if (isMasterMatch) {
         activateMasterSession();
         return { ok: true, isMaster: true, role: 'master' };
+      }
+      return { ok: false, isMaster: false, role: null };
+    }
+
+    if (requiredRole === 'regies') {
+      if (isMasterMatch || isRegiesMatch || isOperatorMatch) {
+        if (isMasterMatch) {
+          activateMasterSession();
+        } else {
+          activateRegiesSession();
+        }
+        return {
+          ok: true,
+          isMaster: isMasterMatch,
+          role: isMasterMatch ? 'master' : 'regies'
+        };
       }
       return { ok: false, isMaster: false, role: null };
     }
@@ -190,8 +249,10 @@
     verifyPassword,
     isMaster: isMasterSessionActive,
     isUnlocked: isOperatorSessionActive,
+    isRegiesUnlocked: isRegiesSessionActive,
     activateMasterSession,
     activateOperatorSession,
+    activateRegiesSession,
     logout: clearSessions
   };
 
@@ -203,7 +264,8 @@
   const masterActive = isMasterSessionActive();
   const pageUnlocked =
     masterActive ||
-    (!isMasterPage && isOperatorSessionActive()) ||
+    (isRegiesPage && isRegiesSessionActive()) ||
+    (!isMasterPage && !isRegiesPage && isOperatorSessionActive()) ||
     sessionStorage.getItem(AUTH_KEY) === 'true' ||
     localStorage.getItem(AUTH_KEY) === 'true';
 
@@ -269,7 +331,7 @@
       transition: border-color 0.2s;
     }
     .st-auth-input:focus {
-      border-color: ${isMasterPage ? '#fdcb6e' : '#6c5ce7'};
+      border-color: ${isMasterPage ? '#fdcb6e' : (isRegiesPage ? '#a29bfe' : '#6c5ce7')};
     }
     .st-auth-input.error {
       border-color: #ff4757;
@@ -282,14 +344,14 @@
       font-weight: 700;
       border: none;
       border-radius: 10px;
-      background: ${isMasterPage ? '#e17055' : '#6c5ce7'};
+      background: ${isMasterPage ? '#e17055' : (isRegiesPage ? '#6c5ce7' : '#6c5ce7')};
       color: #fff;
       cursor: pointer;
       touch-action: manipulation;
       transition: background 0.2s;
     }
     .st-auth-btn:hover {
-      background: ${isMasterPage ? '#d63031' : '#7f70f0'};
+      background: ${isMasterPage ? '#d63031' : (isRegiesPage ? '#5b4bc4' : '#7f70f0')};
     }
     .st-auth-btn:disabled {
       opacity: 0.65;
@@ -323,16 +385,26 @@
   function mountLockScreen() {
     const overlay = document.createElement('div');
     overlay.id = 'st-auth-overlay';
+    const roleIcon = isMasterPage ? '👑' : (isRegiesPage ? '📟' : '🔒');
+    const roleTitle = isMasterPage ? 'Super Régie Master' : (isRegiesPage ? 'Modo Régies' : 'Acesso Restrito');
+    const roleSub = isMasterPage
+      ? 'Acesso exclusivo ao Painel Master.<br>Introduza a credencial de administração:'
+      : (isRegiesPage
+          ? 'Acesso ao Modo Régies (FOH / Palco / Técnico).<br>Introduza o PIN de acesso (4 dígitos):'
+          : 'Introduza a credencial de Controlo (Controlador / Operador):');
+    const rolePlaceholder = isMasterPage ? 'Palavra-passe...' : (isRegiesPage ? 'PIN (0000)...' : 'PIN numérico...');
+    const targetRole = isMasterPage ? 'master' : (isRegiesPage ? 'regies' : 'operator');
+
     overlay.innerHTML = `
       <form class="st-auth-card" id="st-auth-form">
-        <div class="st-auth-icon">${isMasterPage ? '👑' : '🔒'}</div>
-        <div class="st-auth-title">${isMasterPage ? 'Super Régie Master' : 'Acesso Restrito'}</div>
-        <div class="st-auth-sub">${isMasterPage ? 'Acesso exclusivo ao Painel Master.<br>Introduza a credencial de administração:' : 'Introduza a credencial de Controlo (Controlador / Operador):'}</div>
+        <div class="st-auth-icon">${roleIcon}</div>
+        <div class="st-auth-title">${roleTitle}</div>
+        <div class="st-auth-sub">${roleSub}</div>
         <input
           type="password"
           id="st-auth-pass"
           class="st-auth-input"
-          placeholder="${isMasterPage ? 'Palavra-passe...' : 'PIN numérico...'}"
+          placeholder="${rolePlaceholder}"
           ${isMasterPage ? '' : 'inputmode="numeric" pattern="[0-9]*"'}
           autocomplete="current-password"
           autofocus
@@ -364,7 +436,7 @@
       if (!val) return;
 
       if (submitBtn) submitBtn.disabled = true;
-      const result = await verifyPassword(val, isMasterPage ? 'master' : 'operator');
+      const result = await verifyPassword(val, targetRole);
       if (submitBtn) submitBtn.disabled = false;
 
       if (result.ok) {
@@ -374,7 +446,9 @@
         } catch (_) {}
         overlay.remove();
       } else {
-        err.textContent = isMasterPage ? 'Credencial Master incorreta!' : 'Credencial incorreta!';
+        err.textContent = isMasterPage
+          ? 'Credencial Master incorreta!'
+          : (isRegiesPage ? 'PIN de Régies incorreto!' : 'Credencial incorreta!');
         input.classList.remove('error');
         void input.offsetWidth;
         input.classList.add('error');
