@@ -51,7 +51,9 @@
   <meta name="theme-color" content="#0f0f1a">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
-  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Modo Palco</title>
   <link rel="stylesheet" href="css/common.css?v=93">
   <link rel="stylesheet" href="css/viewer.css?v=93">
@@ -124,5 +126,32 @@
   <script src="js/pwa.js?v=93"></script>
   <script src="js/local-sync.js?v=93"></script>
   <script src="js/viewer.js?v=93"></script>
+  <script>
+    // Screen Wake Lock API — Keep Stage Screen Always On
+    (function() {
+      let wakeLockSentinel = null;
+      async function requestStageWakeLock() {
+        if (!('wakeLock' in navigator) || !navigator.wakeLock || typeof navigator.wakeLock.request !== 'function') {
+          return;
+        }
+        if (document.visibilityState !== 'visible') return;
+        if (wakeLockSentinel && !wakeLockSentinel.released) return;
+        try {
+          wakeLockSentinel = await navigator.wakeLock.request('screen');
+          wakeLockSentinel.addEventListener('release', () => {
+            wakeLockSentinel = null;
+          });
+        } catch (_) {
+          // Silent fallback if browser/device does not support or blocks Wake Lock
+        }
+      }
+      requestStageWakeLock();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          requestStageWakeLock();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
