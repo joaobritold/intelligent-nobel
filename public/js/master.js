@@ -996,8 +996,7 @@
         const created = masterClient.createEventWithStages({
           title: name,
           stagesCount,
-          eventType,
-          masterPass: '1379brito'
+          eventType
         });
         if ($newStageInput) $newStageInput.value = '';
         renderEventsManager();
