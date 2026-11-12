@@ -67,11 +67,82 @@
 
 .main {
   display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 0;
+  grid-template-columns: 1fr 380px;
+  gap: 16px;
   flex: 1;
   align-items: start;
   overflow: visible;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1200px) {
+  .app {
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  .main {
+    display: grid;
+    grid-template-columns: minmax(460px, 1.4fr) minmax(320px, 1fr) minmax(320px, 380px);
+    gap: 18px;
+    padding: 16px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    align-items: start;
+  }
+
+  .timer-panel {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    padding: 0;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .sidebar {
+    display: contents;
+    border-left: none;
+    background: transparent;
+  }
+
+  /* Coluna 2: Controlo (Mensagem de Palco & Sincronização) */
+  .message-section {
+    grid-column: 2;
+    grid-row: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    margin-bottom: 0;
+  }
+
+  .links-section {
+    grid-column: 2;
+    grid-row: 2;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    margin-bottom: 0;
+  }
+
+  /* Coluna 3: Preview (Stage Preview & Controlo de Transporte) */
+  .preview-section {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    position: sticky;
+    top: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid var(--border);
+  }
 }
 
 /* ─── Timer List Panel ──────────────────────────────────────────── */
@@ -79,7 +150,7 @@
 .timer-panel {
   display: flex;
   flex-direction: column;
-  padding: 20px 24px;
+  padding: 16px 20px;
   overflow: visible;
 }
 

@@ -234,14 +234,17 @@ body {
   background: #fff;
   color: #111;
   border: none;
-  border-radius: 8px;
-  padding: 10px 18px;
-  font-size: 0.82rem;
+  border-radius: 12px;
+  padding: 14px 26px;
+  min-height: clamp(50px, 6.5dvh, 62px);
+  font-size: clamp(0.95rem, 2.2vw, 1.15rem);
   font-weight: 900;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
   transition: transform 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cs-urgent-ack-btn:active {
@@ -412,20 +415,27 @@ body {
 }
 
 .cs-feedback-buttons {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 8px;
-  flex-wrap: wrap;
+  width: 100%;
 }
 
 .cs-fb-btn {
   border: none;
-  border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 0.82rem;
-  font-weight: 800;
+  border-radius: 12px;
+  min-height: clamp(48px, 6dvh, 60px);
+  padding: 10px 16px;
+  font-size: clamp(0.92rem, 2vw, 1.05rem);
+  font-weight: 900;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: transform 0.15s ease, filter 0.15s ease;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cs-fb-btn:hover {
@@ -1269,19 +1279,19 @@ body {
   .cs-feedback-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6px;
+    gap: 8px;
     width: 100%;
   }
 
   .cs-fb-btn {
-    min-height: 44px;
-    padding: 6px 4px;
-    font-size: 0.82rem;
-    font-weight: 800;
+    min-height: clamp(52px, 7dvh, 64px);
+    padding: 8px 6px;
+    font-size: 0.98rem;
+    font-weight: 900;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: 12px;
   }
 
   /* Main Tabs Card */

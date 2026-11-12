@@ -1,23 +1,28 @@
 /* ─── Operator Mobile Layout (iOS Safari Optimized) ─────────────── */
 
-body {
+html, body {
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
   background: var(--bg-primary);
   color: var(--text-primary);
   -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
 }
 
 .op-app {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 500px;
+  max-width: 540px;
   min-height: 100dvh;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 24px);
-  padding-left: env(safe-area-inset-left, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
+  padding-top: max(8px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 20px));
+  padding-left: max(10px, env(safe-area-inset-left, 0px));
+  padding-right: max(10px, env(safe-area-inset-right, 0px));
   margin: 0 auto;
   box-sizing: border-box;
+  gap: 8px;
 }
 
 /* ─── Top Bar ───────────────────────────────────────────────────── */
@@ -157,13 +162,15 @@ body {
 .op-hero-progress-bar.warn { background: var(--yellow); }
 .op-hero-progress-bar.danger { background: var(--red); }
 
-/* ─── Big Touch Controls ────────────────────────────────────────── */
+/* ─── Big Touch Controls (Ergonomic Thumb-Zone) ─────────────────── */
 
 .op-controls {
-  padding: 0 12px;
+  padding: 4px 8px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .op-primary-controls {
@@ -173,16 +180,23 @@ body {
 }
 
 .op-btn-giant {
-  min-height: 58px;
-  font-size: 1.2rem;
-  font-weight: 700;
+  min-height: clamp(60px, 8.5dvh, 76px);
+  font-size: clamp(1.12rem, 4vw, 1.35rem);
+  font-weight: 800;
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+
+.op-btn-giant:active {
+  transform: scale(0.97);
+  filter: brightness(1.12);
 }
 
 .op-btn-play {
@@ -200,7 +214,7 @@ body {
 .op-btn-reset {
   background: var(--bg-card);
   border-color: var(--border);
-  font-size: 1.05rem;
+  font-size: clamp(1rem, 3.5vw, 1.15rem);
 }
 
 .op-adjust-grid {
@@ -210,13 +224,19 @@ body {
 }
 
 .op-btn-nudge {
-  min-height: 42px;
+  min-height: 46px;
   padding: 6px 2px;
-  font-size: 0.88rem;
-  font-weight: 700;
+  font-size: clamp(0.85rem, 2.6vw, 0.98rem);
+  font-weight: 800;
   font-family: var(--font-mono);
   border-radius: 10px;
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s ease;
+}
+
+.op-btn-nudge:active {
+  transform: scale(0.95);
 }
 
 .op-btn-minus {
@@ -465,58 +485,60 @@ body {
 /* ─── Refined Mobile Phone Experience (Modo Operador: <= 600px) ───── */
 @media (max-width: 600px) {
   .op-app {
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    padding-top: max(6px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 20px));
+    padding-left: max(6px, env(safe-area-inset-left, 0px));
+    padding-right: max(6px, env(safe-area-inset-right, 0px));
+    gap: 6px;
   }
 
   .op-header {
-    padding: 8px 10px calc(8px + env(safe-area-inset-top, 0px));
-  }
-
-  .op-mode-bar {
-    padding: 3px 10px 5px;
-    gap: 4px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .op-mode-bar .mode-pill {
-    padding: 5px 9px;
-    font-size: 0.72rem;
-    min-height: 34px;
-    display: inline-flex;
-    align-items: center;
+    padding: 8px 10px;
+    border-radius: 12px;
   }
 
   .op-hero {
-    margin: 6px 8px;
-    padding: 12px 10px;
+    margin: 4px 0;
+    padding: 14px 10px;
     border-radius: 14px;
   }
 
   .op-hero-time {
-    font-size: clamp(2.8rem, 14vw, 4rem);
-    margin: 2px 0 6px;
+    font-size: clamp(3rem, 16vw, 4.4rem);
+    margin: 2px 0 8px;
   }
 
   .op-controls {
-    padding: 0 8px;
-    gap: 6px;
+    padding: 2px 0;
+    gap: 8px;
   }
 
   .op-primary-controls {
     grid-template-columns: 2fr 1fr;
-    gap: 6px;
+    gap: 8px;
   }
 
   .op-btn-giant {
-    min-height: 52px;
-    font-size: 1.05rem;
-    border-radius: 12px;
+    min-height: clamp(58px, 8.5dvh, 72px);
+    font-size: clamp(1.1rem, 4.5vw, 1.3rem);
+    border-radius: 14px;
+  }
+
+  .op-step-controls button {
+    min-height: 48px;
+  }
+
+  .op-adjust-grid {
+    gap: 5px;
+  }
+
+  .op-btn-nudge {
+    min-height: 46px;
+    font-size: 0.92rem;
   }
 
   .op-section {
-    margin: 8px;
+    margin: 6px 0 0;
     padding: 10px;
     border-radius: 12px;
   }
@@ -527,10 +549,8 @@ body {
     border-radius: 10px;
   }
 
-  .op-queue-name-input {
-    font-size: 16px !important;
-  }
-
+  .op-queue-name-input,
+  .op-msg-input,
   .op-item-dur,
   .op-item-notes {
     font-size: 16px !important;

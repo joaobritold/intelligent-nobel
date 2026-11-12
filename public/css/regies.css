@@ -121,9 +121,10 @@
   background: linear-gradient(135deg, #e17055, #d63031);
   color: #fff;
   border: none;
-  border-radius: 10px;
-  padding: 10px 22px;
-  font-size: 0.95rem;
+  border-radius: 12px;
+  padding: 10px 24px;
+  min-height: clamp(46px, 5.5vh, 54px);
+  font-size: clamp(0.92rem, 1.6vw, 1.1rem);
   font-weight: 900;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -131,8 +132,9 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 3px 14px rgba(214, 48, 49, 0.45);
+  box-shadow: 0 4px 18px rgba(214, 48, 49, 0.45);
   transition: all 0.15s ease;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -142,7 +144,7 @@
 }
 
 .regie-hero-call-btn:active {
-  transform: translateY(1px);
+  transform: scale(0.97);
 }
 
 .regie-hero-call-btn.is-calling {
@@ -302,15 +304,17 @@
   background: #fff;
   color: #111;
   border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 0.88rem;
-  font-weight: 800;
+  border-radius: 10px;
+  padding: 12px 24px;
+  min-height: 48px;
+  font-size: 0.98rem;
+  font-weight: 900;
   text-transform: uppercase;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   transition: transform 0.15s ease;
   white-space: nowrap;
+  touch-action: manipulation;
 }
 
 .regie-ack-btn:active {
@@ -416,9 +420,10 @@
   background: linear-gradient(135deg, #00b894, #00cec9);
   color: #fff;
   border: none;
-  border-radius: 10px;
-  padding: 12px 22px;
-  font-size: 0.92rem;
+  border-radius: 12px;
+  padding: 12px 24px;
+  min-height: 48px;
+  font-size: 0.95rem;
   font-weight: 900;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -426,6 +431,7 @@
   white-space: nowrap;
   box-shadow: 0 4px 18px rgba(0, 184, 148, 0.5);
   transition: all 0.2s ease;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -880,8 +886,25 @@
   color: #000;
 }
 
-/* Responsive Tweaks */
-@media (max-width: 960px) {
+/* Responsive: PC & Tablet Side-by-Side (>=768px) vs Mobile (<768px) */
+@media (min-width: 768px) {
+  .regie-mobile-tab-bar {
+    display: none !important;
+  }
+
+  .lineup-body {
+    display: grid !important;
+    grid-template-columns: minmax(320px, 1fr) minmax(340px, 1.1fr) !important;
+    gap: clamp(14px, 2vw, 22px);
+  }
+
+  .regie-left-col,
+  .regie-right-col {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 767px) {
   .regie-mobile-tab-bar {
     display: flex;
   }
@@ -891,7 +914,7 @@
     gap: 14px;
   }
 
-  /* Segment switching on mobile */
+  /* Segment switching on phone */
   .lineup-body:not(.show-lineup-only) .regie-right-col {
     display: none;
   }
