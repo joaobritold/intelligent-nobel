@@ -600,6 +600,7 @@
 
 .regie-history-receipts {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   font-size: 0.7rem;
   margin-top: 2px;
@@ -630,6 +631,213 @@
 
 .is-station-tech .regie-header {
   border-color: rgba(0, 184, 148, 0.45);
+}
+
+/* Technician User Name Badge & Modal */
+.regie-tech-user-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 184, 148, 0.16);
+  border: 1.5px solid rgba(0, 184, 148, 0.55);
+  color: #55efc4;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 5px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.2s ease;
+  max-width: 240px;
+}
+
+.regie-tech-user-btn:hover {
+  background: rgba(0, 184, 148, 0.28);
+}
+
+.regie-tech-user-btn.needs-name {
+  background: rgba(253, 203, 110, 0.2);
+  border-color: #fdcb6e;
+  color: #ffeaa7;
+  animation: regiePulseRinging 1.2s infinite alternate;
+}
+
+#regie-tech-user-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.regie-tech-user-edit {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+.regie-tech-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 6, 15, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 2500;
+}
+
+.regie-tech-modal {
+  width: 100%;
+  max-width: 420px;
+  background: #141428;
+  border: 1.5px solid rgba(0, 184, 148, 0.5);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.75);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.regie-tech-modal-title {
+  font-size: 1.12rem;
+  font-weight: 900;
+  color: #55efc4;
+}
+
+.regie-tech-modal-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.4;
+  margin: 4px 0 0;
+}
+
+.regie-tech-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.regie-tech-label {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.regie-tech-input {
+  width: 100%;
+  font-size: 16px !important;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1.5px solid rgba(0, 184, 148, 0.45);
+  border-radius: 10px;
+  padding: 11px 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.regie-tech-input:focus {
+  border-color: #00ffb3;
+  box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.2);
+}
+
+.regie-tech-role-chips-label {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.regie-tech-role-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.regie-tech-role-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #cbd5e1;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.15s ease;
+}
+
+.regie-tech-role-chip:hover,
+.regie-tech-role-chip.active {
+  background: rgba(0, 184, 148, 0.22);
+  border-color: #00b894;
+  color: #55efc4;
+}
+
+.regie-tech-online-box {
+  margin-top: 6px;
+  background: rgba(0, 184, 148, 0.08);
+  border: 1px solid rgba(0, 184, 148, 0.25);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.regie-tech-online-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #55efc4;
+  margin-bottom: 6px;
+}
+
+.regie-tech-online-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.regie-tech-online-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.regie-tech-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.regie-tech-btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.regie-tech-btn-primary {
+  background: linear-gradient(135deg, #00b894, #00cec9);
+  border: none;
+  color: #000;
+  font-size: 0.88rem;
+  font-weight: 900;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+  flex: 1;
 }
 
 /* Mobile Segment Tab Bar (Now vs Lineup) */
@@ -731,6 +939,12 @@
   .regie-station-pill {
     width: 100%;
     justify-content: space-between;
+  }
+  .regie-tech-user-btn {
+    width: 100%;
+    max-width: none;
+    justify-content: center;
+    padding: 8px 12px;
   }
   .regie-station-toggle-btn {
     flex: 1;

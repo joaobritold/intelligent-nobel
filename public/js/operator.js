@@ -321,6 +321,8 @@ const $opRegieActiveText = document.getElementById('op-regie-active-text');
 const $opReceiptFoh = document.getElementById('op-receipt-foh');
 const $opReceiptStage = document.getElementById('op-receipt-stage');
 const $opReceiptTech = document.getElementById('op-receipt-tech');
+const $opReceiptTechList = document.getElementById('op-receipt-tech-list');
+const $opRegieTechOnline = document.getElementById('op-regie-tech-online');
 const $opRegieMsgClear = document.getElementById('op-regie-msg-clear');
 
 // ─── Room & Links Setup ────────────────────────────────────────────
@@ -516,6 +518,17 @@ function renderOpRegieSection() {
     }
   }
 
+  const onlineTechs = typeof client.getRoomTechUsers === 'function' ? client.getRoomTechUsers(state.id || roomId) : [];
+  if ($opRegieTechOnline) {
+    if (onlineTechs.length > 0) {
+      $opRegieTechOnline.style.display = 'inline-flex';
+      $opRegieTechOnline.textContent = `🔧 Técnicos (${onlineTechs.length}): ${onlineTechs.join(', ')}`;
+    } else {
+      $opRegieTechOnline.style.display = 'none';
+      $opRegieTechOnline.textContent = '';
+    }
+  }
+
   const rm = state.regieMessage;
   if ($opRegieReceiptBox) {
     if (rm && rm.visible && rm.text && rm.text.trim()) {
@@ -535,11 +548,39 @@ function renderOpRegieSection() {
         $opReceiptStage.style.background = stageRead ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255, 255, 255, 0.08)';
         $opReceiptStage.style.color = stageRead ? '#55efc4' : '#cbd5e1';
       }
-      if ($opReceiptTech) {
-        const techRead = Boolean(rm.ackTech);
-        $opReceiptTech.textContent = techRead ? `🔧 Técnico: ✓ Lido (${rm.ackTech})` : '🔧 Técnico: ⏳ Pendente';
-        $opReceiptTech.style.background = techRead ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255, 255, 255, 0.08)';
-        $opReceiptTech.style.color = techRead ? '#55efc4' : '#cbd5e1';
+
+      const ackTechUsers = (rm.ackTechUsers && typeof rm.ackTechUsers === 'object') ? rm.ackTechUsers : {};
+      const techMap = new Map();
+      Object.entries(ackTechUsers).forEach(([tName, tTime]) => {
+        if (tName && tTime) techMap.set(tName.toLowerCase(), { name: tName, ackTime: tTime });
+      });
+      onlineTechs.forEach(tName => {
+        const k = (tName || '').toLowerCase();
+        if (k && !techMap.has(k)) techMap.set(k, { name: tName, ackTime: null });
+      });
+
+      const techEntries = Array.from(techMap.values());
+      if (techEntries.length > 0 && $opReceiptTechList) {
+        if ($opReceiptTech) $opReceiptTech.style.display = 'none';
+        $opReceiptTechList.style.display = 'contents';
+        $opReceiptTechList.innerHTML = techEntries.map(t => {
+          const isRead = Boolean(t.ackTime);
+          const bg = isRead ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255, 255, 255, 0.08)';
+          const col = isRead ? '#55efc4' : '#cbd5e1';
+          return `<span style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; background: ${bg}; color: ${col};">🔧 ${escapeHtml(t.name)}: ${isRead ? `✓ Lido (${escapeHtml(t.ackTime)})` : '⏳ Pendente'}</span>`;
+        }).join('');
+      } else {
+        if ($opReceiptTechList) {
+          $opReceiptTechList.innerHTML = '';
+          $opReceiptTechList.style.display = 'none';
+        }
+        if ($opReceiptTech) {
+          $opReceiptTech.style.display = 'inline-block';
+          const techRead = Boolean(rm.ackTech);
+          $opReceiptTech.textContent = techRead ? `🔧 Técnico: ✓ Lido (${rm.ackTech})` : '🔧 Técnico: ⏳ Pendente';
+          $opReceiptTech.style.background = techRead ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255, 255, 255, 0.08)';
+          $opReceiptTech.style.color = techRead ? '#55efc4' : '#cbd5e1';
+        }
       }
     } else {
       $opRegieReceiptBox.style.display = 'none';
@@ -754,6 +795,10 @@ setInterval(() => {
 
 client.on('p2p-peers-update', (data) => {
   $connBadge.innerHTML = `<span class="connection-dot"></span> Online (${data.count})`;
+});
+
+client.on('devices-update', () => {
+  renderOpRegieSection();
 });
 
 client.connect();

@@ -46,6 +46,20 @@ if (urlStation === 'tech' || urlStation === 'tecnico' || urlStation === 'técnic
   } catch (_) {}
 }
 
+// Technician User Name (Multi-Technician Support in Modo Técnico)
+let currentTechName = '';
+const urlTechName = (params.get('tech') || params.get('user') || '').trim();
+if (urlTechName) {
+  currentTechName = urlTechName.slice(0, 32);
+  try {
+    localStorage.setItem('stagetimer_regie_tech_name', currentTechName);
+  } catch (_) {}
+} else {
+  try {
+    currentTechName = (localStorage.getItem('stagetimer_regie_tech_name') || '').trim();
+  } catch (_) {}
+}
+
 // Audio Alert Toggle
 let audioEnabled = true;
 try {
@@ -89,11 +103,141 @@ const $msgTime = document.getElementById('regie-msg-time');
 const $receiptFoh = document.getElementById('regie-receipt-foh');
 const $receiptStage = document.getElementById('regie-receipt-stage');
 const $receiptTech = document.getElementById('regie-receipt-tech');
+const $receiptTechList = document.getElementById('regie-receipt-tech-list');
 const $msgAckBtn = document.getElementById('regie-msg-ack-btn');
+
+// Technician User Identity DOM
+const $techUserBtn = document.getElementById('regie-tech-user-btn');
+const $techUserLabel = document.getElementById('regie-tech-user-label');
+const $techModal = document.getElementById('regie-tech-modal');
+const $techNameInput = document.getElementById('regie-tech-name-input');
+const $techSaveBtn = document.getElementById('regie-tech-save-btn');
+const $techCancelBtn = document.getElementById('regie-tech-cancel-btn');
+const $techOnlineBox = document.getElementById('regie-tech-online-box');
+const $techOnlineList = document.getElementById('regie-tech-online-list');
 
 const $mobileTabs = document.getElementById('regie-mobile-tabs');
 const $mainBody = document.getElementById('regie-main-body');
 const $regieHeaderTimer = document.getElementById('regie-header-timer');
+
+let pendingAckOnTechSave = false;
+
+function updateTechUserBadge() {
+  if (!$techUserBtn) return;
+  if (currentStation === 'tech') {
+    $techUserBtn.style.display = 'inline-flex';
+    if (currentTechName) {
+      $techUserBtn.classList.add('has-name');
+      $techUserBtn.classList.remove('needs-name');
+      if ($techUserLabel) $techUserLabel.textContent = `Técnico: ${currentTechName}`;
+    } else {
+      $techUserBtn.classList.remove('has-name');
+      $techUserBtn.classList.add('needs-name');
+      if ($techUserLabel) $techUserLabel.textContent = 'Identificar Técnico';
+    }
+  } else {
+    $techUserBtn.style.display = 'none';
+  }
+}
+
+function updateTechOnlineList() {
+  if (!$techOnlineBox || !$techOnlineList) return;
+  const onlineTechs = typeof client.getRoomTechUsers === 'function' ? client.getRoomTechUsers(roomId) : [];
+  const names = [...onlineTechs];
+  if (currentStation === 'tech' && currentTechName && !names.some(n => n.toLowerCase() === currentTechName.toLowerCase())) {
+    names.unshift(currentTechName);
+  }
+  if (names.length > 0) {
+    $techOnlineBox.style.display = 'block';
+    $techOnlineList.innerHTML = names.map(n => {
+      const isMe = currentTechName && n.toLowerCase() === currentTechName.toLowerCase();
+      return `<span class="regie-tech-online-pill"><span class="dot"></span> 🔧 ${escapeHtml(n)}${isMe ? ' (Tu)' : ''}</span>`;
+    }).join('');
+  } else {
+    $techOnlineBox.style.display = 'none';
+    $techOnlineList.innerHTML = '';
+  }
+}
+
+function openTechModal(ackAfterSave = false) {
+  if (!$techModal) return;
+  pendingAckOnTechSave = Boolean(ackAfterSave);
+  if ($techNameInput) {
+    $techNameInput.value = currentTechName || '';
+  }
+  updateTechOnlineList();
+  $techModal.style.display = 'flex';
+  setTimeout(() => {
+    try { $techNameInput?.focus(); } catch (_) {}
+  }, 60);
+}
+
+function closeTechModal() {
+  if (!$techModal) return;
+  $techModal.style.display = 'none';
+  pendingAckOnTechSave = false;
+}
+
+function saveTechName() {
+  const raw = ($techNameInput?.value || '').trim().replace(/\s+/g, ' ').slice(0, 32);
+  if (!raw) {
+    if ($techNameInput) {
+      $techNameInput.style.borderColor = '#ff4757';
+      $techNameInput.focus();
+    }
+    return;
+  }
+  if ($techNameInput) $techNameInput.style.borderColor = '';
+  currentTechName = raw;
+  try {
+    localStorage.setItem('stagetimer_regie_tech_name', currentTechName);
+  } catch (_) {}
+
+  updateTechUserBadge();
+  if (typeof client.announcePresenceNow === 'function') {
+    client.announcePresenceNow();
+  }
+
+  const shouldAck = pendingAckOnTechSave;
+  closeTechModal();
+  updateRegieControls();
+
+  if (shouldAck) {
+    triggerRegieAckWithCountdown();
+  }
+}
+
+if ($techUserBtn) {
+  $techUserBtn.addEventListener('click', () => openTechModal(false));
+}
+if ($techSaveBtn) {
+  $techSaveBtn.addEventListener('click', saveTechName);
+}
+if ($techCancelBtn) {
+  $techCancelBtn.addEventListener('click', closeTechModal);
+}
+if ($techNameInput) {
+  $techNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveTechName();
+    } else if (e.key === 'Escape') {
+      closeTechModal();
+    }
+  });
+}
+document.querySelectorAll('.regie-tech-role-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    if (!$techNameInput) return;
+    const suffix = chip.dataset.roleSuffix || chip.dataset.roleTag || '';
+    const roleTag = suffix.startsWith('(') ? suffix : `(${suffix})`;
+    let val = $techNameInput.value.trim();
+    // Replace existing parenthetical specialty or append
+    val = val.replace(/\s*\([^)]*\)\s*$/, '').trim();
+    $techNameInput.value = val ? `${val} ${roleTag}` : suffix.replace(/[()]/g, '');
+    $techNameInput.focus();
+  });
+});
 
 // Web Audio API Synthesizer for Intercom Call Chime
 let audioCtx = null;
@@ -145,7 +289,7 @@ function playIntercomChime() {
 
 // ─── Station Switcher Setup ──────────────────────────────────────────
 
-function setStation(station) {
+function setStation(station, isInitial = false) {
   if (station === 'tech' || station === 'tecnico') {
     currentStation = 'tech';
   } else if (station === 'stage' || station === 'palco') {
@@ -166,6 +310,20 @@ function setStation(station) {
     $screen.classList.toggle('is-station-tech', currentStation === 'tech');
     $screen.classList.toggle('is-station-stage', currentStation === 'stage');
     $screen.classList.toggle('is-station-foh', currentStation === 'foh');
+  }
+
+  if (dismissCountdownTimer) {
+    clearInterval(dismissCountdownTimer);
+    dismissCountdownTimer = null;
+  }
+
+  updateTechUserBadge();
+  if (typeof client.announcePresenceNow === 'function') {
+    client.announcePresenceNow();
+  }
+
+  if (currentStation === 'tech' && !currentTechName) {
+    openTechModal(false);
   }
 
   updateRegieControls();
@@ -238,7 +396,8 @@ if ($btnCall) {
       if (rc.fohCallingStage || rc.stageCallingFoh) {
         client.clearRegieCall('all');
       } else {
-        client.triggerRegieCall('all', 'TÉCNICO');
+        const callerLabel = currentTechName ? `TÉCNICO (${currentTechName})` : 'TÉCNICO';
+        client.triggerRegieCall('all', callerLabel);
       }
     }
   });
@@ -278,30 +437,40 @@ document.querySelectorAll('.regie-mobile-tab-btn').forEach(btn => {
 
 // ─── Stage Manager Regie Message Ack Button (5s Auto-Dismiss) ───────
 
-let dismissedMessageId = null;
+let dismissedMessageKey = null;
 let dismissCountdownTimer = null;
 
-if ($msgAckBtn) {
-  $msgAckBtn.addEventListener('click', () => {
-    if (!state || !state.regieMessage || !state.regieMessage.visible) return;
-    const msgId = state.regieMessage.id;
-    client.ackRegieMessage(currentStation);
+function getCurrentDismissKey(msgId) {
+  if (!msgId) return '';
+  if (currentStation === 'tech') {
+    return `${msgId}:tech:${(currentTechName || 'Técnico').toLowerCase()}`;
+  }
+  return `${msgId}:${currentStation}`;
+}
 
+function triggerRegieAckWithCountdown() {
+  if (!state || !state.regieMessage || !state.regieMessage.visible) return;
+  const msgId = state.regieMessage.id;
+  const targetDismissKey = getCurrentDismissKey(msgId);
+
+  client.ackRegieMessage(currentStation, currentStation === 'tech' ? currentTechName : '');
+
+  if ($msgAckBtn) {
     $msgAckBtn.classList.add('acknowledged');
     $msgAckBtn.disabled = true;
-
+    const whoLabel = currentStation === 'tech' && currentTechName ? ` POR ${currentTechName.toUpperCase()}` : '';
     let countdown = 5;
-    $msgAckBtn.textContent = `✓ LIDO (a fechar em ${countdown}s...)`;
+    $msgAckBtn.textContent = `✓ LIDO${whoLabel} (a fechar em ${countdown}s...)`;
 
     if (dismissCountdownTimer) clearInterval(dismissCountdownTimer);
     dismissCountdownTimer = setInterval(() => {
       countdown--;
       if (countdown > 0) {
-        $msgAckBtn.textContent = `✓ LIDO (a fechar em ${countdown}s...)`;
+        $msgAckBtn.textContent = `✓ LIDO${whoLabel} (a fechar em ${countdown}s...)`;
       } else {
         clearInterval(dismissCountdownTimer);
         dismissCountdownTimer = null;
-        dismissedMessageId = msgId;
+        dismissedMessageKey = targetDismissKey;
         $msgBanner.style.opacity = '0';
         $msgBanner.style.transform = 'translateY(-8px)';
         setTimeout(() => {
@@ -310,6 +479,17 @@ if ($msgAckBtn) {
         }, 400);
       }
     }, 1000);
+  }
+}
+
+if ($msgAckBtn) {
+  $msgAckBtn.addEventListener('click', () => {
+    if (!state || !state.regieMessage || !state.regieMessage.visible) return;
+    if (currentStation === 'tech' && !currentTechName) {
+      openTechModal(true);
+      return;
+    }
+    triggerRegieAckWithCountdown();
   });
 }
 
@@ -381,8 +561,9 @@ function updateRegieControls() {
   // 3. Stage Manager Technical Message Banner (With 5s Auto-Dismiss after Ack)
   const rm = state.regieMessage;
   if (rm && rm.visible && rm.text && rm.text.trim()) {
+    const currentKey = getCurrentDismissKey(rm.id);
     // If user already acknowledged and dismissed this message locally, keep hidden
-    if (dismissedMessageId === rm.id) {
+    if (dismissedMessageKey && dismissedMessageKey === currentKey) {
       $msgBanner.classList.remove('visible');
       $msgBanner.style.display = 'none';
       return;
@@ -397,7 +578,7 @@ function updateRegieControls() {
 
     const fohRead = Boolean(rm.ackFoh);
     const stageRead = Boolean(rm.ackStage);
-    const techRead = Boolean(rm.ackTech);
+    const ackTechUsers = (rm.ackTechUsers && typeof rm.ackTechUsers === 'object') ? rm.ackTechUsers : {};
 
     if ($receiptFoh) {
       $receiptFoh.className = `regie-msg-receipt-pill ${fohRead ? 'read' : ''}`;
@@ -407,29 +588,82 @@ function updateRegieControls() {
       $receiptStage.className = `regie-msg-receipt-pill ${stageRead ? 'read' : ''}`;
       $receiptStage.textContent = stageRead ? `🎛️ Palco: ✓ Lido (${rm.ackStage})` : '🎛️ Palco: ⏳ Aguarda';
     }
-    if ($receiptTech) {
-      $receiptTech.className = `regie-msg-receipt-pill ${techRead ? 'read' : ''}`;
-      $receiptTech.textContent = techRead ? `🔧 Técnico: ✓ Lido (${rm.ackTech})` : '🔧 Técnico: ⏳ Aguarda';
+
+    // Build combined list of technicians (acked + online + current tech)
+    const techMap = new Map();
+    Object.entries(ackTechUsers).forEach(([tName, tTime]) => {
+      if (tName && tTime) techMap.set(tName.toLowerCase(), { name: tName, ackTime: tTime });
+    });
+    const onlineTechs = typeof client.getRoomTechUsers === 'function' ? client.getRoomTechUsers(roomId) : [];
+    onlineTechs.forEach(tName => {
+      const k = (tName || '').toLowerCase();
+      if (k && !techMap.has(k)) techMap.set(k, { name: tName, ackTime: null });
+    });
+    if (isTech && currentTechName) {
+      const k = currentTechName.toLowerCase();
+      if (!techMap.has(k)) techMap.set(k, { name: currentTechName, ackTime: null });
     }
 
-    const myAck = isFoh ? fohRead : (isStage ? stageRead : techRead);
+    const techEntries = Array.from(techMap.values());
+    if (techEntries.length > 0 && $receiptTechList) {
+      if ($receiptTech) $receiptTech.style.display = 'none';
+      $receiptTechList.style.display = 'contents';
+      $receiptTechList.innerHTML = techEntries.map(t => {
+        const isRead = Boolean(t.ackTime);
+        return `<span class="regie-msg-receipt-pill ${isRead ? 'read' : ''}">🔧 ${escapeHtml(t.name)}: ${isRead ? `✓ Lido (${escapeHtml(t.ackTime)})` : '⏳ Aguarda'}</span>`;
+      }).join('');
+    } else {
+      if ($receiptTechList) {
+        $receiptTechList.innerHTML = '';
+        $receiptTechList.style.display = 'none';
+      }
+      if ($receiptTech) {
+        $receiptTech.style.display = 'inline-flex';
+        const techRead = Boolean(rm.ackTech);
+        $receiptTech.className = `regie-msg-receipt-pill ${techRead ? 'read' : ''}`;
+        $receiptTech.textContent = techRead ? `🔧 Técnico: ✓ Lido (${rm.ackTech})` : '🔧 Técnico: ⏳ Aguarda';
+      }
+    }
+
+    // Check if THIS specific station / technician has acknowledged
+    let myAck = false;
+    if (isFoh) {
+      myAck = fohRead;
+    } else if (isStage) {
+      myAck = stageRead;
+    } else {
+      if (currentTechName) {
+        const matchKey = Object.keys(ackTechUsers).find(k => k.toLowerCase() === currentTechName.toLowerCase());
+        myAck = Boolean(matchKey && ackTechUsers[matchKey]);
+      } else {
+        myAck = Boolean(ackTechUsers['Técnico']);
+      }
+    }
+
     if ($msgAckBtn) {
       if (myAck) {
         if (!dismissCountdownTimer) {
           $msgAckBtn.classList.add('acknowledged');
           $msgAckBtn.disabled = true;
-          $msgAckBtn.textContent = isFoh ? '✓ LIDO POR FOH' : (isStage ? '✓ LIDO POR PALCO' : '✓ LIDO POR TÉCNICO');
+          const techLabel = currentTechName ? currentTechName.toUpperCase() : 'TÉCNICO';
+          $msgAckBtn.textContent = isFoh ? '✓ LIDO POR FOH' : (isStage ? '✓ LIDO POR PALCO' : `✓ LIDO POR ${techLabel}`);
         }
       } else {
         $msgAckBtn.classList.remove('acknowledged');
         $msgAckBtn.disabled = false;
-        $msgAckBtn.textContent = '✓ CONFIRMAR LEITURA';
+        if (isTech && currentTechName) {
+          $msgAckBtn.textContent = `✓ CONFIRMAR LEITURA (${currentTechName})`;
+        } else if (isTech && !currentTechName) {
+          $msgAckBtn.textContent = '👤 IDENTIFICAR E CONFIRMAR LEITURA';
+        } else {
+          $msgAckBtn.textContent = '✓ CONFIRMAR LEITURA';
+        }
       }
     }
   } else {
     $msgBanner.classList.remove('visible');
     $msgBanner.style.display = 'none';
-    dismissedMessageId = null;
+    dismissedMessageKey = null;
     if (dismissCountdownTimer) {
       clearInterval(dismissCountdownTimer);
       dismissCountdownTimer = null;
@@ -453,7 +687,7 @@ function renderRegieHistory() {
     $regieHistoryCount.textContent = history.length;
   }
 
-  const sig = history.map(h => `${h.id}:${h.timeStr}:${h.type}:${h.ackFoh || ''}:${h.ackStage || ''}:${h.ackTech || ''}`).join('|');
+  const sig = history.map(h => `${h.id}:${h.timeStr}:${h.type}:${h.ackFoh || ''}:${h.ackStage || ''}:${h.ackTech || ''}:${JSON.stringify(h.ackTechUsers || {})}`).join('|');
   if (sig === lastHistorySig) return;
   lastHistorySig = sig;
 
@@ -472,12 +706,24 @@ function renderRegieHistory() {
     if (isMsg) {
       const fohRead = Boolean(item.ackFoh);
       const stageRead = Boolean(item.ackStage);
-      const techRead = Boolean(item.ackTech);
+      const ackTechUsers = (item.ackTechUsers && typeof item.ackTechUsers === 'object') ? item.ackTechUsers : {};
+      const techEntries = Object.entries(ackTechUsers).filter(([k, v]) => k && v);
+
+      let techTagsHtml = '';
+      if (techEntries.length > 0) {
+        techTagsHtml = techEntries.map(([tName, tTime]) =>
+          `<span class="regie-history-receipt-tag read">🔧 ${escapeHtml(tName)}: ✓ Lido (${escapeHtml(tTime)})</span>`
+        ).join('');
+      } else {
+        const techRead = Boolean(item.ackTech);
+        techTagsHtml = `<span class="regie-history-receipt-tag ${techRead ? 'read' : ''}">🔧 Técnico: ${techRead ? `✓ Lido (${escapeHtml(item.ackTech)})` : '⏳ Aguarda'}</span>`;
+      }
+
       receiptsHtml = `
         <div class="regie-history-receipts">
           <span class="regie-history-receipt-tag ${fohRead ? 'read' : ''}">🎚️ FOH: ${fohRead ? `✓ Lido (${escapeHtml(item.ackFoh)})` : '⏳ Aguarda'}</span>
           <span class="regie-history-receipt-tag ${stageRead ? 'read' : ''}">🎛️ Palco: ${stageRead ? `✓ Lido (${escapeHtml(item.ackStage)})` : '⏳ Aguarda'}</span>
-          <span class="regie-history-receipt-tag ${techRead ? 'read' : ''}">🔧 Técnico: ${techRead ? `✓ Lido (${escapeHtml(item.ackTech)})` : '⏳ Aguarda'}</span>
+          ${techTagsHtml}
         </div>
       `;
     }
@@ -940,9 +1186,14 @@ client.on('events-list-update', () => {
   updateLineupStageUI(true);
 });
 
+client.on('devices-update', () => {
+  updateRegieControls();
+  updateTechOnlineList();
+});
+
 client.on('tick', () => {
   render();
 });
 
 client.connect();
-setStation(currentStation);
+setStation(currentStation, true);

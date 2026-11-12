@@ -206,7 +206,10 @@ class UniversalSyncClient {
     else if (viewKey === 'lineup') roleLabel = 'Modo Lista';
     else if (viewKey === 'regies') {
       const st = typeof localStorage !== 'undefined' ? (localStorage.getItem('stagetimer_regie_station') || 'foh') : 'foh';
-      roleLabel = st === 'tech' ? 'Modo Régies (Técnico)' : (st === 'stage' ? 'Modo Régies (Palco)' : 'Modo Régies (FOH)');
+      const techName = typeof localStorage !== 'undefined' ? (localStorage.getItem('stagetimer_regie_tech_name') || '').trim() : '';
+      roleLabel = st === 'tech'
+        ? (techName ? `Modo Régies (Técnico: ${techName})` : 'Modo Régies (Técnico)')
+        : (st === 'stage' ? 'Modo Régies (Palco)' : 'Modo Régies (FOH)');
     }
     else if (viewKey === 'dc') roleLabel = 'Modo Jess (Diretora de Cena)';
     else if (viewKey === 'cue-station') {
@@ -327,6 +330,11 @@ class UniversalSyncClient {
           if (!msg || msg.sender === this.clientId) return;
           if (msg.type === 'room-state' && msg.data) {
             this._applyIncomingState(msg.data, false);
+          } else if (msg.type === 'regie-ack' && msg.ack) {
+            if (this._applyRegieAckToState(msg.ack)) {
+              this._saveLocal();
+              this._emit('room-state', this._state);
+            }
           } else if (msg.type === 'video-config' && msg.video) {
             this._applyIncomingVideoConfig(msg.video, false);
           }
@@ -339,6 +347,19 @@ class UniversalSyncClient {
         this.cmdChannel.onmessage = (event) => {
           const msg = event.data;
           if (!msg || msg.sender === this.clientId) return;
+          if (msg.type === 'local-presence' && msg.payload && msg.payload.deviceUuid) {
+            if (!this.purgedDevicesSet.has(msg.payload.deviceUuid)) {
+              const existing = this.globalDevicesMap.get(msg.payload.deviceUuid);
+              this.globalDevicesMap.set(msg.payload.deviceUuid, {
+                ...msg.payload,
+                firstSeen: existing?.firstSeen || msg.payload.firstSeen || Date.now(),
+                lastSeen: Date.now()
+              });
+              this._cleanupGlobalDevices();
+              this._emit('devices-update', this.getOnlineDevices());
+            }
+            return;
+          }
           if (msg.type === 'webrtc-signal-local' && msg.topic && msg.payload) {
             if (!this._seenWebRtcSigs) this._seenWebRtcSigs = new Set();
             if (msg.payload.sigId) {
@@ -467,6 +488,62 @@ class UniversalSyncClient {
 
   _handleRemoteCommand(msg) {
     if (!msg || typeof msg !== 'object') return;
+
+    // Room-wide atomic Régie ACK & Message commands (processed by all devices in the room)
+    if (msg.action === 'regie_ack') {
+      const targetRoom = String(msg.room || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+      if (!targetRoom || targetRoom === this.cleanRoom) {
+        if (this._applyRegieAckToState(msg)) {
+          this._saveLocal();
+          this._emit('room-state', this._state);
+        }
+      }
+      return;
+    }
+
+    if (msg.action === 'regie_msg_new' && msg.regieMessage) {
+      const targetRoom = String(msg.room || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+      if (!targetRoom || targetRoom === this.cleanRoom) {
+        if (this._state) {
+          this._ensureRegieStructure();
+          const incMsg = msg.regieMessage;
+          const curSentAt = this._state.regieMessage?.sentAt || 0;
+          if (incMsg.id && incMsg.sentAt >= curSentAt && this._state.regieMessage?.id !== incMsg.id) {
+            this._state.regieMessage = {
+              id: incMsg.id,
+              text: incMsg.text || '',
+              visible: Boolean(incMsg.visible),
+              sentAt: incMsg.sentAt || Date.now(),
+              sentTimeStr: incMsg.sentTimeStr || '',
+              ackFoh: incMsg.ackFoh || null,
+              ackStage: incMsg.ackStage || null,
+              ackTech: incMsg.ackTech || null,
+              ackTechUsers: { ...(incMsg.ackTechUsers || {}) }
+            };
+            if (!Array.isArray(this._state.regieHistory)) this._state.regieHistory = [];
+            if (!this._state.regieHistory.some(h => h.id === incMsg.id)) {
+              this._state.regieHistory.unshift({
+                id: incMsg.id,
+                type: 'msg',
+                from: 'Stage Manager',
+                text: incMsg.text || '',
+                timeStr: incMsg.sentTimeStr || '',
+                ts: incMsg.sentAt || Date.now(),
+                ackFoh: incMsg.ackFoh || null,
+                ackStage: incMsg.ackStage || null,
+                ackTech: incMsg.ackTech || null,
+                ackTechUsers: { ...(incMsg.ackTechUsers || {}) }
+              });
+            }
+            this._reapplyCachedRegieAcks();
+            this._saveLocal();
+            this._emit('room-state', this._state);
+          }
+        }
+      }
+      return;
+    }
+
     const target = String(msg.targetUuid || 'ALL').trim().toLowerCase();
     const myUuid = String(this.deviceUuid || '').trim().toLowerCase();
     const isTarget = target === 'all' || target === myUuid;
@@ -990,46 +1067,104 @@ class UniversalSyncClient {
   }
 
   sendRoomCommand(roomCode, command) {
+    const clean = (roomCode || this.cleanRoom || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    const payload = {
+      sender: this.clientId,
+      sentAt: Date.now(),
+      targetUuid: 'ALL',
+      room: clean,
+      ...command
+    };
+
+    if (this.cmdChannel) {
+      try {
+        this.cmdChannel.postMessage(payload);
+      } catch (e) {}
+    }
+
     if (!this.mqttClient || !this.mqttClient.connected) return;
     try {
-      const clean = (roomCode || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+      const json = JSON.stringify(payload);
       const topic = `stagetimer_v10/_cmd_room/${clean}`;
-      this.mqttClient.publish(
-        topic,
-        JSON.stringify({ sender: this.clientId, sentAt: Date.now(), ...command }),
-        { qos: 0, retain: false }
-      );
+      this.mqttClient.publish(topic, json, { qos: 0, retain: false });
+      this.mqttClient.publish(this.mqttTopicCommands, json, { qos: 0, retain: false });
     } catch (e) {}
   }
 
+  announcePresenceNow() {
+    this._announcePresence();
+  }
+
+  getRoomTechUsers(roomCode = this.cleanRoom) {
+    const clean = String(roomCode || this.cleanRoom || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    const devices = this.getOnlineDevices();
+    const names = [];
+    const seen = new Set();
+    devices.forEach(dev => {
+      const devRoom = String(dev.room || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+      if (devRoom !== clean) return;
+      const isRegieTech = (dev.viewKey === 'regies' || String(dev.path || '').includes('regies')) && dev.regieStation === 'tech';
+      const name = String(dev.techName || '').trim();
+      if (isRegieTech && name) {
+        const key = name.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          names.push(name);
+        }
+      }
+    });
+    return names;
+  }
+
   _announcePresence() {
+    const pathFile = typeof location !== 'undefined' ? (location.pathname.split('/').pop() || 'index.html') : 'index.html';
+    const viewKey = this._getCurrentViewKey();
+    const regieStation = (viewKey === 'regies' && typeof localStorage !== 'undefined')
+      ? (localStorage.getItem('stagetimer_regie_station') || 'foh')
+      : '';
+    const techName = (viewKey === 'regies' && regieStation === 'tech' && typeof localStorage !== 'undefined')
+      ? (localStorage.getItem('stagetimer_regie_tech_name') || '').trim()
+      : '';
+
+    const devPayload = {
+      clientId: this.clientId,
+      deviceUuid: this.deviceUuid,
+      label: this._getDeviceLabel(),
+      os: this._getDeviceOS(),
+      viewKey,
+      regieStation,
+      techName,
+      role: this.role,
+      room: this.cleanRoom,
+      roomTitle: this._state?.name || this.cleanRoom,
+      path: pathFile,
+      firstSeen: this.firstSeen,
+      ts: Date.now()
+    };
+
+    // Record self in global devices immediately (even before MQTT connects)
+    const existing = this.globalDevicesMap.get(this.deviceUuid);
+    this.globalDevicesMap.set(this.deviceUuid, {
+      ...devPayload,
+      firstSeen: existing?.firstSeen || this.firstSeen,
+      lastSeen: Date.now()
+    });
+
+    if (this.cmdChannel) {
+      try {
+        this.cmdChannel.postMessage({
+          type: 'local-presence',
+          sender: this.clientId,
+          payload: devPayload
+        });
+      } catch (e) {}
+    }
+
     if (this.mqttClient && this.mqttClient.connected) {
       this.peersMap.set(this.clientId, Date.now());
-      const pathFile = typeof location !== 'undefined' ? (location.pathname.split('/').pop() || 'index.html') : 'index.html';
-      const devPayload = {
-        clientId: this.clientId,
-        deviceUuid: this.deviceUuid,
-        label: this._getDeviceLabel(),
-        os: this._getDeviceOS(),
-        viewKey: this._getCurrentViewKey(),
-        role: this.role,
-        room: this.cleanRoom,
-        roomTitle: this._state?.name || this.cleanRoom,
-        path: pathFile,
-        firstSeen: this.firstSeen,
-        ts: Date.now()
-      };
       const jsonStr = JSON.stringify(devPayload);
       this.mqttClient.publish(this.mqttTopicPresence, jsonStr, { qos: 0, retain: false });
       this.mqttClient.publish(this.mqttTopicGlobalPresence, jsonStr, { qos: 0, retain: false });
-
-      // Record self in global devices
-      const existing = this.globalDevicesMap.get(this.deviceUuid);
-      this.globalDevicesMap.set(this.deviceUuid, {
-        ...devPayload,
-        firstSeen: existing?.firstSeen || this.firstSeen,
-        lastSeen: Date.now()
-      });
       this._cleanupPeers();
     }
   }
@@ -1058,7 +1193,7 @@ class UniversalSyncClient {
       activeTimerId: null,
       message: { text: '', visible: false, level: 'info' },
       regieCall: { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' },
-      regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null },
+      regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null, ackTech: null, ackTechUsers: {} },
       regieHistory: [],
       theatre: this._createDefaultTheatreState(),
       video: this._createDefaultVideoState(),
@@ -1091,12 +1226,23 @@ class UniversalSyncClient {
       this._state.regieCall = { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' };
     }
     if (!this._state.regieMessage || typeof this._state.regieMessage !== 'object') {
-      this._state.regieMessage = { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null, ackTech: null };
+      this._state.regieMessage = { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null, ackTech: null, ackTechUsers: {} };
     } else {
       if (this._state.regieMessage.ackTech === undefined) this._state.regieMessage.ackTech = null;
+      if (!this._state.regieMessage.ackTechUsers || typeof this._state.regieMessage.ackTechUsers !== 'object') {
+        this._state.regieMessage.ackTechUsers = {};
+      }
     }
     if (!Array.isArray(this._state.regieHistory)) {
       this._state.regieHistory = [];
+    } else {
+      this._state.regieHistory.forEach(item => {
+        if (item && item.type === 'msg') {
+          if (!item.ackTechUsers || typeof item.ackTechUsers !== 'object') {
+            item.ackTechUsers = {};
+          }
+        }
+      });
     }
     // Auto-expire calls older than 5.5 seconds across any client/device
     if (this._state.regieCall && (this._state.regieCall.fohCallingStage || this._state.regieCall.stageCallingFoh)) {
@@ -1105,6 +1251,159 @@ class UniversalSyncClient {
         this._state.regieCall.stageCallingFoh = false;
       }
     }
+  }
+
+  _getRegieAckCache() {
+    if (!this._regieAckCache) {
+      this._regieAckCache = new Map();
+    }
+    return this._regieAckCache;
+  }
+
+  _formatTechSummaryFromUsers(ackTechUsers, fallbackAckTech = null) {
+    if (ackTechUsers && typeof ackTechUsers === 'object') {
+      const entries = Object.entries(ackTechUsers).filter(([k, v]) => k && v);
+      if (entries.length > 0) {
+        return entries.map(([name, time]) => (name === 'Técnico' ? time : `${name} (${time})`)).join(', ');
+      }
+    }
+    return fallbackAckTech || null;
+  }
+
+  _recordInRegieAckCache(msgId, { ackFoh, ackStage, ackTech, ackTechUsers } = {}) {
+    if (!msgId) return;
+    const cache = this._getRegieAckCache();
+    const cur = cache.get(msgId) || { ackFoh: null, ackStage: null, ackTech: null, ackTechUsers: {} };
+    if (ackFoh) cur.ackFoh = cur.ackFoh || ackFoh;
+    if (ackStage) cur.ackStage = cur.ackStage || ackStage;
+    if (ackTechUsers && typeof ackTechUsers === 'object') {
+      Object.entries(ackTechUsers).forEach(([u, t]) => {
+        if (u && t && !cur.ackTechUsers[u]) {
+          cur.ackTechUsers[u] = t;
+        }
+      });
+    }
+    if (ackTech && !cur.ackTech) cur.ackTech = ackTech;
+    cur.ackTech = this._formatTechSummaryFromUsers(cur.ackTechUsers, cur.ackTech);
+    cache.set(msgId, cur);
+    if (cache.size > 60) {
+      const firstKey = cache.keys().next().value;
+      cache.delete(firstKey);
+    }
+  }
+
+  _reapplyCachedRegieAcks() {
+    if (!this._state) return false;
+    this._ensureRegieStructure();
+    const cache = this._getRegieAckCache();
+    let changed = false;
+
+    const rm = this._state.regieMessage;
+    if (rm && rm.id) {
+      this._recordInRegieAckCache(rm.id, rm);
+      const cached = cache.get(rm.id);
+      if (cached) {
+        if (cached.ackFoh && !rm.ackFoh) { rm.ackFoh = cached.ackFoh; changed = true; }
+        if (cached.ackStage && !rm.ackStage) { rm.ackStage = cached.ackStage; changed = true; }
+        if (cached.ackTechUsers && typeof cached.ackTechUsers === 'object') {
+          if (!rm.ackTechUsers || typeof rm.ackTechUsers !== 'object') rm.ackTechUsers = {};
+          Object.entries(cached.ackTechUsers).forEach(([u, t]) => {
+            if (u && t && !rm.ackTechUsers[u]) {
+              rm.ackTechUsers[u] = t;
+              changed = true;
+            }
+          });
+        }
+        const computedTech = this._formatTechSummaryFromUsers(rm.ackTechUsers, rm.ackTech || cached.ackTech);
+        if (computedTech !== rm.ackTech) {
+          rm.ackTech = computedTech;
+          changed = true;
+        }
+      }
+    }
+
+    if (Array.isArray(this._state.regieHistory)) {
+      this._state.regieHistory.forEach(item => {
+        if (!item || item.type !== 'msg' || !item.id) return;
+        this._recordInRegieAckCache(item.id, item);
+        const cached = cache.get(item.id);
+        if (cached) {
+          if (cached.ackFoh && !item.ackFoh) { item.ackFoh = cached.ackFoh; changed = true; }
+          if (cached.ackStage && !item.ackStage) { item.ackStage = cached.ackStage; changed = true; }
+          if (!item.ackTechUsers || typeof item.ackTechUsers !== 'object') item.ackTechUsers = {};
+          if (cached.ackTechUsers && typeof cached.ackTechUsers === 'object') {
+            Object.entries(cached.ackTechUsers).forEach(([u, t]) => {
+              if (u && t && !item.ackTechUsers[u]) {
+                item.ackTechUsers[u] = t;
+                changed = true;
+              }
+            });
+          }
+          const computedTech = this._formatTechSummaryFromUsers(item.ackTechUsers, item.ackTech || cached.ackTech);
+          if (computedTech !== item.ackTech) {
+            item.ackTech = computedTech;
+            changed = true;
+          }
+        }
+      });
+    }
+
+    return changed;
+  }
+
+  _applyRegieAckToState({ msgId, station, techName, timeStr } = {}) {
+    if (!this._state) return false;
+    this._ensureRegieStructure();
+    const rm = this._state.regieMessage;
+    const effectiveId = msgId || rm?.id;
+    if (!effectiveId) return false;
+
+    const st = String(station || '').toLowerCase().trim();
+    const cleanTechName = String(techName || '').trim();
+    const tStr = timeStr || (new Date()).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+
+    const patchAck = { ackFoh: null, ackStage: null, ackTech: null, ackTechUsers: {} };
+    if (st === 'foh' || st === 'frente') {
+      patchAck.ackFoh = tStr;
+    } else if (st === 'stage' || st === 'palco') {
+      patchAck.ackStage = tStr;
+    } else if (st === 'tech' || st === 'tecnico' || st === 'técnico') {
+      const userKey = cleanTechName || 'Técnico';
+      patchAck.ackTechUsers[userKey] = tStr;
+      patchAck.ackTech = userKey === 'Técnico' ? tStr : `${userKey} (${tStr})`;
+    }
+
+    this._recordInRegieAckCache(effectiveId, patchAck);
+    return this._reapplyCachedRegieAcks();
+  }
+
+  _extractAndApplyIncomingRegieData(incoming) {
+    if (!incoming || !this._state) return false;
+    let changed = false;
+
+    if (incoming.regieMessage && incoming.regieMessage.id) {
+      this._recordInRegieAckCache(incoming.regieMessage.id, incoming.regieMessage);
+    }
+    if (Array.isArray(incoming.regieHistory)) {
+      incoming.regieHistory.forEach(item => {
+        if (item && item.type === 'msg' && item.id) {
+          this._recordInRegieAckCache(item.id, item);
+        }
+      });
+    }
+
+    // Also if incoming has a newer active regieCall (< 5s old), apply it even if updatedAt was slightly skewed
+    if (incoming.regieCall && incoming.regieCall.triggeredAt > (this._state.regieCall?.triggeredAt || 0)) {
+      if (Date.now() - incoming.regieCall.triggeredAt < 5000) {
+        this._state.regieCall = { ...incoming.regieCall };
+        changed = true;
+      }
+    }
+
+    if (this._reapplyCachedRegieAcks()) {
+      changed = true;
+    }
+    return changed;
   }
 
   _ensureTheatreStructure() {
@@ -1724,7 +2023,7 @@ class UniversalSyncClient {
       activeTimerId: null,
       message: { text: '', visible: false, level: 'info' },
       regieCall: { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' },
-      regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null },
+      regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null, ackTech: null, ackTechUsers: {} },
       regieHistory: [],
       theatre: this._createDefaultTheatreState(),
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
@@ -2113,7 +2412,7 @@ class UniversalSyncClient {
       activeTimerId: null,
       message: { text: '', visible: false, level: 'info' },
       regieCall: { fohCallingStage: false, stageCallingFoh: false, triggeredAt: 0, triggeredBy: '' },
-      regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null },
+      regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null, ackTech: null, ackTechUsers: {} },
       regieHistory: [],
       theatre: this._createDefaultTheatreState(),
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
@@ -2322,9 +2621,18 @@ class UniversalSyncClient {
       currentUpdatedAt === 0
     );
 
+    // CRITICAL: Always extract and preserve Régie ACKs & Calls before checking updatedAt!
+    // Even if a Régie device has a slightly behind clock or a Controller is ticking every 1.5s,
+    // an ACK sent by a Régie must NEVER be discarded!
+    const regieAckMerged = this._extractAndApplyIncomingRegieData(incoming);
+
     // Discard stale incoming states (monotonic clock check)
-    // If incoming state has an older timestamp, ignore it to prevent jump-back glitches!
+    // If incoming state has an older timestamp, ignore timer changes to prevent jump-back glitches!
     if (!isCurrentEmpty && currentUpdatedAt > 0 && incomingUpdatedAt > 0 && incomingUpdatedAt < currentUpdatedAt) {
+      if (regieAckMerged) {
+        this._saveLocal();
+        this._emit('room-state', this._state);
+      }
       return;
     }
 
@@ -2384,6 +2692,7 @@ class UniversalSyncClient {
 
     this._state = incoming;
     this._ensureDaysStructure();
+    this._reapplyCachedRegieAcks();
     this._ensureTheatreStructure();
     this._ensureVideoStructure();
 
@@ -2426,6 +2735,7 @@ class UniversalSyncClient {
 
   _commitStateChange(retain = true) {
     this._ensureDaysStructure();
+    this._reapplyCachedRegieAcks();
     this._enforceInactiveReset();
     if (this._state && this._state.id !== this.cleanRoom) {
       this._state.id = this.cleanRoom;
@@ -2858,7 +3168,8 @@ class UniversalSyncClient {
       sentTimeStr: timeStr,
       ackFoh: null,
       ackStage: null,
-      ackTech: null
+      ackTech: null,
+      ackTechUsers: {}
     };
 
     // Record in history log
@@ -2874,11 +3185,17 @@ class UniversalSyncClient {
       ts: Date.now(),
       ackFoh: null,
       ackStage: null,
-      ackTech: null
+      ackTech: null,
+      ackTechUsers: {}
     });
     if (this._state.regieHistory.length > 30) {
       this._state.regieHistory = this._state.regieHistory.slice(0, 30);
     }
+
+    this.sendRoomCommand(this.cleanRoom, {
+      action: 'regie_msg_new',
+      regieMessage: this._state.regieMessage
+    });
 
     this._commitStateChange();
   }
@@ -2894,45 +3211,60 @@ class UniversalSyncClient {
       sentTimeStr: '',
       ackFoh: null,
       ackStage: null,
-      ackTech: null
+      ackTech: null,
+      ackTechUsers: {}
     };
     this._commitStateChange();
   }
 
-  ackRegieMessage(station) {
+  ackRegieMessage(station, techName = '') {
     if (!this._state) return;
     this._ensureRegieStructure();
     if (!this._state.regieMessage || !this._state.regieMessage.visible) return;
     const now = new Date();
     const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-    const st = String(station || '').toLowerCase();
-    if (st === 'foh' || st === 'frente') {
-      this._state.regieMessage.ackFoh = timeStr;
-    } else if (st === 'stage' || st === 'palco') {
-      this._state.regieMessage.ackStage = timeStr;
-    } else if (st === 'tech' || st === 'tecnico' || st === 'técnico') {
-      this._state.regieMessage.ackTech = timeStr;
+    const st = String(station || '').toLowerCase().trim();
+    const resolvedTechName = (st === 'tech' || st === 'tecnico' || st === 'técnico')
+      ? (String(techName || (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_regie_tech_name') : '') || '').trim() || 'Técnico')
+      : '';
+
+    const msgId = this._state.regieMessage.id;
+    const ackPayload = {
+      action: 'regie_ack',
+      room: this.cleanRoom,
+      msgId,
+      station: st,
+      techName: resolvedTechName,
+      timeStr,
+      deviceUuid: this.deviceUuid
+    };
+
+    // Apply locally and record in monotonic ACK cache
+    this._applyRegieAckToState(ackPayload);
+
+    // 1. Broadcast over room BroadcastChannel & command BroadcastChannel
+    if (this.channel) {
+      try {
+        this.channel.postMessage({
+          type: 'regie-ack',
+          sender: this.clientId,
+          ack: ackPayload
+        });
+      } catch (e) {}
     }
 
-    // Update read receipts in history item
-    if (Array.isArray(this._state.regieHistory)) {
-      const histItem = this._state.regieHistory.find(h => h.id === this._state.regieMessage.id);
-      if (histItem) {
-        if (st === 'foh' || st === 'frente') histItem.ackFoh = timeStr;
-        if (st === 'stage' || st === 'palco') histItem.ackStage = timeStr;
-        if (st === 'tech' || st === 'tecnico' || st === 'técnico') histItem.ackTech = timeStr;
-      }
-    }
+    // 2. Dispatch atomic room command over MQTT + local cmdChannel
+    this.sendRoomCommand(this.cleanRoom, ackPayload);
 
-    this._commitStateChange();
+    // 3. Commit full state change
+    this._commitStateChange(true);
 
-    // If both stations have acknowledged reading, auto-clear message after 5 seconds
-    if (this._state.regieMessage.ackFoh && this._state.regieMessage.ackStage) {
-      if (this._regieMsgClearTimer) clearTimeout(this._regieMsgClearTimer);
-      this._regieMsgClearTimer = setTimeout(() => {
-        this.clearRegieMessage();
-      }, 5000);
-    }
+    // 4. Redundant retry over MQTT after 450ms to guarantee delivery on busy festival Wi-Fi
+    setTimeout(() => {
+      try {
+        this.sendRoomCommand(this.cleanRoom, ackPayload);
+      } catch (_) {}
+    }, 450);
   }
 
   // ─── Theatre Suite (Mesa DC & Cue Stations) ─────────────────────────

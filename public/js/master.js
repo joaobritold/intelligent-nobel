@@ -78,12 +78,18 @@
 
     // 0. Modo Régies (FOH & Palco & Técnico) - Match before generic viewer / palco
     if (viewKey === 'regies' || path.includes('regies') || label.includes('régies') || label.includes('regies')) {
-      const isTech = label.includes('técnico') || label.includes('tecnico') || path.includes('station=tech');
-      const isStage = label.includes('palco') || path.includes('station=stage');
+      const regieStation = String(dev.regieStation || '').toLowerCase();
+      const isTech = regieStation === 'tech' || label.includes('técnico') || label.includes('tecnico') || path.includes('station=tech');
+      const isStage = regieStation === 'stage' || label.includes('palco') || path.includes('station=stage');
+      let tName = String(dev.techName || '').trim();
+      if (!tName && isTech) {
+        const m = String(dev.label || '').match(/t[eé]cnico:\s*([^)]+)/i);
+        if (m && m[1]) tName = m[1].trim();
+      }
       return {
         key: 'regies',
-        name: isTech ? '🔧 Modo Régies (Técnico)' : (isStage ? '🎛️ Modo Régies (Palco)' : '🎚️ Modo Régies (FOH)'),
-        shortName: isTech ? 'Técnico' : (isStage ? 'Palco' : 'FOH'),
+        name: isTech ? (tName ? `🔧 Modo Régies (Técnico: ${tName})` : '🔧 Modo Régies (Técnico)') : (isStage ? '🎛️ Modo Régies (Palco)' : '🎚️ Modo Régies (FOH)'),
+        shortName: isTech ? (tName ? `Técnico (${tName})` : 'Técnico') : (isStage ? 'Palco' : 'FOH'),
         badgeClass: 'view-regies'
       };
     }

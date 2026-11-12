@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Modo Régies (FOH & Palco)</title>
-  <link rel="stylesheet" href="css/common.css?v=99">
-  <link rel="stylesheet" href="css/regies.css?v=99">
+  <link rel="stylesheet" href="css/common.css?v=101">
+  <link rel="stylesheet" href="css/regies.css?v=101">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
@@ -67,7 +67,7 @@
         <a href="index.html" class="regie-home-link" title="Voltar ao Início">
           <span style="font-size: 1.4rem;">📟</span>
           <span class="regie-header-title">RÉGIES</span>
-          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v94</span>
+          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v101</span>
         </a>
 
         <!-- Stage Selector Pill -->
@@ -90,6 +90,13 @@
             🔧 Técnico
           </button>
         </div>
+
+        <!-- Technician User Badge (Visible in Técnico mode) -->
+        <button id="regie-tech-user-btn" class="regie-tech-user-btn" type="button" style="display: none;" title="Tocar para definir ou alterar o seu nome de Técnico">
+          <span>👤</span>
+          <span id="regie-tech-user-label">Identificar Técnico</span>
+          <span class="regie-tech-user-edit">✏️</span>
+        </button>
       </div>
 
       <!-- Center Hero Call Button (5s Burst) -->
@@ -145,6 +152,7 @@
           <span id="regie-receipt-foh" class="regie-msg-receipt-pill">🎚️ FOH: Aguarda</span>
           <span id="regie-receipt-stage" class="regie-msg-receipt-pill">🎛️ Palco: Aguarda</span>
           <span id="regie-receipt-tech" class="regie-msg-receipt-pill">🔧 Técnico: Aguarda</span>
+          <span id="regie-receipt-tech-list" style="display: contents;"></span>
         </div>
       </div>
       <button id="regie-msg-ack-btn" class="regie-msg-ack-btn" type="button">
@@ -201,10 +209,55 @@
     </div>
   </div>
 
+  <!-- Modal de Identificação de Técnico (Multi-Utilizador no Modo Técnico) -->
+  <div id="regie-tech-modal" class="regie-tech-modal-overlay" style="display: none;">
+    <div class="regie-tech-modal">
+      <div class="regie-tech-modal-header">
+        <div class="regie-tech-modal-title">🔧 Identificação do Técnico</div>
+        <p class="regie-tech-modal-sub">
+          Indique o seu nome para que o Stage Manager e as Régies vejam a sua confirmação de leitura individualmente.
+        </p>
+      </div>
+
+      <div class="regie-tech-modal-body">
+        <label class="regie-tech-label" for="regie-tech-name-input">O seu Nome / Função:</label>
+        <input
+          id="regie-tech-name-input"
+          type="text"
+          class="regie-tech-input"
+          placeholder="Ex: Pedro, João (Som), Miguel (Backline)..."
+          maxlength="32"
+          autocomplete="off"
+        />
+
+        <div class="regie-tech-role-chips-label">Especialidade rápida (opcional):</div>
+        <div class="regie-tech-role-chips">
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Som">🔊 Som</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Monitores">🎧 Monitores</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="RF / Micros">🎤 RF / Micros</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Backline">🎸 Backline</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Luz">💡 Luz</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Vídeo">📽️ Vídeo</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Palco">🎪 Palco</button>
+        </div>
+
+        <div id="regie-tech-online-box" class="regie-tech-online-box" style="display: none;">
+          <div class="regie-tech-online-title">🟢 Técnicos ativos neste palco:</div>
+          <div id="regie-tech-online-list" class="regie-tech-online-list"></div>
+        </div>
+      </div>
+
+      <div class="regie-tech-modal-actions">
+        <button id="regie-tech-cancel-btn" type="button" class="regie-tech-btn-secondary">Cancelar</button>
+        <button id="regie-tech-save-btn" type="button" class="regie-tech-btn-primary">✓ Guardar Nome</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Cloud MQTT over WSS -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=99"></script>
-  <script src="js/local-sync.js?v=99"></script>
-  <script src="js/regies.js?v=99"></script>
+  <script src="js/pwa.js?v=101"></script>
+  <script src="js/local-sync.js?v=101"></script>
+  <script src="js/regies.js?v=101"></script>
 </body>
 </html>

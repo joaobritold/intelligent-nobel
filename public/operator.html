@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Modo Operador (Mobile)</title>
-  <link rel="stylesheet" href="css/common.css?v=99">
-  <link rel="stylesheet" href="css/operator.css?v=99">
+  <link rel="stylesheet" href="css/common.css?v=101">
+  <link rel="stylesheet" href="css/operator.css?v=101">
 </head>
 <body>
   <div class="op-app">
@@ -201,11 +201,14 @@
       </button>
 
       <!-- Technical Message to Regies -->
-      <div style="font-size: 0.75rem; font-weight: 700; color: #a29bfe; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">
-        Mensagem Técnica para as Régies
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+        <span style="font-size: 0.75rem; font-weight: 700; color: #a29bfe; text-transform: uppercase; letter-spacing: 0.05em;">
+          Mensagem Técnica para as Régies
+        </span>
+        <span id="op-regie-tech-online" style="display: none; font-size: 0.7rem; font-weight: 700; color: #00cec9; background: rgba(0, 206, 201, 0.14); border: 1px solid rgba(0, 206, 201, 0.35); padding: 2px 8px; border-radius: 999px;"></span>
       </div>
       <div class="op-msg-row">
-        <input id="op-regie-msg-input" class="input op-msg-input" placeholder="Escreva aviso para FOH & Palco...">
+        <input id="op-regie-msg-input" class="input op-msg-input" placeholder="Escreva aviso para FOH, Palco & Técnicos...">
         <button id="op-regie-msg-send" type="button" class="btn btn-primary" style="padding: 0 16px; font-weight: 700; white-space: nowrap;">📢 Enviar</button>
       </div>
 
@@ -219,7 +222,7 @@
         <button type="button" class="op-preset-chip op-regie-chip" data-msg="Atenção à contagem do relógio">⏱️ Atenção relógio</button>
       </div>
 
-      <!-- Read Receipts from FOH & Palco -->
+      <!-- Read Receipts from FOH, Palco & Técnicos -->
       <div id="op-regie-receipt-box" style="display: none; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 10px 14px; margin-top: 6px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <span style="font-size: 0.72rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase;">Estado da Mensagem Ativa</span>
@@ -230,6 +233,7 @@
           <span id="op-receipt-foh" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: #cbd5e1;">🎚️ FOH: ⏳ Pendente</span>
           <span id="op-receipt-stage" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: #cbd5e1;">🎛️ Palco: ⏳ Pendente</span>
           <span id="op-receipt-tech" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: #cbd5e1;">🔧 Técnico: ⏳ Pendente</span>
+          <span id="op-receipt-tech-list" style="display: contents;"></span>
         </div>
       </div>
     </section>
@@ -281,22 +285,22 @@
 
     <!-- Footer Version Indicator -->
     <footer style="text-align: center; padding: 14px 0 8px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-      StageTimer Operador • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 6px; border-radius: 4px; font-weight: 700;">v95</span>
+      StageTimer Operador • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 6px; border-radius: 4px; font-weight: 700;">v101</span>
     </footer>
   </div>
 
   <!-- PDF.js & SheetJS for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=99"></script>
+  <script src="js/schedule-importer.js?v=101"></script>
 
   <!-- Access Control -->
-  <script src="js/auth.js?v=99"></script>
+  <script src="js/auth.js?v=101"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=99"></script>
-  <script src="js/local-sync.js?v=99"></script>
-  <script src="js/operator.js?v=99"></script>
+  <script src="js/pwa.js?v=101"></script>
+  <script src="js/local-sync.js?v=101"></script>
+  <script src="js/operator.js?v=101"></script>
   <script>
     // Screen Wake Lock API — Keep Operator Screen Always On
     (function() {
