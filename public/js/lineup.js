@@ -493,10 +493,6 @@ function render() {
         </div>
       `;
     }).join('');
-          </div>
-        </div>
-      `;
-    }).join('');
 
     if (state.activeTimerId !== lastCenteredActiveId || isFirstRender) {
       lastCenteredActiveId = state.activeTimerId;

@@ -163,86 +163,22 @@ body {
 
 .lineup-now-slot {
   font-family: var(--font-mono);
-  font-size: 0.9rem;
-  color: #a29bfe;
-  margin-bottom: 8px;
+  font-size: clamp(0.85rem, 1.2vw, 0.96rem);
+  color: #cbd5e1;
+  margin: 6px 0 10px;
+  line-height: 1.45;
   width: 100%;
 }
 
-.lineup-now-sched-box {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin: 6px 0 10px;
-  background: rgba(0, 0, 0, 0.35);
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.now-sched-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-}
-
-.now-sched-tag {
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  flex-shrink: 0;
-}
-
-.now-sched-tag.planned {
-  background: rgba(255, 255, 255, 0.1);
-  color: #cbd5e1;
-}
-
-.now-sched-tag.real {
-  background: rgba(108, 92, 231, 0.3);
-  color: #a29bfe;
-  border: 1px solid rgba(108, 92, 231, 0.4);
-}
-
-.now-sched-val {
-  font-weight: 700;
-  color: #fff;
-  white-space: nowrap;
-}
-
-.now-sched-val.font-accent {
-  color: #55efc4;
-}
-
-.lineup-now-delay-pill {
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 6px;
-  white-space: nowrap;
-}
-
-.lineup-now-delay-pill.warn {
-  background: rgba(253, 203, 110, 0.25);
-  color: #ffeaa7;
-  border: 1px solid rgba(253, 203, 110, 0.5);
-}
-
-.lineup-now-delay-pill.early {
-  background: rgba(0, 184, 148, 0.25);
-  color: #55efc4;
-  border: 1px solid rgba(0, 184, 148, 0.5);
-}
-
-.lineup-now-delay-pill.ok {
-  background: rgba(255, 255, 255, 0.08);
+.lineup-now-slot-prev {
   color: #94a3b8;
+  font-size: 0.86rem;
+}
+
+.lineup-now-slot-real {
+  color: #55efc4;
+  font-weight: 700;
+  font-size: 0.94rem;
 }
 
 .lineup-now-timer {
@@ -305,7 +241,7 @@ body {
 
 .lineup-row {
   display: grid;
-  grid-template-columns: 144px minmax(0, 1fr) auto auto;
+  grid-template-columns: 68px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: clamp(10px, 1.8vw, 20px);
   padding: clamp(12px, 1.8vh, 18px) clamp(14px, 2vw, 24px);
@@ -334,132 +270,29 @@ body {
 
 .lineup-col-time {
   display: flex;
-  gap: 6px;
-  align-items: stretch;
-  justify-content: center;
-  width: 144px;
-}
-
-.lineup-time-chip {
-  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
   font-family: var(--font-mono);
-  padding: 5px 6px;
-  border-radius: 8px;
+  background: rgba(108, 92, 231, 0.15);
+  border: 1px solid rgba(108, 92, 231, 0.35);
+  padding: 6px 8px;
+  border-radius: 10px;
   text-align: center;
   line-height: 1.15;
-  flex: 1;
-  min-width: 0;
-  box-sizing: border-box;
 }
 
-.lineup-time-chip.chip-planned {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.chip-tag {
-  font-size: 0.58rem;
+.lineup-time-in {
+  font-size: clamp(0.85rem, 1.2vw, 1rem);
   font-weight: 800;
-  color: #94a3b8;
-  letter-spacing: 0.06em;
+  color: #fff;
 }
 
-.chip-hours {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-}
-
-.chip-planned .chip-time-in {
-  font-size: 0.86rem;
-  font-weight: 700;
-  color: #cbd5e1;
-}
-
-.chip-planned .chip-time-out {
-  font-size: 0.74rem;
+.lineup-time-out {
+  font-size: clamp(0.75rem, 1vw, 0.88rem);
   font-weight: 600;
-  color: #64748b;
-}
-
-.lineup-time-chip.chip-real {
-  background: rgba(108, 92, 231, 0.16);
-  border: 1px solid rgba(108, 92, 231, 0.4);
-}
-
-.chip-real .chip-tag {
   color: #a29bfe;
-}
-
-.chip-real .chip-time-in {
-  font-size: 0.92rem;
-  font-weight: 800;
-  color: #ffffff;
-}
-
-.chip-real .chip-time-out {
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: #c4b5fd;
-}
-
-.chip-tag-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  width: 100%;
-}
-
-.chip-delay-tag {
-  font-size: 0.56rem;
-  font-weight: 800;
-  padding: 1px 3px;
-  border-radius: 3px;
-  line-height: 1;
-}
-
-.chip-delay-tag.warn {
-  background: rgba(253, 203, 110, 0.3);
-  color: #ffeaa7;
-  border: 1px solid rgba(253, 203, 110, 0.6);
-}
-
-.chip-delay-tag.early {
-  background: rgba(0, 184, 148, 0.3);
-  color: #55efc4;
-  border: 1px solid rgba(0, 184, 148, 0.6);
-}
-
-.lineup-time-chip.chip-real.is-delayed {
-  background: rgba(253, 203, 110, 0.14);
-  border-color: rgba(253, 203, 110, 0.5);
-}
-
-.lineup-time-chip.chip-real.is-delayed .chip-tag {
-  color: #fdcb6e;
-}
-
-.lineup-time-chip.chip-real.is-delayed .chip-time-out {
-  color: #ffeaa7;
-}
-
-.lineup-time-chip.chip-real.is-early {
-  background: rgba(0, 184, 148, 0.14);
-  border-color: rgba(0, 184, 148, 0.5);
-}
-
-.lineup-time-chip.chip-real.is-early .chip-tag {
-  color: #55efc4;
-}
-
-.lineup-time-chip.chip-real.is-early .chip-time-out {
-  color: #55efc4;
 }
 
 .lineup-col-artist {
@@ -585,33 +418,10 @@ body {
   }
 
   .lineup-row {
-    grid-template-columns: 82px minmax(0, 1fr) auto;
-    gap: 8px;
-    padding: 10px 10px;
+    grid-template-columns: 58px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 12px;
     border-radius: 12px;
-  }
-
-  .lineup-col-time {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    width: 82px;
-  }
-
-  .lineup-time-chip {
-    padding: 3px 4px;
-    border-radius: 6px;
-    width: 100%;
-  }
-
-  .chip-planned .chip-time-in,
-  .chip-planned .chip-time-out {
-    font-size: 0.74rem;
-  }
-
-  .chip-real .chip-time-in,
-  .chip-real .chip-time-out {
-    font-size: 0.78rem;
   }
 
   .lineup-artist-name {
