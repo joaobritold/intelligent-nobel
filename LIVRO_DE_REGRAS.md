@@ -52,6 +52,12 @@ Nenhuma alteração, criação, edição ou eliminação de ficheiros de código
 ### Regra #0.1 — Commit Git Automático e Autónomo
 Assim que qualquer conjunto de alterações for autorizado e concluído, o agente ou programador deve **executar de imediato um commit no Git de forma 100% autónoma** (sem pedir confirmação para o commit em si), garantindo um histórico limpo e rastreável de todas as modificações (`docs:`, `fix:`, `feat:`).
 
+### Regra #0.2 — Apresentação Obrigatória da Versão Pós-Update
+Sempre que uma alteração for concluída e commitada, o relatório final ao utilizador tem de apresentar explicitamente:
+1. **Versão da Aplicação**: A versão ativa do ecossistema e do service worker (ex.: `v93` em [public/sw.js](public/sw.js) e parâmetros `?v=XX` do HTML).
+2. **Commit Git**: O hash curto e a mensagem do commit gerado automaticamente.
+3. **Ficheiros e Ecrãs Impactados**: Um resumo claro do que mudou e quais os ecrãs afetados.
+
 ### Regra #1 — Nunca Depender Exclusivamente do Backend Node.js
 Toda a funcionalidade nova (timers, cues de teatro, checklists, relatórios, importadores, controlo remoto de ecrãs) **tem de ser implementada no cliente** (em [public/js/local-sync.js](public/js/local-sync.js) e nos respetivos scripts de página) para funcionar no deploy estático do Netlify ([netlify.toml](netlify.toml)).
 
