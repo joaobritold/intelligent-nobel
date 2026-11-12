@@ -1695,9 +1695,16 @@ class UniversalSyncClient {
     return pin || String(Math.floor(1000 + Math.random() * 9000));
   }
 
-  createEventWithStages({ title, stagesCount = 1, eventType = 'concert', masterPass = '' }) {
-    if (masterPass !== '1379brito') {
-      throw new Error('Apenas o Master com a senha 1379brito pode criar eventos.');
+  createEventWithStages({ title, stagesCount = 1, eventType = 'concert' }) {
+    const isMasterAuthorized =
+      (typeof window !== 'undefined' && typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
+      sessionStorage.getItem('stagetimer_master_active') === '1' ||
+      localStorage.getItem('stagetimer_master_active') === '1' ||
+      sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
+      localStorage.getItem('stagetimer_master_auth_v12') === 'true';
+
+    if (!isMasterAuthorized) {
+      throw new Error('Apenas utilizadores autenticados no Modo Master podem criar eventos.');
     }
     const cleanTitle = (title || '').trim() || `Evento ${this.getEventsList().length + 1}`;
     let baseCode = cleanTitle
@@ -1809,7 +1816,12 @@ class UniversalSyncClient {
     const ev = list.find(e => e.code === cleanCode || e.id === cleanCode);
     if (!ev) return { valid: false, error: 'Evento não encontrado' };
     const cleanPin = String(inputPin || '').trim();
-    if (cleanPin === '1379brito' || cleanPin === String(ev.pin || '').trim()) {
+    const isMasterAuthorized =
+      (typeof window !== 'undefined' && typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
+      sessionStorage.getItem('stagetimer_master_active') === '1' ||
+      localStorage.getItem('stagetimer_master_active') === '1';
+
+    if (isMasterAuthorized || cleanPin === String(ev.pin || '').trim()) {
       return { valid: true, event: ev };
     }
     return { valid: false, error: 'PIN de 4 dígitos incorreto' };
