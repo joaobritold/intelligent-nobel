@@ -39,11 +39,19 @@ class ScheduleImporter {
       }
     }
 
-    // Match "23:00", "23.00", "23h00", "23H00", "23h15", "4h30", "01:30", "23h"
-    const m = str.match(/^(\d{1,2})\s*[:.hH]\s*(\d{1,2})?$/) || str.match(/^(\d{1,2})\s*[hH]$/);
+    const ampmMatch = str.match(/\b(am|pm)\b/i);
+    const isPM = ampmMatch && ampmMatch[1].toLowerCase() === 'pm';
+    const isAM = ampmMatch && ampmMatch[1].toLowerCase() === 'am';
+    const clean = str.replace(/\b(?:am|pm)\b/gi, '').trim();
+
+    // Match "23:00", "23:00h", "23.00", "23.00h", "23h00", "23h00m", "23h00min", "23:00:00", "4h30", "01:30", "23h"
+    const m = clean.match(/^(\d{1,2})\s*[:.hH]\s*(\d{1,2})(?:\s*:\s*\d{1,2})?\s*(?:h|hr|hrs|hs|m|min)?$/i) ||
+              clean.match(/^(\d{1,2})\s*[hH]\s*(?:00)?$/i);
     if (!m) return null;
     let h = parseInt(m[1], 10);
-    const min = m[2] ? parseInt(m[2], 10) : 0;
+    const min = m[2] !== undefined ? parseInt(m[2], 10) : 0;
+    if (isPM && h < 12) h += 12;
+    if (isAM && h === 12) h = 0;
     if (h === 24) h = 0; // midnight
     if (h < 0 || h > 23 || min < 0 || min > 59) return null;
     return h * 60 + min;
@@ -100,19 +108,19 @@ class ScheduleImporter {
   }
 
   /**
-   * Regex matching individual time tokens: 23:00, 23.00, 23h00, 23H00, 23h, 4h30, 0h
+   * Regex matching individual time tokens: 23:00, 23:00h, 23:00:00, 23.00, 23.00h, 23h00, 23h00m, 23h00min, 23h, 4h30, 0h
    */
   static _getTimeTokenRegex() {
-    return /\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b/gi;
+    return /\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d(?:\s*:\s*[0-5]\d)?(?:\s*(?:h|hr|hrs|hs|m|min)\b)?|\s*[hH]\b)(?:\s*(?:am|pm)\b)?/gi;
   }
 
   /**
    * Regex matching time ranges strictly with explicit range connectors:
-   * "-", "–", "—", "~", "às", "as", "até", "ate", "a", "to", "till", "until", "->", ">", "=>", "/", "|"
-   * IMPORTANT: Does NOT allow tabs or spaces across columns to prevent mashing different columns together!
+   * "-", "–", "—", "―", "‒", "‑", "‐", "−", "~", "às", "as", "até", "ate", "a", "to", "till", "until", "->", ">", "=>", "/", "|"
    */
   static _getTimeRangeRegex() {
-    return /(\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b)\s*(?:[-–—~]|às|as|até|ate|\ba\b|\bto\b|\btill\b|\buntil\b|-->?|>|=>|\/|\\|\|)\s*(\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b)/gi;
+    const tok = '(?:\\b(?:[01]?\\d|2[0-4])(?:\\s*[:.hH]\\s*[0-5]\\d(?:\\s*:\\s*[0-5]\\d)?(?:\\s*(?:h|hr|hrs|hs|m|min)\\b)?|\\s*[hH]\\b)(?:\\s*(?:am|pm)\\b)?)';
+    return new RegExp(`(${tok})\\s*(?:[-–—―‒‑‐−~]|às|as|até|ate|\\ba\\b|\\bto\\b|\\btill\\b|\\buntil\\b|-->?|==?>|>|\\/|\\\\|\\|)\\s*(${tok})`, 'gi');
   }
 
   /**
@@ -123,12 +131,13 @@ class ScheduleImporter {
     if (!l) return true;
 
     // Header column names without concrete artist times
-    if (/^(artist|artista|hor[áa]rio|palco|stage|lineup|line-up|programação|programa|data|dia|day|load-?in|set\s*up|soundcheck|change-?over|on\s*stage|curfew|obs|observa[çc][õo]es|contacto[s]?|rider|catering)\b/i.test(l) &&
+    if (/^(artist|artista|hor[áa]rio|palco|stage|lineup|line-up|programação|programa|data|dia|day|load-?in|set\s*up|soundcheck|change-?over|on\s*stage|curfew|obs|observa[çc][õo]es|contacto[s]?|rider|catering|in[íi]cio|fim|start|end|dura[çc][ãa]o|duration)\b/i.test(l) &&
         !/\d{1,2}\s*[:.hH]/.test(l)) {
       return true;
     }
-    // Production notices and footer info
-    if (/^(a\s*impossibilidade|regras|normas|contacto[s]?\s*de\s*produção|respons[áa]vel|ficheiro|página|stage\s*manager|produção|load-in\s*[:|])/i.test(l)) {
+    // Production notices and footer info (only if no valid time range is present)
+    if (/^(a\s*impossibilidade|regras|normas|contacto[s]?\s*de\s*produção|respons[áa]vel|ficheiro|página|stage\s*manager|produção|load-in\s*[:|])/i.test(l) &&
+        !this._getTimeRangeRegex().test(l)) {
       return true;
     }
     // Pure note lines (e.g. "***ESTE HORÁRIO JÁ CONSIDERA...")
@@ -145,7 +154,7 @@ class ScheduleImporter {
     let clean = rawLine;
 
     // Remove curfew expressions
-    clean = clean.replace(/\bcurfew\s*[:=-]?\s*\d{1,2}(?:[:.hH]\d{2}|[hH])\b/gi, ' ');
+    clean = clean.replace(/\bcurfew\s*[:=-]?\s*\d{1,2}(?:[:.hH]\d{2}(?::\d{2})?|[hH])\b/gi, ' ');
     clean = clean.replace(/\bcurfew\b/gi, ' ');
 
     // Remove all matched time ranges
@@ -156,10 +165,11 @@ class ScheduleImporter {
     }
 
     // Remove standalone time tokens (e.g. single curfew times)
-    clean = clean.replace(/\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b/gi, ' ');
+    clean = clean.replace(this._getTimeTokenRegex(), ' ');
 
-    // Remove duration notes like "(60m)", "(140min)", "(30m)"
-    clean = clean.replace(/\s*\(\s*\d+\s*m(?:in)?\s*\)/gi, ' ');
+    // Remove duration notes like "(60m)", "(140min)", "(30m)", "60 min"
+    clean = clean.replace(/\s*\(\s*\d+\s*m(?:in(?:utos)?)?\s*\)/gi, ' ');
+    clean = clean.replace(/\b\d+\s*m(?:in(?:utos)?)\b/gi, ' ');
 
     // Remove asterisks denoting notes
     clean = clean.replace(/[*]+/g, ' ');
@@ -167,13 +177,14 @@ class ScheduleImporter {
     // Remove "n/a" indicators
     clean = clean.replace(/\bn\s*\/\s*a\b/gi, ' ');
 
-    // Remove common column header words if left behind
-    clean = clean.replace(/\b(?:artist|artista|load-?in|soundcheck|set\s*up|change-?over|line\s*check|on\s*stage|palco|stage|live|hora|hor[áa]rio)\b/gi, ' ');
+    // Remove column prefix labels if left behind (without deleting valid act names like Soundcheck/Changeover/Live)
+    clean = clean.replace(/^\s*(?:artist|artista|on\s*stage|hor[áa]rio|hora)\s*[:=-]\s*/gi, ' ');
+    clean = clean.replace(/\b(?:load-?in|on\s*stage)\b/gi, ' ');
 
     // Remove table borders, tabs, bullet characters, leading/trailing punctuation
     clean = clean.replace(/[|•\t;~_]+/g, ' ');
     clean = clean.replace(/\s+/g, ' ');
-    clean = clean.replace(/^[\s\-–—:=/]+|[\s\-–—:=/]+$/g, '').trim();
+    clean = clean.replace(/^[\s\-–—―‒‑‐−:=/]+|[\s\-–—―‒‑‐−:=/]+$/g, '').trim();
 
     return clean;
   }
@@ -318,15 +329,34 @@ class ScheduleImporter {
   }
 
   /**
+   * Extract explicit duration in minutes from a line if present (e.g. "(45m)", "45 min", "1h30m")
+   */
+  static _extractExplicitDurationMins(line) {
+    if (!line) return null;
+    const parenMatch = line.match(/\(\s*(\d{1,3})\s*m(?:in(?:utos)?)?\s*\)/i);
+    if (parenMatch) {
+      const v = parseInt(parenMatch[1], 10);
+      if (v >= 2 && v <= 720) return v;
+    }
+    const wordMatch = line.match(/\b(\d{1,3})\s*(?:min|minutos)\b/i) || line.match(/(?:[-–—|•\t]\s*|\s+)(\d{1,3})\s*m\b/i);
+    if (wordMatch) {
+      const v = parseInt(wordMatch[1], 10);
+      if (v >= 2 && v <= 720) return v;
+    }
+    return null;
+  }
+
+  /**
    * Fallback parser for timetables that only list single start times per row
    */
   static _parseSingleStartTimeLines(lines) {
-    const timeTokenRegex = /\b(?:[01]?\d|2[0-4])(?:\s*[:.hH]\s*[0-5]\d|\s*[hH])\b/i;
+    const timeTokenRegex = new RegExp(this._getTimeTokenRegex().source, 'i');
     const entries = [];
     let curfewMinutes = null;
     let curfewStr = null;
 
-    for (const line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       if (this._isHeaderOrMetaLine(line)) continue;
 
       const m = line.match(timeTokenRegex);
@@ -336,13 +366,29 @@ class ScheduleImporter {
       const mins = this.parseTimeStrToMinutes(timeStr);
       if (mins === null) continue;
 
+      const explicitDurMins = this._extractExplicitDurationMins(line);
+
       let name = line.replace(timeStr, ' ');
-      name = name.replace(/\s*\(\s*\d+\s*m(?:in)?\s*\)/gi, ' ');
+      name = name.replace(/\s*\(\s*\d+\s*m(?:in(?:utos)?)?\s*\)/gi, ' ');
+      name = name.replace(/\b\d+\s*(?:min|minutos)\b/gi, ' ');
+      name = name.replace(/(?:[-–—|•\t]\s*|\s+)\d{1,3}\s*m\b/gi, ' ');
       name = name.replace(/[*]+/g, ' ');
       name = name.replace(/\bn\s*\/\s*a\b/gi, ' ');
       name = name.replace(/[|•\t;~_]+/g, ' ');
       name = name.replace(/\s+/g, ' ');
-      name = name.replace(/^[\s\-–—:=/]+|[\s\-–—:=/]+$/g, '').trim();
+      name = name.replace(/^[\s\-–—―‒‑‐−:=/]+|[\s\-–—―‒‑‐−:=/]+$/g, '').trim();
+
+      // If time was on its own line, look at adjacent line for artist name
+      if (!name || name.length < 2) {
+        const nextLine = (lines[i + 1] || '').trim();
+        const prevLine = (lines[i - 1] || '').trim();
+        if (nextLine && !timeTokenRegex.test(nextLine) && !this._isHeaderOrMetaLine(nextLine) && !this._detectDayHeader(nextLine)) {
+          name = this._cleanArtistName(nextLine, []);
+          i++; // consume nextLine
+        } else if (prevLine && !timeTokenRegex.test(prevLine) && !this._isHeaderOrMetaLine(prevLine) && !this._detectDayHeader(prevLine)) {
+          name = this._cleanArtistName(prevLine, []);
+        }
+      }
 
       if (!name) continue;
 
@@ -356,7 +402,8 @@ class ScheduleImporter {
       entries.push({
         name,
         startStr: timeStr,
-        startMinutes: mins
+        startMinutes: mins,
+        explicitDurMins
       });
     }
 
@@ -369,7 +416,13 @@ class ScheduleImporter {
       let endStr = null;
       let durationMs = null;
 
-      if (next) {
+      if (cur.explicitDurMins) {
+        const endMins = (cur.startMinutes + cur.explicitDurMins) % 1440;
+        const h = String(Math.floor(endMins / 60)).padStart(2, '0');
+        const m = String(endMins % 60).padStart(2, '0');
+        endStr = `${h}:${m}`;
+        durationMs = cur.explicitDurMins * 60000;
+      } else if (next) {
         endStr = next.startStr;
         durationMs = this.calcDurationMs(cur.startStr, next.startStr);
       } else if (curfewStr && curfewMinutes !== null) {
@@ -385,6 +438,44 @@ class ScheduleImporter {
       }
 
       timers.push(this.makeTimerObj(cur.name, cur.startStr, endStr, durationMs));
+    }
+
+    return timers;
+  }
+
+  /**
+   * Fallback parser for lists that only have Artist + Duration (e.g. "Banda X - 45 min" or "Abertura 15m")
+   */
+  static _parseDurationOnlyLines(lines) {
+    const timers = [];
+    let runningMins = 21 * 60; // Default 21:00 start anchor for display range
+
+    for (const line of lines) {
+      if (this._isHeaderOrMetaLine(line)) continue;
+      if (this._detectDayHeader(line)) continue;
+
+      const durMins = this._extractExplicitDurationMins(line);
+      if (!durMins) continue;
+
+      let name = line
+        .replace(/\s*\(\s*\d+\s*m(?:in(?:utos)?)?\s*\)/gi, ' ')
+        .replace(/\b\d+\s*(?:min|minutos)\b/gi, ' ')
+        .replace(/(?:[-–—|•\t]\s*|\s+)\d{1,3}\s*m\b/gi, ' ')
+        .replace(/[|•\t;~_]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/^[\s\-–—―‒‑‐−:=/]+|[\s\-–—―‒‑‐−:=/]+$/g, '')
+        .trim();
+
+      if (!name || name.length < 2) continue;
+
+      const sH = String(Math.floor((runningMins % 1440) / 60)).padStart(2, '0');
+      const sM = String((runningMins % 1440) % 60).padStart(2, '0');
+      const endMins = (runningMins + durMins) % 1440;
+      const eH = String(Math.floor(endMins / 60)).padStart(2, '0');
+      const eM = String(endMins % 60).padStart(2, '0');
+
+      timers.push(this.makeTimerObj(name, `${sH}:${sM}`, `${eH}:${eM}`, durMins * 60000));
+      runningMins += durMins;
     }
 
     return timers;
@@ -408,14 +499,70 @@ class ScheduleImporter {
 
     const allTimers = [];
     const rangeRegex = this._getTimeRangeRegex();
+    const tokenRegex = this._getTimeTokenRegex();
+    const consumedLines = new Set();
 
-    for (const line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      if (consumedLines.has(i)) continue;
+      const line = lines[i];
       if (this._isHeaderOrMetaLine(line)) continue;
 
-      const matches = [...line.matchAll(rangeRegex)];
+      let matches = [...line.matchAll(rangeRegex)];
+
+      // Support rows where Start Time and End Time are separated by tabs/spaces without a dash connector
+      // e.g. Excel/PDF columns: "Banda X \t 21:00 \t 22:15" or "21:00   22:15   Banda X"
+      if (matches.length === 0) {
+        const tokens = [...line.matchAll(tokenRegex)];
+        if (tokens.length >= 2) {
+          const syntheticMatches = [];
+          if (tokens.length % 2 === 0) {
+            for (let t = 0; t < tokens.length; t += 2) {
+              syntheticMatches.push([`${tokens[t][0]} ${tokens[t + 1][0]}`, tokens[t][0], tokens[t + 1][0]]);
+            }
+          } else {
+            // Odd number of tokens >= 3: last two tokens are On Stage Start and End
+            const lastIdx = tokens.length - 2;
+            syntheticMatches.push([`${tokens[lastIdx][0]} ${tokens[lastIdx + 1][0]}`, tokens[lastIdx][0], tokens[lastIdx + 1][0]]);
+          }
+          matches = syntheticMatches;
+        }
+      }
+
       if (matches.length > 0) {
-        const artistName = this._cleanArtistName(line, matches);
+        let artistName = this._cleanArtistName(line, matches);
+
+        // If the time range is on its own line (e.g. multi-line PDF or poster), pair with adjacent artist line
+        if (!artistName || artistName.length < 2) {
+          const prevIdx = i - 1;
+          const nextIdx = i + 1;
+          const hasTokens = (str) => {
+            const r = this._getTimeTokenRegex();
+            return r.test(str);
+          };
+          if (
+            prevIdx >= 0 &&
+            !consumedLines.has(prevIdx) &&
+            !hasTokens(lines[prevIdx]) &&
+            !this._isHeaderOrMetaLine(lines[prevIdx]) &&
+            !this._detectDayHeader(lines[prevIdx])
+          ) {
+            artistName = this._cleanArtistName(lines[prevIdx], []);
+            if (artistName && artistName.length >= 2) consumedLines.add(prevIdx);
+          }
+          if ((!artistName || artistName.length < 2) &&
+            nextIdx < lines.length &&
+            !consumedLines.has(nextIdx) &&
+            !hasTokens(lines[nextIdx]) &&
+            !this._isHeaderOrMetaLine(lines[nextIdx]) &&
+            !this._detectDayHeader(lines[nextIdx])
+          ) {
+            artistName = this._cleanArtistName(lines[nextIdx], []);
+            if (artistName && artistName.length >= 2) consumedLines.add(nextIdx);
+          }
+        }
+
         if (!artistName || artistName.length < 2) continue;
+        consumedLines.add(i);
 
         const classified = this._classifyArtistRanges(line, matches, artistName);
 
@@ -432,8 +579,12 @@ class ScheduleImporter {
     }
 
     if (allTimers.length === 0) {
-      // Fallback: Check if schedule uses single start times per row
-      return this._parseSingleStartTimeLines(lines);
+      // Fallback 1: Check if schedule uses single start times per row
+      const singleStartTimers = this._parseSingleStartTimeLines(lines);
+      if (singleStartTimers.length > 0) return singleStartTimers;
+
+      // Fallback 2: Check if schedule lists artist + duration (e.g. "Banda X - 45 min")
+      return this._parseDurationOnlyLines(lines);
     }
 
     // Sort all timers in chronological festival order
@@ -446,12 +597,35 @@ class ScheduleImporter {
   static _detectDayHeader(line) {
     if (!line) return null;
     const l = line.trim();
+    if (!l || l.length > 90) return null;
 
-    // 1. Full or short date: "05 de novembro de 2025", "23 outubro 2025", "18 maio 2026", "24/10"
-    const mDate = l.match(/\b(\d{1,2})\s*(?:de\s+)?(janeiro|fevereiro|mar[çc]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)(?:\s*(?:de\s+)?\d{2,4})?\b/i) ||
-                  l.match(/^\s*(?:===+\s*)?(\d{1,2})[\/\.-](\d{1,2})(?:[\/\.-]\d{2,4})?\b/i);
+    // Never treat a line with time ranges as a day header
+    if (this._getTimeRangeRegex().test(l)) return null;
+
+    // If line has a clock time token (e.g. "21:00 Quinta do Bill" or "21.30 Banda X"), it is an artist row unless explicitly wrapped in "==="
+    const hasExplicitBanner = /^===+.*===+$/.test(l);
+    if (!hasExplicitBanner && this._getTimeTokenRegex().test(l)) {
+      return null;
+    }
+
+    // 1. Full date with month name: "05 de novembro de 2025", "23 outubro 2025", "18 maio 2026"
+    const mDate = l.match(/\b(\d{1,2})\s*(?:de\s+)?(janeiro|fevereiro|mar[çc]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)(?:\s*(?:de\s+)?\d{2,4})?\b/i);
     if (mDate) {
-      return { dayNumber: null, title: l.replace(/^[=–—#*\s]+|[=–—#*\s]+$/g, ''), isDate: true };
+      const dayVal = parseInt(mDate[1], 10);
+      if (dayVal >= 1 && dayVal <= 31) {
+        return { dayNumber: null, title: l.replace(/^[=–—#*\s]+|[=–—#*\s]+$/g, ''), isDate: true };
+      }
+    }
+
+    // 1b. Numeric date: "24/10", "24/10/2026", "24-10-2026" (require valid day 1..31 and month 1..12)
+    const mNumDate = l.match(/^\s*(?:===+\s*)?(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s*(?:===+)?\s*$/i) ||
+                     l.match(/^\s*(?:===+\s*)?(\d{1,2})[\/\.-](\d{1,2})[\/\.-](20\d{2})\b/i);
+    if (mNumDate) {
+      const d = parseInt(mNumDate[1], 10);
+      const m = parseInt(mNumDate[2], 10);
+      if (d >= 1 && d <= 31 && m >= 1 && m <= 12) {
+        return { dayNumber: null, title: l.replace(/^[=–—#*\s]+|[=–—#*\s]+$/g, ''), isDate: true };
+      }
     }
 
     // 2. Explicit "Dia X" or "Day X"
@@ -618,6 +792,16 @@ class ScheduleImporter {
       }
     }
 
+    // Re-normalize day keys to start at '1' if only 1 day was found or if keys are non-contiguous
+    const rawKeys = Object.keys(daysMap).sort((a, b) => Number(a) - Number(b));
+    if (rawKeys.length === 1 && rawKeys[0] !== '1') {
+      const onlyKey = rawKeys[0];
+      daysMap['1'] = daysMap[onlyKey];
+      titlesMap['1'] = titlesMap[onlyKey] || 'Dia 1';
+      delete daysMap[onlyKey];
+      delete titlesMap[onlyKey];
+    }
+
     const dayKeys = Object.keys(daysMap).sort((a, b) => Number(a) - Number(b));
     let totalTimers = 0;
     dayKeys.forEach(k => { totalTimers += daysMap[k].length; });
@@ -670,7 +854,8 @@ class ScheduleImporter {
       for (const it of items) {
         let placed = false;
         for (const row of rows) {
-          if (Math.abs(it.y - row.y) <= 5.5) {
+          const tol = Math.max(6.5, Math.min(it.height || 10, row.height || 10) * 0.65);
+          if (Math.abs(it.y - row.y) <= tol) {
             row.items.push(it);
             row.y = (row.y * (row.items.length - 1) + it.y) / row.items.length;
             placed = true;
@@ -678,7 +863,7 @@ class ScheduleImporter {
           }
         }
         if (!placed) {
-          rows.push({ y: it.y, items: [it] });
+          rows.push({ y: it.y, height: it.height || 10, items: [it] });
         }
       }
 
@@ -711,13 +896,88 @@ class ScheduleImporter {
   }
 
   /**
-   * Excel & CSV extraction with structured column support and sheet-name day preservation
+   * Normalize a single spreadsheet cell value (handles Excel fractional time, HH:MM:SS, Date strings)
+   */
+  static _normalizeSpreadsheetCell(val) {
+    if (val === null || val === undefined) return '';
+    if (val instanceof Date && !isNaN(val.getTime())) {
+      const hh = String(val.getHours()).padStart(2, '0');
+      const mm = String(val.getMinutes()).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+    if (typeof val === 'number' && val >= 0 && val < 1) {
+      const totalMins = Math.round(val * 24 * 60) % 1440;
+      const hh = String(Math.floor(totalMins / 60)).padStart(2, '0');
+      const mm = String(totalMins % 60).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+    const str = String(val).trim();
+    if (!str) return '';
+
+    // Convert "HH:MM:SS" or "H:MM:SS AM/PM" to clean "HH:MM"
+    const secMatch = str.match(/^(\d{1,2}):(\d{2}):(\d{2})(?:\s*(AM|PM))?$/i);
+    if (secMatch) {
+      let h = parseInt(secMatch[1], 10);
+      const m = parseInt(secMatch[2], 10);
+      const ampm = (secMatch[4] || '').toLowerCase();
+      if (ampm === 'pm' && h < 12) h += 12;
+      if (ampm === 'am' && h === 12) h = 0;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    return str;
+  }
+
+  /**
+   * Format a spreadsheet row array into a tab-separated line, joining adjacent standalone Start/End time columns
+   */
+  static _formatSpreadsheetRow(rowArray, durColIdx = -1) {
+    if (!Array.isArray(rowArray)) return '';
+    const cells = [];
+    for (let c = 0; c < rowArray.length; c++) {
+      let cellStr = this._normalizeSpreadsheetCell(rowArray[c]);
+      if (!cellStr) continue;
+      if (c === durColIdx && /^\d{1,3}$/.test(cellStr)) {
+        cellStr = `(${cellStr}min)`;
+      }
+      cells.push(cellStr);
+    }
+    if (cells.length === 0) return '';
+
+    // Join adjacent cells that are individual time tokens (e.g. col[i]="21:00", col[i+1]="22:15" -> "21:00 - 22:15")
+    const merged = [];
+    for (let i = 0; i < cells.length; i++) {
+      const cur = cells[i];
+      const next = cells[i + 1];
+      if (next !== undefined && this.parseTimeStrToMinutes(cur) !== null && this.parseTimeStrToMinutes(next) !== null) {
+        merged.push(`${this.formatCleanTime(cur)} - ${this.formatCleanTime(next)}`);
+        i++; // skip next
+      } else {
+        merged.push(cur);
+      }
+    }
+    return merged.join('\t');
+  }
+
+  /**
+   * Excel, CSV, Word (.docx) & Text extraction with structured column support and sheet-name day preservation
    */
   static async extractSpreadsheetOrText(file) {
-    const ext = file.name.split('.').pop().toLowerCase();
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+
+    // Word (.docx) support via Mammoth if available
+    if (ext === 'docx' && typeof mammoth !== 'undefined' && mammoth.extractRawText) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        const text = (result.value || '').trim();
+        if (text) return { pages: [text], titles: ['Documento Word'] };
+      } catch (e) {}
+    }
+
     if (['xlsx', 'xls', 'csv'].includes(ext) && typeof XLSX !== 'undefined') {
       const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+      const workbook = XLSX.read(data, { type: 'array', cellDates: false });
       const pages = [];
       const titles = [];
 
@@ -734,9 +994,10 @@ class ScheduleImporter {
 
         if (!rows || rows.length === 0) continue;
 
-        // Check if rows have a "Dia" / "Day" column
+        // Check if rows have a "Dia" / "Day" or "Duração" column
         const headerRow = (rows[0] || []).map(c => String(c).trim().toLowerCase());
         const dayColIdx = headerRow.findIndex(c => /^(dia|day|data|date)$/i.test(c));
+        const durColIdx = headerRow.findIndex(c => /^(dura[çc][ãa]o|duration|tempo|min|minutos)$/i.test(c));
 
         if (dayColIdx !== -1 && rows.length > 2) {
           const dayGroups = new Map();
@@ -746,7 +1007,10 @@ class ScheduleImporter {
             const dayVal = String(row[dayColIdx] || '').trim();
             const groupKey = dayVal || '1';
             if (!dayGroups.has(groupKey)) dayGroups.set(groupKey, []);
-            dayGroups.get(groupKey).push(row.filter((_, idx) => idx !== dayColIdx).join('\t'));
+            const filteredRow = row.filter((_, idx) => idx !== dayColIdx);
+            const adjDurIdx = durColIdx > dayColIdx ? durColIdx - 1 : durColIdx;
+            const lineStr = this._formatSpreadsheetRow(filteredRow, adjDurIdx);
+            if (lineStr) dayGroups.get(groupKey).push(lineStr);
           }
 
           if (dayGroups.size > 1) {
@@ -762,12 +1026,14 @@ class ScheduleImporter {
 
         // Standard sheet
         const sheetText = rows
-          .map(r => (r || []).map(cell => String(cell || '').trim()).filter(Boolean).join('\t'))
+          .map((r, rIdx) => this._formatSpreadsheetRow(r, rIdx > 0 ? durColIdx : -1))
           .filter(Boolean)
           .join('\n');
 
-        pages.push(`=== ${sheetName} ===\n` + sheetText);
-        titles.push(sheetName);
+        if (sheetText.trim()) {
+          pages.push(`=== ${sheetName} ===\n` + sheetText);
+          titles.push(sheetName);
+        }
       }
 
       return { pages, titles };

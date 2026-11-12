@@ -2634,40 +2634,95 @@ function renderSchedulePreview(timers, fileInfo = '') {
   }
 }
 
+function parseDcScheduleTextFallback(rawText) {
+  let parsed = [];
+  if (typeof ScheduleImporter !== 'undefined') {
+    if (typeof ScheduleImporter.parseMultiDaySchedule === 'function') {
+      const sched = ScheduleImporter.parseMultiDaySchedule(rawText, { includeSoundchecks: true, includeChangeovers: true });
+      if (sched && sched.totalTimers > 0) {
+        const dayKeys = Object.keys(sched.days).sort((a, b) => Number(a) - Number(b));
+        dayKeys.forEach(k => {
+          (sched.days[k] || []).forEach(t => parsed.push(t));
+        });
+      }
+    }
+    if (parsed.length === 0 && typeof ScheduleImporter.parseTextToTimers === 'function') {
+      parsed = ScheduleImporter.parseTextToTimers(rawText, { includeSoundchecks: true, includeChangeovers: true });
+    }
+  }
+  if (!parsed || parsed.length === 0) {
+    const lines = String(rawText || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    parsed = lines.map(line => {
+      const timeMatch = line.match(/(\d{1,2}[:.h]\d{2})/i);
+      const durMatch = line.match(/(\d{1,3})\s*(?:m|min|minutos)/i);
+      const nameClean = line
+        .replace(/(\d{1,2}[:.h]\d{2})/g, '')
+        .replace(/(\d{1,3})\s*(?:m|min|minutos)/gi, '')
+        .replace(/^[-—–|;>]\s*/, '')
+        .replace(/\s*[-—–|;>]\s*$/, '')
+        .trim();
+      return {
+        name: nameClean || line,
+        startTime: timeMatch ? timeMatch[1].replace('h', ':').replace('.', ':') : '',
+        duration: durMatch ? parseInt(durMatch[1], 10) * 60000 : 20 * 60000,
+        mode: 'countdown'
+      };
+    });
+  }
+  return parsed;
+}
+
 async function handleScheduleFile(file) {
   if (!file) return;
   try {
     const titleEl = $schedDropzone?.querySelector('.dc-import-dropzone-title');
     if (titleEl) titleEl.textContent = '⏳ A processar ficheiro de horários...';
 
+    const ext = file.name.split('.').pop().toLowerCase();
+    let extractedData = null;
     let text = '';
-    if (typeof TheatreImporter !== 'undefined' && typeof TheatreImporter.extractTextFromFile === 'function') {
+
+    if (typeof ScheduleImporter !== 'undefined') {
+      if (ext === 'pdf' && typeof ScheduleImporter.extractPdfPages === 'function') {
+        extractedData = await ScheduleImporter.extractPdfPages(file);
+        text = Array.isArray(extractedData) ? extractedData.join('\n\n') : '';
+      } else if (typeof ScheduleImporter.extractSpreadsheetOrText === 'function') {
+        extractedData = await ScheduleImporter.extractSpreadsheetOrText(file);
+        text = Array.isArray(extractedData?.pages) ? extractedData.pages.join('\n\n') : String(extractedData || '');
+      }
+    }
+
+    if (!text && typeof TheatreImporter !== 'undefined' && typeof TheatreImporter.extractTextFromFile === 'function') {
       text = await TheatreImporter.extractTextFromFile(file);
     }
 
     let parsedTimers = [];
-    if (typeof ScheduleImporter !== 'undefined' && typeof ScheduleImporter.parseTextToTimers === 'function') {
-      parsedTimers = ScheduleImporter.parseTextToTimers(text);
+    if (extractedData && typeof ScheduleImporter !== 'undefined' && typeof ScheduleImporter.parseMultiDaySchedule === 'function') {
+      const sched = ScheduleImporter.parseMultiDaySchedule(extractedData, { includeSoundchecks: true, includeChangeovers: true });
+      if (sched && sched.totalTimers > 0) {
+        const dayKeys = Object.keys(sched.days).sort((a, b) => Number(a) - Number(b));
+        dayKeys.forEach(k => {
+          (sched.days[k] || []).forEach(t => parsedTimers.push(t));
+        });
+      }
     }
 
     if (!parsedTimers || parsedTimers.length === 0) {
-      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-      parsedTimers = lines.map(line => {
-        const timeMatch = line.match(/(\d{1,2}[:.h]\d{2})/i);
-        const durMatch = line.match(/(\d{1,3})\s*(?:m|min|minutos)/i);
-        const nameClean = line.replace(/(\d{1,2}[:.h]\d{2})/g, '').replace(/(\d{1,3})\s*(?:m|min|minutos)/gi, '').replace(/^[-—–|;>]\s*/, '').replace(/\s*[-—–|;>]\s*$/, '').trim();
-        return {
-          name: nameClean || line,
-          startTime: timeMatch ? timeMatch[1].replace('h', ':').replace('.', ':') : '',
-          duration: durMatch ? parseInt(durMatch[1], 10) * 60000 : 20 * 60000,
-          mode: 'countdown'
-        };
-      });
+      parsedTimers = parseDcScheduleTextFallback(text);
     }
 
-    if ($schedImportTextarea) $schedImportTextarea.value = text;
-    renderSchedulePreview(parsedTimers, `${file.name} (${Math.round(file.size / 1024)} KB)`);
-    if (titleEl) titleEl.textContent = `✓ ${file.name} carregado com sucesso`;
+    if ($schedImportTextarea) {
+      if (parsedTimers.length > 0) {
+        $schedImportTextarea.value = parsedTimers.map(t => {
+          const durMins = Math.max(1, Math.round((t.duration || 0) / 60000));
+          return `${t.startTime ? t.startTime + ' - ' : ''}${t.name} (${durMins} min)`;
+        }).join('\n');
+      } else {
+        $schedImportTextarea.value = text;
+      }
+    }
+    renderSchedulePreview(parsedTimers, `${file.name} (${Math.max(1, Math.round(file.size / 1024))} KB)`);
+    if (titleEl) titleEl.textContent = `✓ ${file.name} carregado com sucesso (${parsedTimers.length} itens)`;
   } catch (err) {
     console.error('Error importing schedule file:', err);
     alert('Erro ao processar ficheiro de horários: ' + (err.message || err));
@@ -2681,6 +2736,7 @@ if ($schedDropzone && $schedFileInput) {
   $schedFileInput.addEventListener('change', (e) => {
     const file = e.target.files?.[0];
     if (file) handleScheduleFile(file);
+    $schedFileInput.value = '';
   });
 
   $schedDropzone.addEventListener('dragover', (e) => {
@@ -2703,30 +2759,17 @@ if ($schedImportTextarea) {
       renderSchedulePreview([]);
       return;
     }
-    let parsed = [];
-    if (typeof ScheduleImporter !== 'undefined' && typeof ScheduleImporter.parseTextToTimers === 'function') {
-      parsed = ScheduleImporter.parseTextToTimers(val);
-    }
-    if (!parsed || parsed.length === 0) {
-      const lines = val.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-      parsed = lines.map(line => {
-        const timeMatch = line.match(/(\d{1,2}[:.h]\d{2})/i);
-        const durMatch = line.match(/(\d{1,3})\s*(?:m|min|minutos)/i);
-        const nameClean = line.replace(/(\d{1,2}[:.h]\d{2})/g, '').replace(/(\d{1,3})\s*(?:m|min|minutos)/gi, '').replace(/^[-—–|;>]\s*/, '').trim();
-        return {
-          name: nameClean || line,
-          startTime: timeMatch ? timeMatch[1].replace('h', ':').replace('.', ':') : '',
-          duration: durMatch ? parseInt(durMatch[1], 10) * 60000 : 20 * 60000,
-          mode: 'countdown'
-        };
-      });
-    }
+    const parsed = parseDcScheduleTextFallback(val);
     renderSchedulePreview(parsed, 'Texto colado');
   });
 }
 
 if ($schedImportConfirm) {
   $schedImportConfirm.addEventListener('click', () => {
+    if ((!stagedScheduleTimers || stagedScheduleTimers.length === 0) && $schedImportTextarea && $schedImportTextarea.value.trim()) {
+      stagedScheduleTimers = parseDcScheduleTextFallback($schedImportTextarea.value);
+    }
+
     if (!stagedScheduleTimers || stagedScheduleTimers.length === 0) {
       alert('Nenhum artista detetado para importar.');
       return;
@@ -2736,18 +2779,29 @@ if ($schedImportConfirm) {
     const mode = modeRadio?.value || 'replace';
 
     if (mode === 'replace') {
-      client.clearAllTimers();
-    }
-
-    stagedScheduleTimers.forEach(t => {
-      client.createTimer({
+      client.replaceAllTimers(stagedScheduleTimers.map(t => ({
         name: t.name,
         duration: t.duration || 20 * 60000,
         startTime: t.startTime || '',
         notes: t.notes || '',
         mode: 'countdown'
+      })));
+    } else {
+      stagedScheduleTimers.forEach(t => {
+        client.createTimer({
+          name: t.name,
+          duration: t.duration || 20 * 60000,
+          startTime: t.startTime || '',
+          notes: t.notes || '',
+          mode: 'countdown'
+        });
       });
-    });
+    }
+
+    if (typeof renderStagePhase === 'function') {
+      lastRenderedStructureSig = '__FORCE__';
+      renderStagePhase();
+    }
 
     $modalImportSchedule.style.display = 'none';
   });

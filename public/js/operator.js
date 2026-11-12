@@ -1029,14 +1029,19 @@ if ($opImportFile) {
         const confirmAll = confirm(`O ficheiro contém ${sched.totalDays} dias (${sched.totalTimers} artistas no total):\n\n${daySummary}\n\nDeseja importar TODOS os ${sched.totalDays} dias automaticamente?`);
         if (confirmAll) {
           client.replaceAllDays(sched.days);
+          renderDayTabs(true);
+          render();
           alert(`✓ ${sched.totalDays} dias importados com sucesso!`);
           return;
         } else {
           const ans = prompt(`Qual dia específico deseja carregar para o dia atual? (1 a ${sched.totalDays})`, '1');
           const dKey = String(parseInt(ans, 10) || 1);
           if (sched.days[dKey]) {
-            client.replaceDayTimers(state?.currentDay || 1, sched.days[dKey]);
-            alert(`✓ Dia ${state?.currentDay || 1} atualizado com ${sched.days[dKey].length} artistas!`);
+            const targetDay = state?.activeDayId || state?.currentDay || 1;
+            client.replaceDayTimers(targetDay, sched.days[dKey]);
+            renderDayTabs(true);
+            render();
+            alert(`✓ Dia ${targetDay} atualizado com ${sched.days[dKey].length} artistas!`);
           }
           return;
         }
@@ -1044,6 +1049,8 @@ if ($opImportFile) {
         const singleTimers = sched.days['1'] || [];
         if (confirm(`Encontrados ${singleTimers.length} artistas (${singleTimers.map(p => p.name).join(', ')}). Carregar agora?`)) {
           client.replaceAllTimers(singleTimers);
+          renderDayTabs(true);
+          render();
         }
       }
     } catch (err) {

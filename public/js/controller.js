@@ -1391,26 +1391,55 @@ function formatScheduleSummaryText(sched) {
   return dayKeys.map(k => {
     const title = sched.dayTitles[k] || `Dia ${k}`;
     const timers = sched.days[k] || [];
-    const lines = timers.map(t => `${t.name.padEnd(28, ' ')} ${t.startTime}`);
+    const lines = timers.map(t => {
+      const durMin = Math.max(1, Math.round((t.duration || 0) / 60000));
+      return `${t.name.padEnd(28, ' ')} ${t.startTime} (${durMin}min)`;
+    });
     return `=== ${title.toUpperCase()} ===\n${lines.join('\n')}`;
   }).join('\n\n');
+}
+
+function getEffectiveImportSchedule() {
+  const opts = getImportOptions();
+  if (rawExtractedData) {
+    currentSchedule = ScheduleImporter.parseMultiDaySchedule(rawExtractedData, opts);
+    if (
+      currentSchedule.isMultiDay &&
+      $importPageSelector &&
+      $importPageSelector.style.display !== 'none' &&
+      $importPageSelect &&
+      $importPageSelect.value &&
+      $importPageSelect.value !== 'all_days'
+    ) {
+      const dKey = String($importPageSelect.value);
+      const dayTimers = currentSchedule.days[dKey] || [];
+      return {
+        isMultiDay: false,
+        totalDays: 1,
+        days: { '1': dayTimers },
+        dayTitles: { '1': currentSchedule.dayTitles[dKey] || `Dia ${dKey}` },
+        totalTimers: dayTimers.length,
+        selectedDayNum: parseInt(dKey, 10) || 1
+      };
+    }
+    return currentSchedule;
+  }
+  const text = ($importTextArea ? $importTextArea.value : '').trim();
+  if (!text) {
+    return { isMultiDay: false, totalDays: 0, days: {}, dayTitles: {}, totalTimers: 0 };
+  }
+  return ScheduleImporter.parseMultiDaySchedule(text, opts);
 }
 
 function updateImportPreview() {
   if (!$importTextArea || !$importPreviewBox) return;
   const text = $importTextArea.value.trim();
-  if (!text) {
+  if (!text && !rawExtractedData) {
     $importPreviewBox.style.display = 'none';
     return;
   }
 
-  const opts = getImportOptions();
-  let sched = null;
-  if (currentSchedule && currentSchedule.isMultiDay && $importPageSelect && $importPageSelect.value === 'all_days') {
-    sched = currentSchedule;
-  } else {
-    sched = ScheduleImporter.parseMultiDaySchedule(text, opts);
-  }
+  const sched = getEffectiveImportSchedule();
 
   if (sched.totalTimers === 0) {
     $importPreviewBox.style.display = 'block';
@@ -1491,8 +1520,15 @@ async function handleProcessImportFile(file) {
       $importTextArea.value = formatScheduleSummaryText(currentSchedule);
     } else {
       if ($importPageSelector) $importPageSelector.style.display = 'none';
-      const singleText = Array.isArray(rawExtractedData) ? (rawExtractedData[0] || '') : (rawExtractedData.pages ? rawExtractedData.pages[0] : '');
-      $importTextArea.value = singleText;
+      if ($importPageSelect) $importPageSelect.innerHTML = '';
+      if (currentSchedule.totalTimers > 0) {
+        $importTextArea.value = formatScheduleSummaryText(currentSchedule);
+      } else {
+        const allText = Array.isArray(rawExtractedData)
+          ? rawExtractedData.filter(Boolean).join('\n\n')
+          : ((rawExtractedData && Array.isArray(rawExtractedData.pages)) ? rawExtractedData.pages.filter(Boolean).join('\n\n') : '');
+        $importTextArea.value = allText;
+      }
     }
 
     updateImportPreview();
@@ -1536,6 +1572,7 @@ if ($importFileInput) {
   $importFileInput.addEventListener('change', (e) => {
     const file = e.target.files?.[0];
     if (file) handleProcessImportFile(file);
+    $importFileInput.value = '';
   });
 }
 
@@ -1543,8 +1580,15 @@ function handleImportOptionsChanged() {
   const opts = getImportOptions();
   if (rawExtractedData) {
     currentSchedule = ScheduleImporter.parseMultiDaySchedule(rawExtractedData, opts);
-    if (currentSchedule.isMultiDay && $importPageSelect && $importPageSelect.value === 'all_days') {
+    if (!currentSchedule.isMultiDay || ($importPageSelect && $importPageSelect.value === 'all_days')) {
       $importTextArea.value = formatScheduleSummaryText(currentSchedule);
+    } else if ($importPageSelect && $importPageSelect.value) {
+      const dKey = String($importPageSelect.value);
+      const dTimers = currentSchedule.days[dKey] || [];
+      $importTextArea.value = dTimers.map(t => {
+        const durMin = Math.max(1, Math.round((t.duration || 0) / 60000));
+        return `${t.name.padEnd(28, ' ')} ${t.startTime} (${durMin}min)`;
+      }).join('\n');
     }
   }
   updateImportPreview();
@@ -1574,7 +1618,13 @@ if ($importCancel && $importModal) {
 }
 
 if ($importTextArea) {
-  $importTextArea.addEventListener('input', updateImportPreview);
+  $importTextArea.addEventListener('input', () => {
+    rawExtractedData = null;
+    currentSchedule = null;
+    if ($importPageSelector) $importPageSelector.style.display = 'none';
+    if ($importPageSelect) $importPageSelect.innerHTML = '';
+    updateImportPreview();
+  });
 }
 
 if ($importPageSelect) {
@@ -1587,7 +1637,10 @@ if ($importPageSelect) {
       const dKey = String(val);
       const dTimers = currentSchedule.days[dKey] || [];
       if (dTimers.length > 0) {
-        $importTextArea.value = dTimers.map(t => `${t.name.padEnd(24, ' ')} ${t.startTime}`).join('\n');
+        $importTextArea.value = dTimers.map(t => {
+          const durMin = Math.max(1, Math.round((t.duration || 0) / 60000));
+          return `${t.name.padEnd(28, ' ')} ${t.startTime} (${durMin}min)`;
+        }).join('\n');
       } else {
         const idx = parseInt(val, 10) - 1;
         const pageList = Array.isArray(rawExtractedData) ? rawExtractedData : (rawExtractedData?.pages || []);
@@ -1600,39 +1653,49 @@ if ($importPageSelect) {
 
 if ($importConfirm) {
   $importConfirm.addEventListener('click', () => {
-    const opts = getImportOptions();
-    let sched = null;
-    if (currentSchedule && currentSchedule.isMultiDay && $importPageSelect && $importPageSelect.value === 'all_days') {
-      sched = currentSchedule;
-    } else {
-      sched = ScheduleImporter.parseMultiDaySchedule($importTextArea.value, opts);
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
     }
 
+    const sched = getEffectiveImportSchedule();
+
     if (sched.totalTimers === 0) {
-      alert('Nenhum artista com horário (ex: 23h00 - 00h15 ou 23:00) foi encontrado no texto.');
+      alert('Nenhum artista com horário (ex: 23h00 - 00h15 ou 23:00) foi encontrado no ficheiro ou texto.');
       return;
     }
 
-    if ($importPageSelect && $importPageSelect.value !== 'all_days' && $importPageSelect.value) {
-      // Single day chosen
-      const dayNum = parseInt($importPageSelect.value, 10) || 1;
-      const dayTimers = (currentSchedule && currentSchedule.days[String(dayNum)]) || sched.days[String(dayNum)] || sched.days['1'] || [];
+    if (sched.selectedDayNum) {
+      // Single day chosen from multi-day selector
+      const dayNum = sched.selectedDayNum;
+      const dayTimers = sched.days['1'] || [];
       if (dayTimers.length === 0) {
         alert('Nenhum artista encontrado para o dia selecionado.');
         return;
       }
       client.replaceDayTimers(dayNum, dayTimers);
+      if (typeof client.switchDay === 'function') {
+        client.switchDay(dayNum);
+      }
+      lastRenderedStructureSig = '__FORCE__';
+      renderDayTabs(true);
+      renderTimers();
       $importModal.classList.remove('visible');
       showToast(`✓ Dia ${dayNum} atualizado com ${dayTimers.length} artistas!`);
     } else if (sched.isMultiDay) {
       // Import all days at once
       client.replaceAllDays(sched.days);
+      lastRenderedStructureSig = '__FORCE__';
+      renderDayTabs(true);
+      renderTimers();
       $importModal.classList.remove('visible');
       showToast(`✓ ${sched.totalDays} dias e ${sched.totalTimers} artistas importados com sucesso!`);
     } else {
       // Single day import
       const singleTimers = sched.days['1'] || [];
       client.replaceAllTimers(singleTimers);
+      lastRenderedStructureSig = '__FORCE__';
+      renderDayTabs(true);
+      renderTimers();
       $importModal.classList.remove('visible');
       showToast(`✓ ${singleTimers.length} artistas importados com sucesso!`);
     }

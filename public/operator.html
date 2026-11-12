@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Modo Operador (Mobile)</title>
-  <link rel="stylesheet" href="css/common.css?v=101">
-  <link rel="stylesheet" href="css/operator.css?v=101">
+  <link rel="stylesheet" href="css/common.css?v=102">
+  <link rel="stylesheet" href="css/operator.css?v=102">
 </head>
 <body>
   <div class="op-app">
@@ -274,7 +274,7 @@
         <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center;">
           <div id="op-day-tabs" style="display: flex; gap: 3px; align-items: center; flex-wrap: wrap;"></div>
           <label for="op-import-file" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.7rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff; cursor: pointer;">📂 Ficheiro</label>
-          <input type="file" id="op-import-file" accept=".pdf,.xlsx,.xls,.csv,.txt" style="display: none;">
+          <input type="file" id="op-import-file" accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.txt" style="display: none;">
           <button id="op-clear-event" class="btn btn-sm btn-danger" style="padding: 3px 7px; font-size: 0.7rem;" title="Limpar todos os artistas do dia atual">🧹 Limpar</button>
         </div>
       </div>
@@ -285,22 +285,23 @@
 
     <!-- Footer Version Indicator -->
     <footer style="text-align: center; padding: 14px 0 8px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-      StageTimer Operador • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 6px; border-radius: 4px; font-weight: 700;">v101</span>
+      StageTimer Operador • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 6px; border-radius: 4px; font-weight: 700;">v102</span>
     </footer>
   </div>
 
-  <!-- PDF.js & SheetJS for client-side file parsing -->
+  <!-- PDF.js, SheetJS & Mammoth for client-side file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/schedule-importer.js?v=101"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="js/schedule-importer.js?v=102"></script>
 
   <!-- Access Control -->
-  <script src="js/auth.js?v=101"></script>
+  <script src="js/auth.js?v=102"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=101"></script>
-  <script src="js/local-sync.js?v=101"></script>
-  <script src="js/operator.js?v=101"></script>
+  <script src="js/pwa.js?v=102"></script>
+  <script src="js/local-sync.js?v=102"></script>
+  <script src="js/operator.js?v=102"></script>
   <script>
     // Screen Wake Lock API — Keep Operator Screen Always On
     (function() {
