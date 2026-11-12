@@ -45,12 +45,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="StageTimer">
   <meta name="theme-color" content="#0f0f1a">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
-  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Modo Operador (Mobile)</title>
   <link rel="stylesheet" href="css/common.css?v=93">
   <link rel="stylesheet" href="css/operator.css?v=93">
@@ -282,12 +285,39 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="js/schedule-importer.js?v=93"></script>
 
-  <!-- Access Control (Password: 1379 or brito) -->
+  <!-- Access Control -->
   <script src="js/auth.js?v=93"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <script src="js/pwa.js?v=93"></script>
   <script src="js/local-sync.js?v=93"></script>
   <script src="js/operator.js?v=93"></script>
+  <script>
+    // Screen Wake Lock API — Keep Operator Screen Always On
+    (function() {
+      let wakeLockSentinel = null;
+      async function requestOperatorWakeLock() {
+        if (!('wakeLock' in navigator) || !navigator.wakeLock || typeof navigator.wakeLock.request !== 'function') {
+          return;
+        }
+        if (document.visibilityState !== 'visible') return;
+        if (wakeLockSentinel && !wakeLockSentinel.released) return;
+        try {
+          wakeLockSentinel = await navigator.wakeLock.request('screen');
+          wakeLockSentinel.addEventListener('release', () => {
+            wakeLockSentinel = null;
+          });
+        } catch (_) {
+          // Silent fallback if browser/device does not support or blocks Wake Lock
+        }
+      }
+      requestOperatorWakeLock();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          requestOperatorWakeLock();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
