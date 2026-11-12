@@ -1579,8 +1579,11 @@
 
   function formatEmbedUrl(rawUrl) {
     if (!rawUrl) return '';
-    const url = rawUrl.trim();
-    const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    let url = rawUrl.trim();
+    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(url) && !url.startsWith('/')) {
+      url = 'http://' + url;
+    }
+    const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     if (ytMatch) {
       return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&playsinline=1`;
     }
@@ -1804,16 +1807,23 @@
     const cleanRoom = String(roomCode).toUpperCase().trim();
     let broadcaster = mvmActiveBroadcasters.get(cleanRoom);
     if (!broadcaster) {
-      broadcaster = { stream, peers: new Map() };
+      broadcaster = { stream, peers: new Map(), iceQueues: new Map() };
       mvmActiveBroadcasters.set(cleanRoom, broadcaster);
     } else {
       if (broadcaster.stream && broadcaster.stream !== stream) {
         try { broadcaster.stream.getTracks().forEach(t => t.stop()); } catch (_) {}
       }
       broadcaster.stream = stream;
+      if (!broadcaster.iceQueues) broadcaster.iceQueues = new Map();
     }
 
-    if (masterClient.mqttClient && masterClient.mqttClient.connected) {
+    if (typeof masterClient.sendWebRtcSignal === 'function') {
+      masterClient.sendWebRtcSignal(cleanRoom, {
+        type: 'broadcaster-ready',
+        roomCode: cleanRoom,
+        from: 'master'
+      });
+    } else if (masterClient.mqttClient && masterClient.mqttClient.connected) {
       const signalTopic = `stagetimer_v10/${cleanRoom}/webrtc_signal`;
       masterClient.mqttClient.subscribe(signalTopic);
       masterClient.mqttClient.publish(signalTopic, JSON.stringify({
@@ -1824,55 +1834,124 @@
     }
   }
 
-  function handleWebRtcSignalingMessage(topic, msg) {
+  async function ensureBroadcasterStreamForRoom(room) {
+    const cleanRoom = String(room || '').toUpperCase().trim();
+    let broadcaster = mvmActiveBroadcasters.get(cleanRoom);
+    if (broadcaster && broadcaster.stream && broadcaster.stream.getTracks().some(t => t.readyState === 'live')) {
+      return broadcaster;
+    }
+
+    let videoCfg = stagesStateMap.get(cleanRoom)?.video;
+    try {
+      const rawVid = localStorage.getItem(`stagetimer_v10_video_${cleanRoom}`);
+      if (rawVid) {
+        const parsedVid = JSON.parse(rawVid);
+        if (parsedVid && (!videoCfg || (parsedVid.updatedAt || 0) >= (videoCfg.updatedAt || 0))) {
+          videoCfg = parsedVid;
+        }
+      }
+    } catch (_) {}
+
+    if (!videoCfg || !videoCfg.enabled || videoCfg.sourceType !== 'virtual_cam') return null;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return null;
+
+    try {
+      const savedDevId = videoCfg.deviceId || localStorage.getItem('stagetimer_master_vcam_device') || '';
+      const constraints = savedDevId
+        ? { video: { deviceId: { exact: savedDevId }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }
+        : { video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
+      let stream = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (_) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
+      if (stream) {
+        setupWebRtcBroadcaster(cleanRoom, stream);
+        return mvmActiveBroadcasters.get(cleanRoom);
+      }
+    } catch (err) {
+      console.warn('Erro ao reativar câmara para WebRTC:', err);
+    }
+    return null;
+  }
+
+  async function handleWebRtcSignalingMessage(topic, msg) {
     try {
       const match = topic.match(/^stagetimer_v10\/([^/]+)\/webrtc_signal$/);
       if (!match) return;
       const room = match[1].toUpperCase();
-      const broadcaster = mvmActiveBroadcasters.get(room);
-      if (!broadcaster || !broadcaster.stream) return;
-
       if (!msg || !msg.viewerId || msg.from === 'master') return;
       const viewerId = msg.viewerId;
 
+      let broadcaster = mvmActiveBroadcasters.get(room);
+      if (msg.type === 'viewer-join' && (!broadcaster || !broadcaster.stream || !broadcaster.stream.getTracks().some(t => t.readyState === 'live'))) {
+        broadcaster = await ensureBroadcasterStreamForRoom(room);
+      }
+      if (!broadcaster || !broadcaster.stream) return;
+      if (!broadcaster.iceQueues) broadcaster.iceQueues = new Map();
+
       if (msg.type === 'viewer-join') {
+        const existingPc = broadcaster.peers.get(viewerId);
+        if (existingPc) {
+          if (existingPc._createdAt && (Date.now() - existingPc._createdAt < 3000) && existingPc.signalingState !== 'closed') {
+            return;
+          }
+          try { existingPc.close(); } catch (_) {}
+        }
+
         const pc = new RTCPeerConnection({
-          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun.cloudflare.com:3478' }
+          ]
         });
+        pc._createdAt = Date.now();
         broadcaster.peers.set(viewerId, pc);
+        broadcaster.iceQueues.set(viewerId, []);
 
         broadcaster.stream.getTracks().forEach(track => pc.addTrack(track, broadcaster.stream));
 
         pc.onicecandidate = (event) => {
-          if (event.candidate && masterClient.mqttClient && masterClient.mqttClient.connected) {
-            masterClient.mqttClient.publish(topic, JSON.stringify({
+          if (event.candidate) {
+            masterClient.sendWebRtcSignal(room, {
               type: 'candidate',
               candidate: event.candidate,
               viewerId,
               from: 'master'
-            }));
+            });
           }
         };
 
         pc.createOffer().then(offer => pc.setLocalDescription(offer)).then(() => {
-          if (masterClient.mqttClient && masterClient.mqttClient.connected) {
-            masterClient.mqttClient.publish(topic, JSON.stringify({
-              type: 'offer',
-              offer: pc.localDescription,
-              viewerId,
-              from: 'master'
-            }));
-          }
+          masterClient.sendWebRtcSignal(room, {
+            type: 'offer',
+            offer: pc.localDescription,
+            viewerId,
+            from: 'master'
+          });
         }).catch(err => console.warn('Erro ao criar offer WebRTC:', err));
-      } else if (msg.type === 'answer') {
+      } else if (msg.type === 'answer' && msg.answer) {
         const pc = broadcaster.peers.get(viewerId);
         if (pc && pc.signalingState !== 'stable') {
-          pc.setRemoteDescription(new RTCSessionDescription(msg.answer)).catch(() => {});
+          await pc.setRemoteDescription(new RTCSessionDescription(msg.answer)).catch(() => {});
+          const queue = broadcaster.iceQueues.get(viewerId) || [];
+          broadcaster.iceQueues.set(viewerId, []);
+          for (const cand of queue) {
+            try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (_) {}
+          }
         }
-      } else if (msg.type === 'candidate') {
+      } else if (msg.type === 'candidate' && msg.candidate) {
         const pc = broadcaster.peers.get(viewerId);
-        if (pc && pc.remoteDescription) {
-          pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(() => {});
+        if (pc) {
+          if (pc.remoteDescription && pc.remoteDescription.type) {
+            pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(() => {});
+          } else {
+            const queue = broadcaster.iceQueues.get(viewerId) || [];
+            queue.push(msg.candidate);
+            broadcaster.iceQueues.set(viewerId, queue);
+          }
         }
       }
     } catch (_) {}
@@ -1927,6 +2006,8 @@
       const sourceType = document.querySelector('input[name="mvm-source-type"]:checked')?.value || 'virtual_cam';
       const rawUrl = $mvmStreamUrl ? $mvmStreamUrl.value.trim() : '';
       const chosenDevId = $mvmVcamSelect ? $mvmVcamSelect.value : '';
+      const chosenOpt = $mvmVcamSelect && $mvmVcamSelect.selectedOptions ? $mvmVcamSelect.selectedOptions[0] : null;
+      const chosenDevLabel = chosenOpt ? chosenOpt.textContent.replace(/^🎥 \[OBS Virtual Cam\]\s*|^📹\s*/, '').trim() : '';
 
       if (chosenDevId) {
         localStorage.setItem('stagetimer_master_vcam_device', chosenDevId);
@@ -1936,10 +2017,19 @@
         enabled,
         sourceType,
         url: formatEmbedUrl(rawUrl),
+        deviceId: chosenDevId || '',
+        deviceLabel: chosenDevLabel || '',
         label: currentVideoStageTitle || currentVideoStageCode
       };
 
       if (enabled && sourceType === 'virtual_cam') {
+        if (!mvmMediaStream && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          try {
+            mvmMediaStream = await navigator.mediaDevices.getUserMedia(
+              chosenDevId ? { video: { deviceId: { exact: chosenDevId } }, audio: false } : { video: true, audio: false }
+            );
+          } catch (_) {}
+        }
         if (mvmMediaStream) {
           setupWebRtcBroadcaster(currentVideoStageCode, mvmMediaStream);
           // Hand off ownership of stream to broadcaster so closeMasterVideoModal does NOT stop tracks!

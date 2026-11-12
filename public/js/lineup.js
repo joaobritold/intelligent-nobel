@@ -416,31 +416,13 @@ function render() {
 
     const activeSlot = cascadeData?.slots?.find(s => s.id === activeTimer.id);
     if (activeSlot && activeSlot.planned && activeSlot.planned.hasValue) {
-      const delayBadgeHtml = activeSlot.isDelayed
-        ? `<span class="lineup-now-delay-pill warn">⚠️ +${activeSlot.delayMins}m atraso</span>`
-        : (activeSlot.isEarly ? `<span class="lineup-now-delay-pill early">⚡ ${activeSlot.delayStr} adiantado</span>` : `<span class="lineup-now-delay-pill ok">✓ No horário</span>`);
-
       $nowSlot.innerHTML = `
-        <div class="lineup-now-sched-box">
-          <div class="now-sched-row">
-            <span class="now-sched-tag planned">PREVISTO</span>
-            <span class="now-sched-val">${escapeHtml(activeSlot.planned.slotRange)}</span>
-          </div>
-          <div class="now-sched-row">
-            <span class="now-sched-tag real">REAL (HOJE)</span>
-            <span class="now-sched-val font-accent">${escapeHtml(activeSlot.real.slotRange)}</span>
-            ${delayBadgeHtml}
-          </div>
-        </div>
+        <div class="lineup-now-slot-prev">Previsto: ${escapeHtml(activeSlot.planned.slotRange)}</div>
+        <div class="lineup-now-slot-real">Real: ${escapeHtml(activeSlot.real.slotRange)}</div>
       `;
     } else if (activeSlot) {
       $nowSlot.innerHTML = `
-        <div class="lineup-now-sched-box">
-          <div class="now-sched-row">
-            <span class="now-sched-tag real">REAL (HOJE)</span>
-            <span class="now-sched-val font-accent">${escapeHtml(activeSlot.real.slotRange)}</span>
-          </div>
-        </div>
+        <div class="lineup-now-slot-real">Real: ${escapeHtml(activeSlot.real.slotRange)}</div>
       `;
     } else {
       $nowSlot.textContent = activeTimer.startTime ? `Horário: ${activeTimer.startTime}` : `Duração: ${formatTime(activeTimer.duration)}`;
@@ -460,7 +442,7 @@ function render() {
   // Right table: All Artists (only rebuild DOM when lineup/slots/state changes)
   const sig = state.timers.map((t, idx) => {
     const s = slots[idx];
-    return `${t.id}:${t.name}:${s?.real?.slotRange || ''}:${s?.planned?.slotRange || ''}:${s?.delayStr || ''}:${t.duration}:${t.notes || ''}:${t.state}:${idx === activeIdx}`;
+    return `${t.id}:${t.name}:${s?.real?.slotRange || ''}:${s?.planned?.slotRange || ''}:${t.duration}:${t.notes || ''}:${t.state}:${idx === activeIdx}`;
   }).join('|');
 
   if (sig !== lastLineupSig) {
@@ -491,35 +473,14 @@ function render() {
       }
 
       const slot = slots[idx];
-      const plannedStart = slot?.planned?.hasValue ? slot.planned.startStr : (t.startTime ? t.startTime.trim() : '--:--');
-      const plannedEnd = slot?.planned?.hasValue ? slot.planned.endStr : '';
       const realStart = slot?.real?.startStr || '--:--';
       const realEnd = slot?.real?.endStrClean || slot?.real?.endStr || '';
-      const isDelayed = Boolean(slot?.isDelayed);
-      const isEarly = Boolean(slot?.isEarly);
-      const delayStr = slot?.delayStr || '0m';
 
       return `
         <div class="${rowClass}" data-timer-id="${t.id}">
           <div class="lineup-col-time">
-            <div class="lineup-time-chip chip-planned" title="Horário Previsto original da folha de sala">
-              <span class="chip-tag">PREV</span>
-              <div class="chip-hours">
-                <span class="chip-time-in">${escapeHtml(plannedStart)}</span>
-                ${plannedEnd ? `<span class="chip-time-out">${escapeHtml(plannedEnd)}</span>` : ''}
-              </div>
-            </div>
-            <div class="lineup-time-chip chip-real ${isDelayed ? 'is-delayed' : (isEarly ? 'is-early' : '')}" title="Horário Real / Estimado (Hora em que vai mesmo atuar no relógio de hoje)">
-              <div class="chip-tag-row">
-                <span class="chip-tag">REAL</span>
-                ${isDelayed ? `<span class="chip-delay-tag warn">${escapeHtml(delayStr)}</span>` : ''}
-                ${isEarly ? `<span class="chip-delay-tag early">${escapeHtml(delayStr)}</span>` : ''}
-              </div>
-              <div class="chip-hours">
-                <span class="chip-time-in">${escapeHtml(realStart)}</span>
-                ${realEnd ? `<span class="chip-time-out">${escapeHtml(realEnd)}</span>` : ''}
-              </div>
-            </div>
+            <span class="lineup-time-in">${escapeHtml(realStart)}</span>
+            ${realEnd ? `<span class="lineup-time-out">${escapeHtml(realEnd)}</span>` : ''}
           </div>
           <div class="lineup-col-artist">
             <span class="lineup-artist-name">${escapeHtml(t.name)}</span>
@@ -528,6 +489,10 @@ function render() {
           <div class="lineup-col-duration">${formatTime(t.duration)}</div>
           <div class="lineup-col-status">
             <span class="lineup-status-pill ${statusClass}">${statusText}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
           </div>
         </div>
       `;
@@ -745,8 +710,11 @@ function stopCurrentVideoStream() {
 
 function formatEmbedUrl(rawUrl) {
   if (!rawUrl) return '';
-  const url = rawUrl.trim();
-  const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  let url = rawUrl.trim();
+  if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(url) && !url.startsWith('/')) {
+    url = 'http://' + url;
+  }
+  const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
   if (ytMatch) {
     return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&playsinline=1`;
   }
@@ -759,8 +727,70 @@ function formatEmbedUrl(rawUrl) {
   return url;
 }
 
-// Connect to Master WebRTC Broadcaster
-function connectWebRtcToMaster(cleanRoom) {
+let webrtcIceQueue = [];
+const myViewerId = client.clientId || client.deviceUuid || ('viewer_' + Math.random().toString(36).substr(2, 6));
+
+async function tryDirectLocalCamera(cfg) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices || !navigator.mediaDevices.getUserMedia) {
+    return false;
+  }
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoInputs = devices.filter(d => d.kind === 'videoinput');
+    if (videoInputs.length === 0) return false;
+
+    const targetDevId = cfg?.deviceId || localStorage.getItem('stagetimer_master_vcam_device') || '';
+    const targetDevLabel = (cfg?.deviceLabel || '').toLowerCase().trim();
+
+    let matchedDev = null;
+    if (targetDevId) {
+      matchedDev = videoInputs.find(d => d.deviceId === targetDevId);
+    }
+    if (!matchedDev && targetDevLabel) {
+      matchedDev = videoInputs.find(d => (d.label || '').toLowerCase().trim() === targetDevLabel);
+    }
+    if (!matchedDev) {
+      matchedDev = videoInputs.find(d => {
+        const lbl = (d.label || '').toLowerCase();
+        return lbl.includes('obs') || lbl.includes('virtual');
+      });
+    }
+    // If permission was already granted on this machine (labels are visible) and user configured Virtual Cam on this PC
+    if (!matchedDev && localStorage.getItem('stagetimer_master_vcam_device') && videoInputs[0]?.label) {
+      matchedDev = videoInputs[0];
+    }
+
+    if (!matchedDev || !matchedDev.label) return false;
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { deviceId: { exact: matchedDev.deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+
+    if (webrtcJoinInterval) {
+      clearInterval(webrtcJoinInterval);
+      webrtcJoinInterval = null;
+    }
+    if (currentWebRtcPeer) {
+      try { currentWebRtcPeer.close(); } catch (_) {}
+      currentWebRtcPeer = null;
+    }
+
+    currentMediaStream = stream;
+    if ($videoElement) {
+      $videoElement.srcObject = stream;
+      $videoElement.muted = isVideoMuted;
+      await $videoElement.play().catch(() => {});
+    }
+    showVideoActive(cfg?.label || matchedDev.label || 'OBS Virtual Cam');
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+// Connect to Master WebRTC Broadcaster (or direct local Virtual Cam if on same PC)
+async function connectWebRtcToMaster(cleanRoom, cfg = null) {
   if (!cleanRoom) return;
   if (webrtcJoinInterval) {
     clearInterval(webrtcJoinInterval);
@@ -770,26 +800,34 @@ function connectWebRtcToMaster(cleanRoom) {
     try { currentWebRtcPeer.close(); } catch (_) {}
     currentWebRtcPeer = null;
   }
+  webrtcIceQueue = [];
 
+  // 1. Fast path: if this screen is on the same computer where the camera/Virtual Cam is available, open directly!
+  const openedLocally = await tryDirectLocalCamera(cfg || state?.video);
+  if (openedLocally) return;
+
+  // 2. Remote path: connect via WebRTC to the Master broadcaster
   showVideoPlaceholder('A ligar à emissão do Master...');
 
-  const myUuid = client.deviceUuid || ('viewer_' + Math.random().toString(36).substr(2, 6));
-  const signalTopic = `stagetimer_v10/${cleanRoom}/webrtc_signal`;
-
   const pc = new RTCPeerConnection({
-    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun.cloudflare.com:3478' }
+    ]
   });
   currentWebRtcPeer = pc;
 
   pc.ontrack = (event) => {
-    if (event.streams && event.streams[0]) {
+    const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
+    if (stream) {
       if (webrtcJoinInterval) {
         clearInterval(webrtcJoinInterval);
         webrtcJoinInterval = null;
       }
-      currentMediaStream = event.streams[0];
+      currentMediaStream = stream;
       if ($videoElement) {
-        $videoElement.srcObject = event.streams[0];
+        $videoElement.srcObject = stream;
         $videoElement.muted = isVideoMuted;
         $videoElement.play().catch(() => {});
       }
@@ -798,28 +836,29 @@ function connectWebRtcToMaster(cleanRoom) {
   };
 
   pc.onicecandidate = (event) => {
-    if (event.candidate && client.mqttClient && client.mqttClient.connected) {
-      client.mqttClient.publish(signalTopic, JSON.stringify({
-        type: 'candidate',
-        candidate: event.candidate,
-        viewerId: myUuid,
-        from: myUuid
-      }));
+    if (event.candidate) {
+      if (typeof client.sendWebRtcSignal === 'function') {
+        client.sendWebRtcSignal(cleanRoom, {
+          type: 'candidate',
+          candidate: event.candidate,
+          viewerId: myViewerId,
+          from: myViewerId
+        });
+      }
     }
   };
 
   const sendViewerJoin = () => {
-    if (client.mqttClient && client.mqttClient.connected) {
-      client.mqttClient.subscribe(signalTopic);
-      client.mqttClient.publish(signalTopic, JSON.stringify({
+    if (typeof client.sendWebRtcSignal === 'function') {
+      client.sendWebRtcSignal(cleanRoom, {
         type: 'viewer-join',
-        viewerId: myUuid,
+        viewerId: myViewerId,
         roomCode: cleanRoom
-      }));
+      });
     }
   };
 
-  setTimeout(sendViewerJoin, 200);
+  setTimeout(sendViewerJoin, 150);
   webrtcJoinInterval = setInterval(() => {
     if (!$videoElement || !$videoElement.srcObject) {
       sendViewerJoin();
@@ -831,37 +870,48 @@ function connectWebRtcToMaster(cleanRoom) {
 }
 
 // Listen for WebRTC signals from Master
-client.on('webrtc-signal', ({ topic, msg }) => {
+client.on('webrtc-signal', async ({ topic, msg }) => {
   if (!msg) return;
   if (msg.type === 'broadcaster-ready' && msg.from === 'master') {
     if (state?.video?.enabled && state?.video?.sourceType === 'virtual_cam') {
-      connectWebRtcToMaster(roomId || state?.id || 'PALCO1');
+      if (!$videoElement || !$videoElement.srcObject) {
+        connectWebRtcToMaster(roomId || state?.id || 'PALCO1', state?.video);
+      }
     }
     return;
   }
 
   if (!currentWebRtcPeer) return;
-  const myUuid = client.deviceUuid;
-  if (msg.viewerId !== myUuid || msg.from !== 'master') return;
+  if (msg.viewerId !== myViewerId || msg.from !== 'master') return;
+
+  const cleanRoom = (roomId || state?.id || 'PALCO1').toUpperCase().trim();
 
   if (msg.type === 'offer' && msg.offer) {
-    currentWebRtcPeer.setRemoteDescription(new RTCSessionDescription(msg.offer))
-      .then(() => currentWebRtcPeer.createAnswer())
-      .then(answer => currentWebRtcPeer.setLocalDescription(answer))
-      .then(() => {
-        if (client.mqttClient && client.mqttClient.connected) {
-          client.mqttClient.publish(topic, JSON.stringify({
-            type: 'answer',
-            answer: currentWebRtcPeer.localDescription,
-            viewerId: myUuid,
-            from: myUuid
-          }));
-        }
-      })
-      .catch(err => console.warn('Erro ao processar offer WebRTC no Lineup:', err));
+    try {
+      await currentWebRtcPeer.setRemoteDescription(new RTCSessionDescription(msg.offer));
+      const queued = [...webrtcIceQueue];
+      webrtcIceQueue = [];
+      for (const cand of queued) {
+        try { await currentWebRtcPeer.addIceCandidate(new RTCIceCandidate(cand)); } catch (_) {}
+      }
+      const answer = await currentWebRtcPeer.createAnswer();
+      await currentWebRtcPeer.setLocalDescription(answer);
+      if (typeof client.sendWebRtcSignal === 'function') {
+        client.sendWebRtcSignal(cleanRoom, {
+          type: 'answer',
+          answer: currentWebRtcPeer.localDescription,
+          viewerId: myViewerId,
+          from: myViewerId
+        });
+      }
+    } catch (err) {
+      console.warn('Erro ao processar offer WebRTC no Lineup:', err);
+    }
   } else if (msg.type === 'candidate' && msg.candidate) {
-    if (currentWebRtcPeer.remoteDescription) {
+    if (currentWebRtcPeer.remoteDescription && currentWebRtcPeer.remoteDescription.type) {
       currentWebRtcPeer.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(() => {});
+    } else {
+      webrtcIceQueue.push(msg.candidate);
     }
   }
 });
@@ -885,7 +935,7 @@ async function syncLineupVideo(force = false) {
   const url = (cfg?.url || '').trim();
   const label = (cfg?.label || 'Câmara Palco').trim();
 
-  const sig = `${isEnabled}:${sourceType}:${url}:${label}`;
+  const sig = `${isEnabled}:${sourceType}:${url}:${label}:${cfg?.deviceId || ''}:${cfg?.deviceLabel || ''}`;
   if (!force && sig === lastVideoSig) return;
   lastVideoSig = sig;
 
@@ -908,38 +958,48 @@ async function syncLineupVideo(force = false) {
   showVideoActive(label);
 
   if (sourceType === 'virtual_cam') {
-    // ── Mode: OBS Virtual Camera via WebRTC or Local ──
+    // ── Mode: OBS Virtual Camera via Direct Local or WebRTC ──
     stopCurrentVideoStream();
     if ($videoIframe) $videoIframe.style.display = 'none';
     if ($videoElement) $videoElement.style.display = 'block';
 
-    connectWebRtcToMaster(roomId || state?.id || 'PALCO1');
+    connectWebRtcToMaster(roomId || state?.id || 'PALCO1', cfg);
   } else {
-    // ── Mode: Network Stream URL (YouTube / VDO.Ninja / HLS / MP4) ──
+    // ── Mode: Network Stream URL (YouTube / VDO.Ninja / HLS / MP4 / IP Cam) ──
     stopCurrentVideoStream();
 
-    if (!url) {
+    const cleanUrl = formatEmbedUrl(url);
+    if (!cleanUrl) {
       showVideoPlaceholder('Aguardando sinal do Master...');
       return;
     }
 
-    const isEmbed = url.includes('vdo.ninja') || url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com') || url.includes('/embed/');
+    const isDirectVideoFile = /\.(m3u8|mp4|webm|ogg|mov)(\?|$)/i.test(cleanUrl);
+    const isEmbed = !isDirectVideoFile && (
+      cleanUrl.includes('vdo.ninja') ||
+      cleanUrl.includes('youtube.com') ||
+      cleanUrl.includes('youtu.be') ||
+      cleanUrl.includes('vimeo.com') ||
+      cleanUrl.includes('twitch.tv') ||
+      cleanUrl.includes('/embed/')
+    );
+
     if (isEmbed) {
       if ($videoElement) $videoElement.style.display = 'none';
       if ($videoIframe) {
         $videoIframe.style.display = 'block';
-        $videoIframe.src = formatEmbedUrl(url);
+        $videoIframe.src = cleanUrl;
       }
       showVideoActive(label);
     } else {
       if ($videoIframe) $videoIframe.style.display = 'none';
       if ($videoElement) $videoElement.style.display = 'block';
 
-      if (url.includes('.m3u8')) {
+      if (cleanUrl.includes('.m3u8')) {
         if (window.Hls && Hls.isSupported()) {
           const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
           currentHls = hls;
-          hls.loadSource(url);
+          hls.loadSource(cleanUrl);
           hls.attachMedia($videoElement);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             $videoElement.play().catch(() => {});
@@ -951,16 +1011,25 @@ async function syncLineupVideo(force = false) {
             }
           });
         } else if ($videoElement.canPlayType && $videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-          $videoElement.src = url;
+          $videoElement.src = cleanUrl;
           $videoElement.play().catch(() => {});
           showVideoActive(label);
         } else {
-          $videoElement.src = url;
+          $videoElement.src = cleanUrl;
           $videoElement.play().catch(() => {});
           showVideoActive(label);
         }
       } else {
-        $videoElement.src = url;
+        $videoElement.src = cleanUrl;
+        $videoElement.onerror = () => {
+          // Fallback to iframe if the URL is an IP encoder web player / MJPEG page
+          if ($videoElement) $videoElement.style.display = 'none';
+          if ($videoIframe) {
+            $videoIframe.style.display = 'block';
+            $videoIframe.src = cleanUrl;
+          }
+          showVideoActive(label);
+        };
         $videoElement.play().catch(() => {});
         showVideoActive(label);
       }

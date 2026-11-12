@@ -333,14 +333,26 @@ class UniversalSyncClient {
         };
       } catch (e) {}
 
-      // Dual-channel instant local remote commands
+      // Dual-channel instant local remote commands & WebRTC signaling
       try {
         this.cmdChannel = new BroadcastChannel(this.cmdChannelName);
         this.cmdChannel.onmessage = (event) => {
           const msg = event.data;
-          if (msg && msg.sender !== this.clientId) {
-            this._handleRemoteCommand(msg);
+          if (!msg || msg.sender === this.clientId) return;
+          if (msg.type === 'webrtc-signal-local' && msg.topic && msg.payload) {
+            if (!this._seenWebRtcSigs) this._seenWebRtcSigs = new Set();
+            if (msg.payload.sigId) {
+              if (this._seenWebRtcSigs.has(msg.payload.sigId)) return;
+              this._seenWebRtcSigs.add(msg.payload.sigId);
+              if (this._seenWebRtcSigs.size > 300) {
+                const first = this._seenWebRtcSigs.values().next().value;
+                this._seenWebRtcSigs.delete(first);
+              }
+            }
+            this._emit('webrtc-signal', { topic: msg.topic, msg: msg.payload });
+            return;
           }
+          this._handleRemoteCommand(msg);
         };
       } catch (e) {}
     }
@@ -752,6 +764,16 @@ class UniversalSyncClient {
         if (!msg) return;
 
         if (topic.includes('/webrtc_signal')) {
+          if (msg.sender === this.clientId) return;
+          if (!this._seenWebRtcSigs) this._seenWebRtcSigs = new Set();
+          if (msg.sigId) {
+            if (this._seenWebRtcSigs.has(msg.sigId)) return;
+            this._seenWebRtcSigs.add(msg.sigId);
+            if (this._seenWebRtcSigs.size > 300) {
+              const first = this._seenWebRtcSigs.values().next().value;
+              this._seenWebRtcSigs.delete(first);
+            }
+          }
           this._emit('webrtc-signal', { topic, msg });
           return;
         }
@@ -3507,6 +3529,34 @@ class UniversalSyncClient {
     if (!this._state) return null;
     this._ensureVideoStructure();
     return this._state.video;
+  }
+
+  sendWebRtcSignal(targetRoom, payload = {}) {
+    const cleanTarget = String(targetRoom || this.cleanRoom || 'PALCO1').toUpperCase().trim();
+    const signalTopic = `stagetimer_v10/${cleanTarget}/webrtc_signal`;
+    const enriched = {
+      ...payload,
+      sender: this.clientId,
+      sigId: 'sig_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8)
+    };
+
+    if (this.cmdChannel) {
+      try {
+        this.cmdChannel.postMessage({
+          type: 'webrtc-signal-local',
+          sender: this.clientId,
+          topic: signalTopic,
+          payload: enriched
+        });
+      } catch (_) {}
+    }
+
+    if (this.mqttClient && this.mqttClient.connected) {
+      try {
+        this.mqttClient.subscribe(signalTopic);
+        this.mqttClient.publish(signalTopic, JSON.stringify(enriched), { qos: 0, retain: false });
+      } catch (_) {}
+    }
   }
 
   reorderTimers(order) {
