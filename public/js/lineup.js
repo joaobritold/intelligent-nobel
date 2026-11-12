@@ -1035,6 +1035,20 @@ async function syncLineupVideo(force = false) {
 
 // ── In-Player Controls (Viewer side) ──
 
+const $videoSizeBtn = document.getElementById('lineup-video-size-btn');
+const $lineupBody = document.querySelector('.lineup-body');
+if ($lineupBody && localStorage.getItem('stagetimer_lineup_video_xl') === '1') {
+  $lineupBody.classList.add('is-video-xl');
+}
+if ($videoSizeBtn && $lineupBody) {
+  $videoSizeBtn.addEventListener('click', () => {
+    const isXl = $lineupBody.classList.toggle('is-video-xl');
+    try {
+      localStorage.setItem('stagetimer_lineup_video_xl', isXl ? '1' : '0');
+    } catch (_) {}
+  });
+}
+
 if ($videoMuteBtn) {
   $videoMuteBtn.addEventListener('click', () => {
     isVideoMuted = !isVideoMuted;

@@ -114,11 +114,20 @@ body {
 
 .lineup-body {
   display: grid;
-  grid-template-columns: clamp(270px, 26vw, 360px) minmax(0, 1fr);
+  grid-template-columns: clamp(320px, 34vw, 520px) minmax(0, 1fr);
   gap: clamp(14px, 2vw, 24px);
   flex: 1;
   align-items: start;
   width: 100%;
+  transition: grid-template-columns 0.25s ease;
+}
+
+.lineup-body:has(#lineup-video-container[style*="flex"]) {
+  grid-template-columns: clamp(380px, 43vw, 680px) minmax(0, 1fr);
+}
+
+.lineup-body.is-video-xl:has(#lineup-video-container[style*="flex"]) {
+  grid-template-columns: clamp(440px, 52vw, 860px) minmax(0, 1fr);
 }
 
 /* ─── Left Column: Active Artist Card ───────────────────────────── */
@@ -127,14 +136,14 @@ body {
   background: rgba(22, 33, 62, 0.75);
   border: 2px solid var(--accent);
   border-radius: 18px;
-  padding: 22px 16px;
+  padding: 14px 12px 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   position: sticky;
-  top: 20px;
+  top: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   width: 100%;
   box-sizing: border-box;
@@ -389,7 +398,9 @@ body {
     padding: 3px 9px;
   }
 
-  .lineup-body {
+  .lineup-body,
+  .lineup-body:has(#lineup-video-container[style*="flex"]),
+  .lineup-body.is-video-xl:has(#lineup-video-container[style*="flex"]) {
     grid-template-columns: 1fr;
     gap: 14px;
   }
@@ -443,13 +454,13 @@ body {
 /* ─── Live Video Stage Player & Controls ─────────────────────────── */
 
 .lineup-video-container {
-  width: 100%;
-  margin-bottom: 14px;
+  width: calc(100% + 12px);
+  margin: -6px -6px 14px -6px;
   border-radius: 14px;
   overflow: hidden;
   background: #000;
-  border: 1px solid rgba(108, 92, 231, 0.4);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  border: 1.5px solid rgba(108, 92, 231, 0.55);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
 }
@@ -503,13 +514,13 @@ body {
 }
 
 .lineup-video-label {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #cbd5e1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;
+  max-width: 220px;
 }
 
 .lineup-video-actions {
