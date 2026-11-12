@@ -771,6 +771,9 @@
                 📋 Lista
               </a>
             `}
+            <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(primaryTargetRoom)}" data-title="${escapeHtml(ev.title || ev.code)}" style="background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
+              📹 Vídeo
+            </button>
             <button type="button" class="btn btn-sm" data-add-substage="${escapeHtml(ev.code)}" style="background: rgba(0, 184, 148, 0.18); border-color: #00b894; color: #55efc4; font-weight: 700;" title="Adicionar um novo palco a este evento">
               ➕ + Palco
             </button>
@@ -800,6 +803,9 @@
                     <a href="viewer.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Palco">📺</a>
                     <a href="lineup.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Lista">📋</a>
                   `}
+                  <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
+                    📹
+                  </button>
                   ${ev.stages.length > 1 ? `
                     <button type="button" class="btn btn-sm btn-danger" data-delete-substage="${escapeHtml(st.code)}" data-parent-event="${escapeHtml(ev.code)}" data-stage-name="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; margin-left: 2px;" title="Eliminar este palco do evento">
                       ✕
@@ -1218,9 +1224,14 @@
             <div>
               🏁 Fim: <span class="multiview-end-badge">${eventEndTime}</span>
             </div>
-            <a href="controller.html?room=${encodeURIComponent(stageCode)}" class="btn btn-sm btn-primary" style="padding: 4px 10px; font-size: 0.75rem;">
-              🎛️ Abrir Configurador
-            </a>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
+                📹 Vídeo
+              </button>
+              <a href="controller.html?room=${encodeURIComponent(stageCode)}" class="btn btn-sm btn-primary" style="padding: 4px 10px; font-size: 0.75rem;">
+                🎛️ Abrir
+              </a>
+            </div>
           </div>
         `;
         $multiviewGrid.appendChild(card);
@@ -1459,6 +1470,481 @@
       a.click();
       URL.revokeObjectURL(url);
       return;
+    }
+  });
+
+  // ─── Master Stage Video Manager (Virtual Cam + Stream URL) ──────────
+
+  let currentVideoStageCode = '';
+  let currentVideoStageTitle = '';
+  let mvmMediaStream = null;
+  let mvmHls = null;
+  const mvmActiveBroadcasters = new Map(); // roomCode -> { stream, peers: Map(viewerId -> RTCPeerConnection) }
+
+  const $mvmModal = document.getElementById('master-video-modal');
+  const $mvmCloseBtn = document.getElementById('mvm-modal-close');
+  const $mvmStageTitle = document.getElementById('mvm-stage-title');
+  const $mvmStageCode = document.getElementById('mvm-stage-code');
+  const $mvmEnableToggle = document.getElementById('mvm-enable-toggle');
+  const $mvmSourceTypeRadios = document.querySelectorAll('input[name="mvm-source-type"]');
+  const $mvmPillVcam = document.getElementById('mvm-pill-vcam');
+  const $mvmPillUrl = document.getElementById('mvm-pill-url');
+  const $mvmSectionVcam = document.getElementById('mvm-section-vcam');
+  const $mvmSectionUrl = document.getElementById('mvm-section-url');
+  const $mvmVcamSelect = document.getElementById('mvm-vcam-select');
+  const $mvmRefreshCamsBtn = document.getElementById('mvm-refresh-cams-btn');
+  const $mvmStreamUrl = document.getElementById('mvm-stream-url');
+  const $mvmPreviewVideo = document.getElementById('mvm-preview-video');
+  const $mvmPreviewIframe = document.getElementById('mvm-preview-iframe');
+  const $mvmPreviewPlaceholder = document.getElementById('mvm-preview-placeholder');
+  const $mvmPreviewStatus = document.getElementById('mvm-preview-status');
+  const $mvmSaveBtn = document.getElementById('mvm-save-btn');
+  const $mvmDisableBtn = document.getElementById('mvm-disable-btn');
+  const $mvmCloseBtn2 = document.getElementById('mvm-close-btn');
+
+  function setMvmPreviewPlaceholder(text) {
+    if ($mvmPreviewPlaceholder) {
+      $mvmPreviewPlaceholder.style.display = 'flex';
+      const span = $mvmPreviewPlaceholder.querySelector('span:last-child');
+      if (span) span.textContent = text;
+    }
+    if ($mvmPreviewStatus) {
+      $mvmPreviewStatus.className = 'badge';
+      $mvmPreviewStatus.style.background = 'rgba(255, 118, 117, 0.2)';
+      $mvmPreviewStatus.style.color = '#ff7675';
+      $mvmPreviewStatus.style.border = '1px solid rgba(255, 118, 117, 0.4)';
+      $mvmPreviewStatus.textContent = 'Sem Sinal';
+    }
+  }
+
+  function hideMvmPreviewPlaceholder(statusText = 'Sinal Pronto') {
+    if ($mvmPreviewPlaceholder) $mvmPreviewPlaceholder.style.display = 'none';
+    if ($mvmPreviewStatus) {
+      $mvmPreviewStatus.className = 'badge';
+      $mvmPreviewStatus.style.background = 'rgba(85, 239, 196, 0.2)';
+      $mvmPreviewStatus.style.color = '#55efc4';
+      $mvmPreviewStatus.style.border = '1px solid rgba(85, 239, 196, 0.4)';
+      $mvmPreviewStatus.textContent = statusText;
+    }
+  }
+
+  function stopMvmPreview() {
+    if (mvmMediaStream) {
+      try { mvmMediaStream.getTracks().forEach(t => t.stop()); } catch (_) {}
+      mvmMediaStream = null;
+    }
+    if (mvmHls) {
+      try { mvmHls.destroy(); } catch (_) {}
+      mvmHls = null;
+    }
+    if ($mvmPreviewVideo) {
+      $mvmPreviewVideo.removeAttribute('src');
+      $mvmPreviewVideo.srcObject = null;
+    }
+    if ($mvmPreviewIframe) {
+      $mvmPreviewIframe.src = 'about:blank';
+    }
+  }
+
+  function formatEmbedUrl(rawUrl) {
+    if (!rawUrl) return '';
+    const url = rawUrl.trim();
+    const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (ytMatch) {
+      return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&playsinline=1`;
+    }
+    if (url.includes('vdo.ninja')) {
+      let clean = url;
+      if (!clean.includes('autoplay')) clean += (clean.includes('?') ? '&' : '?') + 'autoplay=1';
+      if (!clean.includes('cleanoutput')) clean += '&cleanoutput=1';
+      return clean;
+    }
+    return url;
+  }
+
+  async function enumerateMasterVideoDevices() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+      if ($mvmVcamSelect) {
+        $mvmVcamSelect.innerHTML = '<option value="">Câmaras não suportadas neste browser</option>';
+      }
+      return;
+    }
+    try {
+      let devices = await navigator.mediaDevices.enumerateDevices();
+      let videoDevices = devices.filter(d => d.kind === 'videoinput');
+
+      if (videoDevices.length > 0 && !videoDevices[0].label) {
+        try {
+          const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          tempStream.getTracks().forEach(t => t.stop());
+          devices = await navigator.mediaDevices.enumerateDevices();
+          videoDevices = devices.filter(d => d.kind === 'videoinput');
+        } catch (_) {}
+      }
+
+      if ($mvmVcamSelect) {
+        if (videoDevices.length === 0) {
+          $mvmVcamSelect.innerHTML = '<option value="">Nenhuma câmara ou Virtual Cam detetada</option>';
+        } else {
+          const savedDevId = localStorage.getItem('stagetimer_master_vcam_device') || '';
+          let obsFound = false;
+
+          $mvmVcamSelect.innerHTML = videoDevices.map((dev, idx) => {
+            const isObs = (dev.label || '').toLowerCase().includes('obs') || (dev.label || '').toLowerCase().includes('virtual');
+            if (isObs && !obsFound && !savedDevId) obsFound = true;
+            const isSelected = savedDevId ? (dev.deviceId === savedDevId) : (isObs || idx === 0);
+            const prefix = isObs ? '🎥 [OBS Virtual Cam]' : '📹';
+            return `<option value="${escapeHtml(dev.deviceId)}" ${isSelected ? 'selected' : ''}>${prefix} ${escapeHtml(dev.label || 'Câmara ' + (idx + 1))}</option>`;
+          }).join('');
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao enumerar dispositivos:', err);
+    }
+  }
+
+  function updateMvmSourceTypeUI(type) {
+    if ($mvmSectionVcam && $mvmSectionUrl) {
+      if (type === 'virtual_cam') {
+        $mvmSectionVcam.style.display = 'flex';
+        $mvmSectionUrl.style.display = 'none';
+        if ($mvmPillVcam) {
+          $mvmPillVcam.classList.add('active');
+          $mvmPillVcam.style.background = 'rgba(108, 92, 231, 0.2)';
+          $mvmPillVcam.style.borderColor = 'rgba(108, 92, 231, 0.6)';
+          $mvmPillVcam.style.color = '#fff';
+        }
+        if ($mvmPillUrl) {
+          $mvmPillUrl.classList.remove('active');
+          $mvmPillUrl.style.background = 'rgba(255, 255, 255, 0.04)';
+          $mvmPillUrl.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+          $mvmPillUrl.style.color = '#cbd5e1';
+        }
+      } else {
+        $mvmSectionVcam.style.display = 'none';
+        $mvmSectionUrl.style.display = 'flex';
+        if ($mvmPillVcam) {
+          $mvmPillVcam.classList.remove('active');
+          $mvmPillVcam.style.background = 'rgba(255, 255, 255, 0.04)';
+          $mvmPillVcam.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+          $mvmPillVcam.style.color = '#cbd5e1';
+        }
+        if ($mvmPillUrl) {
+          $mvmPillUrl.classList.add('active');
+          $mvmPillUrl.style.background = 'rgba(108, 92, 231, 0.2)';
+          $mvmPillUrl.style.borderColor = 'rgba(108, 92, 231, 0.6)';
+          $mvmPillUrl.style.color = '#fff';
+        }
+      }
+    }
+  }
+
+  async function updateMvmLivePreview() {
+    stopMvmPreview();
+    const sourceType = document.querySelector('input[name="mvm-source-type"]:checked')?.value || 'virtual_cam';
+
+    if (sourceType === 'virtual_cam') {
+      if ($mvmPreviewIframe) $mvmPreviewIframe.style.display = 'none';
+      if ($mvmPreviewVideo) $mvmPreviewVideo.style.display = 'block';
+
+      const devId = $mvmVcamSelect?.value;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setMvmPreviewPlaceholder('Câmara não suportada pelo browser');
+        return;
+      }
+
+      try {
+        setMvmPreviewPlaceholder('A ligar à Virtual Camera...');
+        const constraints = {
+          video: devId ? { deviceId: { exact: devId }, width: { ideal: 1280 }, height: { ideal: 720 } } : { width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        mvmMediaStream = stream;
+        if ($mvmPreviewVideo) {
+          $mvmPreviewVideo.srcObject = stream;
+          $mvmPreviewVideo.muted = true;
+          await $mvmPreviewVideo.play();
+        }
+        hideMvmPreviewPlaceholder('● Virtual Cam AO VIVO');
+      } catch (err) {
+        console.warn('Erro ao aceder à Virtual Cam:', err);
+        setMvmPreviewPlaceholder('Sem sinal (Inicie a Câmara Virtual no OBS)');
+      }
+    } else {
+      const rawUrl = ($mvmStreamUrl?.value || '').trim();
+      if (!rawUrl) {
+        setMvmPreviewPlaceholder('Insira o URL da stream para pré-visualizar');
+        return;
+      }
+
+      const isEmbed = rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be') || rawUrl.includes('vdo.ninja') || rawUrl.includes('vimeo.com') || rawUrl.includes('/embed/');
+      if (isEmbed) {
+        if ($mvmPreviewVideo) $mvmPreviewVideo.style.display = 'none';
+        if ($mvmPreviewIframe) {
+          $mvmPreviewIframe.style.display = 'block';
+          $mvmPreviewIframe.src = formatEmbedUrl(rawUrl);
+        }
+        hideMvmPreviewPlaceholder('● Stream Embed Ativo');
+      } else {
+        if ($mvmPreviewIframe) $mvmPreviewIframe.style.display = 'none';
+        if ($mvmPreviewVideo) $mvmPreviewVideo.style.display = 'block';
+
+        if (rawUrl.includes('.m3u8')) {
+          if (window.Hls && Hls.isSupported()) {
+            const hls = new Hls({ enableWorker: true });
+            mvmHls = hls;
+            hls.loadSource(rawUrl);
+            hls.attachMedia($mvmPreviewVideo);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+              $mvmPreviewVideo.play().catch(() => {});
+              hideMvmPreviewPlaceholder('● Stream HLS Ativo');
+            });
+            hls.on(Hls.Events.ERROR, () => {
+              setMvmPreviewPlaceholder('Erro ao carregar stream HLS');
+            });
+          } else if ($mvmPreviewVideo.canPlayType && $mvmPreviewVideo.canPlayType('application/vnd.apple.mpegurl')) {
+            $mvmPreviewVideo.src = rawUrl;
+            $mvmPreviewVideo.play().catch(() => {});
+            hideMvmPreviewPlaceholder('● Stream HLS Ativo');
+          } else {
+            $mvmPreviewVideo.src = rawUrl;
+            $mvmPreviewVideo.play().catch(() => {});
+            hideMvmPreviewPlaceholder('● Stream Ativo');
+          }
+        } else {
+          $mvmPreviewVideo.src = rawUrl;
+          $mvmPreviewVideo.play().catch(() => {});
+          hideMvmPreviewPlaceholder('● Vídeo Direto Ativo');
+        }
+      }
+    }
+  }
+
+  async function openMasterVideoModal(roomCode, title) {
+    currentVideoStageCode = String(roomCode || '').toUpperCase().trim();
+    currentVideoStageTitle = title || currentVideoStageCode;
+
+    if ($mvmStageTitle) $mvmStageTitle.textContent = currentVideoStageTitle;
+    if ($mvmStageCode) $mvmStageCode.textContent = currentVideoStageCode;
+
+    const stageState = stagesStateMap.get(currentVideoStageCode);
+    let videoCfg = stageState?.video;
+    if (!videoCfg) {
+      try {
+        const raw = localStorage.getItem(`stagetimer_v10_state_${currentVideoStageCode}`);
+        if (raw) videoCfg = JSON.parse(raw).video;
+      } catch (_) {}
+    }
+
+    const isEnabled = !!(videoCfg && videoCfg.enabled);
+    const sourceType = (videoCfg?.sourceType === 'url') ? 'url' : 'virtual_cam';
+    const url = videoCfg?.url || '';
+
+    if ($mvmEnableToggle) $mvmEnableToggle.checked = isEnabled;
+    if ($mvmStreamUrl) $mvmStreamUrl.value = url;
+
+    const radio = document.querySelector(`input[name="mvm-source-type"][value="${sourceType}"]`);
+    if (radio) radio.checked = true;
+    updateMvmSourceTypeUI(sourceType);
+
+    await enumerateMasterVideoDevices();
+
+    if ($mvmModal) $mvmModal.style.display = 'flex';
+    updateMvmLivePreview();
+  }
+
+  function closeMasterVideoModal() {
+    stopMvmPreview();
+    if ($mvmModal) $mvmModal.style.display = 'none';
+  }
+
+  function setupWebRtcBroadcaster(roomCode, stream) {
+    if (!stream) return;
+    const cleanRoom = String(roomCode).toUpperCase().trim();
+    let broadcaster = mvmActiveBroadcasters.get(cleanRoom);
+    if (!broadcaster) {
+      broadcaster = { stream, peers: new Map() };
+      mvmActiveBroadcasters.set(cleanRoom, broadcaster);
+    } else {
+      broadcaster.stream = stream;
+    }
+
+    if (masterClient.mqttClient && masterClient.mqttClient.connected) {
+      const signalTopic = `stagetimer_v10/${cleanRoom}/webrtc_signal`;
+      masterClient.mqttClient.subscribe(signalTopic);
+    }
+  }
+
+  function handleWebRtcSignalingMessage(topic, msg) {
+    try {
+      const match = topic.match(/^stagetimer_v10\/([^/]+)\/webrtc_signal$/);
+      if (!match) return;
+      const room = match[1].toUpperCase();
+      const broadcaster = mvmActiveBroadcasters.get(room);
+      if (!broadcaster || !broadcaster.stream) return;
+
+      if (!msg || !msg.viewerId || msg.from === 'master') return;
+      const viewerId = msg.viewerId;
+
+      if (msg.type === 'viewer-join') {
+        const pc = new RTCPeerConnection({
+          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+        broadcaster.peers.set(viewerId, pc);
+
+        broadcaster.stream.getTracks().forEach(track => pc.addTrack(track, broadcaster.stream));
+
+        pc.onicecandidate = (event) => {
+          if (event.candidate && masterClient.mqttClient && masterClient.mqttClient.connected) {
+            masterClient.mqttClient.publish(topic, JSON.stringify({
+              type: 'candidate',
+              candidate: event.candidate,
+              viewerId,
+              from: 'master'
+            }));
+          }
+        };
+
+        pc.createOffer().then(offer => pc.setLocalDescription(offer)).then(() => {
+          if (masterClient.mqttClient && masterClient.mqttClient.connected) {
+            masterClient.mqttClient.publish(topic, JSON.stringify({
+              type: 'offer',
+              offer: pc.localDescription,
+              viewerId,
+              from: 'master'
+            }));
+          }
+        }).catch(err => console.warn('Erro ao criar offer WebRTC:', err));
+      } else if (msg.type === 'answer') {
+        const pc = broadcaster.peers.get(viewerId);
+        if (pc && pc.signalingState !== 'stable') {
+          pc.setRemoteDescription(new RTCSessionDescription(msg.answer)).catch(() => {});
+        }
+      } else if (msg.type === 'candidate') {
+        const pc = broadcaster.peers.get(viewerId);
+        if (pc && pc.remoteDescription) {
+          pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(() => {});
+        }
+      }
+    } catch (_) {}
+  }
+
+  masterClient.on('webrtc-signal', ({ topic, msg }) => {
+    handleWebRtcSignalingMessage(topic, msg);
+  });
+
+  if ($mvmCloseBtn) $mvmCloseBtn.addEventListener('click', closeMasterVideoModal);
+  if ($mvmCloseBtn2) $mvmCloseBtn2.addEventListener('click', closeMasterVideoModal);
+  if ($mvmModal) {
+    $mvmModal.addEventListener('click', (e) => {
+      if (e.target === $mvmModal) closeMasterVideoModal();
+    });
+  }
+
+  $mvmSourceTypeRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      updateMvmSourceTypeUI(radio.value);
+      updateMvmLivePreview();
+    });
+  });
+
+  if ($mvmRefreshCamsBtn) {
+    $mvmRefreshCamsBtn.addEventListener('click', async () => {
+      await enumerateMasterVideoDevices();
+      updateMvmLivePreview();
+    });
+  }
+
+  if ($mvmVcamSelect) {
+    $mvmVcamSelect.addEventListener('change', () => {
+      const devId = $mvmVcamSelect.value;
+      if (devId) localStorage.setItem('stagetimer_master_vcam_device', devId);
+      updateMvmLivePreview();
+    });
+  }
+
+  if ($mvmStreamUrl) {
+    let urlTimer = null;
+    $mvmStreamUrl.addEventListener('input', () => {
+      clearTimeout(urlTimer);
+      urlTimer = setTimeout(updateMvmLivePreview, 400);
+    });
+  }
+
+  if ($mvmSaveBtn) {
+    $mvmSaveBtn.addEventListener('click', async () => {
+      if (!currentVideoStageCode) return;
+      const enabled = $mvmEnableToggle ? $mvmEnableToggle.checked : true;
+      const sourceType = document.querySelector('input[name="mvm-source-type"]:checked')?.value || 'virtual_cam';
+      const rawUrl = $mvmStreamUrl ? $mvmStreamUrl.value.trim() : '';
+      const chosenDevId = $mvmVcamSelect ? $mvmVcamSelect.value : '';
+
+      if (chosenDevId) {
+        localStorage.setItem('stagetimer_master_vcam_device', chosenDevId);
+      }
+
+      const videoConfig = {
+        enabled,
+        sourceType,
+        url: formatEmbedUrl(rawUrl),
+        label: currentVideoStageTitle || currentVideoStageCode
+      };
+
+      if (enabled && sourceType === 'virtual_cam' && mvmMediaStream) {
+        setupWebRtcBroadcaster(currentVideoStageCode, mvmMediaStream);
+      }
+
+      if (typeof masterClient.setRoomVideoConfig === 'function') {
+        masterClient.setRoomVideoConfig(currentVideoStageCode, videoConfig);
+      }
+
+      const st = stagesStateMap.get(currentVideoStageCode);
+      if (st) {
+        st.video = { ...(st.video || {}), ...videoConfig };
+      }
+
+      closeMasterVideoModal();
+      renderMultiview();
+    });
+  }
+
+  if ($mvmDisableBtn) {
+    $mvmDisableBtn.addEventListener('click', () => {
+      if (!currentVideoStageCode) return;
+      const videoConfig = { enabled: false };
+
+      if (typeof masterClient.setRoomVideoConfig === 'function') {
+        masterClient.setRoomVideoConfig(currentVideoStageCode, videoConfig);
+      }
+
+      const st = stagesStateMap.get(currentVideoStageCode);
+      if (st) {
+        st.video = { ...(st.video || {}), ...videoConfig };
+      }
+
+      const broadcaster = mvmActiveBroadcasters.get(currentVideoStageCode);
+      if (broadcaster) {
+        if (broadcaster.stream) {
+          try { broadcaster.stream.getTracks().forEach(t => t.stop()); } catch (_) {}
+        }
+        broadcaster.peers.forEach(pc => { try { pc.close(); } catch (_) {} });
+        mvmActiveBroadcasters.delete(currentVideoStageCode);
+      }
+
+      closeMasterVideoModal();
+      renderMultiview();
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    const vidBtn = e.target.closest('.btn-master-stage-video');
+    if (vidBtn) {
+      const room = decodeURIComponent(vidBtn.dataset.room || '');
+      const title = vidBtn.dataset.title || room;
+      if (room) {
+        openMasterVideoModal(room, title);
+      }
     }
   });
 

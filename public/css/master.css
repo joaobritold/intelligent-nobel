@@ -1174,3 +1174,30 @@
     font-size: 0.85rem;
   }
 }
+
+/* ─── Master Stage Video Modal Styles ────────────────────────────── */
+
+.btn-master-stage-video {
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+}
+
+.btn-master-stage-video:hover {
+  background: rgba(108, 92, 231, 0.45) !important;
+  border-color: #c4b5fd !important;
+  color: #fff !important;
+}
+
+.mvm-source-pill {
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.mvm-source-pill:hover {
+  background: rgba(108, 92, 231, 0.3) !important;
+}
+
+.mvm-source-pill.active {
+  box-shadow: 0 0 12px rgba(108, 92, 231, 0.35);
+}

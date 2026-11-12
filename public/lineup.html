@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Modo Lista (Lineup & Horários)</title>
-  <link rel="stylesheet" href="css/common.css?v=95">
-  <link rel="stylesheet" href="css/lineup.css?v=95">
+  <link rel="stylesheet" href="css/common.css?v=96">
+  <link rel="stylesheet" href="css/lineup.css?v=96">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
@@ -67,7 +67,7 @@
         <div>
           <div class="lineup-title">
             Lineup & Horários
-            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 6px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v94</span>
+            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 6px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v96</span>
           </div>
         </div>
         <!-- Event / Stage Badge & Pills -->
@@ -83,7 +83,6 @@
       <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
         <div class="st-compact-nav">
           <a id="ln-nav-hub" href="index.html" class="st-nav-home-btn">🏠 Início</a>
-          <button type="button" id="ln-nav-video" class="st-nav-home-btn" style="background: rgba(108, 92, 231, 0.2); border-color: rgba(108, 92, 231, 0.45); color: #c4b5fd;">📹 Vídeo</button>
           <div class="st-nav-dropdown">
             <button type="button" class="st-nav-trigger">📋 Ecrãs ▾</button>
             <div class="st-nav-menu">
@@ -125,7 +124,6 @@
               <button type="button" id="lineup-video-pip-btn" class="video-action-btn" title="Janela Flutuante (PiP)">🔲</button>
               <button type="button" id="lineup-video-fs-btn" class="video-action-btn" title="Ecrã Completo">⛶</button>
               <button type="button" id="lineup-video-collapse-btn" class="video-action-btn" title="Recolher Vídeo">▲</button>
-              <button type="button" id="lineup-video-cfg-btn" class="video-action-btn" title="Configurar Vídeo">⚙️</button>
             </div>
           </div>
           <div class="lineup-video-screen">
@@ -155,79 +153,11 @@
     </div>
   </div>
 
-  <!-- Video Setup Modal -->
-  <div id="lineup-video-modal" class="video-modal-backdrop" style="display: none;">
-    <div class="video-modal-box">
-      <div class="video-modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.3rem;">📹</span>
-          <h3 style="margin: 0; font-size: 1.15rem; color: #fff;">Configurar Vídeo de Palco</h3>
-        </div>
-        <button type="button" id="lineup-video-modal-close" class="video-modal-close-btn" aria-label="Fechar">&times;</button>
-      </div>
-      <div class="video-modal-body">
-        <div class="video-form-group">
-          <label class="video-label-toggle">
-            <input type="checkbox" id="video-enable-toggle">
-            <span>Ativar Vídeo neste Palco</span>
-          </label>
-        </div>
-
-        <div class="video-form-group">
-          <label class="video-field-title">Tipo de Fonte:</label>
-          <div class="video-source-radios">
-            <label class="video-radio-pill active" id="pill-source-camera">
-              <input type="radio" name="video-source-type" value="camera" checked>
-              <span>🎥 Câmara / Captura USB</span>
-            </label>
-            <label class="video-radio-pill" id="pill-source-url">
-              <input type="radio" name="video-source-type" value="url">
-              <span>🌐 Stream de Rede / Web</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Section: Camera / USB Capture -->
-        <div id="video-section-camera" class="video-source-section">
-          <label for="video-device-select" class="video-field-title">Dispositivo de Vídeo / Placa USB detetada:</label>
-          <div style="display: flex; gap: 8px;">
-            <select id="video-device-select" class="video-input-select" style="flex: 1;">
-              <option value="">A procurar dispositivos...</option>
-            </select>
-            <button type="button" id="video-refresh-devices-btn" class="video-btn-secondary" title="Atualizar Lista de Câmaras">🔄</button>
-          </div>
-          <p class="video-hint">
-            💡 Suporta placas HDMI USB (Cam Link, dongles USB de captura), webcams e NDI Virtual Input/OBS Virtual Camera <strong>diretamente no browser</strong> sem precisar de nenhum outro software aberto.
-          </p>
-        </div>
-
-        <!-- Section: Network URL / Stream -->
-        <div id="video-section-url" class="video-source-section" style="display: none;">
-          <label for="video-url-input" class="video-field-title">URL da Stream / Vídeo:</label>
-          <input type="url" id="video-url-input" class="video-input-text" placeholder="https://exemplo.com/stream.m3u8 ou link VDO.Ninja / YouTube">
-          <p class="video-hint">
-            💡 Suporta streams HLS (<code>.m3u8</code>), links diretos MP4/WebM, links de emissão <code>vdo.ninja/?view=...</code> ou vídeos embed.
-          </p>
-        </div>
-
-        <div class="video-form-group">
-          <label for="video-label-input" class="video-field-title">Identificação / Legenda:</label>
-          <input type="text" id="video-label-input" class="video-input-text" value="Câmara de Palco" placeholder="ex.: Palco Principal - Frontal">
-        </div>
-
-        <div class="video-modal-actions">
-          <button type="button" id="video-save-btn" class="video-btn-primary">💾 Guardar e Ativar no Palco</button>
-          <button type="button" id="video-disable-btn" class="video-btn-danger">Desativar Vídeo</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Cloud MQTT over WSS & HLS Engine -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
-  <script src="js/pwa.js?v=95"></script>
-  <script src="js/local-sync.js?v=95"></script>
-  <script src="js/lineup.js?v=95"></script>
+  <script src="js/pwa.js?v=96"></script>
+  <script src="js/local-sync.js?v=96"></script>
+  <script src="js/lineup.js?v=96"></script>
 </body>
 </html>

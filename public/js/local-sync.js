@@ -720,7 +720,17 @@ class UniversalSyncClient {
 
     this.mqttClient.on('message', (topic, payload) => {
       try {
-        const msg = JSON.parse(payload.toString());
+        const payloadStr = payload.toString();
+        this._emit('mqtt-raw-message', { topic, payload: payloadStr });
+
+        let msg = null;
+        try { msg = JSON.parse(payloadStr); } catch (_) {}
+        if (!msg) return;
+
+        if (topic.includes('/webrtc_signal')) {
+          this._emit('webrtc-signal', { topic, msg });
+          return;
+        }
 
         // Remote device commands (switch view, change room, reload, purge)
         if (topic === this.mqttTopicCommands ||
@@ -3345,6 +3355,55 @@ class UniversalSyncClient {
     };
     this._commitStateChange();
     return this._state.video;
+  }
+
+  setRoomVideoConfig(targetRoom, config = {}) {
+    const cleanTarget = String(targetRoom || this.cleanRoom || 'PALCO1').toUpperCase().trim();
+    if (!cleanTarget) return null;
+
+    if (cleanTarget === this.cleanRoom && this._state) {
+      return this.setVideoConfig(config);
+    }
+
+    const storageKey = `stagetimer_v10_state_${cleanTarget}`;
+    let roomState = null;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) roomState = JSON.parse(raw);
+    } catch (_) {}
+
+    if (!roomState) {
+      roomState = this._createDefaultRoom(cleanTarget);
+    }
+
+    if (!roomState.video || typeof roomState.video !== 'object') {
+      roomState.video = this._createDefaultVideoState();
+    }
+
+    roomState.video = {
+      ...roomState.video,
+      ...config
+    };
+    roomState.updatedAt = Date.now();
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(roomState));
+    } catch (_) {}
+
+    try {
+      const ch = new BroadcastChannel(`stagetimer_v10_${cleanTarget}`);
+      ch.postMessage({ type: 'room-state', state: roomState });
+      setTimeout(() => ch.close(), 100);
+    } catch (_) {}
+
+    if (this.mqttClient && this.mqttClient.connected) {
+      const topic = `stagetimer_v10/${cleanTarget}/state`;
+      try {
+        this.mqttClient.publish(topic, JSON.stringify(roomState), { qos: 1, retain: true });
+      } catch (_) {}
+    }
+
+    return roomState.video;
   }
 
   getVideoConfig() {

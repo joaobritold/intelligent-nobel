@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Painel Master (Super Régie)</title>
-  <link rel="stylesheet" href="css/master.css?v=95">
-  <script src="js/auth.js?v=95"></script>
+  <link rel="stylesheet" href="css/master.css?v=96">
+  <script src="js/auth.js?v=96"></script>
 </head>
 <body>
   <div class="master-container">
@@ -70,7 +70,7 @@
             <h1 class="master-header-title">
               Painel Master
               <span class="badge">Super Régie</span>
-              <span class="badge" style="background: rgba(253, 203, 110, 0.18); color: #fdcb6e; border-color: #fdcb6e; font-family: var(--font-mono); font-weight: 700;">v95</span>
+              <span class="badge" style="background: rgba(253, 203, 110, 0.18); color: #fdcb6e; border-color: #fdcb6e; font-family: var(--font-mono); font-weight: 700;">v96</span>
             </h1>
             <div class="master-header-sub">
               Gestão Central de Ecrãs e Palcos
@@ -313,16 +313,115 @@
       </div>
     </div>
 
+    <!-- Master Stage Video Setup Modal (Virtual Cam + Stream URL) -->
+    <div id="master-video-modal" style="display: none; position: fixed; inset: 0; background: rgba(5, 7, 15, 0.88); backdrop-filter: blur(8px); z-index: 10002; align-items: center; justify-content: center; padding: 16px;">
+      <div style="background: #141829; border: 1.5px solid #a29bfe; border-radius: 16px; padding: 22px; max-width: 580px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.8); max-height: 92vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
+          <div>
+            <h3 style="margin: 0; font-size: 1.2rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+              📹 Vídeo de Palco — <span id="mvm-stage-title" style="color: #55efc4;">Palco</span>
+            </h3>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+              <span id="mvm-stage-code" class="badge" style="background: rgba(108, 92, 231, 0.25); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4); font-family: var(--font-mono); font-size: 0.72rem;">PALCO1</span>
+              <span style="font-size: 0.75rem; color: var(--text-secondary);">Transmissão direta para o Modo Lista</span>
+            </div>
+          </div>
+          <button id="mvm-modal-close" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border-color: var(--border); color: #fff; font-size: 1.2rem; line-height: 1; padding: 4px 10px;">✕</button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Enable Toggle -->
+          <label style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.95rem; color: #55efc4; cursor: pointer; background: rgba(85, 239, 196, 0.1); padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(85, 239, 196, 0.3);">
+            <input type="checkbox" id="mvm-enable-toggle" style="width: 20px; height: 20px; cursor: pointer; accent-color: #00b894;">
+            <span>Ativar Transmissão de Vídeo neste Palco</span>
+          </label>
+
+          <!-- Source Selection Radios -->
+          <div>
+            <label style="font-size: 0.85rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">Escolher Fonte de Vídeo:</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <label class="mvm-source-pill active" id="mvm-pill-vcam" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(108, 92, 231, 0.2); border: 1px solid rgba(108, 92, 231, 0.6); border-radius: 10px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: #fff;">
+                <input type="radio" name="mvm-source-type" value="virtual_cam" checked style="accent-color: var(--accent);">
+                <span>🎥 OBS Virtual Camera</span>
+              </label>
+              <label class="mvm-source-pill" id="mvm-pill-url" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: #cbd5e1;">
+                <input type="radio" name="mvm-source-type" value="url" style="accent-color: var(--accent);">
+                <span>🌐 URL da Stream</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Section: OBS Virtual Camera -->
+          <div id="mvm-section-vcam" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px;">
+            <label for="mvm-vcam-select" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">Câmara / Dispositivo detetado:</label>
+            <div style="display: flex; gap: 8px;">
+              <select id="mvm-vcam-select" style="flex: 1; padding: 8px 10px; border-radius: 8px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 16px;">
+                <option value="">A procurar dispositivos...</option>
+              </select>
+              <button type="button" id="mvm-refresh-cams-btn" class="btn btn-sm" style="background: rgba(255, 255, 255, 0.08); border-color: var(--border); color: #fff;" title="Atualizar Lista de Câmaras">🔄</button>
+            </div>
+            <p style="font-size: 0.74rem; color: #94a3b8; line-height: 1.4; margin: 4px 0 0;">
+              💡 No OBS clique em <strong>"Iniciar Câmara Virtual"</strong>. O StageTimer capta a Virtual Cam e transmite para os ecrãs de Lineup com latência ultrabaixa (&lt; 0.2s).
+            </p>
+          </div>
+
+          <!-- Section: Stream URL -->
+          <div id="mvm-section-url" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 12px; display: none; flex-direction: column; gap: 6px;">
+            <label for="mvm-stream-url" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">URL da Stream (YouTube / VDO.Ninja / HLS / OBS):</label>
+            <input type="url" id="mvm-stream-url" placeholder="https://youtube.com/watch?v=... ou link VDO.Ninja / .m3u8" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 16px;">
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+              <span class="badge" style="font-size: 0.68rem; background: rgba(255,0,0,0.15); color: #ff7675; border: 1px solid rgba(255,0,0,0.3);">YouTube Live</span>
+              <span class="badge" style="font-size: 0.68rem; background: rgba(85,239,196,0.15); color: #55efc4; border: 1px solid rgba(85,239,196,0.3);">VDO.Ninja</span>
+              <span class="badge" style="font-size: 0.68rem; background: rgba(108,92,231,0.15); color: #c4b5fd; border: 1px solid rgba(108,92,231,0.3);">HLS (.m3u8)</span>
+            </div>
+            <p style="font-size: 0.74rem; color: #94a3b8; line-height: 1.4; margin: 4px 0 0;">
+              💡 Cole o link da transmissão do OBS (live não-listada do YouTube, link VDO.Ninja ou stream HLS).
+            </p>
+          </div>
+
+          <!-- Live Preview Screen inside Master -->
+          <div style="margin-top: 4px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1;">📺 Pré-visualização da Régie:</span>
+              <span id="mvm-preview-status" class="badge" style="font-size: 0.65rem; background: rgba(85, 239, 196, 0.2); color: #55efc4; border: 1px solid rgba(85, 239, 196, 0.4);">Aguardando</span>
+            </div>
+            <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.12);">
+              <video id="mvm-preview-video" playsinline autoplay muted style="width: 100%; height: 100%; object-fit: contain;"></video>
+              <iframe id="mvm-preview-iframe" allow="autoplay; fullscreen" style="width: 100%; height: 100%; border: none; display: none;"></iframe>
+              <div id="mvm-preview-placeholder" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #090b14; color: #64748b; font-size: 0.8rem; gap: 6px; text-align: center; padding: 10px;">
+                <span style="font-size: 1.6rem;">📹</span>
+                <span>Selecione a Virtual Cam ou insira o URL para pré-visualizar</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div style="display: flex; gap: 10px; margin-top: 8px;">
+            <button type="button" id="mvm-save-btn" class="btn btn-primary" style="flex: 2; font-weight: 700; padding: 12px;">
+              💾 Aplicar no Palco
+            </button>
+            <button type="button" id="mvm-disable-btn" class="btn btn-danger" style="flex: 1; font-weight: 700; padding: 12px;">
+              ⏹️ Desativar
+            </button>
+            <button type="button" id="mvm-close-btn" class="btn" style="background: rgba(255, 255, 255, 0.08); border-color: var(--border);">
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Footer Version Indicator -->
     <footer style="text-align: center; padding: 24px 0 12px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-      StageTimer Super Régie Master • <span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(253, 203, 110, 0.4); font-weight: 700;">v95</span>
+      StageTimer Super Régie Master • <span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(253, 203, 110, 0.4); font-weight: 700;">v96</span>
     </footer>
 
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=95"></script>
-  <script src="js/local-sync.js?v=95"></script>
-  <script src="js/master.js?v=95"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
+  <script src="js/pwa.js?v=96"></script>
+  <script src="js/local-sync.js?v=96"></script>
+  <script src="js/master.js?v=96"></script>
 </body>
 </html>

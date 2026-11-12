@@ -631,10 +631,11 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ─── Stage Video System ───────────────────────────────────────────
+// ─── Stage Video System (Passive Receiver controlled by Master) ───
 
 let currentMediaStream = null;
 let currentHls = null;
+let currentWebRtcPeer = null;
 let isVideoMuted = true;
 let isVideoCollapsed = false;
 let lastVideoSig = '';
@@ -651,21 +652,6 @@ const $videoMuteBtn = document.getElementById('lineup-video-mute-btn');
 const $videoPipBtn = document.getElementById('lineup-video-pip-btn');
 const $videoFsBtn = document.getElementById('lineup-video-fs-btn');
 const $videoCollapseBtn = document.getElementById('lineup-video-collapse-btn');
-const $videoCfgBtn = document.getElementById('lineup-video-cfg-btn');
-const $navVideoBtn = document.getElementById('ln-nav-video');
-
-const $videoModal = document.getElementById('lineup-video-modal');
-const $videoModalClose = document.getElementById('lineup-video-modal-close');
-const $videoEnableToggle = document.getElementById('video-enable-toggle');
-const $videoSourceTypeRadios = document.querySelectorAll('input[name="video-source-type"]');
-const $videoSectionCamera = document.getElementById('video-section-camera');
-const $videoSectionUrl = document.getElementById('video-section-url');
-const $videoDeviceSelect = document.getElementById('video-device-select');
-const $videoRefreshDevicesBtn = document.getElementById('video-refresh-devices-btn');
-const $videoUrlInput = document.getElementById('video-url-input');
-const $videoLabelInput = document.getElementById('video-label-input');
-const $videoSaveBtn = document.getElementById('video-save-btn');
-const $videoDisableBtn = document.getElementById('video-disable-btn');
 
 function showVideoPlaceholder(text = 'Aguardando sinal...') {
   if ($videoPlaceholder) {
@@ -691,16 +677,16 @@ function showVideoActive(label = 'Câmara Palco') {
 
 function stopCurrentVideoStream() {
   if (currentMediaStream) {
-    try {
-      currentMediaStream.getTracks().forEach(t => t.stop());
-    } catch (_) {}
+    try { currentMediaStream.getTracks().forEach(t => t.stop()); } catch (_) {}
     currentMediaStream = null;
   }
   if (currentHls) {
-    try {
-      currentHls.destroy();
-    } catch (_) {}
+    try { currentHls.destroy(); } catch (_) {}
     currentHls = null;
+  }
+  if (currentWebRtcPeer) {
+    try { currentWebRtcPeer.close(); } catch (_) {}
+    currentWebRtcPeer = null;
   }
   if ($videoElement) {
     $videoElement.removeAttribute('src');
@@ -727,54 +713,116 @@ function formatEmbedUrl(rawUrl) {
   return url;
 }
 
-async function enumerateVideoDevices() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-    if ($videoDeviceSelect) {
-      $videoDeviceSelect.innerHTML = '<option value="">Captura USB não suportada neste browser</option>';
-    }
-    return;
+// Connect to Master WebRTC Broadcaster
+function connectWebRtcToMaster(cleanRoom) {
+  if (!cleanRoom) return;
+  if (currentWebRtcPeer) {
+    try { currentWebRtcPeer.close(); } catch (_) {}
+    currentWebRtcPeer = null;
   }
-  try {
-    let devices = await navigator.mediaDevices.enumerateDevices();
-    let videoDevices = devices.filter(d => d.kind === 'videoinput');
 
-    if (videoDevices.length > 0 && !videoDevices[0].label) {
-      try {
-        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        tempStream.getTracks().forEach(t => t.stop());
-        devices = await navigator.mediaDevices.enumerateDevices();
-        videoDevices = devices.filter(d => d.kind === 'videoinput');
-      } catch (err) {}
-    }
+  showVideoPlaceholder('A ligar à emissão do Master...');
 
-    if ($videoDeviceSelect) {
-      if (videoDevices.length === 0) {
-        $videoDeviceSelect.innerHTML = '<option value="">Nenhuma câmara ou placa USB detetada</option>';
-      } else {
-        const savedDevId = localStorage.getItem('stagetimer_lineup_camera_device') || '';
-        $videoDeviceSelect.innerHTML = videoDevices.map((dev, idx) => {
-          const label = dev.label || `Câmara / Placa USB ${idx + 1}`;
-          const isSel = dev.deviceId === savedDevId || (idx === 0 && !savedDevId);
-          return `<option value="${escapeHtml(dev.deviceId)}" ${isSel ? 'selected' : ''}>📹 ${escapeHtml(label)}</option>`;
-        }).join('');
+  const myUuid = client.deviceUuid || ('viewer_' + Math.random().toString(36).substr(2, 6));
+  const signalTopic = `stagetimer_v10/${cleanRoom}/webrtc_signal`;
+
+  const pc = new RTCPeerConnection({
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+  });
+  currentWebRtcPeer = pc;
+
+  pc.ontrack = (event) => {
+    if (event.streams && event.streams[0]) {
+      currentMediaStream = event.streams[0];
+      if ($videoElement) {
+        $videoElement.srcObject = event.streams[0];
+        $videoElement.muted = isVideoMuted;
+        $videoElement.play().catch(() => {});
       }
+      showVideoActive('OBS Virtual Cam');
     }
-  } catch (e) {
-    console.warn('Erro ao enumerar dispositivos de vídeo:', e);
-  }
+  };
+
+  pc.onicecandidate = (event) => {
+    if (event.candidate && client.mqttClient && client.mqttClient.connected) {
+      client.mqttClient.publish(signalTopic, JSON.stringify({
+        type: 'candidate',
+        candidate: event.candidate,
+        viewerId: myUuid,
+        from: myUuid
+      }));
+    }
+  };
+
+  setTimeout(() => {
+    if (client.mqttClient && client.mqttClient.connected) {
+      client.mqttClient.subscribe(signalTopic);
+      client.mqttClient.publish(signalTopic, JSON.stringify({
+        type: 'viewer-join',
+        viewerId: myUuid,
+        roomCode: cleanRoom
+      }));
+    }
+  }, 200);
+
+  setTimeout(async () => {
+    if ((!$videoElement || !$videoElement.srcObject) && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const devs = await navigator.mediaDevices.enumerateDevices();
+        const obsDev = devs.find(d => d.kind === 'videoinput' && ((d.label || '').toLowerCase().includes('obs') || (d.label || '').toLowerCase().includes('virtual')));
+        if (obsDev) {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: obsDev.deviceId } }, audio: false });
+          currentMediaStream = stream;
+          if ($videoElement) {
+            $videoElement.srcObject = stream;
+            $videoElement.muted = isVideoMuted;
+            await $videoElement.play();
+          }
+          showVideoActive('OBS Virtual Cam (Local)');
+        }
+      } catch (_) {}
+    }
+  }, 4000);
 }
+
+// Listen for WebRTC signals from Master
+client.on('webrtc-signal', ({ topic, msg }) => {
+  if (!currentWebRtcPeer || !msg) return;
+  const myUuid = client.deviceUuid;
+  if (msg.viewerId !== myUuid) return;
+
+  if (msg.type === 'offer' && msg.offer) {
+    currentWebRtcPeer.setRemoteDescription(new RTCSessionDescription(msg.offer))
+      .then(() => currentWebRtcPeer.createAnswer())
+      .then(answer => currentWebRtcPeer.setLocalDescription(answer))
+      .then(() => {
+        if (client.mqttClient && client.mqttClient.connected) {
+          client.mqttClient.publish(topic, JSON.stringify({
+            type: 'answer',
+            answer: currentWebRtcPeer.localDescription,
+            viewerId: myUuid,
+            from: myUuid
+          }));
+        }
+      })
+      .catch(err => console.warn('Erro ao processar offer WebRTC no Lineup:', err));
+  } else if (msg.type === 'candidate' && msg.candidate) {
+    if (currentWebRtcPeer.remoteDescription) {
+      currentWebRtcPeer.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(() => {});
+    }
+  }
+});
 
 async function syncLineupVideo(force = false) {
   if (!$videoContainer) return;
 
   const cfg = state?.video || (typeof client.getVideoConfig === 'function' ? client.getVideoConfig() : null);
   const isEnabled = !!(cfg && cfg.enabled);
-  const sourceType = cfg?.sourceType || 'camera';
+  const sourceType = cfg?.sourceType || 'virtual_cam';
   const url = (cfg?.url || '').trim();
   const label = (cfg?.label || 'Câmara Palco').trim();
-  const localDevId = localStorage.getItem('stagetimer_lineup_camera_device') || '';
 
-  const sig = `${isEnabled}:${sourceType}:${url}:${label}:${localDevId}`;
+  const sig = `${isEnabled}:${sourceType}:${url}:${label}`;
   if (!force && sig === lastVideoSig) return;
   lastVideoSig = sig;
 
@@ -785,7 +833,7 @@ async function syncLineupVideo(force = false) {
     return;
   }
 
-  // Video is enabled
+  // Video is enabled by Master
   if (isVideoCollapsed) {
     $videoContainer.style.display = 'none';
     if ($videoExpandBtn) $videoExpandBtn.style.display = 'block';
@@ -796,54 +844,19 @@ async function syncLineupVideo(force = false) {
 
   showVideoActive(label);
 
-  if (sourceType === 'camera') {
-    // ── Mode: Local USB / Camera / HDMI Capture Card ──
+  if (sourceType === 'virtual_cam') {
+    // ── Mode: OBS Virtual Camera via WebRTC or Local ──
     stopCurrentVideoStream();
     if ($videoIframe) $videoIframe.style.display = 'none';
     if ($videoElement) $videoElement.style.display = 'block';
 
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      showVideoPlaceholder('Captura USB não suportada pelo browser');
-      return;
-    }
-
-    try {
-      showVideoPlaceholder('A iniciar captura USB...');
-      const constraints = {
-        video: localDevId ? { deviceId: { exact: localDevId }, width: { ideal: 1280 }, height: { ideal: 720 } } : { width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false
-      };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      currentMediaStream = stream;
-      if ($videoElement) {
-        $videoElement.srcObject = stream;
-        $videoElement.muted = isVideoMuted;
-        try {
-          await $videoElement.play();
-        } catch (_) {}
-      }
-      showVideoActive(label);
-    } catch (err) {
-      console.warn('Falha ao aceder à câmara/placa USB:', err);
-      try {
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        currentMediaStream = fallbackStream;
-        if ($videoElement) {
-          $videoElement.srcObject = fallbackStream;
-          $videoElement.muted = isVideoMuted;
-          await $videoElement.play();
-        }
-        showVideoActive(label);
-      } catch (fallbackErr) {
-        showVideoPlaceholder('Dispositivo de captura inacessível ou sem permissão');
-      }
-    }
+    connectWebRtcToMaster(roomId || state?.id || 'PALCO1');
   } else {
-    // ── Mode: Network Stream / URL / HLS / VDO.Ninja ──
+    // ── Mode: Network Stream URL (YouTube / VDO.Ninja / HLS / MP4) ──
     stopCurrentVideoStream();
 
     if (!url) {
-      showVideoPlaceholder('Nenhum URL de stream configurado');
+      showVideoPlaceholder('Aguardando sinal do Master...');
       return;
     }
 
@@ -871,7 +884,7 @@ async function syncLineupVideo(force = false) {
           });
           hls.on(Hls.Events.ERROR, (event, data) => {
             if (data.fatal) {
-              showVideoPlaceholder('Erro ao carregar stream HLS');
+              showVideoPlaceholder('A reconectar stream HLS...');
             }
           });
         } else if ($videoElement.canPlayType && $videoElement.canPlayType('application/vnd.apple.mpegurl')) {
@@ -892,110 +905,7 @@ async function syncLineupVideo(force = false) {
   }
 }
 
-// ── Event Handlers & Modal Logic ──
-
-function openVideoConfigModal() {
-  if (!$videoModal) return;
-  const cfg = state?.video || (typeof client.getVideoConfig === 'function' ? client.getVideoConfig() : null);
-  if ($videoEnableToggle) {
-    $videoEnableToggle.checked = !!(cfg && cfg.enabled);
-  }
-  const type = cfg?.sourceType === 'url' ? 'url' : 'camera';
-  const radio = document.querySelector(`input[name="video-source-type"][value="${type}"]`);
-  if (radio) {
-    radio.checked = true;
-    updateSourceTypeView(type);
-  }
-  if ($videoUrlInput) {
-    $videoUrlInput.value = cfg?.url || '';
-  }
-  if ($videoLabelInput) {
-    $videoLabelInput.value = cfg?.label || 'Câmara de Palco';
-  }
-  enumerateVideoDevices();
-  $videoModal.style.display = 'flex';
-}
-
-function closeVideoConfigModal() {
-  if ($videoModal) $videoModal.style.display = 'none';
-}
-
-function updateSourceTypeView(type) {
-  if ($videoSectionCamera && $videoSectionUrl) {
-    if (type === 'camera') {
-      $videoSectionCamera.style.display = 'flex';
-      $videoSectionUrl.style.display = 'none';
-      document.getElementById('pill-source-camera')?.classList.add('active');
-      document.getElementById('pill-source-url')?.classList.remove('active');
-    } else {
-      $videoSectionCamera.style.display = 'none';
-      $videoSectionUrl.style.display = 'flex';
-      document.getElementById('pill-source-camera')?.classList.remove('active');
-      document.getElementById('pill-source-url')?.classList.add('active');
-    }
-  }
-}
-
-if ($videoCfgBtn) $videoCfgBtn.addEventListener('click', openVideoConfigModal);
-if ($navVideoBtn) $navVideoBtn.addEventListener('click', openVideoConfigModal);
-if ($videoModalClose) $videoModalClose.addEventListener('click', closeVideoConfigModal);
-
-if ($videoModal) {
-  $videoModal.addEventListener('click', (e) => {
-    if (e.target === $videoModal) closeVideoConfigModal();
-  });
-}
-
-$videoSourceTypeRadios.forEach(radio => {
-  radio.addEventListener('change', () => {
-    updateSourceTypeView(radio.value);
-  });
-});
-
-if ($videoRefreshDevicesBtn) {
-  $videoRefreshDevicesBtn.addEventListener('click', () => {
-    enumerateVideoDevices();
-  });
-}
-
-if ($videoSaveBtn) {
-  $videoSaveBtn.addEventListener('click', () => {
-    const enabled = $videoEnableToggle ? $videoEnableToggle.checked : true;
-    const sourceType = document.querySelector('input[name="video-source-type"]:checked')?.value || 'camera';
-    const url = $videoUrlInput ? $videoUrlInput.value.trim() : '';
-    const label = $videoLabelInput ? ($videoLabelInput.value.trim() || 'Câmara de Palco') : 'Câmara de Palco';
-    const chosenDevice = $videoDeviceSelect ? $videoDeviceSelect.value : '';
-
-    if (chosenDevice) {
-      localStorage.setItem('stagetimer_lineup_camera_device', chosenDevice);
-    }
-
-    if (typeof client.setVideoConfig === 'function') {
-      client.setVideoConfig({
-        enabled,
-        sourceType,
-        url,
-        label,
-        muted: isVideoMuted
-      });
-    }
-
-    closeVideoConfigModal();
-    syncLineupVideo(true);
-  });
-}
-
-if ($videoDisableBtn) {
-  $videoDisableBtn.addEventListener('click', () => {
-    if (typeof client.setVideoConfig === 'function') {
-      client.setVideoConfig({ enabled: false });
-    }
-    closeVideoConfigModal();
-    syncLineupVideo(true);
-  });
-}
-
-// ── In-Player Controls ──
+// ── In-Player Controls (Viewer side) ──
 
 if ($videoMuteBtn) {
   $videoMuteBtn.addEventListener('click', () => {
@@ -1034,9 +944,7 @@ if ($videoFsBtn) {
                  $videoElement.mozRequestFullScreen ||
                  $videoElement.msRequestFullscreen;
       if (fn) {
-        try {
-          fn.call($videoElement);
-        } catch (_) {}
+        try { fn.call($videoElement); } catch (_) {}
       }
     }
   });
