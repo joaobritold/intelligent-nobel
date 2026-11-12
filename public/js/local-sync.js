@@ -37,7 +37,9 @@ class UniversalSyncClient {
     this.channelName = `stagetimer_v10_${this.cleanRoom}`;
     this.cmdChannelName = 'stagetimer_v10_cmds';
     this.storageKey = `stagetimer_v10_state_${this.cleanRoom}`;
+    this.videoStorageKey = `stagetimer_v10_video_${this.cleanRoom}`;
     this.mqttTopicState = `stagetimer_v10/${this.cleanRoom}/state`;
+    this.mqttTopicVideo = `stagetimer_v10/${this.cleanRoom}/video`;
     this.mqttTopicPresence = `stagetimer_v10/${this.cleanRoom}/presence`;
     this.mqttTopicRegistry = 'stagetimer_v63_events_registry';
     this.mqttTopicGlobalPresence = 'stagetimer_v10/_global_presence';
@@ -322,8 +324,11 @@ class UniversalSyncClient {
         this.channel = new BroadcastChannel(this.channelName);
         this.channel.onmessage = (event) => {
           const msg = event.data;
-          if (msg && msg.type === 'room-state' && msg.sender !== this.clientId) {
+          if (!msg || msg.sender === this.clientId) return;
+          if (msg.type === 'room-state' && msg.data) {
             this._applyIncomingState(msg.data, false);
+          } else if (msg.type === 'video-config' && msg.video) {
+            this._applyIncomingVideoConfig(msg.video, false);
           }
         };
       } catch (e) {}
@@ -346,6 +351,11 @@ class UniversalSyncClient {
         try {
           const data = JSON.parse(e.newValue);
           this._applyIncomingState(data, false);
+        } catch (err) {}
+      } else if (e.key === this.videoStorageKey && e.newValue) {
+        try {
+          const videoCfg = JSON.parse(e.newValue);
+          this._applyIncomingVideoConfig(videoCfg, false);
         } catch (err) {}
       } else if (e.key === this.registryStorageKey && e.newValue) {
         try {
@@ -419,6 +429,16 @@ class UniversalSyncClient {
     // Ensure days structure is initialized
     this._ensureDaysStructure();
     this._ensureTheatreStructure();
+    this._ensureVideoStructure();
+    try {
+      const savedVid = localStorage.getItem(this.videoStorageKey);
+      if (savedVid) {
+        const parsedVid = JSON.parse(savedVid);
+        if (parsedVid && typeof parsedVid === 'object') {
+          this._state.video = { ...this._state.video, ...parsedVid };
+        }
+      }
+    } catch (_) {}
     this._syncEventInRegistry();
 
     // 4. Local High-FPS UI Render Loop
@@ -687,6 +707,8 @@ class UniversalSyncClient {
 
       const topicsToSubscribe = [
         this.mqttTopicState,
+        this.mqttTopicVideo,
+        `stagetimer_v10/${this.cleanRoom}/webrtc_signal`,
         this.mqttTopicPresence,
         this.mqttTopicRegistry,
         this.mqttTopicGlobalPresence,
@@ -699,9 +721,11 @@ class UniversalSyncClient {
         'stagetimer_v10/_device_removed'
       ];
 
-      // If in Master mode, also subscribe to all room state broadcasts
+      // If in Master mode, also subscribe to all room state & video broadcasts
       if (this.role === 'master') {
         topicsToSubscribe.push('stagetimer_v10/+/state');
+        topicsToSubscribe.push('stagetimer_v10/+/video');
+        topicsToSubscribe.push('stagetimer_v10/+/webrtc_signal');
       }
 
       this.mqttClient.subscribe(topicsToSubscribe, { qos: 0 }, (err) => {
@@ -741,6 +765,24 @@ class UniversalSyncClient {
             topic.startsWith('stagetimer_v10/_cmd_room/')) {
           if (msg.sender === this.clientId) return;
           this._handleRemoteCommand(msg);
+          return;
+        }
+
+        // Room video config update (dedicated topic so video never overwrites timers)
+        if (topic === this.mqttTopicVideo) {
+          if (msg.sender === this.clientId) return;
+          const vidData = msg.video || msg.data || msg;
+          if (vidData && typeof vidData === 'object') {
+            this._applyIncomingVideoConfig(vidData, true);
+          }
+          return;
+        } else if (topic.startsWith('stagetimer_v10/') && topic.endsWith('/video')) {
+          const parts = topic.split('/');
+          const roomCode = parts[1];
+          const vidData = msg.video || msg.data || msg;
+          if (roomCode && vidData && typeof vidData === 'object') {
+            this._emit('multi-room-video', { room: roomCode, video: vidData });
+          }
           return;
         }
 
@@ -2305,9 +2347,36 @@ class UniversalSyncClient {
     });
 
     try { delete incoming.isEmptyDefault; } catch (_) {}
+
+    // Preserve active video configuration if incoming state comes from a controller without video update
+    let preservedVideo = this._state?.video;
+    try {
+      const savedVidRaw = localStorage.getItem(this.videoStorageKey);
+      if (savedVidRaw) {
+        const savedVid = JSON.parse(savedVidRaw);
+        if (savedVid && (!preservedVideo || (savedVid.updatedAt || 0) >= (preservedVideo.updatedAt || 0))) {
+          preservedVideo = savedVid;
+        }
+      }
+    } catch (_) {}
+
     this._state = incoming;
     this._ensureDaysStructure();
     this._ensureTheatreStructure();
+    this._ensureVideoStructure();
+
+    if (preservedVideo && typeof preservedVideo === 'object') {
+      const incVidUpdated = incoming.video?.updatedAt || 0;
+      const presVidUpdated = preservedVideo.updatedAt || 0;
+      if (presVidUpdated > incVidUpdated || (!incoming.video?.enabled && preservedVideo.enabled && !incVidUpdated)) {
+        this._state.video = { ...this._state.video, ...preservedVideo };
+      } else if (incVidUpdated >= presVidUpdated && incoming.video) {
+        try {
+          localStorage.setItem(this.videoStorageKey, JSON.stringify(this._state.video));
+        } catch (_) {}
+      }
+    }
+
     this._enforceInactiveReset();
 
     // Prevent storage circular feedback ping-pong between local tabs
@@ -2492,15 +2561,9 @@ class UniversalSyncClient {
   }
 
   _cascadeSubsequentTimers(fromIdx, deltaMins) {
-    if (!deltaMins || !this._state?.timers) return;
-    for (let j = fromIdx + 1; j < this._state.timers.length; j++) {
-      const nextT = this._state.timers[j];
-      const sMins = this._parseStartMins(nextT.startTime);
-      if (sMins !== null) {
-        const newStart = sMins + deltaMins;
-        nextT.startTime = this._formatSlotRange(newStart, nextT.duration);
-      }
-    }
+    // Scheduled/Planned startTime is preserved as the original reference (never mutated in cascade)
+    // Dynamic cascade is computed in real-time by UniversalSyncClient.computeCascadeSchedule(state)
+    return;
   }
 
   updateTimer(id, updates) {
@@ -2509,18 +2572,16 @@ class UniversalSyncClient {
     const timer = this._state.timers[idx];
 
     if (typeof updates.duration === 'number' && updates.duration !== timer.duration) {
-      const deltaMins = Math.round((updates.duration - timer.duration) / 60000);
       timer.duration = updates.duration;
+      // If this specific timer has a range startTime, update its own planned end range
       const sMins = this._parseStartMins(timer.startTime);
-      if (sMins !== null) {
+      if (sMins !== null && String(timer.startTime).includes('–')) {
         timer.startTime = this._formatSlotRange(sMins, timer.duration);
       }
-      this._cascadeSubsequentTimers(idx, deltaMins);
       delete updates.duration;
     }
 
     if (typeof updates.startTime === 'string' && updates.startTime !== timer.startTime) {
-      const oldStart = this._parseStartMins(timer.startTime);
       const newStart = this._parseStartMins(updates.startTime);
       const rangeMatch = updates.startTime.match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
       if (rangeMatch && newStart !== null) {
@@ -2531,12 +2592,6 @@ class UniversalSyncClient {
         updates.startTime = this._formatSlotRange(newStart, timer.duration);
       } else if (newStart !== null) {
         updates.startTime = this._formatSlotRange(newStart, timer.duration);
-      }
-      if (oldStart !== null && newStart !== null) {
-        let deltaMins = newStart - oldStart;
-        if (deltaMins > 720) deltaMins -= 1440;
-        if (deltaMins < -720) deltaMins += 1440;
-        this._cascadeSubsequentTimers(idx, deltaMins);
       }
     }
 
@@ -3343,67 +3398,109 @@ class UniversalSyncClient {
     this._commitStateChange();
   }
 
-  setVideoConfig(config = {}) {
+  _applyIncomingVideoConfig(videoCfg, fromCloud = false) {
+    if (!videoCfg || typeof videoCfg !== 'object') return;
     if (!this._state) {
       this._state = this._loadState() || this._createDefaultRoom(this.cleanRoom);
     }
-    if (!this._state) return null;
     this._ensureVideoStructure();
     this._state.video = {
       ...this._state.video,
-      ...config
+      ...videoCfg
     };
-    this._commitStateChange();
-    return this._state.video;
+    try {
+      localStorage.setItem(this.videoStorageKey, JSON.stringify(this._state.video));
+    } catch (_) {}
+    if (fromCloud) {
+      this._saveLocal();
+    }
+    this._emit('video-config-update', this._state.video);
+    this._emit('room-state', this._state);
+  }
+
+  setVideoConfig(config = {}) {
+    return this.setRoomVideoConfig(this.cleanRoom, config);
   }
 
   setRoomVideoConfig(targetRoom, config = {}) {
     const cleanTarget = String(targetRoom || this.cleanRoom || 'PALCO1').toUpperCase().trim();
     if (!cleanTarget) return null;
 
-    if (cleanTarget === this.cleanRoom && this._state) {
-      return this.setVideoConfig(config);
-    }
+    const videoStorageKey = `stagetimer_v10_video_${cleanTarget}`;
+    const stateStorageKey = `stagetimer_v10_state_${cleanTarget}`;
 
-    const storageKey = `stagetimer_v10_state_${cleanTarget}`;
+    let existingVideo = this._createDefaultVideoState();
+    try {
+      const rawVid = localStorage.getItem(videoStorageKey);
+      if (rawVid) {
+        existingVideo = { ...existingVideo, ...JSON.parse(rawVid) };
+      }
+    } catch (_) {}
+
     let roomState = null;
     try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) roomState = JSON.parse(raw);
+      const rawState = localStorage.getItem(stateStorageKey);
+      if (rawState) {
+        roomState = JSON.parse(rawState);
+        if (roomState && roomState.video && typeof roomState.video === 'object') {
+          if ((roomState.video.updatedAt || 0) > (existingVideo.updatedAt || 0)) {
+            existingVideo = { ...existingVideo, ...roomState.video };
+          }
+        }
+      }
     } catch (_) {}
 
-    if (!roomState) {
-      roomState = this._createDefaultRoom(cleanTarget);
-    }
-
-    if (!roomState.video || typeof roomState.video !== 'object') {
-      roomState.video = this._createDefaultVideoState();
-    }
-
-    roomState.video = {
-      ...roomState.video,
-      ...config
+    const newVideoCfg = {
+      ...existingVideo,
+      ...config,
+      updatedAt: this.getTrueTime()
     };
-    roomState.updatedAt = Date.now();
 
     try {
-      localStorage.setItem(storageKey, JSON.stringify(roomState));
+      localStorage.setItem(videoStorageKey, JSON.stringify(newVideoCfg));
     } catch (_) {}
 
-    try {
-      const ch = new BroadcastChannel(`stagetimer_v10_${cleanTarget}`);
-      ch.postMessage({ type: 'room-state', state: roomState });
-      setTimeout(() => ch.close(), 100);
-    } catch (_) {}
-
-    if (this.mqttClient && this.mqttClient.connected) {
-      const topic = `stagetimer_v10/${cleanTarget}/state`;
+    if (roomState && typeof roomState === 'object') {
+      roomState.video = newVideoCfg;
       try {
-        this.mqttClient.publish(topic, JSON.stringify(roomState), { qos: 1, retain: true });
+        localStorage.setItem(stateStorageKey, JSON.stringify(roomState));
       } catch (_) {}
     }
 
-    return roomState.video;
+    if (cleanTarget === this.cleanRoom && this._state) {
+      this._ensureVideoStructure();
+      this._state.video = newVideoCfg;
+      this._saveLocal();
+      this._emit('video-config-update', this._state.video);
+      this._emit('room-state', this._state);
+    }
+
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        const ch = new BroadcastChannel(`stagetimer_v10_${cleanTarget}`);
+        ch.postMessage({
+          type: 'video-config',
+          sender: this.clientId,
+          room: cleanTarget,
+          video: newVideoCfg
+        });
+        setTimeout(() => { try { ch.close(); } catch (_) {} }, 150);
+      } catch (_) {}
+    }
+
+    if (this.mqttClient && this.mqttClient.connected) {
+      const videoTopic = `stagetimer_v10/${cleanTarget}/video`;
+      try {
+        this.mqttClient.publish(videoTopic, JSON.stringify({
+          sender: this.clientId,
+          sentAt: this.getTrueTime(),
+          room: cleanTarget,
+          video: newVideoCfg
+        }), { qos: 1, retain: true });
+      } catch (_) {}
+    }
+
+    return newVideoCfg;
   }
 
   getVideoConfig() {
@@ -3415,20 +3512,6 @@ class UniversalSyncClient {
   reorderTimers(order) {
     if (Array.isArray(order)) {
       const oldTimers = this._state.timers || [];
-      const posMeta = oldTimers.map((t, i) => {
-        const sMins = this._parseStartMins(t.startTime);
-        const durMins = Math.round((t.duration || 0) / 60000);
-        return { sMins, endMins: sMins !== null ? sMins + durMins : null };
-      });
-      const gaps = posMeta.map((cur, i) => {
-        if (i === 0 || cur.sMins === null || posMeta[i - 1].endMins === null) return null;
-        let diff = cur.sMins - (posMeta[i - 1].endMins % 1440);
-        if (diff < -720) diff += 1440;
-        if (diff > 720) diff -= 1440;
-        if (Math.abs(diff) > 120) return null;
-        return diff;
-      });
-
       const reordered = [];
       for (const id of order) {
         const t = oldTimers.find(item => item.id === id);
@@ -3438,21 +3521,7 @@ class UniversalSyncClient {
         if (!reordered.includes(t)) reordered.push(t);
       }
 
-      let prevEnd = null;
-      reordered.forEach((t, i) => {
-        if (t.mode === 'clock') return;
-        let curStart = null;
-        if (i === 0 || gaps[i] === null || prevEnd === null) {
-          curStart = posMeta[i]?.sMins ?? this._parseStartMins(t.startTime);
-        } else {
-          curStart = prevEnd + gaps[i];
-        }
-        if (curStart !== null) {
-          t.startTime = this._formatSlotRange(curStart, t.duration);
-          prevEnd = curStart + Math.round((t.duration || 0) / 60000);
-        }
-      });
-
+      // Preserva intacto o Horário Previsto (startTime) original de cada artista
       this._state.timers = reordered;
       this._commitStateChange();
     }
@@ -3473,7 +3542,7 @@ class UniversalSyncClient {
 
   static computeCascadeSchedule(state) {
     if (!state || !Array.isArray(state.timers) || state.timers.length === 0) {
-      return { slots: [], eventEndStr: '--:--' };
+      return { slots: [], eventEndStr: '--:--', globalDelayMins: 0, isDelayed: false, globalDelayStr: '0m' };
     }
 
     const trueNow = UniversalSyncClient.globalTrueTime();
@@ -3494,17 +3563,53 @@ class UniversalSyncClient {
       return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
     };
 
+    const parseRange = (str) => {
+      if (!str) return null;
+      const match = String(str).match(/(\d{1,2})\s*[:hH]\s*(\d{2})\s*[-–—a]\s*(\d{1,2})\s*[:hH]\s*(\d{2})/);
+      if (match) {
+        const s = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+        const e = parseInt(match[3], 10) * 60 + parseInt(match[4], 10);
+        return { s, e };
+      }
+      const single = parseMins(str);
+      if (single !== null) {
+        return { s: single, e: null };
+      }
+      return null;
+    };
+
     const localDate = new Date(trueNow);
     const nowMins = localDate.getHours() * 60 + localDate.getMinutes() + localDate.getSeconds() / 60;
 
     const slots = [];
-    let lastEndMins = null;
+    let lastRealEndMins = null;
 
     for (let i = 0; i < state.timers.length; i++) {
       const t = state.timers[i];
       if (t.mode === 'clock') {
         slots.push({
           id: t.id,
+          planned: {
+            startMins: null,
+            endMins: null,
+            startStr: '--:--',
+            endStr: '--:--',
+            slotRange: 'Relógio',
+            hasValue: false,
+            raw: ''
+          },
+          real: {
+            startMins: null,
+            endMins: null,
+            startStr: '--:--',
+            endStr: '--:--',
+            endStrClean: '--:--',
+            slotRange: 'Relógio'
+          },
+          delayMins: 0,
+          delayStr: '0m',
+          isDelayed: false,
+          isEarly: false,
           startStr: '--:--',
           endStr: '--:--',
           endStrClean: '--:--',
@@ -3524,52 +3629,119 @@ class UniversalSyncClient {
       const overtimeMins = Math.max(0, Math.floor((elapsed - (t.duration || 0)) / 60000));
       const remainingMins = Math.max(0, durMins - elapsedMins);
 
+      // 1. HORÁRIO PREVISTO (Original carregado / escrito - nunca mutado)
+      const plannedRange = parseRange(t.startTime);
+      let plannedStartMins = null;
+      let plannedEndMins = null;
+      let plannedStartStr = '--:--';
+      let plannedEndStr = '--:--';
+      let plannedSlotRange = '--:--';
+      let hasPlanned = false;
+
+      if (plannedRange) {
+        hasPlanned = true;
+        plannedStartMins = plannedRange.s;
+        plannedEndMins = plannedRange.e !== null ? plannedRange.e : (plannedStartMins + Math.round(durMins));
+        plannedStartStr = formatMins(plannedStartMins);
+        plannedEndStr = formatMins(plannedEndMins);
+        plannedSlotRange = `${plannedStartStr} – ${plannedEndStr}`;
+      }
+
+      // 2. HORÁRIO REAL / ESTIMADO (Calculado dinamicamente para situar no relógio do dia)
       let itemStartMins;
       let itemEndMins;
 
-      const explicitStart = parseMins(t.startTime);
-
       if (isRunning || isPaused) {
-        // Active timer live on air: its expected finish is NOW + remaining time
-        itemStartMins = (lastEndMins !== null)
-          ? lastEndMins
-          : (explicitStart !== null ? explicitStart : (nowMins - elapsedMins));
+        // Artista em palco ao vivo:
+        itemStartMins = (nowMins - elapsedMins);
         itemEndMins = nowMins + remainingMins;
       } else if (i < activeIdx || t.state === 'finished') {
-        // Already finished timer
-        itemStartMins = (explicitStart !== null)
-          ? explicitStart
-          : (lastEndMins !== null ? lastEndMins : nowMins);
+        // Já concluído
+        itemStartMins = (plannedStartMins !== null)
+          ? plannedStartMins
+          : (lastRealEndMins !== null ? lastRealEndMins : nowMins);
         itemEndMins = itemStartMins + durMins;
       } else {
-        // Upcoming or waiting timer
-        if (lastEndMins !== null) {
-          // If previous timer finished later than this timer's explicit schedule, cascade pushed forward!
-          if (explicitStart !== null && explicitStart > lastEndMins && (!activeTimer || activeTimer.state !== 'running')) {
-            itemStartMins = explicitStart;
+        // Em espera / próximos
+        if (lastRealEndMins !== null) {
+          if (plannedStartMins !== null && plannedStartMins > lastRealEndMins && (!activeTimer || activeTimer.state !== 'running')) {
+            itemStartMins = plannedStartMins;
           } else {
-            itemStartMins = lastEndMins;
+            itemStartMins = lastRealEndMins;
           }
         } else {
-          itemStartMins = (explicitStart !== null) ? explicitStart : nowMins;
+          if (plannedStartMins !== null) {
+            let diffFromNow = nowMins - plannedStartMins;
+            if (diffFromNow < -720) diffFromNow += 1440;
+            if (diffFromNow > 720) diffFromNow -= 1440;
+            itemStartMins = (diffFromNow > 2) ? nowMins : plannedStartMins;
+          } else {
+            itemStartMins = nowMins;
+          }
         }
         itemEndMins = itemStartMins + durMins;
       }
 
-      lastEndMins = itemEndMins;
+      lastRealEndMins = itemEndMins;
 
-      const startStr = formatMins(itemStartMins);
-      const endStr = formatMins(itemEndMins);
+      // 3. DESVIO / ATRASO (Comparação entre Real e Previsto)
+      let delayMins = 0;
+      let delayStr = '0m';
+      let isDelayed = false;
+      let isEarly = false;
+
+      if (hasPlanned && plannedStartMins !== null) {
+        let diff = itemStartMins - plannedStartMins;
+        if (diff < -720) diff += 1440;
+        if (diff > 720) diff -= 1440;
+        diff = Math.round(diff);
+        delayMins = diff;
+        if (diff >= 2) {
+          isDelayed = true;
+          delayStr = `+${diff}m`;
+        } else if (diff <= -2) {
+          isEarly = true;
+          delayStr = `${diff}m`;
+        } else {
+          delayStr = '0m';
+        }
+      }
+
+      const realStartStr = formatMins(itemStartMins);
+      const realEndStr = formatMins(itemEndMins);
       const otStr = (isRunning || isPaused) && overtimeMins > 0 ? ` (+${overtimeMins}m)` : '';
 
       slots.push({
         id: t.id,
+        planned: {
+          startMins: plannedStartMins,
+          endMins: plannedEndMins,
+          startStr: plannedStartStr,
+          endStr: plannedEndStr,
+          slotRange: plannedSlotRange,
+          hasValue: hasPlanned,
+          raw: t.startTime || ''
+        },
+        real: {
+          startMins: itemStartMins,
+          endMins: itemEndMins,
+          startStr: realStartStr,
+          endStr: `${realEndStr}${otStr}`,
+          endStrClean: realEndStr,
+          slotRange: `${realStartStr} – ${realEndStr}`
+        },
+        delayMins,
+        delayStr,
+        isDelayed,
+        isEarly,
+
+        // Propriedades retrocompatíveis
         startMins: itemStartMins,
         endMins: itemEndMins,
-        startStr,
-        endStr: `${endStr}${otStr}`,
-        endStrClean: endStr,
-        slotRange: `${startStr} – ${endStr}`,
+        startStr: realStartStr,
+        endStr: `${realEndStr}${otStr}`,
+        endStrClean: realEndStr,
+        slotRange: `${realStartStr} – ${realEndStr}`,
         isOvertime: overtimeMins > 0,
         overtimeMins
       });
@@ -3579,7 +3751,16 @@ class UniversalSyncClient {
     const lastCountdown = countdownSlots.length > 0 ? countdownSlots[countdownSlots.length - 1] : null;
     const eventEndStr = lastCountdown ? lastCountdown.endStr : '--:--';
 
-    return { slots, eventEndStr };
+    const activeSlot = activeIdx >= 0 ? slots[activeIdx] : (slots[0] || null);
+    const globalDelayMins = activeSlot ? activeSlot.delayMins : 0;
+
+    return { 
+      slots, 
+      eventEndStr,
+      globalDelayMins,
+      isDelayed: globalDelayMins >= 2,
+      globalDelayStr: globalDelayMins >= 2 ? `+${globalDelayMins}m` : (globalDelayMins <= -2 ? `${globalDelayMins}m` : '0m')
+    };
   }
 
   static computeTimerEndTime(state, timerId) {

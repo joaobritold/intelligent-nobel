@@ -1095,7 +1095,24 @@
 
   masterClient.on('multi-room-state', ({ room, data }) => {
     if (room && data) {
+      const existing = stagesStateMap.get(room);
+      if (existing?.video && (!data.video || (existing.video.updatedAt || 0) > (data.video.updatedAt || 0))) {
+        data.video = existing.video;
+      }
       stagesStateMap.set(room, data);
+      renderMultiview();
+    }
+  });
+
+  masterClient.on('multi-room-video', ({ room, video }) => {
+    if (room && video) {
+      const cleanCode = String(room).toUpperCase().trim();
+      const st = stagesStateMap.get(cleanCode) || { id: cleanCode, timers: [], activeTimerId: null };
+      st.video = { ...(st.video || {}), ...video };
+      stagesStateMap.set(cleanCode, st);
+      try {
+        localStorage.setItem(`stagetimer_v10_video_${cleanCode}`, JSON.stringify(st.video));
+      } catch (_) {}
       renderMultiview();
     }
   });
@@ -1189,7 +1206,21 @@
         displayTime = formatTime(remaining);
       }
 
-      const eventEndTime = StageTimerClient.computeEventEndTime(stageState);
+      const stageCascade = (typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.computeCascadeSchedule === 'function')
+        ? StageTimerClient.computeCascadeSchedule(stageState)
+        : null;
+      const stageSlot = (activeTimer && stageCascade) ? stageCascade.slots?.find(s => s.id === activeTimer.id) : null;
+      let scheduleNote = '';
+      if (stageSlot?.planned?.hasValue) {
+        scheduleNote = `📋 Prev: ${stageSlot.planned.slotRange} • ⏱️ Real: ${stageSlot.real.slotRange}${stageSlot.isDelayed ? ` (${stageSlot.delayStr})` : ''}`;
+      } else if (activeTimer?.startTime) {
+        scheduleNote = `Horário: ${activeTimer.startTime}`;
+      }
+      if (activeTimer?.notes) {
+        scheduleNote = scheduleNote ? `${scheduleNote} | 📝 ${activeTimer.notes}` : `📝 ${activeTimer.notes}`;
+      }
+
+      const eventEndTime = stageCascade?.eventEndStr || StageTimerClient.computeEventEndTime(stageState);
 
       let card = $multiviewGrid.querySelector(`[data-mv-room="${CSS.escape(stageCode)}"]`);
 
@@ -1216,7 +1247,7 @@
               ${activeTimer ? escapeHtml(activeTimer.name || 'Artista') : 'Sem artistas programados'}
             </div>
             <div class="multiview-artist-notes">
-              ${activeTimer?.notes ? escapeHtml(activeTimer.notes) : (activeTimer?.startTime ? `Horário: ${escapeHtml(activeTimer.startTime)}` : '')}
+              ${escapeHtml(scheduleNote)}
             </div>
           </div>
 
@@ -1263,7 +1294,7 @@
         }
 
         const artistNotesEl = card.querySelector('.multiview-artist-notes');
-        const expectedNotes = activeTimer?.notes ? activeTimer.notes : (activeTimer?.startTime ? `Horário: ${activeTimer.startTime}` : '');
+        const expectedNotes = scheduleNote;
         if (artistNotesEl && artistNotesEl.textContent !== expectedNotes) {
           artistNotesEl.textContent = expectedNotes;
         }
@@ -1730,6 +1761,15 @@
 
     const stageState = stagesStateMap.get(currentVideoStageCode);
     let videoCfg = stageState?.video;
+    try {
+      const rawVid = localStorage.getItem(`stagetimer_v10_video_${currentVideoStageCode}`);
+      if (rawVid) {
+        const parsedVid = JSON.parse(rawVid);
+        if (!videoCfg || (parsedVid.updatedAt || 0) >= (videoCfg.updatedAt || 0)) {
+          videoCfg = parsedVid;
+        }
+      }
+    } catch (_) {}
     if (!videoCfg) {
       try {
         const raw = localStorage.getItem(`stagetimer_v10_state_${currentVideoStageCode}`);
@@ -1767,12 +1807,20 @@
       broadcaster = { stream, peers: new Map() };
       mvmActiveBroadcasters.set(cleanRoom, broadcaster);
     } else {
+      if (broadcaster.stream && broadcaster.stream !== stream) {
+        try { broadcaster.stream.getTracks().forEach(t => t.stop()); } catch (_) {}
+      }
       broadcaster.stream = stream;
     }
 
     if (masterClient.mqttClient && masterClient.mqttClient.connected) {
       const signalTopic = `stagetimer_v10/${cleanRoom}/webrtc_signal`;
       masterClient.mqttClient.subscribe(signalTopic);
+      masterClient.mqttClient.publish(signalTopic, JSON.stringify({
+        type: 'broadcaster-ready',
+        roomCode: cleanRoom,
+        from: 'master'
+      }));
     }
   }
 
@@ -1891,18 +1939,31 @@
         label: currentVideoStageTitle || currentVideoStageCode
       };
 
-      if (enabled && sourceType === 'virtual_cam' && mvmMediaStream) {
-        setupWebRtcBroadcaster(currentVideoStageCode, mvmMediaStream);
+      if (enabled && sourceType === 'virtual_cam') {
+        if (mvmMediaStream) {
+          setupWebRtcBroadcaster(currentVideoStageCode, mvmMediaStream);
+          // Hand off ownership of stream to broadcaster so closeMasterVideoModal does NOT stop tracks!
+          mvmMediaStream = null;
+          if ($mvmPreviewVideo) $mvmPreviewVideo.srcObject = null;
+        }
+      } else {
+        const oldBroadcaster = mvmActiveBroadcasters.get(currentVideoStageCode);
+        if (oldBroadcaster) {
+          if (oldBroadcaster.stream) {
+            try { oldBroadcaster.stream.getTracks().forEach(t => t.stop()); } catch (_) {}
+          }
+          oldBroadcaster.peers.forEach(pc => { try { pc.close(); } catch (_) {} });
+          mvmActiveBroadcasters.delete(currentVideoStageCode);
+        }
       }
 
       if (typeof masterClient.setRoomVideoConfig === 'function') {
         masterClient.setRoomVideoConfig(currentVideoStageCode, videoConfig);
       }
 
-      const st = stagesStateMap.get(currentVideoStageCode);
-      if (st) {
-        st.video = { ...(st.video || {}), ...videoConfig };
-      }
+      const st = stagesStateMap.get(currentVideoStageCode) || { id: currentVideoStageCode, timers: [], activeTimerId: null };
+      st.video = { ...(st.video || {}), ...videoConfig };
+      stagesStateMap.set(currentVideoStageCode, st);
 
       closeMasterVideoModal();
       renderMultiview();

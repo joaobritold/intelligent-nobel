@@ -293,45 +293,29 @@ function getTimerDisplayValue(timer) {
   return formatTime(elapsed);
 }
 
-// Compute automatic cascaded estimated times
+// Compute automatic cascaded estimated times and dual schedule (Planned vs Real)
 function computeScheduleSlots(timers, activeIdx) {
   if (!state) return [];
   if (typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.computeCascadeSchedule === 'function') {
     const cascade = StageTimerClient.computeCascadeSchedule(state);
     if (cascade && Array.isArray(cascade.slots) && cascade.slots.length > 0) {
-      return timers.map(t => {
-        const slot = cascade.slots.find(s => s.id === t.id);
-        if (slot) return slot.slotRange;
-        return t.startTime ? t.startTime.trim() : '--:--';
-      });
+      return cascade.slots;
     }
   }
 
   const rollingMs = StageTimerClient.globalTrueTime();
   return timers.map((t, i) => {
-    if (t.startTime && t.startTime.trim()) {
-      return t.startTime.trim();
-    }
-    if (i < activeIdx) {
-      return 'Concluído';
-    }
-    if (i === activeIdx) {
-      return 'Agora';
-    }
-    // Accumulate previous durations from active timer
-    let offsetMs = 0;
-    for (let j = activeIdx >= 0 ? activeIdx : 0; j < i; j++) {
-      const prev = timers[j];
-      if (!prev) continue;
-      let rem = prev.duration;
-      if (j === activeIdx && prev.mode === 'countdown') {
-        const el = getTimerElapsed(prev);
-        rem = Math.max(0, prev.duration - el);
-      }
-      offsetMs += rem;
-    }
-    const est = new Date(rollingMs + offsetMs);
-    return est.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const plannedStr = t.startTime ? t.startTime.trim() : '--:--';
+    return {
+      id: t.id,
+      planned: { slotRange: plannedStr, startStr: plannedStr, endStr: '', hasValue: Boolean(t.startTime && t.startTime.trim()) },
+      real: { slotRange: plannedStr, startStr: plannedStr, endStr: '', endStrClean: '' },
+      delayMins: 0,
+      delayStr: '0m',
+      isDelayed: false,
+      isEarly: false,
+      slotRange: plannedStr
+    };
   });
 }
 
@@ -399,9 +383,16 @@ function render() {
     $roomBadge.textContent = state.name || roomId;
   }
 
+  const cascadeData = typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.computeCascadeSchedule === 'function' ? StageTimerClient.computeCascadeSchedule(state) : null;
+
   const $eventEnd = document.getElementById('lineup-event-end');
   if ($eventEnd) {
-    $eventEnd.textContent = getEventEndTime(state);
+    const endStr = cascadeData?.eventEndStr || getEventEndTime(state);
+    if (cascadeData && cascadeData.isDelayed) {
+      $eventEnd.innerHTML = `${escapeHtml(endStr)} <span style="font-size: 0.72rem; color: #fdcb6e; font-weight: 700; margin-left: 4px;">(${escapeHtml(cascadeData.globalDelayStr)})</span>`;
+    } else {
+      $eventEnd.textContent = endStr;
+    }
   }
 
   const activeTimer = StageTimerClient.getActiveTimer(state);
@@ -412,7 +403,7 @@ function render() {
   if (!activeTimer) {
     $nowBadge.textContent = 'AGUARDANDO INÍCIO';
     $nowName.textContent = 'Sem artista ativo';
-    $nowSlot.textContent = '';
+    $nowSlot.innerHTML = '';
     $nowTimer.textContent = '--:--';
     $nowTimer.className = 'lineup-now-timer';
     $nowNotes.style.display = 'none';
@@ -422,9 +413,39 @@ function render() {
     const isLong = displayVal.length > 5;
     $nowBadge.textContent = activeTimer.state === 'running' ? '● EM PALCO AGORA' : '● PREPARADO EM PALCO';
     $nowName.textContent = activeTimer.name;
-    const activeCascade = typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.computeCascadeSchedule === 'function' ? StageTimerClient.computeCascadeSchedule(state) : null;
-    const activeSlot = activeCascade?.slots?.find(s => s.id === activeTimer.id);
-    $nowSlot.textContent = activeSlot ? `Horário Previsto: ${activeSlot.slotRange}` : (activeTimer.startTime ? `Horário: ${activeTimer.startTime}` : `Duração: ${formatTime(activeTimer.duration)}`);
+
+    const activeSlot = cascadeData?.slots?.find(s => s.id === activeTimer.id);
+    if (activeSlot && activeSlot.planned && activeSlot.planned.hasValue) {
+      const delayBadgeHtml = activeSlot.isDelayed
+        ? `<span class="lineup-now-delay-pill warn">⚠️ +${activeSlot.delayMins}m atraso</span>`
+        : (activeSlot.isEarly ? `<span class="lineup-now-delay-pill early">⚡ ${activeSlot.delayStr} adiantado</span>` : `<span class="lineup-now-delay-pill ok">✓ No horário</span>`);
+
+      $nowSlot.innerHTML = `
+        <div class="lineup-now-sched-box">
+          <div class="now-sched-row">
+            <span class="now-sched-tag planned">PREVISTO</span>
+            <span class="now-sched-val">${escapeHtml(activeSlot.planned.slotRange)}</span>
+          </div>
+          <div class="now-sched-row">
+            <span class="now-sched-tag real">REAL (HOJE)</span>
+            <span class="now-sched-val font-accent">${escapeHtml(activeSlot.real.slotRange)}</span>
+            ${delayBadgeHtml}
+          </div>
+        </div>
+      `;
+    } else if (activeSlot) {
+      $nowSlot.innerHTML = `
+        <div class="lineup-now-sched-box">
+          <div class="now-sched-row">
+            <span class="now-sched-tag real">REAL (HOJE)</span>
+            <span class="now-sched-val font-accent">${escapeHtml(activeSlot.real.slotRange)}</span>
+          </div>
+        </div>
+      `;
+    } else {
+      $nowSlot.textContent = activeTimer.startTime ? `Horário: ${activeTimer.startTime}` : `Duração: ${formatTime(activeTimer.duration)}`;
+    }
+
     $nowTimer.textContent = displayVal;
     $nowTimer.className = `lineup-now-timer ${color}${isLong ? ' is-long' : ''}`;
 
@@ -437,7 +458,11 @@ function render() {
   }
 
   // Right table: All Artists (only rebuild DOM when lineup/slots/state changes)
-  const sig = state.timers.map((t, idx) => `${t.id}:${t.name}:${slots[idx]}:${t.duration}:${t.notes || ''}:${t.state}:${idx === activeIdx}`).join('|');
+  const sig = state.timers.map((t, idx) => {
+    const s = slots[idx];
+    return `${t.id}:${t.name}:${s?.real?.slotRange || ''}:${s?.planned?.slotRange || ''}:${s?.delayStr || ''}:${t.duration}:${t.notes || ''}:${t.state}:${idx === activeIdx}`;
+  }).join('|');
+
   if (sig !== lastLineupSig) {
     const isFirstRender = !lastLineupSig;
     lastLineupSig = sig;
@@ -465,29 +490,36 @@ function render() {
         statusText = '✓ FIM';
       }
 
-      const timeDisplay = slots[idx] || '--:--';
-      let timeIn = timeDisplay;
-      let timeOut = '';
-
-      const rangeMatch = String(timeDisplay).match(/(\d{1,2}\s*[:hH]\s*\d{2})\s*[-–—a]\s*(\d{1,2}\s*[:hH]\s*\d{2})/);
-      if (rangeMatch) {
-        timeIn = rangeMatch[1].replace(/[hH]/, ':').replace(/\s+/g, '');
-        timeOut = rangeMatch[2].replace(/[hH]/, ':').replace(/\s+/g, '');
-      } else {
-        const singleMatch = String(timeDisplay).match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
-        if (singleMatch) {
-          const sMins = parseInt(singleMatch[1], 10) * 60 + parseInt(singleMatch[2], 10);
-          const eMins = (sMins + Math.round((t.duration || 0) / 60000)) % 1440;
-          timeIn = `${String(Math.floor(sMins / 60)).padStart(2, '0')}:${String(sMins % 60).padStart(2, '0')}`;
-          timeOut = `${String(Math.floor(eMins / 60)).padStart(2, '0')}:${String(eMins % 60).padStart(2, '0')}`;
-        }
-      }
+      const slot = slots[idx];
+      const plannedStart = slot?.planned?.hasValue ? slot.planned.startStr : (t.startTime ? t.startTime.trim() : '--:--');
+      const plannedEnd = slot?.planned?.hasValue ? slot.planned.endStr : '';
+      const realStart = slot?.real?.startStr || '--:--';
+      const realEnd = slot?.real?.endStrClean || slot?.real?.endStr || '';
+      const isDelayed = Boolean(slot?.isDelayed);
+      const isEarly = Boolean(slot?.isEarly);
+      const delayStr = slot?.delayStr || '0m';
 
       return `
         <div class="${rowClass}" data-timer-id="${t.id}">
           <div class="lineup-col-time">
-            <span class="lineup-time-in">${escapeHtml(timeIn)}</span>
-            ${timeOut ? `<span class="lineup-time-out">${escapeHtml(timeOut)}</span>` : ''}
+            <div class="lineup-time-chip chip-planned" title="Horário Previsto original da folha de sala">
+              <span class="chip-tag">PREV</span>
+              <div class="chip-hours">
+                <span class="chip-time-in">${escapeHtml(plannedStart)}</span>
+                ${plannedEnd ? `<span class="chip-time-out">${escapeHtml(plannedEnd)}</span>` : ''}
+              </div>
+            </div>
+            <div class="lineup-time-chip chip-real ${isDelayed ? 'is-delayed' : (isEarly ? 'is-early' : '')}" title="Horário Real / Estimado (Hora em que vai mesmo atuar no relógio de hoje)">
+              <div class="chip-tag-row">
+                <span class="chip-tag">REAL</span>
+                ${isDelayed ? `<span class="chip-delay-tag warn">${escapeHtml(delayStr)}</span>` : ''}
+                ${isEarly ? `<span class="chip-delay-tag early">${escapeHtml(delayStr)}</span>` : ''}
+              </div>
+              <div class="chip-hours">
+                <span class="chip-time-in">${escapeHtml(realStart)}</span>
+                ${realEnd ? `<span class="chip-time-out">${escapeHtml(realEnd)}</span>` : ''}
+              </div>
+            </div>
           </div>
           <div class="lineup-col-artist">
             <span class="lineup-artist-name">${escapeHtml(t.name)}</span>
@@ -523,6 +555,15 @@ client.on('room-state', (data) => {
   render();
   if (typeof syncLineupVideo === 'function') {
     syncLineupVideo();
+  }
+});
+
+client.on('video-config-update', (videoCfg) => {
+  if (state && videoCfg) {
+    state.video = videoCfg;
+  }
+  if (typeof syncLineupVideo === 'function') {
+    syncLineupVideo(true);
   }
 });
 
@@ -636,6 +677,7 @@ document.addEventListener('keydown', (e) => {
 let currentMediaStream = null;
 let currentHls = null;
 let currentWebRtcPeer = null;
+let webrtcJoinInterval = null;
 let isVideoMuted = true;
 let isVideoCollapsed = false;
 let lastVideoSig = '';
@@ -676,6 +718,10 @@ function showVideoActive(label = 'Câmara Palco') {
 }
 
 function stopCurrentVideoStream() {
+  if (webrtcJoinInterval) {
+    clearInterval(webrtcJoinInterval);
+    webrtcJoinInterval = null;
+  }
   if (currentMediaStream) {
     try { currentMediaStream.getTracks().forEach(t => t.stop()); } catch (_) {}
     currentMediaStream = null;
@@ -716,6 +762,10 @@ function formatEmbedUrl(rawUrl) {
 // Connect to Master WebRTC Broadcaster
 function connectWebRtcToMaster(cleanRoom) {
   if (!cleanRoom) return;
+  if (webrtcJoinInterval) {
+    clearInterval(webrtcJoinInterval);
+    webrtcJoinInterval = null;
+  }
   if (currentWebRtcPeer) {
     try { currentWebRtcPeer.close(); } catch (_) {}
     currentWebRtcPeer = null;
@@ -733,13 +783,17 @@ function connectWebRtcToMaster(cleanRoom) {
 
   pc.ontrack = (event) => {
     if (event.streams && event.streams[0]) {
+      if (webrtcJoinInterval) {
+        clearInterval(webrtcJoinInterval);
+        webrtcJoinInterval = null;
+      }
       currentMediaStream = event.streams[0];
       if ($videoElement) {
         $videoElement.srcObject = event.streams[0];
         $videoElement.muted = isVideoMuted;
         $videoElement.play().catch(() => {});
       }
-      showVideoActive('OBS Virtual Cam');
+      showVideoActive(state?.video?.label || 'OBS Virtual Cam');
     }
   };
 
@@ -754,7 +808,7 @@ function connectWebRtcToMaster(cleanRoom) {
     }
   };
 
-  setTimeout(() => {
+  const sendViewerJoin = () => {
     if (client.mqttClient && client.mqttClient.connected) {
       client.mqttClient.subscribe(signalTopic);
       client.mqttClient.publish(signalTopic, JSON.stringify({
@@ -763,33 +817,32 @@ function connectWebRtcToMaster(cleanRoom) {
         roomCode: cleanRoom
       }));
     }
-  }, 200);
+  };
 
-  setTimeout(async () => {
-    if ((!$videoElement || !$videoElement.srcObject) && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try {
-        const devs = await navigator.mediaDevices.enumerateDevices();
-        const obsDev = devs.find(d => d.kind === 'videoinput' && ((d.label || '').toLowerCase().includes('obs') || (d.label || '').toLowerCase().includes('virtual')));
-        if (obsDev) {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: obsDev.deviceId } }, audio: false });
-          currentMediaStream = stream;
-          if ($videoElement) {
-            $videoElement.srcObject = stream;
-            $videoElement.muted = isVideoMuted;
-            await $videoElement.play();
-          }
-          showVideoActive('OBS Virtual Cam (Local)');
-        }
-      } catch (_) {}
+  setTimeout(sendViewerJoin, 200);
+  webrtcJoinInterval = setInterval(() => {
+    if (!$videoElement || !$videoElement.srcObject) {
+      sendViewerJoin();
+    } else {
+      clearInterval(webrtcJoinInterval);
+      webrtcJoinInterval = null;
     }
   }, 4000);
 }
 
 // Listen for WebRTC signals from Master
 client.on('webrtc-signal', ({ topic, msg }) => {
-  if (!currentWebRtcPeer || !msg) return;
+  if (!msg) return;
+  if (msg.type === 'broadcaster-ready' && msg.from === 'master') {
+    if (state?.video?.enabled && state?.video?.sourceType === 'virtual_cam') {
+      connectWebRtcToMaster(roomId || state?.id || 'PALCO1');
+    }
+    return;
+  }
+
+  if (!currentWebRtcPeer) return;
   const myUuid = client.deviceUuid;
-  if (msg.viewerId !== myUuid) return;
+  if (msg.viewerId !== myUuid || msg.from !== 'master') return;
 
   if (msg.type === 'offer' && msg.offer) {
     currentWebRtcPeer.setRemoteDescription(new RTCSessionDescription(msg.offer))
@@ -816,7 +869,17 @@ client.on('webrtc-signal', ({ topic, msg }) => {
 async function syncLineupVideo(force = false) {
   if (!$videoContainer) return;
 
-  const cfg = state?.video || (typeof client.getVideoConfig === 'function' ? client.getVideoConfig() : null);
+  let cfg = state?.video || (typeof client.getVideoConfig === 'function' ? client.getVideoConfig() : null);
+  try {
+    const activeRoomCode = (roomId || state?.id || 'PALCO1').toUpperCase().trim();
+    const rawVid = localStorage.getItem(`stagetimer_v10_video_${activeRoomCode}`);
+    if (rawVid) {
+      const parsedVid = JSON.parse(rawVid);
+      if (parsedVid && (!cfg || (parsedVid.updatedAt || 0) >= (cfg.updatedAt || 0))) {
+        cfg = parsedVid;
+      }
+    }
+  } catch (_) {}
   const isEnabled = !!(cfg && cfg.enabled);
   const sourceType = cfg?.sourceType || 'virtual_cam';
   const url = (cfg?.url || '').trim();
