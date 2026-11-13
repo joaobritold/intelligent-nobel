@@ -286,6 +286,29 @@ select.input {
   text-overflow: ellipsis;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  touch-action: manipulation;
+}
+
+@media (max-width: 600px) {
+  .master-stage-select {
+    font-size: 16px !important; /* Previne auto-zoom no iOS Safari */
+    max-width: 150px;
+    padding: 4px 22px 4px 8px;
+  }
+}
+
+.ctrl-stage-badge-btn {
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.ctrl-stage-badge-btn:hover {
+  filter: brightness(1.2);
+}
+.ctrl-stage-badge-btn:active {
+  transform: scale(0.96);
 }
 
 .master-stage-select:hover,

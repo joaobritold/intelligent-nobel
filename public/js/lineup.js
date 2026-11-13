@@ -219,7 +219,9 @@ function updateLineupNavLinks(code) {
   const current = (code || roomId || 'PALCO1').toUpperCase();
   const q = `?room=${encodeURIComponent(current)}`;
   const keys = [
-    { id: 'ln-nav-hub', page: 'index.html' },
+    { id: 'ln-nav-hub', page: 'index.html?portal=1', exact: true },
+    { id: 'ln-nav-portal', page: 'index.html?portal=1', exact: true },
+    { id: 'ln-nav-hub-menu', page: `index.html${q}`, exact: true },
     { id: 'ln-nav-controller', page: 'controller.html' },
     { id: 'ln-nav-operator', page: 'operator.html' },
     { id: 'ln-nav-viewer', page: 'viewer.html' },
@@ -229,7 +231,7 @@ function updateLineupNavLinks(code) {
   ];
   keys.forEach(k => {
     const el = document.getElementById(k.id);
-    if (el) el.href = `${k.page}${q}`;
+    if (el) el.href = k.exact ? k.page : `${k.page}${q}`;
   });
   const $masterPill = document.getElementById('ln-nav-master');
   if ($masterPill) {

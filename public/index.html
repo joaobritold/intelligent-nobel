@@ -59,7 +59,7 @@
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="./index.html">
   <title>StageTimer PFP — Timer de Palco & Lineup</title>
-  <link rel="stylesheet" href="css/common.css?v=108">
+  <link rel="stylesheet" href="css/common.css?v=109">
   <style>
     body {
       display: flex;
@@ -503,15 +503,18 @@
         <p class="hub-sub">Sincronização em Tempo Real para Eventos & Palcos</p>
       </div>
 
-      <!-- Caixa de Troca de Eventos (Visível Exclusivamente para o Master) -->
+      <!-- Caixa de Troca de Eventos (Visível quando há múltiplos eventos ou modo Master) -->
       <div id="hub-master-events-card" class="room-card" style="display: none; margin-bottom: 20px; border: 1.5px solid rgba(253, 203, 110, 0.45); background: linear-gradient(180deg, rgba(253, 203, 110, 0.08) 0%, rgba(26, 26, 46, 0.85) 100%);">
         <div class="room-label" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
-          <span style="color: #fdcb6e; display: flex; align-items: center; gap: 6px; font-weight: 800;">
+          <span id="hub-events-card-title" style="color: #fdcb6e; display: flex; align-items: center; gap: 6px; font-weight: 800;">
             👑 Trocar de Evento (Acesso Master Régie)
           </span>
-          <span style="font-size: 0.72rem; color: #ffeaa7; font-weight: 600; text-transform: none;">
-            Clique para mudar de evento ativo
-          </span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="hub-portal-link-btn" type="button" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.5); color: #c4b5fd; font-weight: 700; padding: 4px 10px; border-radius: 8px; font-size: 0.74rem;">📂 Ver Todos os Eventos (Portal)</button>
+            <span style="font-size: 0.72rem; color: #ffeaa7; font-weight: 600; text-transform: none;">
+              Clique para mudar
+            </span>
+          </div>
         </div>
         <div id="hub-master-events-list" class="events-list-box" style="max-height: 260px; overflow-y: auto;">
           <!-- Injetado por JS -->
@@ -665,15 +668,15 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v108</span>
+        StageTimer PFP • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v109</span>
       </footer>
     </div>
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/auth.js?v=108"></script>
-  <script src="js/pwa.js?v=108"></script>
-  <script src="js/local-sync.js?v=108"></script>
+  <script src="js/auth.js?v=109"></script>
+  <script src="js/pwa.js?v=109"></script>
+  <script src="js/local-sync.js?v=109"></script>
   <script>
     const hubClient = new StageTimerClient({
       role: 'viewer',
@@ -831,6 +834,11 @@
         sessionStorage.setItem('stagetimer_auth_unlocked', 'true');
         localStorage.setItem('stagetimer_auth_unlocked', 'true');
       } catch (_) {}
+    }
+
+    let forcedPortalMode = false;
+    if (params.get('portal') === '1' || params.get('switch') === '1' || params.get('choose') === '1') {
+      forcedPortalMode = true;
     }
 
     let currentUnlockedEventCode = '';
@@ -1055,13 +1063,29 @@
 
     function renderHubMasterEvents() {
       if (!$hubMasterEventsList || !$hubMasterEventsCard) return;
-      if (!isMasterActive) {
+      const allEvents = hubClient.getEventsList();
+      if (!isMasterActive && allEvents.length <= 1) {
         $hubMasterEventsCard.style.display = 'none';
         return;
       }
       $hubMasterEventsCard.style.display = 'block';
 
-      const allEvents = hubClient.getEventsList();
+      const titleSpan = document.getElementById('hub-events-card-title');
+      if (titleSpan) {
+        if (isMasterActive) {
+          titleSpan.innerHTML = '👑 Trocar de Evento (Acesso Master Régie)';
+        } else {
+          titleSpan.innerHTML = `🎪 Trocar de Evento Ativo (${allEvents.length} Disponíveis)`;
+        }
+      }
+      const portalLinkBtn = document.getElementById('hub-portal-link-btn');
+      if (portalLinkBtn && !portalLinkBtn.dataset.wired) {
+        portalLinkBtn.dataset.wired = '1';
+        portalLinkBtn.addEventListener('click', () => {
+          if ($hubBackBtn) $hubBackBtn.click();
+        });
+      }
+
       $hubMasterEventsList.innerHTML = allEvents.map(ev => {
         const isSelected = ev.code === currentUnlockedEventCode;
         const isTheatre = ev.eventType === 'theatre';
@@ -1102,6 +1126,10 @@
 
     function resolveUnlockedEvent() {
       if (isRevoked) return null;
+      const currentParams = new URLSearchParams(location.search);
+      if (forcedPortalMode || currentParams.get('portal') === '1' || currentParams.get('switch') === '1' || currentParams.get('choose') === '1') {
+        return null;
+      }
       const allEvents = hubClient.getEventsList();
       if (!allEvents || allEvents.length === 0) return null;
 
@@ -1121,8 +1149,9 @@
         }
       }
 
-      // 3. Room hint from URL param or device storage
-      const roomHint = paramRoom || localStorage.getItem('stagetimer_device_room') || sessionStorage.getItem('stagetimer_active_room') || '';
+      // 3. Room hint from dynamic URL param or device storage
+      const activeParamRoom = (currentParams.get('room') || '').trim().toUpperCase();
+      const roomHint = activeParamRoom || localStorage.getItem('stagetimer_device_room') || sessionStorage.getItem('stagetimer_active_room') || '';
       if (roomHint) {
         const ev = allEvents.find(e => {
           if (e.code === roomHint) return true;
@@ -1210,9 +1239,13 @@
 
         if (isMasterActive) {
           // Master can enter immediately without PIN
+          forcedPortalMode = false;
           currentUnlockedEventCode = code;
           sessionStorage.setItem('stagetimer_unlocked_event', code);
           localStorage.setItem('stagetimer_unlocked_event', code);
+          try {
+            window.history.replaceState({}, document.title, location.pathname);
+          } catch (_) {}
           renderView();
           return;
         }
@@ -1255,11 +1288,15 @@
       const inputVal = ($pinModalInput ? $pinModalInput.value : '').trim();
       const res = hubClient.verifyEventPin(pendingPinEventCode, inputVal);
       if (res.valid) {
+        forcedPortalMode = false;
         currentUnlockedEventCode = pendingPinEventCode;
         sessionStorage.setItem('stagetimer_unlocked_event', pendingPinEventCode);
         localStorage.setItem('stagetimer_unlocked_event', pendingPinEventCode);
         if ($pinModal) $pinModal.style.display = 'none';
         pendingPinEventCode = '';
+        try {
+          window.history.replaceState({}, document.title, location.pathname);
+        } catch (_) {}
         renderView();
       } else {
         if ($pinModalError) {
@@ -1512,6 +1549,7 @@
             stagesCount,
             eventType: selectedCreateType
           });
+          forcedPortalMode = false;
           if ($createModal) $createModal.style.display = 'none';
           currentUnlockedEventCode = newEvent.code;
           sessionStorage.setItem('stagetimer_unlocked_event', newEvent.code);
@@ -1522,6 +1560,7 @@
             localStorage.setItem('stagetimer_device_room', selectedRoom);
             localStorage.setItem('stagetimer_last_room', selectedRoom);
             sessionStorage.setItem('stagetimer_active_room', selectedRoom);
+            window.history.replaceState({}, document.title, location.pathname);
           } catch (_) {}
           renderView();
         } catch (err) {
@@ -1533,11 +1572,15 @@
     // Hub: Back to Portal button
     if ($hubBackBtn) {
       $hubBackBtn.addEventListener('click', () => {
+        forcedPortalMode = true;
         currentUnlockedEventCode = '';
         sessionStorage.removeItem('stagetimer_unlocked_event');
         localStorage.removeItem('stagetimer_unlocked_event');
+        sessionStorage.removeItem('stagetimer_active_room');
+        localStorage.removeItem('stagetimer_device_room');
+        localStorage.removeItem('stagetimer_last_room');
         try {
-          window.history.replaceState({}, document.title, location.pathname);
+          window.history.replaceState({}, document.title, location.pathname + '?portal=1');
         } catch (_) {}
         renderView();
       });
@@ -1553,6 +1596,7 @@
             const allEvents = hubClient.getEventsList();
             const targetEv = allEvents.find(ev => ev.code === targetCode);
             if (targetEv) {
+              forcedPortalMode = false;
               currentUnlockedEventCode = targetCode;
               sessionStorage.setItem('stagetimer_unlocked_event', targetCode);
               localStorage.setItem('stagetimer_unlocked_event', targetCode);
@@ -1562,6 +1606,8 @@
               try {
                 localStorage.setItem('stagetimer_device_room', selectedRoom);
                 localStorage.setItem('stagetimer_last_room', selectedRoom);
+                sessionStorage.setItem('stagetimer_active_room', selectedRoom);
+                window.history.replaceState({}, document.title, location.pathname);
               } catch (_) {}
               renderEventHub(targetEv);
             }

@@ -220,13 +220,17 @@ function updateViewerNavLinks(code) {
   const current = (code || roomId || 'PALCO1').toUpperCase();
   const q = `?room=${encodeURIComponent(current)}`;
   const $hub = document.getElementById('viewer-nav-hub');
+  const $portal = document.getElementById('viewer-nav-portal');
+  const $hubMenu = document.getElementById('viewer-nav-hub-menu');
   const $ctrl = document.getElementById('viewer-nav-controller');
   const $op = document.getElementById('viewer-nav-operator');
   const $vw = document.getElementById('viewer-nav-viewer');
   const $ln = document.getElementById('viewer-lineup-btn');
   const $rg = document.getElementById('viewer-regies-btn');
   const $master = document.getElementById('viewer-nav-master');
-  if ($hub) $hub.href = `index.html${q}`;
+  if ($hub) $hub.href = `index.html?portal=1`;
+  if ($portal) $portal.href = `index.html?portal=1`;
+  if ($hubMenu) $hubMenu.href = `index.html${q}`;
   if ($ctrl) $ctrl.href = `controller.html${q}`;
   if ($op) $op.href = `operator.html${q}`;
   if ($vw) $vw.href = `viewer.html${q}`;

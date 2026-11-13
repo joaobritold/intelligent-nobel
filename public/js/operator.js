@@ -136,6 +136,7 @@ function renderOpStageBadge(force = false) {
   if ($opEventSelect) {
     if (list.length > 1 || totalStagesCount > 1) {
       $opEventSelect.style.display = 'inline-block';
+      if ($opStageBadge) $opStageBadge.style.display = 'none';
       const selectSig = list.map(ev => `${ev.code}:${ev.title}:${(ev.stages || []).map(s => `${s.code}:${s.name}`).join(';')}`).join('||') + `::${currentCode}`;
       if (force || selectSig !== lastOpSelectSig) {
         lastOpSelectSig = selectSig;
@@ -158,23 +159,31 @@ function renderOpStageBadge(force = false) {
           }
         });
 
+        // Add utility actions into select
+        optionsHtml += `<optgroup label="⚡ Ações">`;
+        optionsHtml += `<option value="__GO_PORTAL__">🏠 Escolher Outro Evento (Início)...</option>`;
+        optionsHtml += `</optgroup>`;
+
         $opEventSelect.innerHTML = optionsHtml;
         $opEventSelect.value = currentCode;
       }
     } else {
       $opEventSelect.style.display = 'none';
+      if ($opStageBadge) $opStageBadge.style.display = 'inline-block';
       lastOpSelectSig = '';
     }
   }
 }
 
-// Stage badge click focuses/opens select
+// Stage badge click focuses/opens select or navigates to portal
 if ($opStageBadge && $opEventSelect) {
   $opStageBadge.style.cursor = 'pointer';
   $opStageBadge.addEventListener('click', () => {
     if ($opEventSelect.style.display !== 'none') {
       $opEventSelect.focus();
       try { $opEventSelect.showPicker(); } catch (_) {}
+    } else {
+      window.location.href = 'index.html?portal=1';
     }
   });
 }
@@ -198,8 +207,18 @@ document.addEventListener('click', (e) => {
 if ($opEventSelect) {
   $opEventSelect.addEventListener('change', () => {
     const val = $opEventSelect.value;
+    if (val === '__GO_PORTAL__') {
+      window.location.href = 'index.html?portal=1';
+      return;
+    }
     if (val && val !== (state?.id || roomId)) {
+      const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+      const owningEv = rawList.find(e => e.code === val || (Array.isArray(e.stages) && e.stages.some(s => (s.code || s.id || '').toUpperCase() === val.toUpperCase())));
       try {
+        if (owningEv) {
+          localStorage.setItem('stagetimer_unlocked_event', owningEv.code);
+          sessionStorage.setItem('stagetimer_unlocked_event', owningEv.code);
+        }
         localStorage.setItem('stagetimer_device_room', val.toUpperCase());
         localStorage.setItem('stagetimer_last_room', val.toUpperCase());
         sessionStorage.setItem('stagetimer_active_room', val.toUpperCase());
@@ -211,7 +230,7 @@ if ($opEventSelect) {
 
 const $navHub = document.getElementById('nav-hub');
 if ($navHub) {
-  $navHub.href = `index.html?room=${encodeURIComponent(roomId || 'PALCO1')}`;
+  $navHub.href = `index.html?portal=1`;
 }
 
 let lastOpDayTabsSig = '';
@@ -334,7 +353,11 @@ function updateNavLinks() {
   const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
   const code = encodeURIComponent(currentCode);
   const $navHub = document.getElementById('nav-hub');
-  if ($navHub) $navHub.href = `index.html?room=${code}`;
+  const $navPortal = document.getElementById('nav-portal');
+  const $navHubEvent = document.getElementById('nav-hub-event');
+  if ($navHub) $navHub.href = `index.html?portal=1`;
+  if ($navPortal) $navPortal.href = `index.html?portal=1`;
+  if ($navHubEvent) $navHubEvent.href = `index.html?room=${code}`;
   if ($navController) $navController.href = `controller.html?room=${code}`;
   if ($navOperator) $navOperator.href = `operator.html?room=${code}`;
   if ($navViewer) $navViewer.href = `viewer.html?room=${code}`;

@@ -74,17 +74,23 @@ const $ctrlEventsManageList = document.getElementById('ctrl-events-manage-list')
 const $ctrlDeleteAllEventsBtn = document.getElementById('ctrl-delete-all-events-btn');
 const $ctrlStagePills = document.getElementById('ctrl-stage-pills');
 const $ctrlDayTabs = document.getElementById('ctrl-day-tabs');
+const $ctrlSwitchEventBtn = document.getElementById('ctrl-switch-event-btn');
+
 function updateTopNavLinks(code) {
   const current = (code || roomId || 'PALCO1').toUpperCase();
   const q = `?room=${encodeURIComponent(current)}`;
   const topHub = document.getElementById('top-nav-hub');
+  const topPortal = document.getElementById('top-nav-portal');
+  const topHubMenu = document.getElementById('top-nav-hub-menu');
   const topController = document.getElementById('top-nav-controller');
   const topOperator = document.getElementById('top-nav-operator');
   const topViewer = document.getElementById('top-nav-viewer');
   const topLineup = document.getElementById('top-nav-lineup');
   const topRegies = document.getElementById('top-nav-regies');
   const topMaster = document.getElementById('top-nav-master');
-  if (topHub) topHub.href = `index.html${q}`;
+  if (topHub) topHub.href = `index.html?portal=1`;
+  if (topPortal) topPortal.href = `index.html?portal=1`;
+  if (topHubMenu) topHubMenu.href = `index.html${q}`;
   if (topController) topController.href = `controller.html${q}`;
   if (topOperator) topOperator.href = `operator.html${q}`;
   if (topViewer) topViewer.href = `viewer.html${q}`;
@@ -181,7 +187,7 @@ function renderEventSelector(force = false) {
       break;
     }
     if (Array.isArray(ev.stages)) {
-      const st = ev.stages.find(s => s.code === currentCode);
+      const st = ev.stages.find(s => (s.code || s.id || '').toUpperCase() === currentCode);
       if (st) {
         name = `${ev.title || ev.code} • ${st.name || st.code}`;
         currentEvent = ev;
@@ -201,15 +207,16 @@ function renderEventSelector(force = false) {
     localStorage.getItem('stagetimer_master_auth_v12') === 'true'
   );
 
-  if ($ctrlEventSelect) {
-    let totalStagesCount = 0;
-    list.forEach(e => {
-      totalStagesCount += (Array.isArray(e.stages) && e.stages.length > 0) ? e.stages.length : 1;
-    });
+  let totalStagesCount = 0;
+  list.forEach(e => {
+    totalStagesCount += (Array.isArray(e.stages) && e.stages.length > 0) ? e.stages.length : 1;
+  });
 
+  if ($ctrlEventSelect) {
     if (isMaster || list.length > 1 || totalStagesCount > 1) {
       $ctrlEventSelect.style.display = 'inline-block';
       if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'none';
+      if ($ctrlSwitchEventBtn) $ctrlSwitchEventBtn.style.display = 'inline-flex';
 
       const selectSig = `${currentCode}:${list.map(e => `${e.code}:${e.title}:${(e.stages||[]).map(s=>`${s.code}:${s.name}`).join(';')}`).join('|')}`;
       if (force || selectSig !== lastCtrlSelectSig) {
@@ -233,23 +240,12 @@ function renderEventSelector(force = false) {
           }
         });
 
-        $ctrlEventSelect.innerHTML = optionsHtml;
-        $ctrlEventSelect.value = currentCode;
-      }
-    } else if (currentEvent && Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
-      // Event has multiple stages: show stages dropdown
-      $ctrlEventSelect.style.display = 'inline-block';
-      if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'none';
-      const selectSig = `stages:${currentCode}:${currentEvent.stages.map(s=>`${s.code}:${s.name}`).join(';')}`;
-      if (force || selectSig !== lastCtrlSelectSig) {
-        lastCtrlSelectSig = selectSig;
-        let optionsHtml = `<optgroup label="🎪 ${escapeHtml(currentEvent.title || currentEvent.code)}">`;
-        currentEvent.stages.forEach(st => {
-          const stCode = (st.code || st.id || '').toUpperCase();
-          const isSel = stCode === currentCode;
-          optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(st.name || stCode)}</option>`;
-        });
+        // Add utility actions into select
+        optionsHtml += `<optgroup label="⚡ Ações">`;
+        optionsHtml += `<option value="__NEW_CLEAN__">➕ Criar / Gerir Eventos...</option>`;
+        optionsHtml += `<option value="__GO_PORTAL__">🏠 Escolher Outro Evento (Início)...</option>`;
         optionsHtml += `</optgroup>`;
+
         $ctrlEventSelect.innerHTML = optionsHtml;
         $ctrlEventSelect.value = currentCode;
       }
@@ -257,6 +253,7 @@ function renderEventSelector(force = false) {
       $ctrlEventSelect.style.display = 'none';
       lastCtrlSelectSig = '';
       if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'inline-block';
+      if ($ctrlSwitchEventBtn) $ctrlSwitchEventBtn.style.display = 'inline-flex';
     }
   }
 
@@ -304,16 +301,17 @@ function renderEventSelector(force = false) {
 
   if ($ctrlEventsManageList) {
     $ctrlEventsManageList.innerHTML = list.map(ev => {
-      const isAct = ev.code === currentCode;
+      const targetStageCode = (Array.isArray(ev.stages) && ev.stages.length > 0) ? (ev.stages[0].code || ev.code) : ev.code;
+      const isAct = ev.code === currentCode || (Array.isArray(ev.stages) && ev.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode));
       return `
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid ${isAct ? '#00b894' : 'var(--border)'}; font-size: 0.8rem;">
           <div>
-            <strong>${ev.title || ev.code}</strong>
-            <span style="color: var(--text-secondary); font-family: var(--font-mono); margin-left: 6px; font-size: 0.72rem;">(${ev.code})</span>
+            <strong>${escapeHtml(ev.title || ev.code)}</strong>
+            <span style="color: var(--text-secondary); font-family: var(--font-mono); margin-left: 6px; font-size: 0.72rem;">(${escapeHtml(ev.code)})</span>
           </div>
           <div style="display: flex; gap: 6px;">
-            <button type="button" class="btn btn-sm ${isAct ? 'btn-primary' : ''}" data-open-ev="${ev.code}" style="padding: 3px 8px; font-size: 0.72rem;">${isAct ? 'Ativo' : 'Abrir'}</button>
-            ${list.length > 1 ? `<button type="button" class="btn btn-sm btn-danger" data-del-ev="${ev.code}" style="padding: 3px 8px; font-size: 0.72rem;" title="Apagar este evento">🗑️</button>` : ''}
+            <button type="button" class="btn btn-sm ${isAct ? 'btn-primary' : ''}" data-open-ev="${escapeHtml(targetStageCode)}" data-event-root="${escapeHtml(ev.code)}" style="padding: 3px 8px; font-size: 0.72rem;">${isAct ? 'Ativo' : 'Abrir'}</button>
+            ${list.length > 1 ? `<button type="button" class="btn btn-sm btn-danger" data-del-ev="${escapeHtml(ev.code)}" style="padding: 3px 8px; font-size: 0.72rem;" title="Apagar este evento">🗑️</button>` : ''}
           </div>
         </div>
       `;
@@ -340,13 +338,40 @@ if ($ctrlEventSelect) {
       openNewEventModal();
       return;
     }
+    if (val === '__GO_PORTAL__') {
+      window.location.href = 'index.html?portal=1';
+      return;
+    }
     if (val && val !== (state?.id || roomId)) {
+      const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+      const owningEv = rawList.find(e => e.code === val || (Array.isArray(e.stages) && e.stages.some(s => (s.code || s.id || '').toUpperCase() === val.toUpperCase())));
       try {
+        if (owningEv) {
+          localStorage.setItem('stagetimer_unlocked_event', owningEv.code);
+          sessionStorage.setItem('stagetimer_unlocked_event', owningEv.code);
+        }
         localStorage.setItem('stagetimer_device_room', val.toUpperCase());
         localStorage.setItem('stagetimer_last_room', val.toUpperCase());
         sessionStorage.setItem('stagetimer_active_room', val.toUpperCase());
       } catch (e) {}
       window.location.replace(`controller.html?room=${encodeURIComponent(val)}`);
+    }
+  });
+}
+
+if ($ctrlSwitchEventBtn) {
+  $ctrlSwitchEventBtn.addEventListener('click', () => {
+    openNewEventModal();
+  });
+}
+
+if ($ctrlStageBadge) {
+  $ctrlStageBadge.addEventListener('click', () => {
+    if ($ctrlEventSelect && $ctrlEventSelect.style.display !== 'none') {
+      $ctrlEventSelect.focus();
+      try { $ctrlEventSelect.showPicker(); } catch (_) {}
+    } else {
+      openNewEventModal();
     }
   });
 }
@@ -401,11 +426,15 @@ if ($ctrlEventsManageList) {
     const openBtn = e.target.closest('[data-open-ev]');
     if (openBtn) {
       const code = openBtn.dataset.openEv.toUpperCase();
+      const rootCode = (openBtn.dataset.eventRoot || code).toUpperCase();
       try {
+        localStorage.setItem('stagetimer_unlocked_event', rootCode);
+        sessionStorage.setItem('stagetimer_unlocked_event', rootCode);
         localStorage.setItem('stagetimer_device_room', code);
         localStorage.setItem('stagetimer_last_room', code);
+        sessionStorage.setItem('stagetimer_active_room', code);
       } catch (e) {}
-      location.search = `?room=${encodeURIComponent(code)}`;
+      window.location.replace(`controller.html?room=${encodeURIComponent(code)}`);
       return;
     }
     const delBtn = e.target.closest('[data-del-ev]');

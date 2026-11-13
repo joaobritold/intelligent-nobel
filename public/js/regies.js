@@ -28,7 +28,7 @@ const client = new StageTimerClient({
 
 const $regieNavHub = document.getElementById('regie-nav-hub');
 if ($regieNavHub) {
-  $regieNavHub.href = `index.html?room=${encodeURIComponent(roomId)}`;
+  $regieNavHub.href = `index.html?portal=1`;
 }
 
 let state = null;

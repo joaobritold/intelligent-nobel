@@ -1001,15 +1001,10 @@ button, a, input, select, textarea {
     display: flex;
     gap: 6px;
     margin-left: 0;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
+    overflow: visible;
+    flex-wrap: wrap;
     width: 100%;
     padding: 3px 0 5px 0;
-    scrollbar-width: none;
-  }
-  .top-nav-modes::-webkit-scrollbar {
-    display: none;
   }
 
   .top-nav-modes .btn {
@@ -1449,12 +1444,15 @@ button, a, input, select, textarea {
     padding: 3px 8px !important;
   }
 
+  .btn-switch-event {
+    touch-action: manipulation;
+    flex-shrink: 0;
+  }
+
   .top-nav-modes {
     padding: 2px 0 4px 0;
     gap: 4px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    overflow: visible;
   }
 
   .top-nav-modes .btn {

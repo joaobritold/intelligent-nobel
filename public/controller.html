@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=108">
-  <link rel="stylesheet" href="css/controller.css?v=108">
+  <link rel="stylesheet" href="css/common.css?v=109">
+  <link rel="stylesheet" href="css/controller.css?v=109">
 </head>
 <body>
   <div class="app">
@@ -65,23 +65,27 @@
       <div class="header-left">
         <div class="header-brand-row">
           <div class="logo">
-            <img src="icon.svg?v=108" alt="StageTimer Logo" class="logo-icon" width="26" height="26" style="vertical-align: middle; border-radius: 6px; margin-right: 6px;">
+            <img src="icon.svg?v=109" alt="StageTimer Logo" class="logo-icon" width="26" height="26" style="vertical-align: middle; border-radius: 6px; margin-right: 6px;">
             <span>StageTimer</span>
-            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 4px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v108</span>
+            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 4px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v109</span>
           </div>
-          <div class="room-info" style="display: flex; align-items: center; gap: 8px;">
+          <div class="room-info" id="ctrl-room-box" style="display: flex; align-items: center; gap: 6px;">
             <span>🎪</span>
-            <span id="ctrl-stage-badge" style="font-size: 0.85rem; font-weight: 800; color: #55efc4; background: rgba(0, 184, 148, 0.15); border: 1px solid rgba(0, 184, 148, 0.35); padding: 4px 10px; border-radius: 8px;">Palco</span>
-            <select id="ctrl-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco (Modo Master)"></select>
+            <span id="ctrl-stage-badge" class="ctrl-stage-badge-btn" role="button" tabindex="0" title="Clique para trocar ou gerir eventos" style="font-size: 0.85rem; font-weight: 800; color: #55efc4; background: rgba(0, 184, 148, 0.15); border: 1px solid rgba(0, 184, 148, 0.35); padding: 4px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">Palco</span>
+            <select id="ctrl-event-select" class="master-stage-select" style="display: none;" title="Trocar de Palco ou Evento"></select>
+            <button id="ctrl-switch-event-btn" type="button" class="btn btn-sm btn-switch-event" title="Trocar ou Gerir Eventos" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; font-size: 0.74rem; font-weight: 700; background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.5); color: #c4b5fd; border-radius: 8px; cursor: pointer; white-space: nowrap;">🎪 Trocar</button>
             <span id="room-id" class="room-id" title="Código desta sessão (clique para copiar)" style="display: none;">------</span>
           </div>
         </div>
         <!-- Compact Modes Navigation -->
         <div class="top-nav-modes st-compact-nav">
-          <a id="top-nav-hub" href="index.html" class="st-nav-home-btn">🏠 Início</a>
+          <a id="top-nav-hub" href="index.html?portal=1" class="st-nav-home-btn" title="Ir para o Início / Escolher Evento">🏠 Início</a>
           <div class="st-nav-dropdown align-left">
             <button type="button" class="st-nav-trigger">🎛️ Configurador ▾</button>
             <div class="st-nav-menu">
+              <div class="st-nav-group-label">Navegação</div>
+              <a id="top-nav-portal" href="index.html?portal=1" class="st-nav-item">🏠 Escolher Evento (Início)</a>
+              <a id="top-nav-hub-menu" href="index.html" class="st-nav-item">🎪 Menu do Evento</a>
               <div class="st-nav-group-label">Controlo & Operação</div>
               <a id="top-nav-controller" href="controller.html" class="st-nav-item active">🎛️ Configurador</a>
               <a id="top-nav-operator" href="operator.html" class="st-nav-item">📱 Modo Operador</a>
@@ -330,6 +334,7 @@
       </div>
 
       <div class="modal-actions modal-actions-sticky">
+        <a href="index.html?portal=1" class="btn" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #cbd5e1; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 700;">🏠 Ir para o Início (Portal)</a>
         <button id="new-event-cancel" type="button" class="btn">Fechar</button>
         <button id="new-event-confirm" type="button" class="btn btn-primary">✨ Criar Palco Limpo</button>
       </div>
@@ -432,16 +437,16 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=108"></script>
+  <script src="js/schedule-importer.js?v=109"></script>
 
   <!-- Access Control -->
-  <script src="js/auth.js?v=108"></script>
+  <script src="js/auth.js?v=109"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=108"></script>
-  <script src="js/local-sync.js?v=108"></script>
-  <script src="js/notifications.js?v=108"></script>
-  <script src="js/controller.js?v=108"></script>
+  <script src="js/pwa.js?v=109"></script>
+  <script src="js/local-sync.js?v=109"></script>
+  <script src="js/notifications.js?v=109"></script>
+  <script src="js/controller.js?v=109"></script>
 </body>
 </html>

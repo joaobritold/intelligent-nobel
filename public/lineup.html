@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Modo Lista (Lineup & Horários)</title>
-  <link rel="stylesheet" href="css/common.css?v=108">
-  <link rel="stylesheet" href="css/lineup.css?v=108">
+  <link rel="stylesheet" href="css/common.css?v=109">
+  <link rel="stylesheet" href="css/lineup.css?v=109">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
@@ -67,7 +67,7 @@
         <div>
           <div class="lineup-title">
             Lineup & Horários
-            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 6px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v106</span>
+            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 6px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v109</span>
           </div>
         </div>
         <!-- Event / Stage Badge & Pills -->
@@ -82,10 +82,13 @@
 
       <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
         <div class="st-compact-nav">
-          <a id="ln-nav-hub" href="index.html" class="st-nav-home-btn">🏠 Início</a>
+          <a id="ln-nav-hub" href="index.html?portal=1" class="st-nav-home-btn" title="Ir para o Início / Escolher Evento">🏠 Início</a>
           <div class="st-nav-dropdown">
             <button type="button" class="st-nav-trigger">📋 Ecrãs ▾</button>
             <div class="st-nav-menu">
+              <div class="st-nav-group-label">Navegação</div>
+              <a id="ln-nav-portal" href="index.html?portal=1" class="st-nav-item">🏠 Escolher Evento (Início)</a>
+              <a id="ln-nav-hub-menu" href="index.html" class="st-nav-item">🎪 Menu do Evento</a>
               <div class="st-nav-group-label">Controlo & Operação</div>
               <a id="ln-nav-operator" href="operator.html" class="st-nav-item">📱 Modo Operador</a>
               <a id="ln-nav-controller" href="controller.html" class="st-nav-item">🎛️ Configurador</a>
@@ -157,8 +160,8 @@
   <!-- Cloud MQTT over WSS & HLS Engine -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
-  <script src="js/pwa.js?v=108"></script>
-  <script src="js/local-sync.js?v=108"></script>
-  <script src="js/lineup.js?v=108"></script>
+  <script src="js/pwa.js?v=109"></script>
+  <script src="js/local-sync.js?v=109"></script>
+  <script src="js/lineup.js?v=109"></script>
 </body>
 </html>
