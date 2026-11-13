@@ -158,12 +158,33 @@
     // ══════════════════════════════════════════════════════════════════════
     async sendTelegramMessage(text, customConfig = null) {
       let cfg = customConfig;
-      if (!cfg && window.syncClient && typeof window.syncClient.getIntegrations === 'function') {
-        const integrations = window.syncClient.getIntegrations();
+      if (!cfg && this._syncClient && typeof this._syncClient.getIntegrations === 'function') {
+        const integrations = this._syncClient.getIntegrations();
         cfg = integrations ? integrations.telegram : null;
+      }
+      if (!cfg && this._syncClient && this._syncClient._state && this._syncClient._state.integrations) {
+        cfg = this._syncClient._state.integrations.telegram;
+      }
+      if (!cfg && this._lastState && this._lastState.integrations) {
+        cfg = this._lastState.integrations.telegram;
+      }
+
+      // Fallback: check localStorage for saved room state if state not fully hydrated
+      if (!cfg || !cfg.botToken) {
+        try {
+          const roomKey = this._syncClient?.cleanRoom || (typeof localStorage !== 'undefined' ? (localStorage.getItem('stagetimer_device_room') || localStorage.getItem('stagetimer_last_room') || 'PALCO1') : 'PALCO1');
+          const localRaw = localStorage.getItem(`stagetimer_v10_state_${roomKey}`);
+          if (localRaw) {
+            const parsed = JSON.parse(localRaw);
+            if (parsed && parsed.integrations && parsed.integrations.telegram) {
+              cfg = parsed.integrations.telegram;
+            }
+          }
+        } catch (_) {}
       }
 
       if (!cfg || !cfg.enabled) {
+        console.warn('[StageTimer Telegram] Alerta não enviado: Telegram desativado ou sem configuração.', cfg);
         return { success: false, reason: 'disabled' };
       }
 
@@ -171,8 +192,11 @@
       const chatId = (cfg.chatId || '').trim();
 
       if (!token || !chatId) {
+        console.warn('[StageTimer Telegram] Alerta não enviado: Token ou Chat ID vazio.', { token, chatId });
         return { success: false, error: 'Token ou Chat ID do Telegram não configurados.' };
       }
+
+      console.log('[StageTimer Telegram] A enviar mensagem para o chat:', chatId);
 
       const url = `https://api.telegram.org/bot${encodeURIComponent(token)}/sendMessage`;
       const payload = {
@@ -191,12 +215,15 @@
 
         const data = await response.json();
         if (data && data.ok) {
+          console.log('[StageTimer Telegram] Mensagem enviada com sucesso! Message ID:', data.result?.message_id);
           return { success: true, messageId: data.result ? data.result.message_id : null };
         } else {
           const errDesc = data ? (data.description || 'Erro da API do Telegram') : 'Erro desconhecido';
+          console.error('[StageTimer Telegram] Erro da API:', errDesc);
           return { success: false, error: errDesc };
         }
       } catch (netErr) {
+        console.error('[StageTimer Telegram] Erro de rede:', netErr);
         return { success: false, error: 'Erro de rede ou bloqueio ao contactar api.telegram.org: ' + netErr.message };
       }
     },
@@ -225,7 +252,10 @@
     _isTelegramLeader(room) {
       const roomKey = `stagetimer_tg_leader_${room || 'default'}`;
       const now = Date.now();
-      const myId = window.syncClient?.clientId || Math.random().toString(36).substring(2, 9);
+      if (!this._clientId) {
+        this._clientId = (this._syncClient && this._syncClient.clientId) || ('st_' + Math.random().toString(36).substring(2, 9));
+      }
+      const myId = this._clientId;
       
       try {
         const raw = localStorage.getItem(roomKey);
@@ -334,7 +364,8 @@
           this.sendTelegramMessage(
             `⏳ <b>AVISO 5 MINUTOS [${stageName}]</b>\n` +
             `🎤 <b>${timerTitle}</b> tem <b>5 minutos</b> restantes no palco.\n` +
-            `⏰ Hora: ${new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`
+            `⏰ Hora: ${new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`,
+            tgCfg
           );
         }
       }
@@ -356,7 +387,8 @@
           this.sendTelegramMessage(
             `⚠️ <b>AVISO 1 MINUTO [${stageName}]</b>\n` +
             `🎤 <b>${timerTitle}</b>: <b>último minuto</b>!\n` +
-            `⏰ Próxima atuação a postos!`
+            `⏰ Próxima atuação a postos!`,
+            tgCfg
           );
         }
       }
@@ -378,7 +410,8 @@
           this.sendTelegramMessage(
             `🛑 <b>TEMPO ESGOTADO [${stageName}]</b>\n` +
             `🎤 <b>${timerTitle}</b> terminou o tempo regulamentar!\n` +
-            `⏱️ Entrando em Overtime.`
+            `⏱️ Entrando em Overtime.`,
+            tgCfg
           );
         }
       }
@@ -425,7 +458,8 @@
             this.sendTelegramMessage(
               `${tgHeadline}\n` +
               `⏰ Hora: <b>${timeStr}</b>\n` +
-              `🎪 Palco: <b>${stageName}</b>`
+              `🎪 Palco: <b>${stageName}</b>`,
+              tgCfg
             );
           }
         }
@@ -447,7 +481,8 @@
             this.sendTelegramMessage(
               `📟 <b>COMUNICAÇÃO RÉGIES & TÉCNICOS [${stageName}]</b>\n\n` +
               `💬 <i>"${state.regieMessage.text}"</i>\n` +
-              `⏰ Hora: ${state.regieMessage.sentTimeStr || timeStr}`
+              `⏰ Hora: ${state.regieMessage.sentTimeStr || timeStr}`,
+              tgCfg
             );
           }
         }
@@ -470,7 +505,8 @@
             this.sendTelegramMessage(
               `📢 <b>AVISO DIREÇÃO DE CENA [${stageName}]</b>\n\n` +
               `💬 <i>"${state.theatre.urgentNotice.text}"</i>\n` +
-              `⏰ Hora: ${timeStr}`
+              `⏰ Hora: ${timeStr}`,
+              tgCfg
             );
           }
         }
@@ -492,7 +528,8 @@
           if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertUrgent !== false) {
             this.sendTelegramMessage(
               `🚨 <b>MENSAGEM DE PALCO [${stageName}]</b>\n\n` +
-              `💬 <i>"${state.message.text}"</i>`
+              `💬 <i>"${state.message.text}"</i>`,
+              tgCfg
             );
           }
         }
@@ -520,7 +557,8 @@
               this.sendTelegramMessage(
                 `🟡 <b>STANDBY CUE ${cue.number} [${targetDept}]</b>\n` +
                 `📋 <i>${cueDesc || 'Preparar disparo'}</i>\n` +
-                `🎪 ${stageName}`
+                `🎪 ${stageName}`,
+                tgCfg
               );
             }
           }
@@ -546,7 +584,8 @@
               this.sendTelegramMessage(
                 `🟢 <b>GO CUE ${cue.number} [${targetDept}]</b> 🚀\n` +
                 `🎬 <b>${cueDesc || 'Executado'}</b>\n` +
-                `🎪 ${stageName}`
+                `🎪 ${stageName}`,
+                tgCfg
               );
             }
           }
