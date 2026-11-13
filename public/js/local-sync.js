@@ -1496,16 +1496,20 @@ class UniversalSyncClient {
         alert5m: true,
         alert1m: true,
         alertEnd: true,
-        alertCues: true,
-        alertUrgent: true
+        alertCues: false,
+        alertUrgent: true,
+        alertRegieCalls: true,
+        alertRegieMsg: true
       },
       webPush: {
         enabled: true,
         alert5m: true,
         alert1m: true,
         alertEnd: true,
-        alertCues: true,
-        alertUrgent: true
+        alertCues: false,
+        alertUrgent: true,
+        alertRegieCalls: true,
+        alertRegieMsg: true
       }
     };
   }
@@ -1526,8 +1530,10 @@ class UniversalSyncClient {
         if (typeof tg.alert5m !== 'boolean') tg.alert5m = true;
         if (typeof tg.alert1m !== 'boolean') tg.alert1m = true;
         if (typeof tg.alertEnd !== 'boolean') tg.alertEnd = true;
-        if (typeof tg.alertCues !== 'boolean') tg.alertCues = true;
+        if (typeof tg.alertCues !== 'boolean') tg.alertCues = false;
         if (typeof tg.alertUrgent !== 'boolean') tg.alertUrgent = true;
+        if (typeof tg.alertRegieCalls !== 'boolean') tg.alertRegieCalls = true;
+        if (typeof tg.alertRegieMsg !== 'boolean') tg.alertRegieMsg = true;
       }
       if (!this._state.integrations.webPush || typeof this._state.integrations.webPush !== 'object') {
         this._state.integrations.webPush = def.webPush;
@@ -1537,8 +1543,10 @@ class UniversalSyncClient {
         if (typeof wp.alert5m !== 'boolean') wp.alert5m = true;
         if (typeof wp.alert1m !== 'boolean') wp.alert1m = true;
         if (typeof wp.alertEnd !== 'boolean') wp.alertEnd = true;
-        if (typeof wp.alertCues !== 'boolean') wp.alertCues = true;
+        if (typeof wp.alertCues !== 'boolean') wp.alertCues = false;
         if (typeof wp.alertUrgent !== 'boolean') wp.alertUrgent = true;
+        if (typeof wp.alertRegieCalls !== 'boolean') wp.alertRegieCalls = true;
+        if (typeof wp.alertRegieMsg !== 'boolean') wp.alertRegieMsg = true;
       }
     }
   }

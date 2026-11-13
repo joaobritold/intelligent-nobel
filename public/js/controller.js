@@ -1834,6 +1834,8 @@ if ($ctrlPrevReset) {
   const $tgAlert5m = document.getElementById('notif-tg-alert-5m');
   const $tgAlert1m = document.getElementById('notif-tg-alert-1m');
   const $tgAlertEnd = document.getElementById('notif-tg-alert-end');
+  const $tgAlertRegieCall = document.getElementById('notif-tg-alert-regie-call');
+  const $tgAlertRegieMsg = document.getElementById('notif-tg-alert-regie-msg');
   const $tgAlertCues = document.getElementById('notif-tg-alert-cues');
   const $tgAlertUrgent = document.getElementById('notif-tg-alert-urgent');
   const $tgTestBtn = document.getElementById('notif-tg-btn-test');
@@ -1873,7 +1875,9 @@ if ($ctrlPrevReset) {
     if ($tgAlert5m) $tgAlert5m.checked = tg.alert5m !== false;
     if ($tgAlert1m) $tgAlert1m.checked = tg.alert1m !== false;
     if ($tgAlertEnd) $tgAlertEnd.checked = tg.alertEnd !== false;
-    if ($tgAlertCues) $tgAlertCues.checked = tg.alertCues !== false;
+    if ($tgAlertRegieCall) $tgAlertRegieCall.checked = tg.alertRegieCalls !== false;
+    if ($tgAlertRegieMsg) $tgAlertRegieMsg.checked = tg.alertRegieMsg !== false;
+    if ($tgAlertCues) $tgAlertCues.checked = tg.alertCues === true; // Deixas desativadas por defeito
     if ($tgAlertUrgent) $tgAlertUrgent.checked = tg.alertUrgent !== false;
     if ($tgFeedback) $tgFeedback.textContent = '';
   }
@@ -1917,7 +1921,9 @@ if ($ctrlPrevReset) {
         alert5m: $tgAlert5m ? $tgAlert5m.checked : true,
         alert1m: $tgAlert1m ? $tgAlert1m.checked : true,
         alertEnd: $tgAlertEnd ? $tgAlertEnd.checked : true,
-        alertCues: $tgAlertCues ? $tgAlertCues.checked : true,
+        alertRegieCalls: $tgAlertRegieCall ? $tgAlertRegieCall.checked : true,
+        alertRegieMsg: $tgAlertRegieMsg ? $tgAlertRegieMsg.checked : true,
+        alertCues: $tgAlertCues ? $tgAlertCues.checked : false,
         alertUrgent: $tgAlertUrgent ? $tgAlertUrgent.checked : true
       };
 

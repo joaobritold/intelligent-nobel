@@ -256,6 +256,8 @@
       lastStandbyCueId: null,
       lastActiveCueId: null,
       lastRegieMsgId: null,
+      lastRegieCallAt: 0,
+      lastTheatreNoticeAt: 0,
       lastUrgentNoticeId: null,
       watcherInterval: null
     },
@@ -387,9 +389,117 @@
       const stageName = state.name || state.id || 'Palco';
       const tgCfg = state.integrations?.telegram;
       const isLeader = this._isTelegramLeader(state.id);
+      const timeStr = new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
 
-      // 1. Theatre Cues Monitoring (Jess DC & Cue Station)
-      if (state.theatre && Array.isArray(state.theatre.cues)) {
+      // 1. Chamadas entre Régies (Intercom: FOH ⇄ Palco ⇄ Geral)
+      if (state.regieCall && state.regieCall.triggeredAt && (state.regieCall.fohCallingStage || state.regieCall.stageCallingFoh)) {
+        if (state.regieCall.triggeredAt !== this._state.lastRegieCallAt) {
+          this._state.lastRegieCallAt = state.regieCall.triggeredAt;
+          _playChime('warning');
+
+          let callTitle = 'Chamada de Régie';
+          let callBody = 'Uma régie está a chamar com urgência!';
+          let tgHeadline = '📞 <b>CHAMADA DE RÉGIE</b>';
+
+          if (state.regieCall.fohCallingStage && state.regieCall.stageCallingFoh) {
+            callTitle = '📞 CHAMADA GERAL DE RÉGIE';
+            callBody = 'Alerta máximo: chamada geral para todas as régies e postos técnicos!';
+            tgHeadline = `📞 <b>CHAMADA GERAL DE RÉGIE [${stageName}]</b>\n🚨 <i>Atenção máxima requerida em todos os postos técnicos!</i>`;
+          } else if (state.regieCall.fohCallingStage) {
+            callTitle = '📞 FOH ➔ PALCO';
+            callBody = 'A Régie de Frente (FOH) está a chamar a Régie de Palco com urgência!';
+            tgHeadline = `📞 <b>CHAMADA DE RÉGIE: FOH ➔ PALCO [${stageName}]</b>\n🚨 <i>A Régie de Frente (FOH) está a chamar o Palco com urgência!</i>`;
+          } else if (state.regieCall.stageCallingFoh) {
+            callTitle = '📞 PALCO ➔ FOH';
+            callBody = 'A Régie de Palco está a chamar a Frente (FOH) com urgência!';
+            tgHeadline = `📞 <b>CHAMADA DE RÉGIE: PALCO ➔ FOH [${stageName}]</b>\n🚨 <i>A Régie de Palco está a chamar a Frente (FOH) com urgência!</i>`;
+          }
+
+          this.showLocalNotification(`${callTitle} — ${stageName}`, {
+            body: callBody,
+            tag: `regie-call-${state.regieCall.triggeredAt}`,
+            vibrate: [300, 100, 300, 100, 300]
+          });
+
+          if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertRegieCalls !== false) {
+            this.sendTelegramMessage(
+              `${tgHeadline}\n` +
+              `⏰ Hora: <b>${timeStr}</b>\n` +
+              `🎪 Palco: <b>${stageName}</b>`
+            );
+          }
+        }
+      }
+
+      // 2. Todas as Comunicações dadas para as Régies e Técnicos
+      if (state.regieMessage && state.regieMessage.visible && state.regieMessage.text) {
+        if (state.regieMessage.id && state.regieMessage.id !== this._state.lastRegieMsgId) {
+          this._state.lastRegieMsgId = state.regieMessage.id;
+          _playChime('warning');
+
+          this.showLocalNotification(`📟 Comunicação Régie — ${stageName}`, {
+            body: state.regieMessage.text,
+            tag: `regie-msg-${state.regieMessage.id}`,
+            vibrate: [200, 100, 200]
+          });
+
+          if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertRegieMsg !== false) {
+            this.sendTelegramMessage(
+              `📟 <b>COMUNICAÇÃO RÉGIES & TÉCNICOS [${stageName}]</b>\n\n` +
+              `💬 <i>"${state.regieMessage.text}"</i>\n` +
+              `⏰ Hora: ${state.regieMessage.sentTimeStr || timeStr}`
+            );
+          }
+        }
+      }
+
+      // 3. Avisos Urgentes de Cena / Técnicos (Direção de Cena)
+      if (state.theatre && state.theatre.urgentNotice && state.theatre.urgentNotice.visible && state.theatre.urgentNotice.text) {
+        const noticeTs = state.theatre.urgentNotice.sentAt || 1;
+        if (noticeTs !== this._state.lastTheatreNoticeAt) {
+          this._state.lastTheatreNoticeAt = noticeTs;
+          _playChime('warning');
+
+          this.showLocalNotification(`📢 Aviso de Cena — ${stageName}`, {
+            body: state.theatre.urgentNotice.text,
+            tag: `dc-urgent-${noticeTs}`,
+            vibrate: [250, 100, 250]
+          });
+
+          if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertRegieMsg !== false) {
+            this.sendTelegramMessage(
+              `📢 <b>AVISO DIREÇÃO DE CENA [${stageName}]</b>\n\n` +
+              `💬 <i>"${state.theatre.urgentNotice.text}"</i>\n` +
+              `⏰ Hora: ${timeStr}`
+            );
+          }
+        }
+      }
+
+      // 4. Mensagens de Palco (Prompter / Ecrã dos Artistas)
+      if (state.message && state.message.visible && state.message.text) {
+        const msgKey = state.message.text + '_' + (state.updatedAt || 0);
+        if (msgKey !== this._state.lastUrgentNoticeId) {
+          this._state.lastUrgentNoticeId = msgKey;
+          _playChime('warning');
+
+          this.showLocalNotification(`🚨 Mensagem de Palco — ${stageName}`, {
+            body: state.message.text,
+            tag: `stage-msg-${Date.now()}`,
+            vibrate: [250, 100, 250, 100, 250]
+          });
+
+          if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertUrgent !== false) {
+            this.sendTelegramMessage(
+              `🚨 <b>MENSAGEM DE PALCO [${stageName}]</b>\n\n` +
+              `💬 <i>"${state.message.text}"</i>`
+            );
+          }
+        }
+      }
+
+      // 5. Deixas Cênicas (Cues) — Desativadas por defeito a pedido
+      if (tgCfg && tgCfg.alertCues === true && state.theatre && Array.isArray(state.theatre.cues)) {
         // STANDBY Cue
         const standbyId = state.theatre.standbyCueId;
         if (standbyId && standbyId !== this._state.lastStandbyCueId) {
@@ -406,7 +516,7 @@
               vibrate: [150, 80, 150]
             });
 
-            if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertCues !== false) {
+            if (isLeader && tgCfg && tgCfg.enabled) {
               this.sendTelegramMessage(
                 `🟡 <b>STANDBY CUE ${cue.number} [${targetDept}]</b>\n` +
                 `📋 <i>${cueDesc || 'Preparar disparo'}</i>\n` +
@@ -432,56 +542,13 @@
               vibrate: [400, 100, 400]
             });
 
-            if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertCues !== false) {
+            if (isLeader && tgCfg && tgCfg.enabled) {
               this.sendTelegramMessage(
                 `🟢 <b>GO CUE ${cue.number} [${targetDept}]</b> 🚀\n` +
                 `🎬 <b>${cueDesc || 'Executado'}</b>\n` +
                 `🎪 ${stageName}`
               );
             }
-          }
-        }
-      }
-
-      // 2. Urgent Stage Messages / Regie Calls
-      if (state.message && state.message.visible && state.message.text) {
-        const msgKey = state.message.text + '_' + (state.updatedAt || 0);
-        if (msgKey !== this._state.lastUrgentNoticeId) {
-          this._state.lastUrgentNoticeId = msgKey;
-          _playChime('warning');
-
-          this.showLocalNotification(`🚨 Mensagem de Palco — ${stageName}`, {
-            body: state.message.text,
-            tag: `stage-msg-${Date.now()}`,
-            vibrate: [250, 100, 250, 100, 250]
-          });
-
-          if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertUrgent !== false) {
-            this.sendTelegramMessage(
-              `🚨 <b>MENSAGEM DE PALCO [${stageName}]</b>\n\n` +
-              `💬 <i>"${state.message.text}"</i>`
-            );
-          }
-        }
-      }
-
-      // 3. Regie Inter-Com Message
-      if (state.regieMessage && state.regieMessage.visible && state.regieMessage.text) {
-        if (state.regieMessage.id && state.regieMessage.id !== this._state.lastRegieMsgId) {
-          this._state.lastRegieMsgId = state.regieMessage.id;
-          _playChime('warning');
-
-          this.showLocalNotification(`📟 Mensagem Régie — ${stageName}`, {
-            body: state.regieMessage.text,
-            tag: `regie-msg-${state.regieMessage.id}`,
-            vibrate: [200, 100, 200]
-          });
-
-          if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertUrgent !== false) {
-            this.sendTelegramMessage(
-              `📟 <b>COMUNICAÇÃO RÉGIE [${stageName}]</b>\n\n` +
-              `💬 <i>"${state.regieMessage.text}"</i>`
-            );
           }
         }
       }

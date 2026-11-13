@@ -2154,6 +2154,8 @@
   const $masterTgAlert5m = document.getElementById('master-tg-alert-5m');
   const $masterTgAlert1m = document.getElementById('master-tg-alert-1m');
   const $masterTgAlertEnd = document.getElementById('master-tg-alert-end');
+  const $masterTgAlertRegieCall = document.getElementById('master-tg-alert-regie-call');
+  const $masterTgAlertRegieMsg = document.getElementById('master-tg-alert-regie-msg');
   const $masterTgAlertCues = document.getElementById('master-tg-alert-cues');
   const $masterTgAlertUrgent = document.getElementById('master-tg-alert-urgent');
   const $masterTgTestBtn = document.getElementById('master-tg-btn-test');
@@ -2193,7 +2195,9 @@
     if ($masterTgAlert5m) $masterTgAlert5m.checked = tg.alert5m !== false;
     if ($masterTgAlert1m) $masterTgAlert1m.checked = tg.alert1m !== false;
     if ($masterTgAlertEnd) $masterTgAlertEnd.checked = tg.alertEnd !== false;
-    if ($masterTgAlertCues) $masterTgAlertCues.checked = tg.alertCues !== false;
+    if ($masterTgAlertRegieCall) $masterTgAlertRegieCall.checked = tg.alertRegieCalls !== false;
+    if ($masterTgAlertRegieMsg) $masterTgAlertRegieMsg.checked = tg.alertRegieMsg !== false;
+    if ($masterTgAlertCues) $masterTgAlertCues.checked = tg.alertCues === true; // Deixas desativadas por defeito
     if ($masterTgAlertUrgent) $masterTgAlertUrgent.checked = tg.alertUrgent !== false;
     if ($masterTgFeedback) $masterTgFeedback.textContent = '';
   }
@@ -2234,7 +2238,9 @@
         alert5m: $masterTgAlert5m ? $masterTgAlert5m.checked : true,
         alert1m: $masterTgAlert1m ? $masterTgAlert1m.checked : true,
         alertEnd: $masterTgAlertEnd ? $masterTgAlertEnd.checked : true,
-        alertCues: $masterTgAlertCues ? $masterTgAlertCues.checked : true,
+        alertRegieCalls: $masterTgAlertRegieCall ? $masterTgAlertRegieCall.checked : true,
+        alertRegieMsg: $masterTgAlertRegieMsg ? $masterTgAlertRegieMsg.checked : true,
+        alertCues: $masterTgAlertCues ? $masterTgAlertCues.checked : false,
         alertUrgent: $masterTgAlertUrgent ? $masterTgAlertUrgent.checked : true
       };
 
