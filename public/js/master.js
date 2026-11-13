@@ -780,6 +780,9 @@
             <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(primaryTargetRoom)}" data-title="${escapeHtml(ev.title || ev.code)}" style="background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
               📹 Vídeo
             </button>
+            <button type="button" class="btn btn-sm btn-master-stage-notif" data-room="${encodeURIComponent(primaryTargetRoom)}" data-title="${escapeHtml(ev.title || ev.code)}" style="background: rgba(9, 132, 227, 0.25); border-color: #0984e3; color: #74b9ff; font-weight: 700;" title="Configurar Alertas e Telegram deste Evento/Palco">
+              🔔 Alertas
+            </button>
             <button type="button" class="btn btn-sm" data-add-substage="${escapeHtml(ev.code)}" style="background: rgba(0, 184, 148, 0.18); border-color: #00b894; color: #55efc4; font-weight: 700;" title="Adicionar um novo palco a este evento">
               ➕ + Palco
             </button>
@@ -811,6 +814,9 @@
                   `}
                   <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
                     📹
+                  </button>
+                  <button type="button" class="btn btn-sm btn-master-stage-notif" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; background: rgba(9, 132, 227, 0.25); border-color: #0984e3; color: #74b9ff; font-weight: 700;" title="Configurar Alertas e Telegram deste Palco">
+                    🔔
                   </button>
                   ${ev.stages.length > 1 ? `
                     <button type="button" class="btn btn-sm btn-danger" data-delete-substage="${escapeHtml(st.code)}" data-parent-event="${escapeHtml(ev.code)}" data-stage-name="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; margin-left: 2px;" title="Eliminar este palco do evento">
@@ -1264,6 +1270,9 @@
             <div style="display: flex; gap: 6px; align-items: center;">
               <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
                 📹 Vídeo
+              </button>
+              <button type="button" class="btn btn-sm btn-master-stage-notif" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(9, 132, 227, 0.25); border-color: #0984e3; color: #74b9ff; font-weight: 700;" title="Configurar Alertas e Telegram deste Palco">
+                🔔
               </button>
               <a href="controller.html?room=${encodeURIComponent(stageCode)}" class="btn btn-sm btn-primary" style="padding: 4px 10px; font-size: 0.75rem;">
                 🎛️ Abrir
@@ -2137,6 +2146,14 @@
         openMasterVideoModal(room, title);
       }
     }
+
+    const notifBtn = e.target.closest('.btn-master-stage-notif');
+    if (notifBtn) {
+      const room = decodeURIComponent(notifBtn.dataset.room || '');
+      if (room) {
+        openMasterNotifModal(room);
+      }
+    }
   });
 
   // ─── Master Notifications & Telegram Modal ──────────────────────────────
@@ -2147,6 +2164,10 @@
   const $masterNotifSaveBtn = document.getElementById('master-notif-save-btn');
   const $masterBrowserStatus = document.getElementById('master-browser-status');
   const $masterEnableBrowserBtn = document.getElementById('master-btn-enable-browser-notif');
+
+  const $masterNotifStageSelect = document.getElementById('master-notif-stage-select');
+  const $masterNotifStageBadge = document.getElementById('master-notif-stage-badge');
+  const $masterTgApplyAll = document.getElementById('master-tg-apply-all-stages');
 
   const $masterTgEnabled = document.getElementById('master-tg-enabled');
   const $masterTgToken = document.getElementById('master-tg-token');
@@ -2160,6 +2181,8 @@
   const $masterTgAlertUrgent = document.getElementById('master-tg-alert-urgent');
   const $masterTgTestBtn = document.getElementById('master-tg-btn-test');
   const $masterTgFeedback = document.getElementById('master-tg-feedback');
+
+  let currentNotifStageCode = masterClient.cleanRoom || 'PALCO1';
 
   function updateMasterBrowserStatus() {
     if (!window.StageTimerNotifications) return;
@@ -2184,10 +2207,86 @@
     }
   }
 
-  function populateMasterNotifForm() {
+  function populateMasterNotifStageSelector(selectedRoom) {
+    if (!$masterNotifStageSelect) return;
+    const events = masterClient.getEventsList();
+    let optionsHtml = '';
+    const allStages = [];
+
+    if (events.length === 0) {
+      const defRoom = masterClient.cleanRoom || 'PALCO1';
+      optionsHtml = `<option value="${escapeHtml(defRoom)}">🎪 Palco Padrão (${escapeHtml(defRoom)})</option>`;
+      allStages.push(defRoom);
+    } else {
+      events.forEach(ev => {
+        const isTheatre = ev.eventType === 'theatre';
+        const evIcon = isTheatre ? '🎭' : '🎪';
+        const evTitle = ev.title || ev.code;
+        if (Array.isArray(ev.stages) && ev.stages.length > 0) {
+          optionsHtml += `<optgroup label="${evIcon} ${escapeHtml(evTitle)} (${escapeHtml(ev.code)})">`;
+          ev.stages.forEach(st => {
+            const stName = st.name || st.code;
+            const code = String(st.code || '').toUpperCase().trim();
+            if (code) {
+              allStages.push(code);
+              optionsHtml += `<option value="${escapeHtml(code)}">${escapeHtml(stName)} (${escapeHtml(code)})</option>`;
+            }
+          });
+          optionsHtml += `</optgroup>`;
+        } else {
+          const code = String(ev.code || '').toUpperCase().trim();
+          allStages.push(code);
+          optionsHtml += `<option value="${escapeHtml(code)}">${evIcon} ${escapeHtml(evTitle)} (${escapeHtml(code)})</option>`;
+        }
+      });
+    }
+
+    $masterNotifStageSelect.innerHTML = optionsHtml;
+
+    const cleanSelected = String(selectedRoom || '').toUpperCase().trim();
+    const target = cleanSelected && allStages.includes(cleanSelected)
+      ? cleanSelected
+      : (allStages.length > 0 ? allStages[0] : (masterClient.cleanRoom || 'PALCO1'));
+
+    $masterNotifStageSelect.value = target;
+    currentNotifStageCode = target;
+    if ($masterNotifStageBadge) {
+      $masterNotifStageBadge.textContent = target;
+    }
+  }
+
+  function populateMasterNotifForm(stageCode) {
+    const code = String(stageCode || currentNotifStageCode || masterClient.cleanRoom || 'PALCO1').toUpperCase().trim();
+    currentNotifStageCode = code;
+
+    if ($masterNotifStageSelect && $masterNotifStageSelect.value !== code) {
+      $masterNotifStageSelect.value = code;
+    }
+    if ($masterNotifStageBadge) {
+      $masterNotifStageBadge.textContent = code;
+    }
+
     updateMasterBrowserStatus();
-    const integrations = masterClient.getIntegrations ? masterClient.getIntegrations() : null;
-    const tg = integrations?.telegram || {};
+
+    let tg = null;
+    if (typeof masterClient.getRoomTelegramConfig === 'function') {
+      tg = masterClient.getRoomTelegramConfig(code);
+    }
+    if (!tg || Object.keys(tg).length === 0) {
+      const mapState = stagesStateMap.get(code);
+      if (mapState?.integrations?.telegram) {
+        tg = mapState.integrations.telegram;
+      } else {
+        try {
+          const raw = localStorage.getItem(`stagetimer_v10_state_${code}`);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            tg = parsed.integrations?.telegram;
+          }
+        } catch (_) {}
+      }
+    }
+    if (!tg) tg = {};
 
     if ($masterTgEnabled) $masterTgEnabled.checked = !!tg.enabled;
     if ($masterTgToken) $masterTgToken.value = tg.botToken || '';
@@ -2200,12 +2299,28 @@
     if ($masterTgAlertCues) $masterTgAlertCues.checked = tg.alertCues === true; // Deixas desativadas por defeito
     if ($masterTgAlertUrgent) $masterTgAlertUrgent.checked = tg.alertUrgent !== false;
     if ($masterTgFeedback) $masterTgFeedback.textContent = '';
+    if ($masterTgApplyAll) $masterTgApplyAll.checked = false;
+
+    if ($masterTgTestBtn) {
+      $masterTgTestBtn.textContent = `🧪 Testar Envio Telegram (${code})`;
+    }
+  }
+
+  function openMasterNotifModal(room) {
+    populateMasterNotifStageSelector(room);
+    populateMasterNotifForm(room);
+    if ($masterNotifModal) $masterNotifModal.style.display = 'flex';
+  }
+
+  if ($masterNotifStageSelect) {
+    $masterNotifStageSelect.addEventListener('change', (e) => {
+      populateMasterNotifForm(e.target.value);
+    });
   }
 
   if ($masterNotifBtn && $masterNotifModal) {
     $masterNotifBtn.addEventListener('click', () => {
-      populateMasterNotifForm();
-      $masterNotifModal.style.display = 'flex';
+      openMasterNotifModal(currentNotifStageCode);
     });
   }
 
@@ -2231,6 +2346,7 @@
 
   if ($masterNotifSaveBtn) {
     $masterNotifSaveBtn.addEventListener('click', () => {
+      const targetRoom = currentNotifStageCode || masterClient.cleanRoom || 'PALCO1';
       const tgConfig = {
         enabled: $masterTgEnabled ? $masterTgEnabled.checked : false,
         botToken: $masterTgToken ? $masterTgToken.value.trim() : '',
@@ -2244,10 +2360,49 @@
         alertUrgent: $masterTgAlertUrgent ? $masterTgAlertUrgent.checked : true
       };
 
-      if (masterClient && typeof masterClient.setTelegramConfig === 'function') {
+      if (typeof masterClient.setRoomTelegramConfig === 'function') {
+        masterClient.setRoomTelegramConfig(targetRoom, tgConfig);
+      } else if (typeof masterClient.setTelegramConfig === 'function' && targetRoom === masterClient.cleanRoom) {
         masterClient.setTelegramConfig(tgConfig);
       }
-      showToast('Configurações de Alertas guardadas!', 'success');
+
+      const st = stagesStateMap.get(targetRoom) || { id: targetRoom, timers: [], activeTimerId: null };
+      if (!st.integrations) st.integrations = {};
+      st.integrations.telegram = { ...(st.integrations.telegram || {}), ...tgConfig };
+      stagesStateMap.set(targetRoom, st);
+
+      let replicatedCount = 0;
+      if ($masterTgApplyAll && $masterTgApplyAll.checked) {
+        const events = masterClient.getEventsList();
+        const parentEv = events.find(ev => {
+          if (ev.code === targetRoom) return true;
+          if (Array.isArray(ev.stages) && ev.stages.some(s => s.code === targetRoom)) return true;
+          return false;
+        });
+
+        const stagesToReplicate = [];
+        if (parentEv && Array.isArray(parentEv.stages) && parentEv.stages.length > 0) {
+          parentEv.stages.forEach(s => {
+            if (s.code && s.code !== targetRoom) stagesToReplicate.push(s.code);
+          });
+        }
+
+        stagesToReplicate.forEach(subRoom => {
+          if (typeof masterClient.setRoomTelegramConfig === 'function') {
+            masterClient.setRoomTelegramConfig(subRoom, tgConfig);
+          }
+          const subSt = stagesStateMap.get(subRoom) || { id: subRoom, timers: [], activeTimerId: null };
+          if (!subSt.integrations) subSt.integrations = {};
+          subSt.integrations.telegram = { ...(subSt.integrations.telegram || {}), ...tgConfig };
+          stagesStateMap.set(subRoom, subSt);
+          replicatedCount++;
+        });
+      }
+
+      const msg = replicatedCount > 0
+        ? `Alertas guardados para ${targetRoom} e replicados para +${replicatedCount} palco(s)!`
+        : `Alertas guardados com sucesso para ${targetRoom}!`;
+      showToast(msg, 'success');
       closeMasterModal();
     });
   }
@@ -2271,14 +2426,14 @@
         $masterTgFeedback.style.color = '#74b9ff';
       }
 
-      const stageName = masterClient?.cleanRoom || 'Super Régie Master';
+      const stageName = currentNotifStageCode || masterClient?.cleanRoom || 'Super Régie Master';
       const result = await window.StageTimerNotifications.testTelegram(token, chat, stageName);
       if (result.success) {
         if ($masterTgFeedback) {
           $masterTgFeedback.textContent = '✅ Mensagem entregue no Telegram!';
           $masterTgFeedback.style.color = '#55efc4';
         }
-        showToast('Teste de Telegram enviado com sucesso!', 'success');
+        showToast(`Teste de Telegram enviado com sucesso para ${stageName}!`, 'success');
       } else {
         if ($masterTgFeedback) {
           $masterTgFeedback.textContent = '❌ ' + (result.error || 'Falha ao enviar');

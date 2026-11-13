@@ -3351,6 +3351,78 @@ class UniversalSyncClient {
     this._commitStateChange();
   }
 
+  setRoomTelegramConfig(targetRoom, config = {}) {
+    const cleanTarget = String(targetRoom || this.cleanRoom || 'PALCO1').toUpperCase().trim();
+    if (!cleanTarget) return null;
+
+    const stateStorageKey = `stagetimer_v10_state_${cleanTarget}`;
+    let roomState = null;
+    try {
+      const rawState = localStorage.getItem(stateStorageKey);
+      if (rawState) roomState = JSON.parse(rawState);
+    } catch (_) {}
+
+    if (!roomState || typeof roomState !== 'object') {
+      roomState = {
+        id: cleanTarget,
+        timers: [],
+        activeTimerId: null,
+        integrations: this._createDefaultIntegrationsState()
+      };
+    }
+    if (!roomState.integrations || typeof roomState.integrations !== 'object') {
+      roomState.integrations = this._createDefaultIntegrationsState();
+    }
+    if (!roomState.integrations.telegram || typeof roomState.integrations.telegram !== 'object') {
+      roomState.integrations.telegram = this._createDefaultIntegrationsState().telegram;
+    }
+
+    roomState.integrations.telegram = Object.assign({}, roomState.integrations.telegram, config, {
+      updatedAt: this.getTrueTime()
+    });
+
+    try {
+      localStorage.setItem(stateStorageKey, JSON.stringify(roomState));
+    } catch (_) {}
+
+    if (cleanTarget === this.cleanRoom && this._state) {
+      this._ensureIntegrationsStructure();
+      this._state.integrations.telegram = roomState.integrations.telegram;
+      this._commitStateChange();
+    } else {
+      if (this.mqttClient && this.mqttClient.connected) {
+        try {
+          this.mqttClient.publish(`stagetimer_v10/${cleanTarget}/state`, JSON.stringify(roomState), { qos: 1, retain: true });
+        } catch (_) {}
+      }
+      if (typeof BroadcastChannel !== 'undefined') {
+        try {
+          const ch = new BroadcastChannel(`stagetimer_v10_${cleanTarget}`);
+          ch.postMessage({ type: 'state', state: roomState, sender: this.clientId, room: cleanTarget });
+          setTimeout(() => { try { ch.close(); } catch (_) {} }, 150);
+        } catch (_) {}
+      }
+    }
+
+    return roomState.integrations.telegram;
+  }
+
+  getRoomTelegramConfig(targetRoom) {
+    const cleanTarget = String(targetRoom || this.cleanRoom || 'PALCO1').toUpperCase().trim();
+    if (cleanTarget === this.cleanRoom && this._state?.integrations?.telegram) {
+      return this._state.integrations.telegram;
+    }
+    const stateStorageKey = `stagetimer_v10_state_${cleanTarget}`;
+    try {
+      const raw = localStorage.getItem(stateStorageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.integrations?.telegram) return parsed.integrations.telegram;
+      }
+    } catch (_) {}
+    return this._createDefaultIntegrationsState().telegram;
+  }
+
   setWebPushConfig(config) {
     if (!this._state) return;
     this._ensureIntegrationsStructure();

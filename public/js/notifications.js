@@ -302,6 +302,15 @@
         this.checkStateEvents(state);
       });
 
+      // Listen to multi-room state updates (Master Mode)
+      if (typeof syncClient.on === 'function') {
+        syncClient.on('multi-room-state', ({ room, data }) => {
+          if (data && typeof data === 'object') {
+            this.checkStateEvents(data);
+          }
+        });
+      }
+
       // Regular tick check for timer thresholds (every 1 second)
       if (this._state.watcherInterval) {
         clearInterval(this._state.watcherInterval);
