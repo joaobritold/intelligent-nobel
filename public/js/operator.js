@@ -1274,3 +1274,48 @@ window.addEventListener('pointerdown', () => {
     acquireOperatorWakeLock();
   }
 }, { passive: true });
+
+// ─── Operator Mobile Notifications ───────────────────────────────────────────
+(function initOperatorNotifications() {
+  const $btn = document.getElementById('op-notify-toggle-btn');
+  if (!$btn) return;
+
+  function updateIcon() {
+    if (!window.StageTimerNotifications) return;
+    const perm = window.StageTimerNotifications.getBrowserPermission();
+    if (perm === 'granted') {
+      $btn.textContent = '🔔';
+      $btn.style.borderColor = '#00b894';
+      $btn.style.background = 'rgba(0, 184, 148, 0.2)';
+      $btn.style.color = '#55efc4';
+      $btn.title = 'Notificações ativas neste telemóvel';
+    } else if (perm === 'denied') {
+      $btn.textContent = '🔕';
+      $btn.style.borderColor = '#d63031';
+      $btn.style.background = 'rgba(214, 48, 49, 0.2)';
+      $btn.style.color = '#ff7675';
+      $btn.title = 'Notificações bloqueadas no navegador';
+    } else {
+      $btn.textContent = '🔔';
+      $btn.style.borderColor = 'var(--border)';
+      $btn.style.background = 'rgba(255, 255, 255, 0.08)';
+      $btn.style.color = '#fff';
+      $btn.title = 'Tocar para ativar notificações no telemóvel';
+    }
+  }
+
+  $btn.addEventListener('click', async () => {
+    if (!window.StageTimerNotifications) return;
+    const res = await window.StageTimerNotifications.requestBrowserPermission();
+    updateIcon();
+    if (typeof showToast === 'function') {
+      showToast(res.message, res.status === 'granted' ? 'success' : 'warn');
+    }
+  });
+
+  updateIcon();
+
+  if (window.StageTimerNotifications && client) {
+    window.StageTimerNotifications.initWatcher(client, 'operator');
+  }
+})();

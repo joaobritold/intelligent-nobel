@@ -2139,6 +2139,154 @@
     }
   });
 
+  // ─── Master Notifications & Telegram Modal ──────────────────────────────
+  const $masterNotifBtn = document.getElementById('master-notif-btn');
+  const $masterNotifModal = document.getElementById('master-notifications-modal');
+  const $masterNotifCloseTop = document.getElementById('master-notif-close-top');
+  const $masterNotifCloseBtn = document.getElementById('master-notif-close-btn');
+  const $masterNotifSaveBtn = document.getElementById('master-notif-save-btn');
+  const $masterBrowserStatus = document.getElementById('master-browser-status');
+  const $masterEnableBrowserBtn = document.getElementById('master-btn-enable-browser-notif');
+
+  const $masterTgEnabled = document.getElementById('master-tg-enabled');
+  const $masterTgToken = document.getElementById('master-tg-token');
+  const $masterTgChat = document.getElementById('master-tg-chat');
+  const $masterTgAlert5m = document.getElementById('master-tg-alert-5m');
+  const $masterTgAlert1m = document.getElementById('master-tg-alert-1m');
+  const $masterTgAlertEnd = document.getElementById('master-tg-alert-end');
+  const $masterTgAlertCues = document.getElementById('master-tg-alert-cues');
+  const $masterTgAlertUrgent = document.getElementById('master-tg-alert-urgent');
+  const $masterTgTestBtn = document.getElementById('master-tg-btn-test');
+  const $masterTgFeedback = document.getElementById('master-tg-feedback');
+
+  function updateMasterBrowserStatus() {
+    if (!window.StageTimerNotifications) return;
+    const perm = window.StageTimerNotifications.getBrowserPermission();
+    if ($masterBrowserStatus) {
+      if (perm === 'granted') {
+        $masterBrowserStatus.textContent = '✅ Ativas';
+        $masterBrowserStatus.style.background = 'rgba(0, 184, 148, 0.2)';
+        $masterBrowserStatus.style.color = '#55efc4';
+        if ($masterEnableBrowserBtn) $masterEnableBrowserBtn.textContent = '✅ Notificações Ativas Neste Dispositivo';
+      } else if (perm === 'denied') {
+        $masterBrowserStatus.textContent = '❌ Bloqueadas';
+        $masterBrowserStatus.style.background = 'rgba(214, 48, 49, 0.2)';
+        $masterBrowserStatus.style.color = '#ff7675';
+        if ($masterEnableBrowserBtn) $masterEnableBrowserBtn.textContent = '❌ Desbloquear nas Definições do Browser';
+      } else {
+        $masterBrowserStatus.textContent = '⚠️ Desativadas';
+        $masterBrowserStatus.style.background = 'rgba(253, 203, 110, 0.2)';
+        $masterBrowserStatus.style.color = '#ffeaa7';
+        if ($masterEnableBrowserBtn) $masterEnableBrowserBtn.textContent = '🔔 Ativar Notificações Neste Dispositivo';
+      }
+    }
+  }
+
+  function populateMasterNotifForm() {
+    updateMasterBrowserStatus();
+    const integrations = masterClient.getIntegrations ? masterClient.getIntegrations() : null;
+    const tg = integrations?.telegram || {};
+
+    if ($masterTgEnabled) $masterTgEnabled.checked = !!tg.enabled;
+    if ($masterTgToken) $masterTgToken.value = tg.botToken || '';
+    if ($masterTgChat) $masterTgChat.value = tg.chatId || '';
+    if ($masterTgAlert5m) $masterTgAlert5m.checked = tg.alert5m !== false;
+    if ($masterTgAlert1m) $masterTgAlert1m.checked = tg.alert1m !== false;
+    if ($masterTgAlertEnd) $masterTgAlertEnd.checked = tg.alertEnd !== false;
+    if ($masterTgAlertCues) $masterTgAlertCues.checked = tg.alertCues !== false;
+    if ($masterTgAlertUrgent) $masterTgAlertUrgent.checked = tg.alertUrgent !== false;
+    if ($masterTgFeedback) $masterTgFeedback.textContent = '';
+  }
+
+  if ($masterNotifBtn && $masterNotifModal) {
+    $masterNotifBtn.addEventListener('click', () => {
+      populateMasterNotifForm();
+      $masterNotifModal.style.display = 'flex';
+    });
+  }
+
+  const closeMasterModal = () => {
+    if ($masterNotifModal) $masterNotifModal.style.display = 'none';
+  };
+  if ($masterNotifCloseTop) $masterNotifCloseTop.addEventListener('click', closeMasterModal);
+  if ($masterNotifCloseBtn) $masterNotifCloseBtn.addEventListener('click', closeMasterModal);
+  if ($masterNotifModal) {
+    $masterNotifModal.addEventListener('click', (e) => {
+      if (e.target === $masterNotifModal) closeMasterModal();
+    });
+  }
+
+  if ($masterEnableBrowserBtn) {
+    $masterEnableBrowserBtn.addEventListener('click', async () => {
+      if (!window.StageTimerNotifications) return;
+      const res = await window.StageTimerNotifications.requestBrowserPermission();
+      updateMasterBrowserStatus();
+      showToast(res.message, res.status === 'granted' ? 'success' : 'warn');
+    });
+  }
+
+  if ($masterNotifSaveBtn) {
+    $masterNotifSaveBtn.addEventListener('click', () => {
+      const tgConfig = {
+        enabled: $masterTgEnabled ? $masterTgEnabled.checked : false,
+        botToken: $masterTgToken ? $masterTgToken.value.trim() : '',
+        chatId: $masterTgChat ? $masterTgChat.value.trim() : '',
+        alert5m: $masterTgAlert5m ? $masterTgAlert5m.checked : true,
+        alert1m: $masterTgAlert1m ? $masterTgAlert1m.checked : true,
+        alertEnd: $masterTgAlertEnd ? $masterTgAlertEnd.checked : true,
+        alertCues: $masterTgAlertCues ? $masterTgAlertCues.checked : true,
+        alertUrgent: $masterTgAlertUrgent ? $masterTgAlertUrgent.checked : true
+      };
+
+      if (masterClient && typeof masterClient.setTelegramConfig === 'function') {
+        masterClient.setTelegramConfig(tgConfig);
+      }
+      showToast('Configurações de Alertas guardadas!', 'success');
+      closeMasterModal();
+    });
+  }
+
+  if ($masterTgTestBtn) {
+    $masterTgTestBtn.addEventListener('click', async () => {
+      if (!window.StageTimerNotifications) return;
+      const token = $masterTgToken ? $masterTgToken.value.trim() : '';
+      const chat = $masterTgChat ? $masterTgChat.value.trim() : '';
+
+      if (!token || !chat) {
+        if ($masterTgFeedback) {
+          $masterTgFeedback.textContent = '❌ Preencha o Token e o Chat ID';
+          $masterTgFeedback.style.color = '#ff7675';
+        }
+        return;
+      }
+
+      if ($masterTgFeedback) {
+        $masterTgFeedback.textContent = '⏳ A enviar teste...';
+        $masterTgFeedback.style.color = '#74b9ff';
+      }
+
+      const stageName = masterClient?.cleanRoom || 'Super Régie Master';
+      const result = await window.StageTimerNotifications.testTelegram(token, chat, stageName);
+      if (result.success) {
+        if ($masterTgFeedback) {
+          $masterTgFeedback.textContent = '✅ Mensagem entregue no Telegram!';
+          $masterTgFeedback.style.color = '#55efc4';
+        }
+        showToast('Teste de Telegram enviado com sucesso!', 'success');
+      } else {
+        if ($masterTgFeedback) {
+          $masterTgFeedback.textContent = '❌ ' + (result.error || 'Falha ao enviar');
+          $masterTgFeedback.style.color = '#ff7675';
+        }
+      }
+    });
+  }
+
+  // Initialize event watcher on master
+  if (window.StageTimerNotifications && masterClient) {
+    window.StageTimerNotifications.initWatcher(masterClient, 'master');
+  }
+
   // Initial Boot
   preloadLocalStagesState();
   masterClient.connect();

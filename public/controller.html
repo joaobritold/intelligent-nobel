@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=107">
-  <link rel="stylesheet" href="css/controller.css?v=107">
+  <link rel="stylesheet" href="css/common.css?v=108">
+  <link rel="stylesheet" href="css/controller.css?v=108">
 </head>
 <body>
   <div class="app">
@@ -65,9 +65,9 @@
       <div class="header-left">
         <div class="header-brand-row">
           <div class="logo">
-            <img src="icon.svg?v=107" alt="StageTimer Logo" class="logo-icon" width="26" height="26" style="vertical-align: middle; border-radius: 6px; margin-right: 6px;">
+            <img src="icon.svg?v=108" alt="StageTimer Logo" class="logo-icon" width="26" height="26" style="vertical-align: middle; border-radius: 6px; margin-right: 6px;">
             <span>StageTimer</span>
-            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 4px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v107</span>
+            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 4px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v108</span>
           </div>
           <div class="room-info" style="display: flex; align-items: center; gap: 8px;">
             <span>🎪</span>
@@ -133,6 +133,7 @@
             </div>
             <div class="panel-header-btn-group util-group">
               <button id="open-import-btn" class="btn btn-sm btn-import-outline">📂 Importar</button>
+              <button id="open-notif-btn" type="button" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border: 1px solid rgba(108, 92, 231, 0.5); color: #c4b5fd; font-weight: 700;" title="Configurar Alertas Telegram e Notificações no Telemóvel">🔔 Alertas</button>
               <button id="clear-event-btn" class="btn btn-sm btn-danger" title="Apagar todos os artistas do dia atual">🧹 Limpar</button>
             </div>
             <button id="add-timer-btn" class="btn btn-primary btn-sm btn-add-main">+ Add Timer</button>
@@ -335,6 +336,95 @@
     </div>
   </div>
 
+  <!-- Notifications & Telegram Modal -->
+  <div id="notifications-modal" class="modal-overlay">
+    <div class="modal" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🔔 Notificações & Alertas no Telemóvel</h3>
+        <p class="modal-subtitle">Configure alertas nativos para telemóveis e envio automático para grupos de Telegram da equipa.</p>
+      </div>
+
+      <div class="modal-scroll-content">
+        <!-- Section 1: Notificações no Telemóvel (Web / PWA) -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+              <span>📱</span> Notificações Neste Telemóvel / PC
+            </div>
+            <span id="notif-browser-status" class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-secondary); font-size: 0.72rem;">Verificando...</span>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
+            Receba banners com vibração neste telemóvel quando houver Cues (<code>STANDBY</code> / <code>GO</code>), aviso de 5m/1m ou mensagens urgentes.
+            <em style="display: block; margin-top: 4px; color: #fdcb6e;">(No iPhone: requer adicionar ao Ecrã Principal pelo Safari).</em>
+          </p>
+          <button id="btn-enable-browser-notif" type="button" class="btn btn-sm" style="background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4; font-weight: 600;">
+            🔔 Ativar Notificações Neste Dispositivo
+          </button>
+        </div>
+
+        <!-- Section 2: Integração Telegram Bot -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+              <span>✈️</span> Canal / Grupo de Telegram
+            </div>
+            <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 8px;">
+              <input type="checkbox" id="notif-tg-enabled" style="cursor: pointer; width: 18px; height: 18px;">
+              <span style="font-size: 0.8rem; font-weight: 700; color: #a29bfe;">Ativar Telegram</span>
+            </label>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
+            Envia alertas em tempo real para o grupo da equipa técnica (Som, Luz, Vídeo, Produção). Crie o bot no <a href="https://t.me/BotFather" target="_blank" style="color: #74b9ff; text-decoration: underline;">@BotFather</a> e obtenha o Chat ID.
+          </p>
+
+          <div class="modal-field" style="margin-bottom: 10px;">
+            <label class="modal-label" for="notif-tg-token" style="font-size: 0.8rem;">Bot Token (Telegram):</label>
+            <input id="notif-tg-token" class="input input-mono" placeholder="Ex: 7123456789:AAHxxxxx..." autocomplete="off">
+          </div>
+
+          <div class="modal-field" style="margin-bottom: 12px;">
+            <label class="modal-label" for="notif-tg-chat" style="font-size: 0.8rem;">Chat ID (Grupo, Canal ou Utilizador):</label>
+            <input id="notif-tg-chat" class="input input-mono" placeholder="Ex: -1001234567890 ou @meucanal" autocomplete="off">
+            <small style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-top: 4px;">Dica: Adicione o bot ao grupo e use o ID do grupo (número negativo para grupos/supergrupos).</small>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <div class="modal-label" style="font-size: 0.8rem; margin-bottom: 6px;">Alertas Automáticos a Enviar:</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.82rem; color: #ddd;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="notif-tg-alert-5m" checked> ⏳ Faltam 5 Minutos
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="notif-tg-alert-1m" checked> ⚠️ Falta 1 Minuto
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="notif-tg-alert-end" checked> 🛑 Fim / Overtime
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="notif-tg-alert-cues" checked> 🚦 Cues (STANDBY/GO)
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; grid-column: span 2;">
+                <input type="checkbox" id="notif-tg-alert-urgent" checked> 🚨 Mensagens de Palco Urgentes
+              </label>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
+            <button id="notif-tg-btn-test" type="button" class="btn btn-sm" style="background: rgba(9, 132, 227, 0.2); border-color: #0984e3; color: #74b9ff; font-weight: 600;">
+              🧪 Testar Envio Telegram
+            </button>
+            <span id="notif-tg-feedback" style="font-size: 0.78rem; font-weight: 600;"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions modal-actions-sticky">
+        <button id="notif-modal-close" type="button" class="btn">Fechar</button>
+        <button id="notif-modal-save" type="button" class="btn btn-primary">💾 Guardar Configurações</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="toast"></div>
 
@@ -342,15 +432,16 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=107"></script>
+  <script src="js/schedule-importer.js?v=108"></script>
 
   <!-- Access Control -->
-  <script src="js/auth.js?v=107"></script>
+  <script src="js/auth.js?v=108"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=107"></script>
-  <script src="js/local-sync.js?v=107"></script>
-  <script src="js/controller.js?v=107"></script>
+  <script src="js/pwa.js?v=108"></script>
+  <script src="js/local-sync.js?v=108"></script>
+  <script src="js/notifications.js?v=108"></script>
+  <script src="js/controller.js?v=108"></script>
 </body>
 </html>

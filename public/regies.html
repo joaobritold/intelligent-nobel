@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Modo Régies (FOH & Palco)</title>
-  <link rel="stylesheet" href="css/common.css?v=104">
-  <link rel="stylesheet" href="css/regies.css?v=104">
+  <link rel="stylesheet" href="css/common.css?v=108">
+  <link rel="stylesheet" href="css/regies.css?v=108">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
@@ -67,7 +67,7 @@
         <a id="regie-nav-hub" href="index.html" class="regie-home-link" title="Voltar ao Início">
           <span style="font-size: 1.4rem;">📟</span>
           <span class="regie-header-title">RÉGIES</span>
-          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v104</span>
+          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v108</span>
         </a>
 
         <!-- Stage Selector Pill -->
@@ -90,6 +90,9 @@
             🔧 Técnico
           </button>
         </div>
+
+        <!-- Notification Bell -->
+        <button id="regie-notif-btn" type="button" class="btn btn-sm" title="Ativar Notificações no Telemóvel" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); padding: 5px 8px; font-size: 0.9rem; border-radius: 8px; cursor: pointer;">🔔</button>
 
         <!-- Technician User Badge (Visible in Técnico mode) -->
         <button id="regie-tech-user-btn" class="regie-tech-user-btn" type="button" style="display: none;" title="Tocar para definir ou alterar o seu nome de Técnico">
@@ -255,11 +258,12 @@
   </div>
 
   <!-- Access Control -->
-  <script src="js/auth.js?v=104"></script>
+  <script src="js/auth.js?v=108"></script>
   <!-- Cloud MQTT over WSS -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=104"></script>
-  <script src="js/local-sync.js?v=104"></script>
-  <script src="js/regies.js?v=104"></script>
+  <script src="js/pwa.js?v=108"></script>
+  <script src="js/local-sync.js?v=108"></script>
+  <script src="js/notifications.js?v=108"></script>
+  <script src="js/regies.js?v=108"></script>
 </body>
 </html>

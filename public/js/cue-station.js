@@ -1056,3 +1056,48 @@ client.on('tick', () => {
 
 client.connect();
 render();
+
+// ─── Cue Station Web Notifications ───────────────────────────────────────────
+(function initCueStationNotifications() {
+  const $notifBtn = document.getElementById('cs-notif-btn');
+  const $notifIcon = document.getElementById('cs-notif-icon');
+  const $notifText = document.getElementById('cs-notif-text');
+  if (!$notifBtn) return;
+
+  function updateNotifBtn() {
+    if (!window.StageTimerNotifications) return;
+    const perm = window.StageTimerNotifications.getBrowserPermission();
+    if (perm === 'granted') {
+      if ($notifIcon) $notifIcon.textContent = '✅';
+      if ($notifText) $notifText.textContent = 'Alertas Ativos';
+      $notifBtn.classList.add('enabled');
+      $notifBtn.style.borderColor = '#00b894';
+      $notifBtn.title = 'Notificações nativas ativas neste ecrã';
+    } else if (perm === 'denied') {
+      if ($notifIcon) $notifIcon.textContent = '❌';
+      if ($notifText) $notifText.textContent = 'Bloqueado';
+      $notifBtn.classList.remove('enabled');
+      $notifBtn.style.borderColor = '#d63031';
+      $notifBtn.title = 'Notificações bloqueadas nas definições do browser';
+    } else {
+      if ($notifIcon) $notifIcon.textContent = '📲';
+      if ($notifText) $notifText.textContent = 'Alertas Web';
+      $notifBtn.classList.remove('enabled');
+      $notifBtn.style.borderColor = '';
+      $notifBtn.title = 'Tocar para ativar notificações neste telemóvel';
+    }
+  }
+
+  $notifBtn.addEventListener('click', async () => {
+    if (!window.StageTimerNotifications) return;
+    const res = await window.StageTimerNotifications.requestBrowserPermission();
+    updateNotifBtn();
+    if (res.message) alert(res.message);
+  });
+
+  updateNotifBtn();
+
+  if (window.StageTimerNotifications && client) {
+    window.StageTimerNotifications.initWatcher(client, 'cue-station');
+  }
+})();

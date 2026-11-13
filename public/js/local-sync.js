@@ -1197,6 +1197,7 @@ class UniversalSyncClient {
       regieHistory: [],
       theatre: this._createDefaultTheatreState(),
       video: this._createDefaultVideoState(),
+      integrations: this._createDefaultIntegrationsState(),
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
       updatedAt: 0,
       isEmptyDefault: true
@@ -1218,6 +1219,7 @@ class UniversalSyncClient {
     this._ensureRegieStructure();
     this._ensureTheatreStructure();
     this._ensureVideoStructure();
+    this._ensureIntegrationsStructure();
   }
 
   _ensureRegieStructure() {
@@ -1482,6 +1484,62 @@ class UniversalSyncClient {
       if (typeof this._state.video.label !== 'string') this._state.video.label = 'Câmara de Palco';
       if (typeof this._state.video.muted !== 'boolean') this._state.video.muted = true;
       if (typeof this._state.video.aspectRatio !== 'string') this._state.video.aspectRatio = '16:9';
+    }
+  }
+
+  _createDefaultIntegrationsState() {
+    return {
+      telegram: {
+        enabled: false,
+        botToken: '',
+        chatId: '',
+        alert5m: true,
+        alert1m: true,
+        alertEnd: true,
+        alertCues: true,
+        alertUrgent: true
+      },
+      webPush: {
+        enabled: true,
+        alert5m: true,
+        alert1m: true,
+        alertEnd: true,
+        alertCues: true,
+        alertUrgent: true
+      }
+    };
+  }
+
+  _ensureIntegrationsStructure() {
+    if (!this._state) return;
+    if (!this._state.integrations || typeof this._state.integrations !== 'object') {
+      this._state.integrations = this._createDefaultIntegrationsState();
+    } else {
+      const def = this._createDefaultIntegrationsState();
+      if (!this._state.integrations.telegram || typeof this._state.integrations.telegram !== 'object') {
+        this._state.integrations.telegram = def.telegram;
+      } else {
+        const tg = this._state.integrations.telegram;
+        if (typeof tg.enabled !== 'boolean') tg.enabled = false;
+        if (typeof tg.botToken !== 'string') tg.botToken = '';
+        if (typeof tg.chatId !== 'string') tg.chatId = '';
+        if (typeof tg.alert5m !== 'boolean') tg.alert5m = true;
+        if (typeof tg.alert1m !== 'boolean') tg.alert1m = true;
+        if (typeof tg.alertEnd !== 'boolean') tg.alertEnd = true;
+        if (typeof tg.alertCues !== 'boolean') tg.alertCues = true;
+        if (typeof tg.alertUrgent !== 'boolean') tg.alertUrgent = true;
+      }
+      if (!this._state.integrations.webPush || typeof this._state.integrations.webPush !== 'object') {
+        this._state.integrations.webPush = def.webPush;
+      } else {
+        const wp = this._state.integrations.webPush;
+        if (typeof wp.enabled !== 'boolean') wp.enabled = true;
+        if (typeof wp.alert5m !== 'boolean') wp.alert5m = true;
+        if (typeof wp.alert1m !== 'boolean') wp.alert1m = true;
+        if (typeof wp.alertEnd !== 'boolean') wp.alertEnd = true;
+        if (typeof wp.alertCues !== 'boolean') wp.alertCues = true;
+        if (typeof wp.alertUrgent !== 'boolean') wp.alertUrgent = true;
+      }
     }
   }
 
@@ -2026,6 +2084,8 @@ class UniversalSyncClient {
       regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null, ackTech: null, ackTechUsers: {} },
       regieHistory: [],
       theatre: this._createDefaultTheatreState(),
+      video: this._createDefaultVideoState(),
+      integrations: this._createDefaultIntegrationsState(),
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
       updatedAt: Date.now()
     };
@@ -2415,6 +2475,8 @@ class UniversalSyncClient {
       regieMessage: { id: '', text: '', visible: false, sentAt: 0, sentTimeStr: '', ackFoh: null, ackStage: null, ackTech: null, ackTechUsers: {} },
       regieHistory: [],
       theatre: this._createDefaultTheatreState(),
+      video: this._createDefaultVideoState(),
+      integrations: this._createDefaultIntegrationsState(),
       theme: { viewerBg: '#000000', controllerBg: '#0f0f1a' },
       updatedAt: Date.now()
     };
@@ -3265,6 +3327,27 @@ class UniversalSyncClient {
         this.sendRoomCommand(this.cleanRoom, ackPayload);
       } catch (_) {}
     }, 450);
+  }
+
+  // ─── Integrations & Notifications (Telegram & Web Push) ───────────────────
+
+  getIntegrations() {
+    this._ensureIntegrationsStructure();
+    return this._state.integrations;
+  }
+
+  setTelegramConfig(config) {
+    if (!this._state) return;
+    this._ensureIntegrationsStructure();
+    this._state.integrations.telegram = Object.assign({}, this._state.integrations.telegram, config);
+    this._commitStateChange();
+  }
+
+  setWebPushConfig(config) {
+    if (!this._state) return;
+    this._ensureIntegrationsStructure();
+    this._state.integrations.webPush = Object.assign({}, this._state.integrations.webPush, config);
+    this._commitStateChange();
   }
 
   // ─── Theatre Suite (Mesa DC & Cue Stations) ─────────────────────────

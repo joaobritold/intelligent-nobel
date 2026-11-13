@@ -2869,3 +2869,7 @@ client.on('tick', () => {
 });
 
 client.connect();
+
+if (window.StageTimerNotifications && client) {
+  window.StageTimerNotifications.initWatcher(client, 'dc');
+}

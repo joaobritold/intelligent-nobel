@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stagetimer-pfp-v107';
+const CACHE_NAME = 'stagetimer-pfp-v108';
 const ASSETS = [
   './',
   './index.html',
@@ -27,6 +27,7 @@ const ASSETS = [
   './css/cue-station.css',
   './css/master.css',
   './js/local-sync.js',
+  './js/notifications.js',
   './js/controller.js',
   './js/operator.js',
   './js/viewer.js',
@@ -69,5 +70,58 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => caches.match(event.request))
+  );
+});
+
+// Push Notifications Listener (Background Mobile Wake & Alerts)
+self.addEventListener('push', (event) => {
+  let data = {
+    title: 'StageTimer PFP',
+    body: 'Alerta de Palco',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    tag: 'stagetimer-alert',
+    vibrate: [200, 100, 200, 100, 200],
+    data: { url: './' }
+  };
+
+  if (event.data) {
+    try {
+      const parsed = event.data.json();
+      data = Object.assign(data, parsed);
+    } catch (_) {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || './icon-192.png',
+    badge: data.badge || './icon-192.png',
+    vibrate: data.vibrate || [200, 100, 200, 100, 200],
+    tag: data.tag || 'stagetimer-alert',
+    renotify: true,
+    data: data.data || { url: './' }
+  };
+
+  event.waitUntil(self.registration.showNotification(data.title, options));
+});
+
+// Notification Click Handler (Brings the active app or tab to foreground)
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) ? event.notification.data.url : './';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if ('focus' in client) {
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+    })
   );
 });

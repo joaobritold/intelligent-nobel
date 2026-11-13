@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Posto Técnico (Cue Station)</title>
-  <link rel="stylesheet" href="css/common.css?v=104">
-  <link rel="stylesheet" href="css/cue-station.css?v=104">
+  <link rel="stylesheet" href="css/common.css?v=108">
+  <link rel="stylesheet" href="css/cue-station.css?v=108">
 </head>
 <body>
   <div id="cue-screen" class="cs-screen">
@@ -71,7 +71,7 @@
             <div class="cs-brand-title">POSTO TÉCNICO</div>
             <div class="cs-brand-sub" id="cs-hud-dept-subtitle">Técnico</div>
           </div>
-          <span class="badge cs-version-badge">v104</span>
+          <span class="badge cs-version-badge">v108</span>
         </a>
 
         <!-- Department Locked Badge & Switch Button -->
@@ -87,6 +87,11 @@
 
       <!-- Right HUD Controls & Clocks -->
       <div class="cs-hud-right">
+        <button id="cs-notif-btn" class="cs-hud-tool-btn" type="button" title="Ativar Notificações no Telemóvel" style="cursor: pointer;">
+          <span id="cs-notif-icon">📲</span>
+          <span id="cs-notif-text">Alertas Web</span>
+        </button>
+
         <button id="cs-audio-btn" class="cs-hud-tool-btn enabled" type="button" title="Ativar ou desativar aviso sonoro de deixas">
           <span id="cs-audio-icon">🔔</span>
           <span id="cs-audio-text">Som Ativo</span>
@@ -337,8 +342,9 @@
 
   <!-- Scripts -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=104"></script>
-  <script src="js/local-sync.js?v=104"></script>
-  <script src="js/cue-station.js?v=104"></script>
+  <script src="js/pwa.js?v=108"></script>
+  <script src="js/local-sync.js?v=108"></script>
+  <script src="js/notifications.js?v=108"></script>
+  <script src="js/cue-station.js?v=108"></script>
 </body>
 </html>
