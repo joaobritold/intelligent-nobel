@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stagetimer-pfp-v111';
+const CACHE_NAME = 'stagetimer-pfp-v112';
 const ASSETS = [
   './',
   './index.html',
@@ -61,7 +61,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-cache' })
       .then((response) => {
         if (response && response.status === 200 && response.type === 'basic') {
           const clone = response.clone();
