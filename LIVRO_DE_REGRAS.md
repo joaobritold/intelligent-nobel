@@ -126,10 +126,10 @@ Sempre que existir uma limpeza de época (`CLEAN_SLATE_EPOCH`), reset de cache o
 Em espetáculos ao vivo, diferentes telemóveis, tablets e PCs podem ter os seus relógios internos desfasados em vários segundos.
 - Todos os cálculos de tempo decorrido (`elapsed`), contagem decrescente e relógio de parede devem usar `UniversalSyncClient.globalTrueTime()` / `client.getTrueTime()`, que compensa automaticamente o offset (`window._stagetimer_time_offset`) sincronizado por HTTP `Date` header.
 
-### Regra #7 — Cache-Busting e Service Worker (`sw.js`)
-Para garantir que nenhum iPad ou computador de régie fica preso numa versão antiga em cache:
-1. Sempre que editar um ficheiro `.js` ou `.css`, atualize o sufixo `?v=XX` nos ficheiros `.html` que o importam.
-2. Atualize a constante `CACHE_NAME` no topo de [public/sw.js](public/sw.js) (ex.: de `stagetimer-pfp-v93` para `stagetimer-pfp-v94`).
+### Regra #7 — Versão Unificada Global e Cache-Busting (`sw.js`)
+Para garantir que nenhum iPad ou computador de régie fica preso numa versão antiga ou em descompasso com os outros postos:
+1. **Versão Única e Sincronizada para Todos os Modos**: Sempre que existir uma atualização de código ou estilos em `public/`, **todos os 9 ecrãs** (`index.html`, `master.html`, `controller.html`, `operator.html`, `dc.html`, `cue-station.html`, `regies.html`, `lineup.html`, `viewer.html`) têm obrigatoriamente de ser atualizados para a **mesmíssima versão `?v=XX`**. É expressamente proibido lançar uma versão nova apenas para um modo deixando outros desatualizados.
+2. **Service Worker Sincronizado**: Atualize a constante `CACHE_NAME` no topo de [public/sw.js](public/sw.js) para corresponder com precisão à nova versão global (ex.: `stagetimer-pfp-v112` ➔ `stagetimer-pfp-v113`).
 
 ---
 

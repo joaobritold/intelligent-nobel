@@ -17,9 +17,10 @@ Este ficheiro define as **regras obrigatórias de arquitetura, desenvolvimento e
 4. **Preservação de Sessão e Identidade**: Qualquer limpeza de cache ou reset de estado **tem obrigatoriamente de preservar**:
    - `stagetimer_device_uuid` e `stagetimer_screen_uuid` (identidade do dispositivo)
    - `stagetimer_master_active`, `stagetimer_master_auth_v12` e `stagetimer_auth_unlocked` (sessão de autenticação)
-5. **Cache-Busting Obrigatório**: Sempre que modificar qualquer ficheiro `.js` ou `.css` em `public/`:
-   - Incremente o parâmetro `?v=XX` nas referências `<script src="...">` e `<link href="...">` dos ficheiros `.html` afetados.
-   - Incremente o `CACHE_NAME` em [public/sw.js](public/sw.js) (ex.: `stagetimer-pfp-v93` ➔ `stagetimer-pfp-v94`).
+5. **Versão Unificada Global e Cache-Busting Obrigatório**: Sempre que houver qualquer atualização de código ou estilos em `public/`:
+   - A nova versão tem obrigatoriamente de sair **em simultâneo para todos os 9 modos/ecrãs** (`index`, `master`, `controller`, `operator`, `dc`, `cue-station`, `regies`, `lineup`, `viewer`). É expressamente proibido deixar modos em versões díspares.
+   - Atualize todos os parâmetros `?v=XX` nas referências `<script src="...">` e `<link href="...">` de **todos os ficheiros `.html`** para a mesma versão global sincronizada.
+   - Incremente o `CACHE_NAME` em [public/sw.js](public/sw.js) para exatamente a mesma versão (ex.: `stagetimer-pfp-v112` ➔ `stagetimer-pfp-v113`).
 
 ---
 
