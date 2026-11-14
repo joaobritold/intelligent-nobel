@@ -343,6 +343,27 @@
       font-size: 22px !important;
       letter-spacing: 0.3em;
     }
+    .st-auth-pad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+    .st-auth-pad button {
+      padding: 14px 0;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .st-auth-pad button:active { background: rgba(255,255,255,0.2); }
+    .st-auth-pad button[data-k="OK"] { background: #6c5ce7; border-color: #6c5ce7; font-size: 1.05rem; }
     .st-auth-kbd-toggle {
       display: inline-block;
       margin: -4px 0 12px;
@@ -439,7 +460,10 @@
           spellcheck="false"
           autofocus
         />
-        <button type="button" class="st-auth-kbd-toggle" id="st-auth-kbd-toggle">🔤 Usar teclado ABC</button>`}
+        <button type="button" class="st-auth-kbd-toggle" id="st-auth-kbd-toggle">🔤 Usar teclado ABC</button>
+        <div class="st-auth-pad" id="st-auth-pad">
+          ${['1','2','3','4','5','6','7','8','9','⌫','0','OK'].map(k => `<button type="button" data-k="${k}">${k}</button>`).join('')}
+        </div>`}
         <button type="submit" class="st-auth-btn" id="st-auth-submit">Entrar</button>
         <div class="st-auth-error" id="st-auth-err"></div>
         <a href="index.html${location.search}" class="st-auth-back">← Voltar ao Início</a>
@@ -455,6 +479,23 @@
     const kbdToggle = document.getElementById('st-auth-kbd-toggle');
 
     // Teclado numérico por defeito; botão permite alternar para teclado completo (ABC)
+    const pad = document.getElementById('st-auth-pad');
+    if (pad) {
+      pad.addEventListener('click', (ev) => {
+        const b = ev.target.closest('button[data-k]');
+        if (!b) return;
+        const k = b.dataset.k;
+        if (k === '⌫') input.value = input.value.slice(0, -1);
+        else if (k === 'OK') form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true }));
+        else input.value += k;
+      });
+    }
+    // iOS/Android só abrem o teclado nativo após um toque: focar no primeiro toque fora do teclado do ecrã
+    const focusOnFirstTouch = (ev) => {
+      if (ev.target.closest && ev.target.closest('.st-auth-pad, .st-auth-kbd-toggle, a, .st-auth-btn')) return;
+      try { input.focus(); } catch (_) {}
+    };
+    overlay.addEventListener('touchend', focusOnFirstTouch, { passive: true });
     if (kbdToggle) {
       kbdToggle.addEventListener('click', () => {
         const numeric = input.getAttribute('inputmode') === 'numeric';
