@@ -1201,3 +1201,8 @@
 .mvm-source-pill.active {
   box-shadow: 0 0 12px rgba(108, 92, 231, 0.35);
 }
+
+/* v113 — ajustes responsivos */
+.master-quick-add { flex-wrap: wrap; }
+.master-quick-add input { min-width: min(220px, 100%); }
+@media (max-width: 600px) { .master-quick-add > * { flex: 1 1 100%; } }

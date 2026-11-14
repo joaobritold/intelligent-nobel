@@ -855,3 +855,6 @@ body {
 .video-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.15);
 }
+
+/* v113 — ajustes responsivos */
+table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }

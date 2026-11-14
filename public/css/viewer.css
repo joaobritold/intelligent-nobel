@@ -457,3 +457,7 @@ body::-webkit-scrollbar,
     padding: 6px 12px;
   }
 }
+
+/* v113 — ajustes responsivos */
+html[data-view-mode] body { max-width: none !important; margin: 0 !important; box-shadow: none !important; }
+html[data-view-mode="pc"] { min-width: 0 !important; overflow-x: hidden !important; }

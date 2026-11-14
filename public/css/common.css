@@ -519,3 +519,6 @@ html[data-view-mode="pc"] { min-width: 1024px; overflow-x: auto; }
 @media (max-width: 480px) { #vm-switch .vm-lbl { display: none; } }
 #vm-switch.vm-hidden { opacity: 0; pointer-events: none; }
 #vm-hotzone { position: fixed; z-index: 99998; right: 0; bottom: 0; width: 64px; height: 64px; }
+
+/* v113 — index e modais genéricos */
+@media (max-width: 480px) { [class*="modal"] > div, .modal-content { max-width: calc(100vw - 16px); } }

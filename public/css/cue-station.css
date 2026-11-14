@@ -1411,3 +1411,9 @@ body {
     border-radius: 10px;
   }
 }
+
+/* v113 — ajustes responsivos */
+.cs-cues-list, .cs-rundown-acts-list { min-width: 0; }
+.cs-checklist-header, .cs-hero-header { flex-wrap: wrap; gap: 6px; }
+.cs-main-tabs-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+@media (max-width: 480px) { .cs-dept-modal-grid { grid-template-columns: 1fr !important; } }

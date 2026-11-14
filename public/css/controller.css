@@ -1698,3 +1698,14 @@ button, a, input, select, textarea {
     padding: 6px 4px;
   }
 }
+
+/* v113 — ajustes responsivos */
+.timer-list { min-width: 0; }
+.modal-header { flex-wrap: wrap; gap: 8px; }
+[class*="modal"] [style*="min-width: 320px"], [class*="modal"] > div { max-width: calc(100vw - 16px); }
+@media (max-width: 600px) {
+  .header, .panel-header-title-row, .panel-header-nav-row, .panel-header-actions-row, .panel-header-btn-group { flex-wrap: wrap; gap: 6px; }
+  .header-right { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .day-tabs-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+  .day-tabs-bar > * { flex: 0 0 auto; min-height: 44px; }
+}
