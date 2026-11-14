@@ -18,6 +18,7 @@ const ASSETS = [
   './apple-touch-icon.png',
   './favicon-32x32.png',
   './css/common.css',
+  './css/common-legacy.css',
   './css/controller.css',
   './css/operator.css',
   './css/viewer.css',
