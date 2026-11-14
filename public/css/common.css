@@ -490,3 +490,35 @@ select.input {
   background: rgba(253, 203, 110, 0.18);
   color: #ffeaa7;
 }
+
+/* ═══ v113 — Responsividade + Seletor de Modo ═══════════════════════ */
+:root { --touch-min: 44px; --space-fluid: clamp(8px, 2vw, 20px); }
+html, body { overflow-x: hidden; max-width: 100vw; }
+button, a, input, select, textarea, [role="button"] { touch-action: manipulation; }
+button, .btn, select { min-height: var(--touch-min); }
+input, select, textarea { font-size: 16px; min-width: 0; max-width: 100%; }
+h1, h2, h3, p, label, td, th, li { overflow-wrap: anywhere; min-width: 0; }
+table { max-width: 100%; }
+img, video, canvas { max-width: 100%; }
+
+/* Modo Telemóvel forçado: coluna única, largura de ~telemóvel */
+html[data-view-mode="phone"] body { max-width: 430px; margin-inline: auto; box-shadow: 0 0 0 1px var(--border); }
+html[data-view-mode="phone"] [class*="grid"] { grid-template-columns: 1fr !important; }
+html[data-view-mode="phone"] button, html[data-view-mode="phone"] .btn { min-height: 48px; }
+/* Modo PC forçado: largura total, grelhas mais densas */
+html[data-view-mode="pc"] body { max-width: none; }
+html[data-view-mode="pc"] { min-width: 1024px; overflow-x: auto; }
+
+/* Seletor flutuante */
+#vm-switch { position: fixed; z-index: 99999; right: calc(8px + var(--safe-right)); bottom: calc(8px + var(--safe-bottom));
+  display: flex; gap: 2px; padding: 3px; background: rgba(15,15,26,.92); border: 1px solid var(--border-light);
+  border-radius: 999px; box-shadow: var(--shadow-lg); backdrop-filter: blur(6px); transition: opacity var(--transition); }
+#vm-switch .vm-btn { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; min-width: 44px; padding: 0 10px;
+  background: transparent; color: var(--text-secondary); border: 0; border-radius: 999px; font: 600 12px var(--font-sans); cursor: pointer; justify-content: center; }
+#vm-switch .vm-btn.active { background: var(--accent); color: #fff; }
+@media (max-width: 480px) { #vm-switch .vm-lbl { display: none; } }
+#vm-switch.vm-hidden { opacity: 0; pointer-events: none; }
+#vm-hotzone { position: fixed; z-index: 99998; right: 0; bottom: 0; width: 64px; height: 64px; }
+
+/* v113 — index e modais genéricos */
+@media (max-width: 480px) { [class*="modal"] > div, .modal-content { max-width: calc(100vw - 16px); } }

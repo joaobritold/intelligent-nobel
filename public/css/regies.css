@@ -1003,3 +1003,6 @@
     text-align: center;
   }
 }
+
+/* v113 — ajustes responsivos */
+@media (max-width: 480px) { button, select { min-height: 48px; } }

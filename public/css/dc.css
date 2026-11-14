@@ -1926,3 +1926,12 @@ body {
     gap: 6px;
   }
 }
+
+/* v113 — ajustes responsivos */
+.dc-urgent-input { min-width: min(250px, 100%); }
+.dc-input-sm { min-width: min(180px, 100%); }
+.dc-cues-list, .dc-main-grid { min-width: 0; }
+@media (max-width: 760px) {
+  .dc-main-grid { grid-template-columns: 1fr !important; }
+  .dc-pane-header, .dc-overview-header { flex-wrap: wrap; gap: 6px; }
+}
