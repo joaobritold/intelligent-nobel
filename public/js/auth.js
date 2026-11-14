@@ -337,6 +337,25 @@
       border-color: #ff4757;
       animation: st-shake 0.35s ease;
     }
+    .st-auth-input.st-auth-masked {
+      -webkit-text-security: disc;
+      text-security: disc;
+      font-size: 22px !important;
+      letter-spacing: 0.3em;
+    }
+    .st-auth-kbd-toggle {
+      display: inline-block;
+      margin: -4px 0 12px;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #a0aec0;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
     .st-auth-btn {
       width: 100%;
       padding: 12px;
@@ -400,15 +419,27 @@
         <div class="st-auth-icon">${roleIcon}</div>
         <div class="st-auth-title">${roleTitle}</div>
         <div class="st-auth-sub">${roleSub}</div>
-        <input
+        ${isMasterPage ? `<input
           type="password"
           id="st-auth-pass"
           class="st-auth-input"
           placeholder="${rolePlaceholder}"
-          ${isMasterPage ? '' : 'inputmode="numeric" pattern="[0-9]*"'}
           autocomplete="current-password"
           autofocus
+        />` : `<input
+          type="text"
+          id="st-auth-pass"
+          class="st-auth-input st-auth-masked"
+          placeholder="${rolePlaceholder}"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          autofocus
         />
+        <button type="button" class="st-auth-kbd-toggle" id="st-auth-kbd-toggle">🔤 Usar teclado ABC</button>`}
         <button type="submit" class="st-auth-btn" id="st-auth-submit">Entrar</button>
         <div class="st-auth-error" id="st-auth-err"></div>
         <a href="index.html${location.search}" class="st-auth-back">← Voltar ao Início</a>
@@ -421,6 +452,25 @@
     const input = document.getElementById('st-auth-pass');
     const err = document.getElementById('st-auth-err');
     const submitBtn = document.getElementById('st-auth-submit');
+    const kbdToggle = document.getElementById('st-auth-kbd-toggle');
+
+    // Teclado numérico por defeito; botão permite alternar para teclado completo (ABC)
+    if (kbdToggle) {
+      kbdToggle.addEventListener('click', () => {
+        const numeric = input.getAttribute('inputmode') === 'numeric';
+        if (numeric) {
+          input.setAttribute('inputmode', 'text');
+          input.removeAttribute('pattern');
+          kbdToggle.textContent = '🔢 Usar teclado numérico';
+        } else {
+          input.setAttribute('inputmode', 'numeric');
+          input.setAttribute('pattern', '[0-9]*');
+          kbdToggle.textContent = '🔤 Usar teclado ABC';
+        }
+        input.blur();
+        setTimeout(() => { try { input.focus(); } catch (_) {} }, 50);
+      });
+    }
 
     try {
       input.focus();
