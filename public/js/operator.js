@@ -817,7 +817,7 @@ setInterval(() => {
 }, 1000);
 
 client.on('p2p-peers-update', (data) => {
-  $connBadge.innerHTML = `<span class="connection-dot"></span> Online (${data.count})`;
+  $connBadge.innerHTML = `<span class="connection-dot"></span> ${data.count}`;
 });
 
 client.on('devices-update', () => {

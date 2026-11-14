@@ -565,3 +565,5 @@ html, body {
 .op-header > div:last-child { flex: 0 0 auto; flex-wrap: nowrap; }
 .op-header .st-compact-nav, .op-header .st-nav-trigger, .op-header #op-conn-badge { flex-shrink: 0; white-space: nowrap; }
 @media (max-width: 360px) { .op-header .st-nav-trigger { padding-inline: 6px; font-size: .75rem; } .op-header #op-conn-badge { padding: 3px 6px; } }
+
+.op-header #op-conn-badge { padding: 3px 7px; font-size: .7rem; gap: 4px; min-width: 0; }
