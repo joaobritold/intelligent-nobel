@@ -1111,8 +1111,25 @@
       if (existing?.video && (!data.video || (existing.video.updatedAt || 0) > (data.video.updatedAt || 0))) {
         data.video = existing.video;
       }
+      if (existing?.integrations?.telegram && (!data.integrations?.telegram || (existing.integrations.telegram.updatedAt || 0) > (data.integrations.telegram.updatedAt || 0))) {
+        if (!data.integrations) data.integrations = {};
+        data.integrations.telegram = existing.integrations.telegram;
+      }
       stagesStateMap.set(room, data);
       renderMultiview();
+    }
+  });
+
+  masterClient.on('multi-room-telegram', ({ room, telegram }) => {
+    if (room && telegram) {
+      const cleanCode = String(room).toUpperCase().trim();
+      const st = stagesStateMap.get(cleanCode) || { id: cleanCode, timers: [], activeTimerId: null };
+      if (!st.integrations) st.integrations = {};
+      st.integrations.telegram = { ...(st.integrations.telegram || {}), ...telegram };
+      stagesStateMap.set(cleanCode, st);
+      try {
+        localStorage.setItem(`stagetimer_v10_telegram_${cleanCode}`, JSON.stringify(st.integrations.telegram));
+      } catch (_) {}
     }
   });
 

@@ -38,8 +38,10 @@ class UniversalSyncClient {
     this.cmdChannelName = 'stagetimer_v10_cmds';
     this.storageKey = `stagetimer_v10_state_${this.cleanRoom}`;
     this.videoStorageKey = `stagetimer_v10_video_${this.cleanRoom}`;
+    this.telegramStorageKey = `stagetimer_v10_telegram_${this.cleanRoom}`;
     this.mqttTopicState = `stagetimer_v10/${this.cleanRoom}/state`;
     this.mqttTopicVideo = `stagetimer_v10/${this.cleanRoom}/video`;
+    this.mqttTopicTelegram = `stagetimer_v10/${this.cleanRoom}/telegram`;
     this.mqttTopicPresence = `stagetimer_v10/${this.cleanRoom}/presence`;
     this.mqttTopicRegistry = 'stagetimer_v63_events_registry';
     this.mqttTopicGlobalPresence = 'stagetimer_v10/_global_presence';
@@ -337,6 +339,8 @@ class UniversalSyncClient {
             }
           } else if (msg.type === 'video-config' && msg.video) {
             this._applyIncomingVideoConfig(msg.video, false);
+          } else if (msg.type === 'telegram-config' && msg.telegram) {
+            this._applyIncomingTelegramConfig(msg.telegram, false);
           }
         };
       } catch (e) {}
@@ -463,12 +467,25 @@ class UniversalSyncClient {
     this._ensureDaysStructure();
     this._ensureTheatreStructure();
     this._ensureVideoStructure();
+    this._ensureIntegrationsStructure();
     try {
       const savedVid = localStorage.getItem(this.videoStorageKey);
       if (savedVid) {
         const parsedVid = JSON.parse(savedVid);
         if (parsedVid && typeof parsedVid === 'object') {
           this._state.video = { ...this._state.video, ...parsedVid };
+        }
+      }
+    } catch (_) {}
+    try {
+      const savedTg = localStorage.getItem(this.telegramStorageKey);
+      if (savedTg) {
+        const parsedTg = JSON.parse(savedTg);
+        if (parsedTg && typeof parsedTg === 'object') {
+          const curUpdatedAt = this._state.integrations?.telegram?.updatedAt || 0;
+          if ((parsedTg.updatedAt || 0) >= curUpdatedAt || (!this._state.integrations?.telegram?.botToken && parsedTg.botToken)) {
+            this._state.integrations.telegram = { ...this._state.integrations.telegram, ...parsedTg };
+          }
         }
       }
     } catch (_) {}
@@ -540,7 +557,42 @@ class UniversalSyncClient {
             this._emit('room-state', this._state);
           }
         }
+      } else if (this.role === 'master') {
+        this._emit('multi-room-regie-msg', { room: targetRoom, regieMessage: msg.regieMessage });
       }
+      return;
+    }
+
+    if (msg.action === 'regie_call_new' && msg.regieCall) {
+      const targetRoom = String(msg.room || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+      if (!targetRoom || targetRoom === this.cleanRoom) {
+        if (this._state) {
+          this._ensureRegieStructure();
+          const incCall = msg.regieCall;
+          if ((incCall.triggeredAt || 0) > (this._state.regieCall?.triggeredAt || 0)) {
+            this._state.regieCall = { ...incCall };
+            this._saveLocal();
+            this._emit('room-state', this._state);
+          }
+        }
+      } else if (this.role === 'master') {
+        this._emit('multi-room-regie-call', { room: targetRoom, regieCall: msg.regieCall });
+      }
+      return;
+    }
+
+    if (msg.action === 'telegram_config_update' && msg.telegram) {
+      const targetRoom = String(msg.room || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+      if (!targetRoom || targetRoom === this.cleanRoom) {
+        this._applyIncomingTelegramConfig(msg.telegram, true);
+      } else if (this.role === 'master') {
+        this._emit('multi-room-telegram', { room: targetRoom, telegram: msg.telegram });
+      }
+      return;
+    }
+
+    if (msg.action === 'tg_event_claimed' && msg.eventKey) {
+      this._emit('tg-event-claimed', msg);
       return;
     }
 
@@ -797,6 +849,7 @@ class UniversalSyncClient {
       const topicsToSubscribe = [
         this.mqttTopicState,
         this.mqttTopicVideo,
+        this.mqttTopicTelegram,
         `stagetimer_v10/${this.cleanRoom}/webrtc_signal`,
         this.mqttTopicPresence,
         this.mqttTopicRegistry,
@@ -814,6 +867,7 @@ class UniversalSyncClient {
       if (this.role === 'master') {
         topicsToSubscribe.push('stagetimer_v10/+/state');
         topicsToSubscribe.push('stagetimer_v10/+/video');
+        topicsToSubscribe.push('stagetimer_v10/+/telegram');
         topicsToSubscribe.push('stagetimer_v10/+/webrtc_signal');
       }
 
@@ -881,6 +935,24 @@ class UniversalSyncClient {
           const vidData = msg.video || msg.data || msg;
           if (roomCode && vidData && typeof vidData === 'object') {
             this._emit('multi-room-video', { room: roomCode, video: vidData });
+          }
+          return;
+        }
+
+        // Room Telegram config update (dedicated retained topic so config never gets overwritten)
+        if (topic === this.mqttTopicTelegram) {
+          if (msg.sender === this.clientId) return;
+          const tgData = msg.telegram || msg.data || msg;
+          if (tgData && typeof tgData === 'object') {
+            this._applyIncomingTelegramConfig(tgData, true);
+          }
+          return;
+        } else if (topic.startsWith('stagetimer_v10/') && topic.endsWith('/telegram')) {
+          const parts = topic.split('/');
+          const roomCode = parts[1];
+          const tgData = msg.telegram || msg.data || msg;
+          if (roomCode && tgData && typeof tgData === 'object') {
+            this._emit('multi-room-telegram', { room: roomCode, telegram: tgData });
           }
           return;
         }
@@ -2748,7 +2820,7 @@ class UniversalSyncClient {
 
     try { delete incoming.isEmptyDefault; } catch (_) {}
 
-    // Preserve active video configuration if incoming state comes from a controller without video update
+    // Preserve active video & Telegram configuration if incoming state comes from a device without recent config update
     let preservedVideo = this._state?.video;
     try {
       const savedVidRaw = localStorage.getItem(this.videoStorageKey);
@@ -2760,11 +2832,23 @@ class UniversalSyncClient {
       }
     } catch (_) {}
 
+    let preservedTelegram = this._state?.integrations?.telegram;
+    try {
+      const savedTgRaw = localStorage.getItem(this.telegramStorageKey);
+      if (savedTgRaw) {
+        const savedTg = JSON.parse(savedTgRaw);
+        if (savedTg && (!preservedTelegram || (savedTg.updatedAt || 0) >= (preservedTelegram.updatedAt || 0))) {
+          preservedTelegram = savedTg;
+        }
+      }
+    } catch (_) {}
+
     this._state = incoming;
     this._ensureDaysStructure();
     this._reapplyCachedRegieAcks();
     this._ensureTheatreStructure();
     this._ensureVideoStructure();
+    this._ensureIntegrationsStructure();
 
     if (preservedVideo && typeof preservedVideo === 'object') {
       const incVidUpdated = incoming.video?.updatedAt || 0;
@@ -2774,6 +2858,18 @@ class UniversalSyncClient {
       } else if (incVidUpdated >= presVidUpdated && incoming.video) {
         try {
           localStorage.setItem(this.videoStorageKey, JSON.stringify(this._state.video));
+        } catch (_) {}
+      }
+    }
+
+    if (preservedTelegram && typeof preservedTelegram === 'object') {
+      const incTgUpdated = incoming.integrations?.telegram?.updatedAt || 0;
+      const presTgUpdated = preservedTelegram.updatedAt || 0;
+      if (presTgUpdated > incTgUpdated || (!incoming.integrations?.telegram?.botToken && preservedTelegram.botToken && !incTgUpdated)) {
+        this._state.integrations.telegram = { ...this._state.integrations.telegram, ...preservedTelegram };
+      } else if (incTgUpdated >= presTgUpdated && incoming.integrations?.telegram?.botToken) {
+        try {
+          localStorage.setItem(this.telegramStorageKey, JSON.stringify(this._state.integrations.telegram));
         } catch (_) {}
       }
     }
@@ -3140,12 +3236,23 @@ class UniversalSyncClient {
   }
 
   sendMessage(text, visible = true, level = 'info') {
-    this._state.message = { text, visible, level };
+    const cleanText = String(text || '').trim();
+    const isVisible = Boolean(visible && cleanText);
+    const prevMsg = this._state?.message || {};
+    const isNewOrChanged = Boolean(isVisible && (cleanText !== prevMsg.text || !prevMsg.visible || !prevMsg.id));
+    const now = this.getTrueTime();
+    this._state.message = {
+      id: isNewOrChanged ? ('sm_' + now + '_' + Math.random().toString(36).substring(2, 6)) : (prevMsg.id || ''),
+      text: cleanText,
+      visible: isVisible,
+      level: level || 'info',
+      sentAt: isNewOrChanged ? now : (prevMsg.sentAt || now)
+    };
     this._commitStateChange();
   }
 
   clearMessage() {
-    this._state.message = { text: '', visible: false, level: 'info' };
+    this._state.message = { id: '', text: '', visible: false, level: 'info', sentAt: 0 };
     this._commitStateChange();
   }
 
@@ -3197,6 +3304,11 @@ class UniversalSyncClient {
     if (this._state.regieHistory.length > 30) {
       this._state.regieHistory = this._state.regieHistory.slice(0, 30);
     }
+
+    this.sendRoomCommand(this.cleanRoom, {
+      action: 'regie_call_new',
+      regieCall: this._state.regieCall
+    });
 
     this._commitStateChange();
 
@@ -3344,83 +3456,163 @@ class UniversalSyncClient {
     return this._state.integrations;
   }
 
-  setTelegramConfig(config) {
-    if (!this._state) return;
+  _applyIncomingTelegramConfig(tgCfg, fromCloud = false) {
+    if (!tgCfg || typeof tgCfg !== 'object') return;
+    if (!this._state) {
+      this._state = this._loadState() || this._createDefaultRoom(this.cleanRoom);
+    }
     this._ensureIntegrationsStructure();
-    this._state.integrations.telegram = Object.assign({}, this._state.integrations.telegram, config);
-    this._commitStateChange();
+    const curUpdatedAt = this._state.integrations.telegram?.updatedAt || 0;
+    const incUpdatedAt = tgCfg.updatedAt || 0;
+    if (incUpdatedAt >= curUpdatedAt || !this._state.integrations.telegram?.botToken) {
+      this._state.integrations.telegram = {
+        ...this._state.integrations.telegram,
+        ...tgCfg
+      };
+      try {
+        localStorage.setItem(this.telegramStorageKey, JSON.stringify(this._state.integrations.telegram));
+      } catch (_) {}
+      if (fromCloud) {
+        this._saveLocal();
+      }
+      this._emit('telegram-config-update', this._state.integrations.telegram);
+      this._emit('room-state', this._state);
+    }
+  }
+
+  setTelegramConfig(config) {
+    return this.setRoomTelegramConfig(this.cleanRoom, config);
   }
 
   setRoomTelegramConfig(targetRoom, config = {}) {
     const cleanTarget = String(targetRoom || this.cleanRoom || 'PALCO1').toUpperCase().trim();
     if (!cleanTarget) return null;
 
+    const tgStorageKey = `stagetimer_v10_telegram_${cleanTarget}`;
     const stateStorageKey = `stagetimer_v10_state_${cleanTarget}`;
+
+    let existingTg = this._createDefaultIntegrationsState().telegram;
+    try {
+      const rawTg = localStorage.getItem(tgStorageKey);
+      if (rawTg) {
+        existingTg = { ...existingTg, ...JSON.parse(rawTg) };
+      }
+    } catch (_) {}
+
     let roomState = null;
     try {
       const rawState = localStorage.getItem(stateStorageKey);
-      if (rawState) roomState = JSON.parse(rawState);
+      if (rawState) {
+        roomState = JSON.parse(rawState);
+        if (roomState?.integrations?.telegram && typeof roomState.integrations.telegram === 'object') {
+          if ((roomState.integrations.telegram.updatedAt || 0) > (existingTg.updatedAt || 0)) {
+            existingTg = { ...existingTg, ...roomState.integrations.telegram };
+          }
+        }
+      }
     } catch (_) {}
 
-    if (!roomState || typeof roomState !== 'object') {
-      roomState = {
-        id: cleanTarget,
-        timers: [],
-        activeTimerId: null,
-        integrations: this._createDefaultIntegrationsState()
-      };
-    }
-    if (!roomState.integrations || typeof roomState.integrations !== 'object') {
-      roomState.integrations = this._createDefaultIntegrationsState();
-    }
-    if (!roomState.integrations.telegram || typeof roomState.integrations.telegram !== 'object') {
-      roomState.integrations.telegram = this._createDefaultIntegrationsState().telegram;
-    }
-
-    roomState.integrations.telegram = Object.assign({}, roomState.integrations.telegram, config, {
-      updatedAt: this.getTrueTime()
-    });
+    const trueNow = this.getTrueTime();
+    const newTgCfg = {
+      ...existingTg,
+      ...config,
+      updatedAt: trueNow
+    };
 
     try {
-      localStorage.setItem(stateStorageKey, JSON.stringify(roomState));
+      localStorage.setItem(tgStorageKey, JSON.stringify(newTgCfg));
+      if (newTgCfg.botToken && newTgCfg.chatId) {
+        localStorage.setItem('stagetimer_v10_telegram_GLOBAL_LAST', JSON.stringify(newTgCfg));
+      }
     } catch (_) {}
+
+    if (roomState && typeof roomState === 'object') {
+      if (!roomState.integrations || typeof roomState.integrations !== 'object') {
+        roomState.integrations = this._createDefaultIntegrationsState();
+      }
+      roomState.integrations.telegram = newTgCfg;
+      try {
+        localStorage.setItem(stateStorageKey, JSON.stringify(roomState));
+      } catch (_) {}
+    }
 
     if (cleanTarget === this.cleanRoom && this._state) {
       this._ensureIntegrationsStructure();
-      this._state.integrations.telegram = roomState.integrations.telegram;
-      this._commitStateChange();
-    } else {
-      if (this.mqttClient && this.mqttClient.connected) {
-        try {
-          this.mqttClient.publish(`stagetimer_v10/${cleanTarget}/state`, JSON.stringify(roomState), { qos: 1, retain: true });
-        } catch (_) {}
-      }
-      if (typeof BroadcastChannel !== 'undefined') {
-        try {
-          const ch = new BroadcastChannel(`stagetimer_v10_${cleanTarget}`);
-          ch.postMessage({ type: 'state', state: roomState, sender: this.clientId, room: cleanTarget });
-          setTimeout(() => { try { ch.close(); } catch (_) {} }, 150);
-        } catch (_) {}
-      }
+      this._state.integrations.telegram = newTgCfg;
+      this._saveLocal();
+      this._emit('telegram-config-update', this._state.integrations.telegram);
+      this._emit('room-state', this._state);
     }
 
-    return roomState.integrations.telegram;
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        const ch = new BroadcastChannel(`stagetimer_v10_${cleanTarget}`);
+        ch.postMessage({
+          type: 'telegram-config',
+          sender: this.clientId,
+          room: cleanTarget,
+          telegram: newTgCfg
+        });
+        setTimeout(() => { try { ch.close(); } catch (_) {} }, 150);
+      } catch (_) {}
+    }
+
+    this.sendRoomCommand(cleanTarget, {
+      action: 'telegram_config_update',
+      room: cleanTarget,
+      telegram: newTgCfg
+    });
+
+    if (this.mqttClient && this.mqttClient.connected) {
+      const tgTopic = `stagetimer_v10/${cleanTarget}/telegram`;
+      try {
+        this.mqttClient.publish(tgTopic, JSON.stringify({
+          sender: this.clientId,
+          sentAt: trueNow,
+          room: cleanTarget,
+          telegram: newTgCfg
+        }), { qos: 1, retain: true });
+      } catch (_) {}
+    }
+
+    return newTgCfg;
   }
 
   getRoomTelegramConfig(targetRoom) {
     const cleanTarget = String(targetRoom || this.cleanRoom || 'PALCO1').toUpperCase().trim();
-    if (cleanTarget === this.cleanRoom && this._state?.integrations?.telegram) {
-      return this._state.integrations.telegram;
+    const tgStorageKey = `stagetimer_v10_telegram_${cleanTarget}`;
+    let bestCfg = null;
+
+    if (cleanTarget === this.cleanRoom && this._state?.integrations?.telegram?.botToken) {
+      bestCfg = this._state.integrations.telegram;
     }
+
+    try {
+      const rawTg = localStorage.getItem(tgStorageKey);
+      if (rawTg) {
+        const parsedTg = JSON.parse(rawTg);
+        if (parsedTg && (!bestCfg || (parsedTg.updatedAt || 0) >= (bestCfg.updatedAt || 0))) {
+          bestCfg = parsedTg;
+        }
+      }
+    } catch (_) {}
+
     const stateStorageKey = `stagetimer_v10_state_${cleanTarget}`;
     try {
       const raw = localStorage.getItem(stateStorageKey);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed.integrations?.telegram) return parsed.integrations.telegram;
+        const stateTg = parsed?.integrations?.telegram;
+        if (stateTg && (!bestCfg || (stateTg.updatedAt || 0) > (bestCfg.updatedAt || 0))) {
+          bestCfg = stateTg;
+        }
       }
     } catch (_) {}
-    return this._createDefaultIntegrationsState().telegram;
+
+    if (bestCfg && bestCfg.botToken) {
+      return { ...this._createDefaultIntegrationsState().telegram, ...bestCfg };
+    }
+    return bestCfg || this._createDefaultIntegrationsState().telegram;
   }
 
   setWebPushConfig(config) {
