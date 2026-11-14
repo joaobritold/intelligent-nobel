@@ -526,9 +526,13 @@ class UniversalSyncClient {
           const incMsg = msg.regieMessage;
           const curSentAt = this._state.regieMessage?.sentAt || 0;
           if (incMsg.id && incMsg.sentAt >= curSentAt && this._state.regieMessage?.id !== incMsg.id) {
+            const resolvedFrom = incMsg.from || 'Operador';
+            const resolvedRole = incMsg.senderRole || 'operator';
             this._state.regieMessage = {
               id: incMsg.id,
               text: incMsg.text || '',
+              from: resolvedFrom,
+              senderRole: resolvedRole,
               visible: Boolean(incMsg.visible),
               sentAt: incMsg.sentAt || Date.now(),
               sentTimeStr: incMsg.sentTimeStr || '',
@@ -542,7 +546,8 @@ class UniversalSyncClient {
               this._state.regieHistory.unshift({
                 id: incMsg.id,
                 type: 'msg',
-                from: 'Stage Manager',
+                from: resolvedFrom,
+                senderRole: resolvedRole,
                 text: incMsg.text || '',
                 timeStr: incMsg.sentTimeStr || '',
                 ts: incMsg.sentAt || Date.now(),
@@ -758,7 +763,8 @@ class UniversalSyncClient {
           }
         });
       } catch (e) {}
-      if (!activeSet.has(this.cleanRoom)) {
+      const isSpecialScreen = this.cleanRoom === 'PORTAL' || this.cleanRoom === 'MASTER' || this.role === 'master' || this.cleanRoom.startsWith('_');
+      if (!isSpecialScreen && !activeSet.has(this.cleanRoom)) {
         const u = new URL(location.href);
         u.searchParams.set('room', 'PALCO1');
         window.location.replace(u.toString());
@@ -795,9 +801,10 @@ class UniversalSyncClient {
       if (!isMasterUser) return;
 
       const list = this.getEventsList();
+      const deletedCodes = Array.from(this._getDeletedEvents());
       if (list && list.length > 0 && this.mqttClient && this.mqttClient.connected) {
         try {
-          const payload = JSON.stringify({ sender: this.clientId, forceReplace: false, events: list });
+          const payload = JSON.stringify({ sender: this.clientId, forceReplace: false, events: list, deleted: deletedCodes });
           this.mqttClient.publish(this.mqttTopicRegistry, payload, { qos: 0, retain: true });
         } catch (e) {}
       }
@@ -982,7 +989,7 @@ class UniversalSyncClient {
         } else if (topic === this.mqttTopicRegistry) {
           if (msg && msg.sender === this.clientId) return; // Prevent echo feedback loops
           if (msg && Array.isArray(msg.events)) {
-            this._mergeIncomingRegistry(msg.events, Boolean(msg.forceReplace));
+            this._mergeIncomingRegistry(msg.events, Boolean(msg.forceReplace), msg.deleted || []);
           }
         } else if (topic === this.mqttTopicPresence) {
           if (msg.clientId) {
@@ -1989,15 +1996,36 @@ class UniversalSyncClient {
     } catch (e) {}
     if (publish && this.mqttClient && this.mqttClient.connected) {
       try {
-        const payload = JSON.stringify({ sender: this.clientId, forceReplace, events: normalized });
+        const payload = JSON.stringify({
+          sender: this.clientId,
+          forceReplace,
+          events: normalized,
+          deleted: Array.from(deletedSet)
+        });
         this.mqttClient.publish(this.mqttTopicRegistry, payload, { qos: 0, retain: true });
       } catch (e) {}
     }
     this._emit('events-list-update', normalized);
   }
 
-  _mergeIncomingRegistry(incomingList, forceReplace = false) {
+  _mergeIncomingRegistry(incomingList, forceReplace = false, incomingDeleted = []) {
     if (!Array.isArray(incomingList)) return;
+
+    // Ingest and record remote tombstones on this device
+    if (Array.isArray(incomingDeleted) && incomingDeleted.length > 0) {
+      incomingDeleted.forEach(delCode => {
+        if (delCode && typeof delCode === 'string') {
+          const cleanDel = delCode.toUpperCase().trim();
+          this._recordDeletedEvent(cleanDel);
+          try {
+            localStorage.removeItem(`stagetimer_v10_state_${cleanDel}`);
+            localStorage.removeItem(`stagetimer_v8_state_${cleanDel}`);
+            localStorage.removeItem(`stagetimer_live_state_${cleanDel}`);
+          } catch (_) {}
+        }
+      });
+    }
+
     const deletedSet = this._getDeletedEvents();
 
     const validIncoming = incomingList
@@ -2019,8 +2047,16 @@ class UniversalSyncClient {
 
         try {
           Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('stagetimer_live_state_')) {
-              const roomCode = key.replace('stagetimer_live_state_', '').toUpperCase();
+            if (
+              key.startsWith('stagetimer_v10_state_') ||
+              key.startsWith('stagetimer_v8_state_') ||
+              key.startsWith('stagetimer_live_state_')
+            ) {
+              const roomCode = key
+                .replace('stagetimer_v10_state_', '')
+                .replace('stagetimer_v8_state_', '')
+                .replace('stagetimer_live_state_', '')
+                .toUpperCase();
               if (roomCode && !incomingCodes.has(roomCode) && roomCode !== 'PALCO1') {
                 localStorage.removeItem(key);
                 this._recordDeletedEvent(roomCode);
@@ -3235,24 +3271,52 @@ class UniversalSyncClient {
     }
   }
 
-  sendMessage(text, visible = true, level = 'info') {
+  _resolveSenderIdentity(customFrom = '') {
+    const viewKey = this._getCurrentViewKey();
+    const trimmed = String(customFrom || '').trim();
+    if (trimmed) {
+      const upper = trimmed.toUpperCase();
+      if (upper === 'SM' || upper === 'STAGE MANAGER' || upper === 'OPERATOR' || upper === 'OPERADOR') {
+        return { from: 'Operador', senderRole: 'operator' };
+      }
+      return { from: trimmed, senderRole: viewKey };
+    }
+    if (viewKey === 'operator') return { from: 'Operador', senderRole: 'operator' };
+    if (viewKey === 'controller') return { from: 'Configurador', senderRole: 'controller' };
+    if (viewKey === 'master') return { from: 'Super Régie Master', senderRole: 'master' };
+    if (viewKey === 'dc') return { from: 'Direção de Cena', senderRole: 'dc' };
+    if (viewKey === 'regies') {
+      const st = typeof localStorage !== 'undefined' ? (localStorage.getItem('stagetimer_regie_station') || 'foh') : 'foh';
+      const techName = typeof localStorage !== 'undefined' ? (localStorage.getItem('stagetimer_regie_tech_name') || '').trim() : '';
+      if (st === 'tech') {
+        return { from: techName ? `Técnico (${techName})` : 'Técnico', senderRole: 'regies' };
+      }
+      return { from: st === 'stage' ? 'Régie de Palco' : 'Régie FOH', senderRole: 'regies' };
+    }
+    return { from: 'Operador', senderRole: viewKey };
+  }
+
+  sendMessage(text, visible = true, level = 'info', customFrom = '') {
     const cleanText = String(text || '').trim();
     const isVisible = Boolean(visible && cleanText);
     const prevMsg = this._state?.message || {};
     const isNewOrChanged = Boolean(isVisible && (cleanText !== prevMsg.text || !prevMsg.visible || !prevMsg.id));
     const now = this.getTrueTime();
+    const senderInfo = this._resolveSenderIdentity(customFrom);
     this._state.message = {
       id: isNewOrChanged ? ('sm_' + now + '_' + Math.random().toString(36).substring(2, 6)) : (prevMsg.id || ''),
       text: cleanText,
       visible: isVisible,
       level: level || 'info',
+      from: isNewOrChanged ? senderInfo.from : (prevMsg.from || senderInfo.from),
+      senderRole: isNewOrChanged ? senderInfo.senderRole : (prevMsg.senderRole || senderInfo.senderRole),
       sentAt: isNewOrChanged ? now : (prevMsg.sentAt || now)
     };
     this._commitStateChange();
   }
 
   clearMessage() {
-    this._state.message = { id: '', text: '', visible: false, level: 'info', sentAt: 0 };
+    this._state.message = { id: '', text: '', visible: false, level: 'info', from: '', senderRole: '', sentAt: 0 };
     this._commitStateChange();
   }
 
@@ -3263,27 +3327,35 @@ class UniversalSyncClient {
     this._ensureRegieStructure();
     const now = Date.now();
     const tgt = String(target || '').toLowerCase();
-    let sender = fromStation;
+    const viewKey = this._getCurrentViewKey();
+    let normalizedFrom = String(fromStation || '').trim();
+    if (/^(sm|stage manager|operator|operador)$/i.test(normalizedFrom) || (!normalizedFrom && viewKey === 'operator')) {
+      normalizedFrom = 'Operador';
+    }
+    let sender = normalizedFrom;
     let targetName = 'Todos';
 
     if (tgt === 'stage' || tgt === 'palco') {
       this._state.regieCall.fohCallingStage = true;
       this._state.regieCall.triggeredAt = now;
-      this._state.regieCall.triggeredBy = fromStation || 'FOH';
-      sender = fromStation || 'FOH';
+      this._state.regieCall.triggeredBy = normalizedFrom || 'FOH';
+      this._state.regieCall.senderRole = viewKey;
+      sender = normalizedFrom || 'FOH';
       targetName = 'Palco';
     } else if (tgt === 'foh' || tgt === 'frente') {
       this._state.regieCall.stageCallingFoh = true;
       this._state.regieCall.triggeredAt = now;
-      this._state.regieCall.triggeredBy = fromStation || 'PALCO';
-      sender = fromStation || 'PALCO';
+      this._state.regieCall.triggeredBy = normalizedFrom || 'PALCO';
+      this._state.regieCall.senderRole = viewKey;
+      sender = normalizedFrom || 'PALCO';
       targetName = 'FOH';
     } else {
       this._state.regieCall.fohCallingStage = true;
       this._state.regieCall.stageCallingFoh = true;
       this._state.regieCall.triggeredAt = now;
-      this._state.regieCall.triggeredBy = fromStation || 'ALL';
-      sender = fromStation || 'ALL';
+      this._state.regieCall.triggeredBy = normalizedFrom || 'ALL';
+      this._state.regieCall.senderRole = viewKey;
+      sender = normalizedFrom || 'ALL';
       targetName = 'Geral';
     }
 
@@ -3296,6 +3368,7 @@ class UniversalSyncClient {
       id: 'rc_' + now + '_' + Math.random().toString(36).substr(2, 4),
       type: 'call',
       from: sender,
+      senderRole: viewKey,
       target: targetName,
       text: `Chamada de Intercom (${sender} ➔ ${targetName})`,
       timeStr: callTimeStr,
@@ -3334,7 +3407,7 @@ class UniversalSyncClient {
     this._commitStateChange();
   }
 
-  sendRegieMessage(text) {
+  sendRegieMessage(text, customFrom = '') {
     if (!this._state) return;
     this._ensureRegieStructure();
     const cleanText = (text || '').trim();
@@ -3342,9 +3415,12 @@ class UniversalSyncClient {
     const now = new Date();
     const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
     const msgId = 'rm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    const senderInfo = this._resolveSenderIdentity(customFrom);
     this._state.regieMessage = {
       id: msgId,
       text: cleanText,
+      from: senderInfo.from,
+      senderRole: senderInfo.senderRole,
       visible: true,
       sentAt: Date.now(),
       sentTimeStr: timeStr,
@@ -3361,7 +3437,8 @@ class UniversalSyncClient {
     this._state.regieHistory.unshift({
       id: msgId,
       type: 'msg',
-      from: 'Stage Manager',
+      from: senderInfo.from,
+      senderRole: senderInfo.senderRole,
       text: cleanText,
       timeStr: timeStr,
       ts: Date.now(),

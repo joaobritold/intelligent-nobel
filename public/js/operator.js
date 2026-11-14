@@ -929,13 +929,13 @@ document.querySelectorAll('.op-regie-chip').forEach(btn => {
 // Régie Intercom & Technical Messages Action Listeners
 if ($opCallStageBtn) {
   $opCallStageBtn.addEventListener('click', () => {
-    client.triggerRegieCall('stage', 'SM');
+    client.triggerRegieCall('stage', 'Operador');
   });
 }
 
 if ($opCallFohBtn) {
   $opCallFohBtn.addEventListener('click', () => {
-    client.triggerRegieCall('foh', 'SM');
+    client.triggerRegieCall('foh', 'Operador');
   });
 }
 
@@ -949,7 +949,7 @@ if ($opRegieMsgSend) {
   $opRegieMsgSend.addEventListener('click', () => {
     const text = ($opRegieMsgInput?.value || '').trim();
     if (text) {
-      client.sendRegieMessage(text);
+      client.sendRegieMessage(text, 'Operador');
       if ($opRegieMsgInput) {
         $opRegieMsgInput.value = '';
         $opRegieMsgInput.blur();

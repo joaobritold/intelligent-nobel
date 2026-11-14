@@ -545,8 +545,13 @@ function updateRegieControls() {
   if (isIncoming) {
     const elapsedSecs = Math.floor((now - (rc.triggeredAt || now)) / 1000);
     const remSecs = Math.max(1, 5 - elapsedSecs);
+    const rawCaller = String(rc.triggeredBy || '').trim();
+    const isOpCaller = rc.senderRole === 'operator' || /^(operador|sm|stage manager|operator)$/i.test(rawCaller);
     $incomingAlert.classList.add('visible');
-    if (isFoh) {
+    if (isOpCaller) {
+      $incomingTitle.textContent = `🚨 ATENÇÃO ${isFoh ? 'FOH' : 'PALCO'}: O OPERADOR ESTÁ A CHAMAR (${remSecs}s)!`;
+      $incomingSub.textContent = 'O Operador está a chamar com urgência. Por favor verifique o intercomunicador.';
+    } else if (isFoh) {
       $incomingTitle.textContent = `🚨 ATENÇÃO FOH: PALCO ESTÁ A CHAMAR (${remSecs}s)!`;
       $incomingSub.textContent = 'A Régie de Palco está a chamar no intercomunicador. Por favor coloque os auscultadores.';
     } else {
@@ -563,7 +568,7 @@ function updateRegieControls() {
   }
   lastIncomingCallState = isIncoming;
 
-  // 3. Stage Manager Technical Message Banner (With 5s Auto-Dismiss after Ack)
+  // 3. Operator / Stage Manager Technical Message Banner (With 5s Auto-Dismiss after Ack)
   const rm = state.regieMessage;
   if (rm && rm.visible && rm.text && rm.text.trim()) {
     const currentKey = getCurrentDismissKey(rm.id);
@@ -572,6 +577,14 @@ function updateRegieControls() {
       $msgBanner.classList.remove('visible');
       $msgBanner.style.display = 'none';
       return;
+    }
+
+    const rawMsgFrom = String(rm.from || '').trim();
+    const isMsgFromOp = rm.senderRole === 'operator' || !rawMsgFrom || /^(operador|stage manager|sm|operator)$/i.test(rawMsgFrom);
+    const senderBadgeText = isMsgFromOp ? '📱 MENSAGEM DO OPERADOR' : `📢 MENSAGEM DE ${rawMsgFrom.toUpperCase()}`;
+    const $msgSenderLabel = document.getElementById('regie-msg-sender-label');
+    if ($msgSenderLabel) {
+      $msgSenderLabel.textContent = senderBadgeText;
     }
 
     $msgBanner.style.display = 'flex';
@@ -704,8 +717,11 @@ function renderRegieHistory() {
   $regieHistoryList.innerHTML = history.map(item => {
     const isCall = item.type === 'call';
     const isMsg = item.type === 'msg';
-    const icon = isCall ? '🚨' : '📢';
-    const sender = isCall ? `CHAMADA: ${escapeHtml(item.from || 'RÉGIE')}` : `STAGE MANAGER`;
+    const icon = isCall ? '🚨' : '📱';
+    const rawSender = String(item.from || '').trim();
+    const isOpSender = !rawSender || /^(operador|stage manager|sm|operator)$/i.test(rawSender);
+    const cleanSender = isOpSender ? 'OPERADOR' : rawSender.toUpperCase();
+    const sender = isCall ? `CHAMADA: ${escapeHtml(cleanSender)}` : `MENSAGEM: ${escapeHtml(cleanSender)}`;
 
     let receiptsHtml = '';
     if (isMsg) {
