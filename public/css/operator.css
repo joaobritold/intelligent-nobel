@@ -556,3 +556,12 @@ html, body {
     font-size: 16px !important;
   }
 }
+
+/* v119 — barra de topo simplificada: Palco, Ecrãs, Hora, Online */
+#op-notify-toggle-btn, #nav-hub, .op-header .st-nav-home-btn, #op-bg-color, #op-bg-color-wrap { display: none !important; }
+.op-header { flex-wrap: nowrap; gap: 6px; align-items: center; }
+.op-header .op-room-box { flex: 1 1 auto; min-width: 0; overflow: hidden; }
+.op-header #op-stage-badge { min-width: 0; flex: 0 1 auto; }
+.op-header > div:last-child { flex: 0 0 auto; flex-wrap: nowrap; }
+.op-header .st-compact-nav, .op-header .st-nav-trigger, .op-header #op-conn-badge { flex-shrink: 0; white-space: nowrap; }
+@media (max-width: 360px) { .op-header .st-nav-trigger { padding-inline: 6px; font-size: .75rem; } .op-header #op-conn-badge { padding: 3px 6px; } }
