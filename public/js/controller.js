@@ -417,7 +417,9 @@ if ($newEventConfirm) {
       return;
     }
     const newCode = client.createNewCleanEvent(title);
-    location.search = `?room=${encodeURIComponent(newCode)}&clean=1`;
+    setTimeout(() => {
+      location.search = `?room=${encodeURIComponent(newCode)}&clean=1`;
+    }, 120);
   });
 }
 
