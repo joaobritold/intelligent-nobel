@@ -526,7 +526,7 @@ class UniversalSyncClient {
           const incMsg = msg.regieMessage;
           const curSentAt = this._state.regieMessage?.sentAt || 0;
           if (incMsg.id && incMsg.sentAt >= curSentAt && this._state.regieMessage?.id !== incMsg.id) {
-            const resolvedFrom = incMsg.from || 'Operador';
+            const resolvedFrom = incMsg.from || 'S.Manager';
             const resolvedRole = incMsg.senderRole || 'operator';
             this._state.regieMessage = {
               id: incMsg.id,
@@ -3276,12 +3276,12 @@ class UniversalSyncClient {
     const trimmed = String(customFrom || '').trim();
     if (trimmed) {
       const upper = trimmed.toUpperCase();
-      if (upper === 'SM' || upper === 'STAGE MANAGER' || upper === 'OPERATOR' || upper === 'OPERADOR') {
-        return { from: 'Operador', senderRole: 'operator' };
+      if (upper === 'SM' || upper === 'S.M.' || upper === 'S.MANAGER' || upper === 'STAGE MANAGER' || upper === 'OPERATOR' || upper === 'OPERADOR') {
+        return { from: 'S.Manager', senderRole: 'operator' };
       }
       return { from: trimmed, senderRole: viewKey };
     }
-    if (viewKey === 'operator') return { from: 'Operador', senderRole: 'operator' };
+    if (viewKey === 'operator') return { from: 'S.Manager', senderRole: 'operator' };
     if (viewKey === 'controller') return { from: 'Configurador', senderRole: 'controller' };
     if (viewKey === 'master') return { from: 'Super Régie Master', senderRole: 'master' };
     if (viewKey === 'dc') return { from: 'Direção de Cena', senderRole: 'dc' };
@@ -3293,7 +3293,7 @@ class UniversalSyncClient {
       }
       return { from: st === 'stage' ? 'Régie de Palco' : 'Régie FOH', senderRole: 'regies' };
     }
-    return { from: 'Operador', senderRole: viewKey };
+    return { from: 'S.Manager', senderRole: viewKey };
   }
 
   sendMessage(text, visible = true, level = 'info', customFrom = '') {
@@ -3329,8 +3329,8 @@ class UniversalSyncClient {
     const tgt = String(target || '').toLowerCase();
     const viewKey = this._getCurrentViewKey();
     let normalizedFrom = String(fromStation || '').trim();
-    if (/^(sm|stage manager|operator|operador)$/i.test(normalizedFrom) || (!normalizedFrom && viewKey === 'operator')) {
-      normalizedFrom = 'Operador';
+    if (/^(sm|s\.m\.|s\.manager|stage manager|operator|operador)$/i.test(normalizedFrom) || (!normalizedFrom && viewKey === 'operator')) {
+      normalizedFrom = 'S.Manager';
     }
     let sender = normalizedFrom;
     let targetName = 'Todos';

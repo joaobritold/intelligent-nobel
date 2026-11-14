@@ -946,11 +946,10 @@
 
         if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alert5m !== false) {
           this.sendTelegramMessage(
-            `⏳ <b>AVISO 5 MINUTOS</b> • <code>${safeStage}</code>\n` +
+            `⏳ <b>AVISO 5 MINUTOS</b> • <code>${safeStage}</code> • ⏰ <b>${nowStr}</b>\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `🎤 <b>Em Palco:</b> ${safeArtist}\n` +
-            `⏱️ <b>Tempo Restante:</b> <code>05:00</code>\n` +
-            `⏰ <b>Hora:</b> ${nowStr}`,
+            `⏱️ <b>Tempo Restante:</b> <code>05:00</code>`,
             tgCfg,
             { eventKey, room: roomCode, priority: 'normal' }
           );
@@ -971,7 +970,7 @@
 
         if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alert1m !== false) {
           this.sendTelegramMessage(
-            `⚠️ <b>AVISO 1 MINUTO</b> • <code>${safeStage}</code>\n` +
+            `⚠️ <b>AVISO 1 MINUTO</b> • <code>${safeStage}</code> • ⏰ <b>${nowStr}</b>\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `🎤 <b>Em Palco:</b> ${safeArtist}\n` +
             `⏱️ <b>Tempo Restante:</b> <code>01:00</code> (Reta Final)\n` +
@@ -996,11 +995,10 @@
 
         if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertEnd !== false) {
           this.sendTelegramMessage(
-            `🛑 <b>TEMPO ESGOTADO (OVERTIME)</b> • <code>${safeStage}</code>\n` +
+            `🛑 <b>TEMPO ESGOTADO (OVERTIME)</b> • <code>${safeStage}</code> • ⏰ <b>${nowStr}</b>\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `🎤 <b>Artista:</b> ${safeArtist}\n` +
-            `⏱️ <b>Estado:</b> Tempo regulamentar concluído (<code>00:00</code>)\n` +
-            `⏰ <b>Hora:</b> ${nowStr}`,
+            `⏱️ <b>Estado:</b> Tempo regulamentar concluído (<code>00:00</code>)`,
             tgCfg,
             { eventKey, room: roomCode, priority: 'high' }
           );
@@ -1018,7 +1016,7 @@
       const isLeader = this._isTelegramLeader(roomCode);
       const timeStr = getNowTimeStr(false);
 
-      // 1. Chamadas entre Régies ou do Operador (Intercom: FOH ⇄ Palco ⇄ Operador ⇄ Geral)
+      // 1. Chamadas entre Régies ou do Stage Manager / Operador (Intercom: FOH ⇄ Palco ⇄ S.Manager ⇄ Geral)
       if (state.regieCall && state.regieCall.triggeredAt && (state.regieCall.fohCallingStage || state.regieCall.stageCallingFoh)) {
         if (state.regieCall.triggeredAt !== rState.lastRegieCallAt) {
           rState.lastRegieCallAt = state.regieCall.triggeredAt;
@@ -1027,30 +1025,30 @@
 
           const rawCaller = String(state.regieCall.triggeredBy || '').trim();
           const callerRole = String(state.regieCall.senderRole || '').toLowerCase();
-          const isOperatorCall = callerRole === 'operator' || /^(operador|sm|stage manager|operator)$/i.test(rawCaller);
-          const callerDisplay = isOperatorCall ? 'Operador' : (rawCaller || 'Régie');
+          const isOperatorCall = callerRole === 'operator' || /^(operador|sm|s\.m\.|s\.manager|stage manager|operator)$/i.test(rawCaller);
+          const callerDisplay = isOperatorCall ? 'S.Manager' : (rawCaller || 'Régie');
           const safeCaller = escapeHtml(callerDisplay);
 
-          let callTitle = isOperatorCall ? '📱 Chamada do Operador' : '📞 Chamada de Régie';
+          let callTitle = isOperatorCall ? '📱 Chamada S.Manager' : '📞 Chamada de Régie';
           let callBody = isOperatorCall
-            ? 'O Operador está a chamar com urgência!'
+            ? 'O Stage Manager (S.Manager) está a chamar com urgência!'
             : 'Uma régie está a chamar com urgência!';
           let callRoute = `${safeCaller} ➔ INTERCOM`;
           let tgHeader = isOperatorCall
-            ? `📱 <b>CHAMADA DO OPERADOR</b> • <code>${safeStage}</code>`
-            : `📞 <b>CHAMADA URGENTE DE RÉGIE</b> • <code>${safeStage}</code>`;
+            ? `📱 <b>CHAMADA S.MANAGER</b> • <code>${safeStage}</code> • ⏰ <b>${timeStr}</b>`
+            : `📞 <b>CHAMADA URGENTE DE RÉGIE</b> • <code>${safeStage}</code> • ⏰ <b>${timeStr}</b>`;
 
           if (state.regieCall.fohCallingStage && state.regieCall.stageCallingFoh) {
-            callTitle = isOperatorCall ? '📱 OPERADOR ➔ TODAS AS RÉGIES' : '📞 CHAMADA GERAL DE RÉGIE';
+            callTitle = isOperatorCall ? '📱 S.MANAGER ➔ TODAS AS RÉGIES' : '📞 CHAMADA GERAL DE RÉGIE';
             callBody = isOperatorCall
-              ? 'O Operador está a chamar todas as régies e postos técnicos com urgência!'
+              ? 'O Stage Manager (S.Manager) está a chamar todas as régies e postos técnicos com urgência!'
               : 'Alerta máximo: chamada geral para todas as régies e postos técnicos!';
             callRoute = `${safeCaller} ➔ TODAS AS RÉGIES`;
           } else if (state.regieCall.fohCallingStage) {
             if (isOperatorCall) {
-              callTitle = '📱 OPERADOR ➔ PALCO';
-              callBody = 'O Operador está a chamar a Régie de Palco com urgência!';
-              callRoute = 'OPERADOR ➔ PALCO';
+              callTitle = '📱 S.MANAGER ➔ PALCO';
+              callBody = 'O Stage Manager (S.Manager) está a chamar a Régie de Palco com urgência!';
+              callRoute = 'S.MANAGER ➔ PALCO';
             } else {
               callTitle = '📞 FOH ➔ PALCO';
               callBody = 'A Régie de Frente (FOH) está a chamar a Régie de Palco com urgência!';
@@ -1058,9 +1056,9 @@
             }
           } else if (state.regieCall.stageCallingFoh) {
             if (isOperatorCall) {
-              callTitle = '📱 OPERADOR ➔ FOH';
-              callBody = 'O Operador está a chamar a Régie de Frente (FOH) com urgência!';
-              callRoute = 'OPERADOR ➔ FOH (Frente)';
+              callTitle = '📱 S.MANAGER ➔ FOH';
+              callBody = 'O Stage Manager (S.Manager) está a chamar a Régie de Frente (FOH) com urgência!';
+              callRoute = 'S.MANAGER ➔ FOH (Frente)';
             } else {
               callTitle = '📞 PALCO ➔ FOH';
               callBody = 'A Régie de Palco está a chamar a Frente (FOH) com urgência!';
@@ -1080,8 +1078,7 @@
               `━━━━━━━━━━━━━━━━━━━━\n` +
               `👤 <b>Origem:</b> <b>${safeCaller}</b>\n` +
               `📡 <b>Direção:</b> <b>${callRoute}</b>\n` +
-              `🚨 <i>${escapeHtml(callBody)}</i>\n` +
-              `⏰ <b>Hora:</b> ${timeStr}`,
+              `🚨 <i>${escapeHtml(callBody)}</i>`,
               tgCfg,
               { eventKey, room: roomCode, priority: 'high' }
             );
@@ -1089,7 +1086,7 @@
         }
       }
 
-      // 2. Comunicações dadas pelo Operador / Régies / Técnicos
+      // 2. Comunicações dadas pelo Stage Manager (Operador) / Régies / Técnicos
       if (state.regieMessage && state.regieMessage.visible && state.regieMessage.text) {
         if (state.regieMessage.id && state.regieMessage.id !== rState.lastRegieMsgId) {
           rState.lastRegieMsgId = state.regieMessage.id;
@@ -1098,12 +1095,12 @@
 
           const rawFrom = String(state.regieMessage.from || '').trim();
           const senderRole = String(state.regieMessage.senderRole || '').toLowerCase();
-          const isFromOperator = senderRole === 'operator' || !rawFrom || /^(operador|stage manager|sm|operator)$/i.test(rawFrom);
-          const senderDisplay = isFromOperator ? 'Operador' : rawFrom;
+          const isFromOperator = senderRole === 'operator' || !rawFrom || /^(operador|stage manager|sm|s\.m\.|s\.manager|operator)$/i.test(rawFrom);
+          const senderDisplay = isFromOperator ? 'Stage Manager (S.Manager)' : rawFrom;
           const safeSender = escapeHtml(senderDisplay);
 
           const localNotifTitle = isFromOperator
-            ? `📱 Mensagem do Operador — ${stageName}`
+            ? `📱 Mensagem S.Manager — ${stageName}`
             : `📟 Mensagem de ${senderDisplay} — ${stageName}`;
 
           this.showLocalNotification(localNotifTitle, {
@@ -1116,15 +1113,14 @@
             const safeMsg = escapeHtml(state.regieMessage.text);
             const msgTime = escapeHtml(state.regieMessage.sentTimeStr || timeStr);
             const tgHeader = isFromOperator
-              ? `📱 <b>MENSAGEM DO OPERADOR</b> • <code>${safeStage}</code>`
-              : `📟 <b>MENSAGEM DE ${escapeHtml(senderDisplay.toUpperCase())}</b> • <code>${safeStage}</code>`;
+              ? `📱 <b>MENSAGEM S.MANAGER</b> • <code>${safeStage}</code> • ⏰ <b>${msgTime}</b>`
+              : `📟 <b>MENSAGEM DE ${escapeHtml(senderDisplay.toUpperCase())}</b> • <code>${safeStage}</code> • ⏰ <b>${msgTime}</b>`;
 
             this.sendTelegramMessage(
               `${tgHeader}\n` +
               `━━━━━━━━━━━━━━━━━━━━\n` +
-              `💬 <b>"${safeMsg}"</b>\n\n` +
-              `👤 <b>Enviado por:</b> ${safeSender} ➔ Régies &amp; Técnicos\n` +
-              `⏰ <b>Hora:</b> ${msgTime} • <i>Responda <code>/ok</code> para confirmar receção</i>`,
+              `💬 <b>"${safeMsg}"</b>\n` +
+              `👤 <b>Origem:</b> ${safeSender}`,
               tgCfg,
               { eventKey, room: roomCode, priority: 'high' }
             );
@@ -1149,10 +1145,9 @@
           if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertRegieMsg !== false) {
             const safeNotice = escapeHtml(state.theatre.urgentNotice.text);
             this.sendTelegramMessage(
-              `📢 <b>AVISO DIREÇÃO DE CENA</b> • <code>${safeStage}</code>\n` +
+              `📢 <b>AVISO DIREÇÃO DE CENA</b> • <code>${safeStage}</code> • ⏰ <b>${timeStr}</b>\n` +
               `━━━━━━━━━━━━━━━━━━━━\n` +
-              `💬 <b>"${safeNotice}"</b>\n` +
-              `⏰ <b>Hora:</b> ${timeStr}`,
+              `💬 <b>"${safeNotice}"</b>`,
               tgCfg,
               { eventKey, room: roomCode, priority: 'high' }
             );
@@ -1178,18 +1173,17 @@
           if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertUrgent !== false) {
             const safePrompter = escapeHtml(state.message.text);
             const rawPrompterFrom = String(state.message.from || '').trim();
-            const prompterSender = (!rawPrompterFrom || /^(operador|stage manager|sm|operator)$/i.test(rawPrompterFrom))
-              ? 'Operador'
+            const prompterSender = (!rawPrompterFrom || /^(operador|stage manager|sm|s\.m\.|s\.manager|operator)$/i.test(rawPrompterFrom))
+              ? 'Stage Manager (S.Manager)'
               : rawPrompterFrom;
             const lvl = state.message.level === 'danger' || state.message.level === 'urgent'
               ? '🔴 URGENTE'
               : (state.message.level === 'warn' ? '🟡 AVISO' : '🔵 INFO');
             this.sendTelegramMessage(
-              `🚨 <b>MENSAGEM NO ECRÃ DE PALCO</b> • <code>${safeStage}</code>\n` +
+              `🚨 <b>MENSAGEM NO ECRÃ DE PALCO</b> • <code>${safeStage}</code> • ⏰ <b>${timeStr}</b>\n` +
               `━━━━━━━━━━━━━━━━━━━━\n` +
               `📺 <b>[${lvl}]:</b> <b>"${safePrompter}"</b>\n` +
-              `👤 <b>Enviado por:</b> ${escapeHtml(prompterSender)}\n` +
-              `⏰ <b>Hora:</b> ${timeStr}`,
+              `👤 <b>Enviado por:</b> ${escapeHtml(prompterSender)}`,
               tgCfg,
               { eventKey, room: roomCode, priority: 'high' }
             );

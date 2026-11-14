@@ -546,11 +546,11 @@ function updateRegieControls() {
     const elapsedSecs = Math.floor((now - (rc.triggeredAt || now)) / 1000);
     const remSecs = Math.max(1, 5 - elapsedSecs);
     const rawCaller = String(rc.triggeredBy || '').trim();
-    const isOpCaller = rc.senderRole === 'operator' || /^(operador|sm|stage manager|operator)$/i.test(rawCaller);
+    const isOpCaller = rc.senderRole === 'operator' || /^(operador|sm|s\.m\.|s\.manager|stage manager|operator)$/i.test(rawCaller);
     $incomingAlert.classList.add('visible');
     if (isOpCaller) {
-      $incomingTitle.textContent = `🚨 ATENÇÃO ${isFoh ? 'FOH' : 'PALCO'}: O OPERADOR ESTÁ A CHAMAR (${remSecs}s)!`;
-      $incomingSub.textContent = 'O Operador está a chamar com urgência. Por favor verifique o intercomunicador.';
+      $incomingTitle.textContent = `🚨 ATENÇÃO ${isFoh ? 'FOH' : 'PALCO'}: S.MANAGER ESTÁ A CHAMAR (${remSecs}s)!`;
+      $incomingSub.textContent = 'O Stage Manager (S.Manager) está a chamar com urgência. Por favor verifique o intercomunicador.';
     } else if (isFoh) {
       $incomingTitle.textContent = `🚨 ATENÇÃO FOH: PALCO ESTÁ A CHAMAR (${remSecs}s)!`;
       $incomingSub.textContent = 'A Régie de Palco está a chamar no intercomunicador. Por favor coloque os auscultadores.';
@@ -580,8 +580,8 @@ function updateRegieControls() {
     }
 
     const rawMsgFrom = String(rm.from || '').trim();
-    const isMsgFromOp = rm.senderRole === 'operator' || !rawMsgFrom || /^(operador|stage manager|sm|operator)$/i.test(rawMsgFrom);
-    const senderBadgeText = isMsgFromOp ? '📱 MENSAGEM DO OPERADOR' : `📢 MENSAGEM DE ${rawMsgFrom.toUpperCase()}`;
+    const isMsgFromOp = rm.senderRole === 'operator' || !rawMsgFrom || /^(operador|stage manager|sm|s\.m\.|s\.manager|operator)$/i.test(rawMsgFrom);
+    const senderBadgeText = isMsgFromOp ? '📱 MENSAGEM S.MANAGER' : `📢 MENSAGEM DE ${rawMsgFrom.toUpperCase()}`;
     const $msgSenderLabel = document.getElementById('regie-msg-sender-label');
     if ($msgSenderLabel) {
       $msgSenderLabel.textContent = senderBadgeText;
@@ -719,8 +719,8 @@ function renderRegieHistory() {
     const isMsg = item.type === 'msg';
     const icon = isCall ? '🚨' : '📱';
     const rawSender = String(item.from || '').trim();
-    const isOpSender = !rawSender || /^(operador|stage manager|sm|operator)$/i.test(rawSender);
-    const cleanSender = isOpSender ? 'OPERADOR' : rawSender.toUpperCase();
+    const isOpSender = !rawSender || /^(operador|stage manager|sm|s\.m\.|s\.manager|operator)$/i.test(rawSender);
+    const cleanSender = isOpSender ? 'S.MANAGER' : rawSender.toUpperCase();
     const sender = isCall ? `CHAMADA: ${escapeHtml(cleanSender)}` : `MENSAGEM: ${escapeHtml(cleanSender)}`;
 
     let receiptsHtml = '';
