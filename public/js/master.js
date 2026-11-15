@@ -144,6 +144,16 @@
       };
     }
 
+    // 3b. Apple Watch
+    if (viewKey === 'watch' || path.includes('watch') || label.includes('watch') || label.includes('Watch')) {
+      return {
+        key: 'watch',
+        name: '⌚ Apple Watch',
+        shortName: 'Watch',
+        badgeClass: 'view-watch'
+      };
+    }
+
     // 4. Configurador
     if (viewKey === 'controller' || path.includes('controller') || label.includes('configurador') || label.includes('controlador')) {
       return {
@@ -199,6 +209,7 @@
   }
 
   function getDeviceCleanOS(dev) {
+    if (dev.viewKey === 'watch' || String(dev.label).includes('Watch') || dev.os === 'Apple Watch') return '⌚ Apple Watch';
     if (dev.os) return dev.os;
     const raw = String(dev.label || '');
     const m = raw.match(/\(([^)]+)\)/);

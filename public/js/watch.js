@@ -1,6 +1,7 @@
 /**
- * ⌚ StageTimer PFP — Apple Watch Fullscreen Micro-Viewer Controller
- * Ultra-responsive touch navigation, edge-to-edge digits, projected event end & OLED dark mode.
+ * ⌚ StageTimer PFP — Apple Watch Single Screen Controller
+ * One unified, automatic display: Giant Stage Timer when running, Official Clock when idle,
+ * Artist name, Projected event end & instant presence in Master panel.
  */
 
 (function() {
@@ -8,17 +9,24 @@
 
   // ─── Room & Device Resolution ─────────────────────────────────────────
   const params = new URLSearchParams(location.search);
-  const paramRoom = (params.get('room') || '').trim();
+  const rawParamRoom = (params.get('room') || '').trim();
+  // Normalize spaces to hyphens so "rc viana" automatically matches "RC-VIANA"
+  const normalizedParam = rawParamRoom.replace(/\s+/g, '-').toUpperCase();
   const savedActiveRoom = (sessionStorage.getItem('stagetimer_active_room') || '').trim();
   const savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim();
   const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim();
 
-  let roomId = (paramRoom || savedActiveRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
+  let roomId = (normalizedParam || savedActiveRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
 
-  // Smart resolve: if parent event code has multiple stages, resolve to Stage 1
+  // Smart resolve from cached registry if available
   try {
     const localEvents = JSON.parse(localStorage.getItem('stagetimer_v63_registry') || localStorage.getItem('stagetimer_v10_events_list') || '[]');
-    const matchedEv = localEvents.find(e => (e.code || '').toUpperCase() === roomId);
+    const cleanLookup = roomId.replace(/[^A-Z0-9]/g, '');
+    const matchedEv = localEvents.find(e => {
+      const c = (e.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const t = (e.title || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      return c === cleanLookup || t === cleanLookup;
+    });
     if (matchedEv && Array.isArray(matchedEv.stages) && matchedEv.stages.length > 0) {
       const hasCurrent = matchedEv.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId);
       if (!hasCurrent && matchedEv.stages[0]?.code) {
@@ -34,113 +42,19 @@
   } catch (_) {}
 
   // ─── DOM References ──────────────────────────────────────────────────
-  const $container = document.getElementById('watch-container');
   const $statusDot = document.getElementById('watch-status-dot');
   const $stageBadge = document.getElementById('watch-stage-badge');
   const $miniClock = document.getElementById('watch-mini-clock');
-  const $center = document.getElementById('watch-center');
   const $digits = document.getElementById('watch-digits');
   const $info = document.getElementById('watch-info');
-  const $secondary = document.getElementById('watch-secondary');
   const $eventEndVal = document.getElementById('watch-event-end-val');
-  const $modePill = document.getElementById('watch-mode-pill');
-  const $modeToast = document.getElementById('watch-mode-toast');
   const $msgOverlay = document.getElementById('watch-message-overlay');
   const $msgBadge = document.getElementById('watch-msg-badge');
   const $msgText = document.getElementById('watch-msg-text');
 
-  // ─── View Modes: 'timer', 'clock', 'dual' ───────────────────────────
-  const MODES = ['timer', 'clock', 'dual'];
-  const MODE_LABELS = {
-    'timer': '⏱️ Modo Timer',
-    'clock': '🕒 Relógio Oficial',
-    'dual': '⚡ Modo Duplo'
-  };
-
-  let currentModeIndex = 0;
-  try {
-    const savedMode = localStorage.getItem('stagetimer_watch_mode');
-    const idx = MODES.indexOf(savedMode);
-    if (idx >= 0) currentModeIndex = idx;
-  } catch (_) {}
-
-  let toastTimer = null;
-  function showModeToast(text) {
-    if (!$modeToast) return;
-    $modeToast.textContent = text;
-    $modeToast.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      $modeToast.classList.remove('show');
-    }, 1100);
-  }
-
-  function applyMode(showToast = false) {
-    const mode = MODES[currentModeIndex];
-    if ($container) {
-      $container.className = `watch-container mode-${mode}`;
-    }
-    if ($modePill) {
-      if (mode === 'timer') $modePill.textContent = 'Timer';
-      else if (mode === 'clock') $modePill.textContent = 'Relógio';
-      else if (mode === 'dual') $modePill.textContent = 'Duplo';
-    }
-    if (showToast) {
-      showModeToast(MODE_LABELS[mode] || mode);
-    }
-    try {
-      localStorage.setItem('stagetimer_watch_mode', mode);
-    } catch (_) {}
-  }
-  applyMode(false);
-
-  function cycleMode() {
-    currentModeIndex = (currentModeIndex + 1) % MODES.length;
-    applyMode(true);
-
-    // Haptic vibration feedback
-    if (navigator.vibrate) {
-      try { navigator.vibrate(60); } catch (_) {}
-    }
-
-    // Visual tap flash on the screen
-    if ($container) {
-      $container.classList.add('tap-flash');
-      setTimeout(() => {
-        $container.classList.remove('tap-flash');
-      }, 150);
-    }
-
-    render();
-  }
-
-  // ─── Global Touch / Tap Listener (Resolves Apple Watch Tap) ───────────
-  let lastTapTime = 0;
-  function handleScreenTap(e) {
-    const now = Date.now();
-    if (now - lastTapTime < 280) return; // Debounce rapid multiple events
-    lastTapTime = now;
-
-    // If tap was specifically on the stage badge, let cycleStage handle it
-    if (e && e.target && e.target.closest('#watch-stage-badge')) {
-      return;
-    }
-
-    // If message overlay is open, dismiss it
-    if ($msgOverlay && $msgOverlay.classList.contains('visible')) {
-      $msgOverlay.classList.remove('visible');
-      return;
-    }
-
-    cycleMode();
-  }
-
-  window.addEventListener('touchend', handleScreenTap, { passive: true });
-  window.addEventListener('click', handleScreenTap);
-
-  // ─── Client Sync ─────────────────────────────────────────────────────
+  // ─── Client Sync (Role 'watch' announces Apple Watch to Master) ─────────
   const client = new StageTimerClient({
-    role: 'viewer',
+    role: 'watch',
     room: roomId,
   });
 
@@ -167,54 +81,42 @@
     render();
   });
 
-  client.connect();
+  // Dynamic Room Resolution when Cloud Registry arrives
+  client.on('events-list-update', (eventsList) => {
+    if (!Array.isArray(eventsList) || eventsList.length === 0) return;
+    const cleanLookup = roomId.replace(/[^A-Z0-9]/g, '');
+    const matchedEv = eventsList.find(e => {
+      const c = (e.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const t = (e.title || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      return c === cleanLookup || t === cleanLookup;
+    });
 
-  // ─── Stage Switching on Watch Tap ────────────────────────────────────
-  function getAvailableStages() {
-    try {
-      const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
-      const currentCode = (state?.id || roomId).toUpperCase();
-      for (const ev of rawList) {
-        if (ev.code === currentCode || (Array.isArray(ev.stages) && ev.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode))) {
-          if (Array.isArray(ev.stages) && ev.stages.length > 1) {
-            return ev.stages.map(s => (s.code || s.id || '').toUpperCase());
-          }
+    if (matchedEv) {
+      const stages = Array.isArray(matchedEv.stages) && matchedEv.stages.length > 0
+        ? matchedEv.stages
+        : [{ code: matchedEv.code, name: matchedEv.title }];
+      const hasCurrent = stages.some(s => (s.code || s.id || '').toUpperCase() === roomId);
+      if (!hasCurrent && stages[0]?.code) {
+        const targetCode = stages[0].code.toUpperCase();
+        if (targetCode !== roomId) {
+          try {
+            localStorage.setItem('stagetimer_device_room', targetCode);
+            localStorage.setItem('stagetimer_last_room', targetCode);
+            sessionStorage.setItem('stagetimer_active_room', targetCode);
+          } catch (_) {}
+          window.location.replace(`watch.html?room=${encodeURIComponent(targetCode)}`);
         }
       }
-    } catch (_) {}
-    return [roomId];
-  }
-
-  function cycleStage(e) {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
     }
-    const stages = getAvailableStages();
-    if (stages.length <= 1) return;
+  });
 
-    const currIdx = stages.indexOf(roomId);
-    const nextIdx = (currIdx + 1) % stages.length;
-    const nextRoom = stages[nextIdx];
+  client.connect();
 
-    try {
-      localStorage.setItem('stagetimer_device_room', nextRoom);
-      localStorage.setItem('stagetimer_last_room', nextRoom);
-      sessionStorage.setItem('stagetimer_active_room', nextRoom);
-    } catch (_) {}
-
-    window.location.replace(`watch.html?room=${encodeURIComponent(nextRoom)}`);
-  }
-
-  if ($stageBadge) {
-    $stageBadge.addEventListener('touchend', cycleStage, { passive: false });
-    $stageBadge.addEventListener('click', cycleStage);
-  }
-
+  // ─── Stage Badge Display ─────────────────────────────────────────────
   function updateStageBadge() {
     if (!$stageBadge) return;
     const currentCode = (state?.id || roomId).toUpperCase();
-    $stageBadge.textContent = currentCode;
+    $stageBadge.textContent = state?.name || currentCode;
   }
   updateStageBadge();
 
@@ -249,7 +151,6 @@
       if ($msgOverlay) {
         $msgOverlay.className = `watch-message-overlay visible ${msg.level === 'urgent' ? 'urgent' : ''}`;
       }
-      // Vibrate if it's a new incoming message
       if (msg.id !== lastMessageId) {
         lastMessageId = msg.id;
         if (navigator.vibrate) {
@@ -260,6 +161,12 @@
       if ($msgOverlay) $msgOverlay.className = '';
       lastMessageId = '';
     }
+  }
+
+  if ($msgOverlay) {
+    $msgOverlay.addEventListener('click', () => {
+      $msgOverlay.classList.remove('visible');
+    });
   }
 
   // ─── Format & Calculation Helpers ────────────────────────────────────
@@ -313,64 +220,39 @@
   // ─── Edge-to-Edge Dynamic Scaling ────────────────────────────────────
   function fitDigits() {
     if (!$digits) return;
-    const mode = MODES[currentModeIndex];
-    const textLen = $digits.textContent.length;
-    const isHours = textLen > 5;
-
-    let targetVw = 32;
-    if (mode === 'dual') {
-      targetVw = isHours ? 19 : 24;
-    } else if (isHours) {
-      targetVw = 19.5;
-    }
-
-    $digits.style.fontSize = `${targetVw}vw`;
+    const isHours = $digits.textContent.length > 5;
+    $digits.style.fontSize = isHours ? '19.5vw' : '31vw';
   }
 
-  // ─── Render Loop ─────────────────────────────────────────────────────
+  // ─── Render Loop (Single Unified Screen) ─────────────────────────────
   let lastColorState = '';
 
   function render() {
     const trueClockStr = getTrueTimeString();
     if ($miniClock) {
-      $miniClock.textContent = trueClockStr.substring(0, 5); // HH:MM
+      $miniClock.textContent = trueClockStr.substring(0, 5); // HH:MM no topo
     }
 
-    const mode = MODES[currentModeIndex];
     const activeTimer = state ? StageTimerClient.getActiveTimer(state) : null;
 
-    if (mode === 'clock') {
-      // ── Pure Clock Mode ──
-      if ($digits) {
-        $digits.textContent = trueClockStr;
-        $digits.className = 'watch-digits clock has-hours';
-      }
-      if ($info) {
-        $info.textContent = activeTimer ? `⏱️ ${activeTimer.name}` : (state?.name || roomId);
-      }
-      if ($secondary) $secondary.textContent = '';
-      fitDigits();
-      return;
-    }
-
-    // ── Timer or Dual Mode ──
     if (!activeTimer) {
+      // ── Nenhum timer ativo: Mostra o Relógio Oficial em Gigante ──
       if ($digits) {
         $digits.textContent = trueClockStr;
         $digits.className = 'watch-digits clock has-hours';
       }
       if ($info) {
-        $info.textContent = 'Sem Timer Ativo';
+        $info.textContent = 'Palco Livre • Sem Timer';
       }
-      if ($secondary) $secondary.textContent = '';
       fitDigits();
       return;
     }
 
+    // ── Timer Ativo em Palco (Countdown / Countup / Overtime) ──
     const displayVal = getTimerDisplayValue(activeTimer);
     const colorClass = getTimerColorClass(activeTimer);
 
-    // Haptic vibration on entering overtime
+    // Vibração tátil ao entrar em tempo excedido (overtime)
     if (colorClass === 'overtime' && lastColorState !== 'overtime') {
       if (navigator.vibrate) {
         try { navigator.vibrate([150, 80, 150]); } catch (_) {}
@@ -386,27 +268,17 @@
 
     if ($info) {
       const prefix = activeTimer.state === 'paused' ? '⏸️ ' : '';
-      $info.textContent = prefix + (activeTimer.name || 'Timer');
-    }
-
-    if ($secondary) {
-      if (mode === 'dual') {
-        $secondary.textContent = trueClockStr;
-      } else {
-        $secondary.textContent = '';
-      }
+      $info.textContent = prefix + (activeTimer.name || 'Timer de Palco');
     }
 
     fitDigits();
   }
 
-  // Fast animation ticker for smooth countdown and true clock
+  // Atualização suave a cada 200ms
   setInterval(render, 200);
-
-  // Periodically refresh event end calculation
   setInterval(updateEventEnd, 2000);
 
-  // ─── Screen Wake Lock (Keep Watch Screen Awake) ──────────────────────
+  // ─── Screen Wake Lock (Manter Ecrã Ligado) ────────────────────────────
   let wakeLock = null;
   async function requestWakeLock() {
     try {
@@ -421,12 +293,12 @@
   });
   document.addEventListener('touchstart', requestWakeLock, { passive: true, once: true });
 
-  // ─── Auto-Collapse watchOS Navigation Header (True Fullscreen) ───────
+  // ─── Auto-Collapse watchOS Navigation Header (Tela Cheia) ────────────
   function tryCollapseWatchHeader() {
     try {
-      window.scrollTo({ top: 32, behavior: 'smooth' });
+      window.scrollTo({ top: 30, behavior: 'smooth' });
     } catch (_) {
-      window.scrollTo(0, 32);
+      window.scrollTo(0, 30);
     }
   }
   window.addEventListener('load', () => setTimeout(tryCollapseWatchHeader, 350));

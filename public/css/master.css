@@ -378,6 +378,20 @@
 }
 
 /* Color Themes for each screen */
+.device-view-status-banner.view-watch {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.25) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border-color: rgba(0, 255, 136, 0.7);
+  color: #00ff88;
+}
+.device-view-status-banner.view-watch .device-view-tag-name {
+  color: #00ff88;
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+}
+.device-view-status-banner.view-watch .device-view-live-pill {
+  background: rgba(0, 255, 136, 0.25);
+  border-color: rgba(0, 255, 136, 0.5);
+  color: #00ff88;
+}
 .device-view-status-banner.view-viewer {
   background: linear-gradient(135deg, rgba(0, 184, 148, 0.22) 0%, rgba(15, 23, 42, 0.9) 100%);
   border-color: rgba(0, 184, 148, 0.6);

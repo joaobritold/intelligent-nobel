@@ -442,9 +442,94 @@ window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       acknowledgeIncomingCall();
+      return;
     }
   }
+
+  // Atalho de teclado para Ecrã Completo ('f' ou 'F')
+  if (e.key === 'f' || e.key === 'F') {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable)) {
+      return;
+    }
+    e.preventDefault();
+    toggleFullscreen();
+  } else if (e.key === 'Escape' && isFullscreen()) {
+    exitFullscreen();
+  }
 });
+
+// ─── Fullscreen System ───────────────────────────────────────────────
+const $regieFsBtn = document.getElementById('regie-fs-btn');
+const $regieFsIcon = document.getElementById('regie-fs-icon');
+
+function isFullscreen() {
+  return !!(
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement
+  );
+}
+
+function updateFullscreenUI() {
+  const fs = isFullscreen();
+  if ($regieFsBtn) {
+    $regieFsBtn.classList.toggle('active', fs);
+    $regieFsBtn.title = fs ? 'Sair de Ecrã Completo (Esc / F)' : 'Ecrã Completo (F)';
+    $regieFsBtn.setAttribute('aria-label', fs ? 'Sair de Ecrã Completo' : 'Ecrã Completo');
+  }
+  if ($regieFsIcon) {
+    $regieFsIcon.textContent = fs ? '✕' : '⛶';
+  }
+}
+
+function enterFullscreen() {
+  const el = document.documentElement;
+  const fn = el.requestFullscreen ||
+             el.webkitRequestFullscreen ||
+             el.mozRequestFullScreen ||
+             el.msRequestFullscreen;
+  if (fn) {
+    try {
+      const p = fn.call(el);
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+  }
+}
+
+function exitFullscreen() {
+  const fn = document.exitFullscreen ||
+             document.webkitExitFullscreen ||
+             document.mozCancelFullScreen ||
+             document.msExitFullscreen;
+  if (fn) {
+    try {
+      const p = fn.call(document);
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+  }
+}
+
+function toggleFullscreen() {
+  if (isFullscreen()) {
+    exitFullscreen();
+  } else {
+    enterFullscreen();
+  }
+}
+
+if ($regieFsBtn) {
+  $regieFsBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    toggleFullscreen();
+  });
+}
+
+document.addEventListener('fullscreenchange', updateFullscreenUI);
+document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
+document.addEventListener('mozfullscreenchange', updateFullscreenUI);
+document.addEventListener('MSFullscreenChange', updateFullscreenUI);
 
 // ─── Mobile Segment Tabs (Now vs Lineup) ─────────────────────────────
 document.querySelectorAll('.regie-mobile-tab-btn').forEach(btn => {

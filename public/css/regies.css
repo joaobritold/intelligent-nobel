@@ -238,6 +238,44 @@
   line-height: 1.1;
 }
 
+/* Fullscreen Toggle Action Button */
+.regie-fs-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
+  color: var(--text-primary, #fff);
+  padding: 6px 10px;
+  font-size: 1.15rem;
+  line-height: 1;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  flex-shrink: 0;
+  min-width: 38px;
+  min-height: 38px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.regie-fs-btn:hover {
+  background: rgba(108, 92, 231, 0.25);
+  border-color: #6c5ce7;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.regie-fs-btn:active {
+  transform: translateY(0);
+}
+
+.regie-fs-btn.active {
+  background: rgba(0, 184, 148, 0.2);
+  border-color: #00b894;
+  color: #55efc4;
+}
+
 /* ─── Massive Flashing Full-Screen Incoming Call Alert ──────────────── */
 .regie-incoming-alert {
   display: none;
@@ -1082,6 +1120,14 @@
   .regie-header-right {
     width: 100%;
     justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+  }
+  .regie-fs-btn {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 4px 6px;
+    font-size: 1.05rem;
   }
   .regie-incoming-inner {
     padding: 10px 4px;

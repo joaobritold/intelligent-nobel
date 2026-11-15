@@ -27,7 +27,7 @@ class UniversalSyncClient {
     }
 
     this.room = initialRoom;
-    this.cleanRoom = this.room.replace(/[^A-Z0-9_-]/g, '') || 'PALCO1';
+    this.cleanRoom = this.room.trim().replace(/\s+/g, '-').replace(/[^A-Z0-9_-]/g, '') || 'PALCO1';
     try {
       localStorage.setItem('stagetimer_device_room', this.cleanRoom);
       localStorage.setItem('stagetimer_last_room', this.cleanRoom);
@@ -167,6 +167,7 @@ class UniversalSyncClient {
 
   _getDeviceOS() {
     const ua = (typeof navigator !== 'undefined' ? navigator.userAgent : '') || '';
+    if (/Watch|AppleWatch|Apple-Watch|watchOS/i.test(ua)) return 'Apple Watch';
     if (/iPhone/i.test(ua)) return 'iPhone';
     if (/iPad/i.test(ua)) return 'iPad';
     if (/Android/i.test(ua)) return 'Android';
@@ -179,6 +180,7 @@ class UniversalSyncClient {
   _getCurrentViewKey() {
     const path = typeof location !== 'undefined' ? location.pathname.toLowerCase() : '';
     if (path.includes('master')) return 'master';
+    if (path.includes('watch')) return 'watch';
     if (path.includes('lineup')) return 'lineup';
     if (path.includes('regies')) return 'regies';
     if (path.includes('operator')) return 'operator';
@@ -189,6 +191,7 @@ class UniversalSyncClient {
     if (path.includes('index') || path === '' || path === '/') return 'index';
 
     if (this.role === 'master') return 'master';
+    if (this.role === 'watch') return 'watch';
     if (this.role === 'operator') return 'operator';
     if (this.role === 'regies') return 'regies';
     if (this.role === 'dc') return 'dc';
@@ -203,6 +206,7 @@ class UniversalSyncClient {
     const viewKey = this._getCurrentViewKey();
     let roleLabel = 'Ecrã';
     if (viewKey === 'master') roleLabel = 'Painel Master';
+    else if (viewKey === 'watch') roleLabel = '⌚ Apple Watch';
     else if (viewKey === 'controller') roleLabel = 'Configurador';
     else if (viewKey === 'operator') roleLabel = 'Operador Mobile';
     else if (viewKey === 'lineup') roleLabel = 'Modo Lista';

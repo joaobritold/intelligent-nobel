@@ -50,53 +50,42 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Apple Watch</title>
-  <link rel="stylesheet" href="css/common.css?v=125">
-  <link rel="stylesheet" href="css/watch.css?v=125">
+  <link rel="stylesheet" href="css/common.css?v=126">
+  <link rel="stylesheet" href="css/watch.css?v=126">
 </head>
 <body>
-  <!-- Container principal otimizado para preencher 100% do ecrã do Apple Watch -->
-  <div id="watch-container" class="watch-container mode-timer">
-    <!-- Barra Superior (Status, Palco, Mini-Relógio) -->
+  <!-- Ecrã Único Direto (Sem Modos Alternados) -->
+  <div id="watch-container" class="watch-container">
+    <!-- Barra Superior: Estado, Nome do Palco & Hora Real -->
     <div class="watch-top">
       <div class="watch-top-left">
-        <div id="watch-status-dot" class="watch-status-dot" title="Estado de Conexão"></div>
-        <span id="watch-stage-badge" class="watch-stage-badge" title="Tocar para alternar palco">PALCO</span>
+        <div id="watch-status-dot" class="watch-status-dot disconnected" title="Estado de Ligação"></div>
+        <span id="watch-stage-badge" class="watch-stage-badge">A carregar...</span>
       </div>
       <div id="watch-mini-clock" class="watch-mini-clock">--:--</div>
     </div>
 
-    <!-- Ecrã Central (Números Gigantes preenchendo a tela toda) -->
+    <!-- Centro: Dígitos Gigantes de Palco & Artista Atual -->
     <div id="watch-center" class="watch-center">
       <div id="watch-digits" class="watch-digits clock">--:--</div>
-      <div id="watch-secondary" class="watch-secondary"></div>
-      <div id="watch-info" class="watch-info">A carregar...</div>
+      <div id="watch-info" class="watch-info">A sincronizar...</div>
     </div>
 
-    <!-- Barra Inferior (Fim Previsto do Evento & Indicador de Modo) -->
+    <!-- Barra Inferior: Fim Previsto do Evento -->
     <div class="watch-bottom">
       <div id="watch-event-end" class="watch-event-end" title="Fim Previsto do Evento">
         <span id="watch-event-end-val">🏁 Fim: --:--</span>
       </div>
-      <span id="watch-mode-pill" class="watch-mode-pill">Timer</span>
     </div>
-
-    <!-- Toast de Feedback Rápido ao Tocar no Ecrã -->
-    <div id="watch-mode-toast" class="watch-mode-toast">⏱️ Modo Timer</div>
   </div>
 
-  <!-- Overlay de Mensagem Flash / Urgente da Régie -->
+  <!-- Overlay de Alerta / Mensagem Flash da Régie -->
   <div id="watch-message-overlay">
     <div id="watch-msg-badge" class="watch-msg-badge">AVISO</div>
     <div id="watch-msg-text" class="watch-msg-text">MENSAGEM DE PALCO</div>
   </div>
 
-  <!-- Banner informativo se aberto em PC ou Tablet -->
-  <div id="watch-desktop-banner">
-    ⌚ <strong>Ecrã Apple Watch</strong> | Para abrir no relógio: envia o link por iMessage ou cria um atalho na app <em>Atalhos (Shortcuts)</em> do iPhone.
-    &nbsp;<a href="index.html">← Voltar ao Início</a>
-  </div>
-
-  <script src="js/local-sync.js?v=125"></script>
-  <script src="js/watch.js?v=125"></script>
+  <script src="js/local-sync.js?v=126"></script>
+  <script src="js/watch.js?v=126"></script>
 </body>
 </html>
