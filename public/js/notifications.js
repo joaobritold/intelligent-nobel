@@ -720,6 +720,15 @@
       }
     },
 
+    claimLeadership(room) {
+      const cleanRoom = String(room || 'PALCO1').toUpperCase().trim();
+      const roomKey = `stagetimer_tg_leader_${cleanRoom}`;
+      const myId = this._getMyClientId();
+      try {
+        localStorage.setItem(roomKey, JSON.stringify({ id: myId, ts: Date.now(), role: this._role }));
+      } catch (_) {}
+    },
+
     _isTelegramLeader(room) {
       const cleanRoom = String(room || 'PALCO1').toUpperCase().trim();
       const roomKey = `stagetimer_tg_leader_${cleanRoom}`;

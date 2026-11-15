@@ -3296,6 +3296,19 @@ class UniversalSyncClient {
     return { from: 'S.Manager', senderRole: viewKey };
   }
 
+  _dispatchImmediateTelegramEvent() {
+    if (typeof window !== 'undefined' && window.StageTimerNotifications && this._state) {
+      try {
+        if (typeof window.StageTimerNotifications.claimLeadership === 'function') {
+          window.StageTimerNotifications.claimLeadership(this.cleanRoom);
+        }
+        if (typeof window.StageTimerNotifications.checkStateEvents === 'function') {
+          window.StageTimerNotifications.checkStateEvents(this._state);
+        }
+      } catch (_) {}
+    }
+  }
+
   sendMessage(text, visible = true, level = 'info', customFrom = '') {
     const cleanText = String(text || '').trim();
     const isVisible = Boolean(visible && cleanText);
@@ -3312,6 +3325,9 @@ class UniversalSyncClient {
       senderRole: isNewOrChanged ? senderInfo.senderRole : (prevMsg.senderRole || senderInfo.senderRole),
       sentAt: isNewOrChanged ? now : (prevMsg.sentAt || now)
     };
+    if (isNewOrChanged) {
+      this._dispatchImmediateTelegramEvent();
+    }
     this._commitStateChange();
   }
 
@@ -3377,6 +3393,8 @@ class UniversalSyncClient {
     if (this._state.regieHistory.length > 30) {
       this._state.regieHistory = this._state.regieHistory.slice(0, 30);
     }
+
+    this._dispatchImmediateTelegramEvent();
 
     this.sendRoomCommand(this.cleanRoom, {
       action: 'regie_call_new',
@@ -3450,6 +3468,8 @@ class UniversalSyncClient {
     if (this._state.regieHistory.length > 30) {
       this._state.regieHistory = this._state.regieHistory.slice(0, 30);
     }
+
+    this._dispatchImmediateTelegramEvent();
 
     this.sendRoomCommand(this.cleanRoom, {
       action: 'regie_msg_new',
