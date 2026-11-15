@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -54,9 +54,9 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <title>StageTimer â€” Painel Master (Super RÃ©gie)</title>
-  <link rel="stylesheet" href="css/master.css?v=130">
-  <script src="js/auth.js?v=130"></script>
+  <title>StageTimer — Painel Master (Super Régie)</title>
+  <link rel="stylesheet" href="css/master.css?v=131">
+  <script src="js/auth.js?v=131"></script>
 </head>
 <body>
   <div class="master-container">
@@ -65,45 +65,45 @@
     <header class="master-header">
       <div class="master-header-main">
         <div class="master-header-left">
-          <div class="master-crown">ðŸ‘‘</div>
+          <div class="master-crown">👑</div>
           <div>
             <h1 class="master-header-title">
               Painel Master
-              <span class="badge">Super RÃ©gie</span>
+              <span class="badge">Super Régie</span>
               <span class="badge" style="background: rgba(253, 203, 110, 0.18); color: #fdcb6e; border-color: #fdcb6e; font-family: var(--font-mono); font-weight: 700;">v130</span>
             </h1>
             <div class="master-header-sub">
-              GestÃ£o Central de EcrÃ£s e Palcos
+              Gestão Central de Ecrãs e Palcos
             </div>
           </div>
         </div>
 
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 0.95rem;">ðŸŽª</span>
-            <select id="master-event-select" class="master-stage-select" style="min-width: 170px; font-weight: 700; color: #55efc4; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #00b894; border-radius: 8px; padding: 6px 10px; font-size: 0.85rem;" title="ðŸ‘‘ Escolher Palco / SessÃ£o Ativa"></select>
-            <button id="master-top-copy-watch-btn" type="button" class="btn btn-sm btn-master-copy-watch" style="background: rgba(0, 255, 136, 0.2); border: 1.5px solid #00ff88; color: #55efc4; font-weight: 700; padding: 6px 10px; border-radius: 8px;" title="Copiar link do RelÃ³gio (Apple Watch) para o palco ativo">âŒš RelÃ³gio</button>
-            <button id="master-notif-btn" type="button" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border: 1px solid rgba(108, 92, 231, 0.5); color: #c4b5fd; font-weight: 700; padding: 6px 10px; border-radius: 8px;" title="Configurar Alertas Telegram e NotificaÃ§Ãµes no TelemÃ³vel">ðŸ”” Alertas</button>
+            <span style="font-size: 0.95rem;">🎪</span>
+            <select id="master-event-select" class="master-stage-select" style="min-width: 170px; font-weight: 700; color: #55efc4; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #00b894; border-radius: 8px; padding: 6px 10px; font-size: 0.85rem;" title="👑 Escolher Palco / Sessão Ativa"></select>
+            <button id="master-top-copy-watch-btn" type="button" class="btn btn-sm btn-master-copy-watch" style="background: rgba(0, 255, 136, 0.2); border: 1.5px solid #00ff88; color: #55efc4; font-weight: 700; padding: 6px 10px; border-radius: 8px;" title="Copiar link do Relógio (Apple Watch) para o palco ativo">✚ Relógio</button>
+            <button id="master-notif-btn" type="button" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border: 1px solid rgba(108, 92, 231, 0.5); color: #c4b5fd; font-weight: 700; padding: 6px 10px; border-radius: 8px;" title="Configurar Alertas Telegram e Notificações no Telemóvel">🔔 Alertas</button>
           </div>
           <div class="st-compact-nav">
-            <a href="index.html?portal=1" class="st-nav-home-btn master-nav-btn" title="Ir para o InÃ­cio / Escolher Evento">ðŸ  InÃ­cio</a>
+            <a href="index.html?portal=1" class="st-nav-home-btn master-nav-btn" title="Ir para o Início / Escolher Evento">🏠 Início</a>
             <div class="st-nav-dropdown">
-              <button type="button" class="st-nav-trigger">ðŸ§­ EcrÃ£s â–¾</button>
+              <button type="button" class="st-nav-trigger">🧭 Ecrãs ▾</button>
               <div class="st-nav-menu">
-                <div class="st-nav-group-label">NavegaÃ§Ã£o</div>
-                <a href="index.html?portal=1" class="st-nav-item master-nav-btn">ðŸ  Escolher Evento (InÃ­cio)</a>
-                <a href="index.html" class="st-nav-item master-nav-btn">ðŸŽª Menu do Evento</a>
-                <div class="st-nav-group-label" data-suite="concert">Controlo & OperaÃ§Ã£o</div>
-                <a href="controller.html" class="st-nav-item master-nav-btn" data-suite="concert">ðŸŽ›ï¸ Configurador</a>
-                <a href="operator.html" class="st-nav-item master-nav-btn" data-suite="concert">ðŸ“± Modo Operador</a>
+                <div class="st-nav-group-label">Navegação</div>
+                <a href="index.html?portal=1" class="st-nav-item master-nav-btn">🏠 Escolher Evento (Início)</a>
+                <a href="index.html" class="st-nav-item master-nav-btn">🎪 Menu do Evento</a>
+                <div class="st-nav-group-label" data-suite="concert">Controlo & Operação</div>
+                <a href="controller.html" class="st-nav-item master-nav-btn" data-suite="concert">🎛️ Configurador</a>
+                <a href="operator.html" class="st-nav-item master-nav-btn" data-suite="concert">📱 Modo Operador</a>
                 <div class="st-nav-group-label" data-suite="concert">Palco & Equipa</div>
-                <a href="viewer.html" class="st-nav-item master-nav-btn" data-suite="concert">ðŸ“º Modo Palco</a>
-                <a href="watch.html" class="st-nav-item master-nav-btn" data-suite="concert">âŒš Modo Apple Watch</a>
-                <a href="lineup.html" class="st-nav-item master-nav-btn" data-suite="concert">ðŸ“‹ Modo Lista</a>
-                <a href="regies.html" class="st-nav-item master-nav-btn" data-suite="concert">ðŸ“Ÿ Modo RÃ©gies</a>
-                <div class="st-nav-group-label" data-suite="theatre" style="display: none;">Teatro & Artes CÃ©nicas</div>
-                <a href="dc.html" class="st-nav-item master-nav-btn" data-suite="theatre" style="display: none;">ðŸŽ­ Modo Jess (DC)</a>
-                <a href="cue-station.html" class="st-nav-item master-nav-btn" data-suite="theatre" style="display: none;">ðŸš¦ Posto TÃ©cnico (Cue)</a>
+                <a href="viewer.html" class="st-nav-item master-nav-btn" data-suite="concert">📺 Modo Palco</a>
+                <a href="watch.html" class="st-nav-item master-nav-btn" data-suite="concert">✚ Modo Apple Watch</a>
+                <a href="lineup.html" class="st-nav-item master-nav-btn" data-suite="concert">📋 Modo Lista</a>
+                <a href="regies.html" class="st-nav-item master-nav-btn" data-suite="concert">📟 Modo Régies</a>
+                <div class="st-nav-group-label" data-suite="theatre" style="display: none;">Teatro & Artes Cénicas</div>
+                <a href="dc.html" class="st-nav-item master-nav-btn" data-suite="theatre" style="display: none;">🎭 Modo Jess (DC)</a>
+                <a href="cue-station.html" class="st-nav-item master-nav-btn" data-suite="theatre" style="display: none;">🚦 Posto Técnico (Cue)</a>
               </div>
             </div>
           </div>
@@ -115,7 +115,7 @@
     <!-- Top KPI Metrics -->
     <div class="master-kpi-grid">
       <div class="master-kpi-card">
-        <div class="master-kpi-icon">ðŸ“±</div>
+        <div class="master-kpi-icon">📱</div>
         <div>
           <div id="kpi-devices-count" class="master-kpi-value">0</div>
           <div class="master-kpi-label">Dispositivos Online</div>
@@ -123,77 +123,77 @@
       </div>
 
       <div class="master-kpi-card">
-        <div class="master-kpi-icon">ðŸŽª</div>
+        <div class="master-kpi-icon">🎪</div>
         <div>
           <div id="kpi-events-count" class="master-kpi-value">0</div>
-          <div class="master-kpi-label">Palcos / SessÃµes</div>
+          <div class="master-kpi-label">Palcos / Sessões</div>
         </div>
       </div>
 
       <div class="master-kpi-card">
-        <div class="master-kpi-icon">â±ï¸</div>
+        <div class="master-kpi-icon">⏱️</div>
         <div>
           <div id="kpi-running-count" class="master-kpi-value">0</div>
-          <div class="master-kpi-label">Palcos em ExecuÃ§Ã£o</div>
+          <div class="master-kpi-label">Palcos em Execução</div>
         </div>
       </div>
 
       <div class="master-kpi-card">
-        <div class="master-kpi-icon">â˜ï¸</div>
+        <div class="master-kpi-icon">☁️</div>
         <div>
           <div id="kpi-cloud-status" class="master-kpi-value" style="font-size: 1.1rem; color: #55efc4;">Conectando...</div>
-          <div class="master-kpi-label">SincronizaÃ§Ã£o Cloud</div>
+          <div class="master-kpi-label">Sincronização Cloud</div>
         </div>
       </div>
     </div>
 
     <!-- Mobile Segmented Tab Control (Sticky) -->
-    <nav class="master-tab-bar" id="master-tab-bar" aria-label="NavegaÃ§Ã£o de SecÃ§Ãµes">
+    <nav class="master-tab-bar" id="master-tab-bar" aria-label="Navegação de Secções">
       <button type="button" class="master-tab-item active" data-target="section-devices">
-        <span class="master-tab-icon">ðŸ“±</span>
+        <span class="master-tab-icon">📱</span>
         <span class="master-tab-text">Dispositivos</span>
         <span id="tab-devices-badge" class="master-tab-badge">0</span>
       </button>
       <button type="button" class="master-tab-item" data-target="section-events">
-        <span class="master-tab-icon">ðŸŽª</span>
+        <span class="master-tab-icon">🎪</span>
         <span class="master-tab-text">Palcos</span>
         <span id="tab-events-badge" class="master-tab-badge">0</span>
       </button>
       <button type="button" class="master-tab-item" data-target="section-multiview">
-        <span class="master-tab-icon">â±ï¸</span>
+        <span class="master-tab-icon">⏱️</span>
         <span class="master-tab-text">Multiview</span>
         <span id="tab-running-badge" class="master-tab-badge">0</span>
       </button>
     </nav>
 
-    <!-- Section 1: Dispositivos Online & Controlo Remoto de EcrÃ£s -->
+    <!-- Section 1: Dispositivos Online & Controlo Remoto de Ecrãs -->
     <section id="section-devices" class="master-section">
       <div class="master-section-header">
         <div>
           <h2 class="master-section-title">
-            <span>ðŸ“± Dispositivos Online & Controlo Remoto</span>
+            <span>📱 Dispositivos Online & Controlo Remoto</span>
           </h2>
           <div class="master-section-sub">
-            Todos os telemÃ³veis, computadores e telÃµes conectados em tempo real. Mude a vista ou o palco de qualquer ecrÃ£ com 1 clique.
+            Todos os telemóveis, computadores e telões conectados em tempo real. Mude a vista ou o palco de qualquer ecrã com 1 clique.
           </div>
         </div>
 
         <!-- Global Broadcast Actions -->
         <div class="master-broadcast-actions">
           <button id="cmd-all-viewer" type="button" class="btn btn-sm btn-broadcast-action" style="background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4;">
-            ðŸ“º Todos Palco
+            📺 Todos Palco
           </button>
           <button id="cmd-all-lineup" type="button" class="btn btn-sm btn-broadcast-action" style="background: rgba(9, 132, 227, 0.2); border-color: #0984e3; color: #74b9ff;">
-            ðŸ“‹ Todos Lista
+            📋 Todos Lista
           </button>
           <button id="cmd-all-regies" type="button" class="btn btn-sm btn-broadcast-action" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe;">
-            ðŸ“Ÿ Todos RÃ©gies
+            📟 Todos Régies
           </button>
           <button id="cmd-all-reload" type="button" class="btn btn-sm btn-broadcast-action" style="background: rgba(243, 156, 18, 0.15); border-color: #f39c12; color: #fed330;">
-            ðŸ”„ Recarregar Todos
+            🔄 Recarregar Todos
           </button>
           <button id="cmd-clear-offline" type="button" class="btn btn-sm btn-danger btn-broadcast-action" title="Eliminar dispositivos sem sinal">
-            ðŸ—‘ï¸ Limpar Inativos
+            🗑️ Limpar Inativos
           </button>
         </div>
       </div>
@@ -205,12 +205,12 @@
       </div>
     </section>
 
-    <!-- Section 2: GestÃ£o Central de Palcos & Eventos -->
+    <!-- Section 2: Gestão Central de Palcos & Eventos -->
     <section id="section-events" class="master-section">
       <div class="master-section-header">
         <div>
           <h2 class="master-section-title">
-            <span>ðŸŽª GestÃ£o Central de Palcos & Eventos</span>
+            <span>🎪 Gestão Central de Palcos & Eventos</span>
           </h2>
           <div class="master-section-sub">
             Crie novos palcos 100% independentes ou elimine palcos antigos sem erros.
@@ -218,27 +218,27 @@
         </div>
 
         <div class="master-stage-actions">
-          <button id="master-clean-ghosts-btn" type="button" class="btn btn-sm" style="background: rgba(253, 203, 110, 0.18); border-color: #fdcb6e; color: #ffeaa7; font-weight: 700;" title="Eliminar palcos inexistentes da nuvem e forÃ§ar sincronizaÃ§Ã£o">
-            ðŸ‘» Purgar Fantasmas
+          <button id="master-clean-ghosts-btn" type="button" class="btn btn-sm" style="background: rgba(253, 203, 110, 0.18); border-color: #fdcb6e; color: #ffeaa7; font-weight: 700;" title="Eliminar palcos inexistentes da nuvem e forçar sincronização">
+            👻 Purgar Fantasmas
           </button>
           <button id="master-wipe-all-btn" type="button" class="btn btn-sm btn-danger" style="font-weight: 700;">
-            ðŸ§¹ Reset Geral
+            🧹 Reset Geral
           </button>
         </div>
       </div>
 
       <!-- Quick Add Stage / Event Bar -->
       <div class="master-quick-add" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
-        <input id="master-new-stage-input" class="input" placeholder="Nome do novo evento (ex: Festival Rock, PeÃ§a Hamlet, Gala...)" autocomplete="off" style="flex: 2; min-width: 180px;">
+        <input id="master-new-stage-input" class="input" placeholder="Nome do novo evento (ex: Festival Rock, Peça Hamlet, Gala...)" autocomplete="off" style="flex: 2; min-width: 180px;">
         <div style="display: flex; align-items: center; gap: 6px;">
           <label for="master-new-event-type" style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap;">Tipo:</label>
           <select id="master-new-event-type" class="input" style="width: auto; padding: 6px 10px; font-weight: 700; background: rgba(15, 23, 42, 0.95); border: 1.5px solid var(--accent); border-radius: 8px; color: #fff;">
-            <option value="concert">ðŸŽª Concerto</option>
-            <option value="theatre">ðŸŽ­ Teatro</option>
+            <option value="concert">🎪 Concerto</option>
+            <option value="theatre">🎭 Teatro</option>
           </select>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <label for="master-new-stages-count" style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap;">NÂº Palcos:</label>
+          <label for="master-new-stages-count" style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap;">Nº Palcos:</label>
           <select id="master-new-stages-count" class="input" style="width: auto; padding: 6px 10px; font-weight: 700; background: rgba(15, 23, 42, 0.95); border: 1.5px solid var(--accent); border-radius: 8px; color: #fff;">
             <option value="1">1 Palco</option>
             <option value="2">2 Palcos</option>
@@ -251,7 +251,7 @@
           </select>
         </div>
         <button id="master-create-stage-btn" type="button" class="btn btn-primary" style="font-weight: 700; white-space: nowrap;">
-          âœ¨ + Criar Evento
+          ✨ + Criar Evento
         </button>
       </div>
 
@@ -260,15 +260,15 @@
       </div>
     </section>
 
-    <!-- Section 3: Multiview SimultÃ¢neo dos Palcos -->
+    <!-- Section 3: Multiview Simultâneo dos Palcos -->
     <section id="section-multiview" class="master-section">
       <div class="master-section-header">
         <div>
           <h2 class="master-section-title">
-            <span>â±ï¸ Multiview dos Palcos em Tempo Real</span>
+            <span>⏱️ Multiview dos Palcos em Tempo Real</span>
           </h2>
           <div class="master-section-sub">
-            VisÃ£o simultÃ¢nea de todos os palcos a decorrer, artista em palco e hora exata de fim.
+            Visão simultânea de todos os palcos a decorrer, artista em palco e hora exata de fim.
           </div>
         </div>
       </div>
@@ -286,11 +286,11 @@
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 14px;">
           <div>
             <h3 id="master-theatre-reports-title" style="margin: 0; font-size: 1.15rem; color: #ffeaa7; display: flex; align-items: center; gap: 8px;">
-              ðŸ“œ RelatÃ³rios Gravados
+              📜 Relatórios Gravados
             </h3>
-            <span id="master-theatre-reports-sub" style="font-size: 0.75rem; color: var(--text-secondary);">RelatÃ³rios de rÃ©gie arquivados no evento</span>
+            <span id="master-theatre-reports-sub" style="font-size: 0.75rem; color: var(--text-secondary);">Relatórios de régie arquivados no evento</span>
           </div>
-          <button id="master-theatre-reports-close" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border-color: var(--border); color: #fff;">âœ•</button>
+          <button id="master-theatre-reports-close" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border-color: var(--border); color: #fff;">✕</button>
         </div>
         <div id="master-theatre-reports-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 440px; overflow-y: auto;">
           <!-- Dynamically injected -->
@@ -302,7 +302,7 @@
     <div id="master-rename-modal" style="display: none; position: fixed; inset: 0; background: rgba(5, 7, 15, 0.85); backdrop-filter: blur(6px); z-index: 10000; align-items: center; justify-content: center; padding: 16px;">
       <div style="background: #16213e; border: 1.5px solid var(--accent); border-radius: 16px; padding: 24px; max-width: 440px; width: 100%; box-shadow: 0 20px 45px rgba(0,0,0,0.7);">
         <h3 id="master-rename-title" style="margin-top: 0; margin-bottom: 8px; font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 8px;">
-          âœï¸ Renomear
+          ✏️ Renomear
         </h3>
         <p id="master-rename-subtitle" style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.4;">
           Altere o nome e clique em Guardar.
@@ -313,7 +313,7 @@
             Cancelar
           </button>
           <button id="master-rename-save-btn" type="button" class="btn btn-primary" style="font-weight: 700;">
-            ðŸ’¾ Guardar
+            💾 Guardar
           </button>
         </div>
       </div>
@@ -325,49 +325,49 @@
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
           <div>
             <h3 style="margin: 0; font-size: 1.2rem; color: #fff; display: flex; align-items: center; gap: 8px;">
-              ðŸ“¹ VÃ­deo de Palco â€” <span id="mvm-stage-title" style="color: #55efc4;">Palco</span>
+              📹 Vídeo de Palco — <span id="mvm-stage-title" style="color: #55efc4;">Palco</span>
             </h3>
             <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
               <span id="mvm-stage-code" class="badge" style="background: rgba(108, 92, 231, 0.25); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4); font-family: var(--font-mono); font-size: 0.72rem;">PALCO1</span>
-              <span style="font-size: 0.75rem; color: var(--text-secondary);">TransmissÃ£o direta para o Modo Lista</span>
+              <span style="font-size: 0.75rem; color: var(--text-secondary);">Transmissão direta para o Modo Lista</span>
             </div>
           </div>
-          <button id="mvm-modal-close" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border-color: var(--border); color: #fff; font-size: 1.2rem; line-height: 1; padding: 4px 10px;">âœ•</button>
+          <button id="mvm-modal-close" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border-color: var(--border); color: #fff; font-size: 1.2rem; line-height: 1; padding: 4px 10px;">✕</button>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 14px;">
           <!-- Enable Toggle -->
           <label style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.95rem; color: #55efc4; cursor: pointer; background: rgba(85, 239, 196, 0.1); padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(85, 239, 196, 0.3);">
             <input type="checkbox" id="mvm-enable-toggle" style="width: 20px; height: 20px; cursor: pointer; accent-color: #00b894;">
-            <span>Ativar TransmissÃ£o de VÃ­deo neste Palco</span>
+            <span>Ativar Transmissão de Vídeo neste Palco</span>
           </label>
 
           <!-- Source Selection Radios -->
           <div>
-            <label style="font-size: 0.85rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">Escolher Fonte de VÃ­deo:</label>
+            <label style="font-size: 0.85rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">Escolher Fonte de Vídeo:</label>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
               <label class="mvm-source-pill active" id="mvm-pill-vcam" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(108, 92, 231, 0.2); border: 1px solid rgba(108, 92, 231, 0.6); border-radius: 10px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: #fff;">
                 <input type="radio" name="mvm-source-type" value="virtual_cam" checked style="accent-color: var(--accent);">
-                <span>ðŸŽ¥ OBS Virtual Camera</span>
+                <span>🎥 OBS Virtual Camera</span>
               </label>
               <label class="mvm-source-pill" id="mvm-pill-url" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: #cbd5e1;">
                 <input type="radio" name="mvm-source-type" value="url" style="accent-color: var(--accent);">
-                <span>ðŸŒ URL da Stream</span>
+                <span>🌐 URL da Stream</span>
               </label>
             </div>
           </div>
 
           <!-- Section: OBS Virtual Camera -->
           <div id="mvm-section-vcam" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px;">
-            <label for="mvm-vcam-select" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">CÃ¢mara / Dispositivo detetado:</label>
+            <label for="mvm-vcam-select" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">Câmara / Dispositivo detetado:</label>
             <div style="display: flex; gap: 8px;">
               <select id="mvm-vcam-select" style="flex: 1; padding: 8px 10px; border-radius: 8px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 16px;">
                 <option value="">A procurar dispositivos...</option>
               </select>
-              <button type="button" id="mvm-refresh-cams-btn" class="btn btn-sm" style="background: rgba(255, 255, 255, 0.08); border-color: var(--border); color: #fff;" title="Atualizar Lista de CÃ¢maras">ðŸ”„</button>
+              <button type="button" id="mvm-refresh-cams-btn" class="btn btn-sm" style="background: rgba(255, 255, 255, 0.08); border-color: var(--border); color: #fff;" title="Atualizar Lista de Câmaras">🔄</button>
             </div>
             <p style="font-size: 0.74rem; color: #94a3b8; line-height: 1.4; margin: 4px 0 0;">
-              ðŸ’¡ No OBS clique em <strong>"Iniciar CÃ¢mara Virtual"</strong>. O StageTimer capta a Virtual Cam e transmite para os ecrÃ£s de Lineup com latÃªncia ultrabaixa (&lt; 0.2s).
+              💡 No OBS clique em <strong>"Iniciar Câmara Virtual"</strong>. O StageTimer capta a Virtual Cam e transmite para os ecrãs de Lineup com latência ultrabaixa (&lt; 0.2s).
             </p>
           </div>
 
@@ -376,7 +376,7 @@
             <label for="mvm-stream-url" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">URL da Stream (VDO.Ninja / YouTube / HLS):</label>
             <input type="url" id="mvm-stream-url" placeholder="https://vdo.ninja/?view=... ou link YouTube / .m3u8" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 16px;">
             <button type="button" id="mvm-vdo-launch-btn" class="btn btn-sm" style="width: 100%; padding: 10px 12px; background: rgba(0, 184, 148, 0.18); border: 1px solid rgba(85, 239, 196, 0.55); color: #55efc4; font-weight: 800; font-size: 0.85rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-              ðŸš€ Gerar Link &amp; Abrir VDO.Ninja (OBS)
+              🚀 Gerar Link &amp; Abrir VDO.Ninja (OBS)
             </button>
             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
               <span class="badge" style="font-size: 0.68rem; background: rgba(85,239,196,0.15); color: #55efc4; border: 1px solid rgba(85,239,196,0.3);">VDO.Ninja</span>
@@ -384,22 +384,22 @@
               <span class="badge" style="font-size: 0.68rem; background: rgba(108,92,231,0.15); color: #c4b5fd; border: 1px solid rgba(108,92,231,0.3);">HLS (.m3u8)</span>
             </div>
             <p style="font-size: 0.74rem; color: #94a3b8; line-height: 1.4; margin: 2px 0 0;">
-              ðŸ’¡ Clique em <strong>Gerar Link &amp; Abrir VDO.Ninja</strong> para preencher o URL automaticamente e abrir o emissor. No VDO.Ninja escolha a <strong>OBS Virtual Camera</strong> e clique em <strong>START</strong>. Depois basta clicar em <strong>Aplicar no Palco</strong> (pode fechar o Master a seguir).
+              💡 Clique em <strong>Gerar Link &amp; Abrir VDO.Ninja</strong> para preencher o URL automaticamente e abrir o emissor. No VDO.Ninja escolha a <strong>OBS Virtual Camera</strong> e clique em <strong>START</strong>. Depois basta clicar em <strong>Aplicar no Palco</strong> (pode fechar o Master a seguir).
             </p>
           </div>
 
           <!-- Live Preview Screen inside Master -->
           <div style="margin-top: 4px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1;">ðŸ“º PrÃ©-visualizaÃ§Ã£o da RÃ©gie:</span>
+              <span style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1;">📺 Pré-visualização da Régie:</span>
               <span id="mvm-preview-status" class="badge" style="font-size: 0.65rem; background: rgba(85, 239, 196, 0.2); color: #55efc4; border: 1px solid rgba(85, 239, 196, 0.4);">Aguardando</span>
             </div>
             <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.12);">
               <video id="mvm-preview-video" playsinline autoplay muted style="width: 100%; height: 100%; object-fit: contain;"></video>
               <iframe id="mvm-preview-iframe" allow="autoplay; fullscreen" style="width: 100%; height: 100%; border: none; display: none;"></iframe>
               <div id="mvm-preview-placeholder" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #090b14; color: #64748b; font-size: 0.8rem; gap: 6px; text-align: center; padding: 10px;">
-                <span style="font-size: 1.6rem;">ðŸ“¹</span>
-                <span>Selecione a Virtual Cam ou insira o URL para prÃ©-visualizar</span>
+                <span style="font-size: 1.6rem;">📹</span>
+                <span>Selecione a Virtual Cam ou insira o URL para pré-visualizar</span>
               </div>
             </div>
           </div>
@@ -407,10 +407,10 @@
           <!-- Actions -->
           <div style="display: flex; gap: 10px; margin-top: 8px;">
             <button type="button" id="mvm-save-btn" class="btn btn-primary" style="flex: 2; font-weight: 700; padding: 12px;">
-              ðŸ’¾ Aplicar no Palco
+              💾 Aplicar no Palco
             </button>
             <button type="button" id="mvm-disable-btn" class="btn btn-danger" style="flex: 1; font-weight: 700; padding: 12px;">
-              â¹ï¸ Desativar
+              ⏹️ Desativar
             </button>
             <button type="button" id="mvm-close-btn" class="btn" style="background: rgba(255, 255, 255, 0.08); border-color: var(--border);">
               Fechar
@@ -425,24 +425,24 @@
       <div class="modal" style="max-width: 540px; background: #16162a; border: 1px solid var(--border); border-radius: 14px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.7); max-height: 90vh; overflow-y: auto;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
           <div>
-            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 4px;">ðŸ”” NotificaÃ§Ãµes & Alertas no TelemÃ³vel</h3>
-            <p style="font-size: 0.8rem; color: var(--text-muted);">Configure alertas nativos e envio automÃ¡tico para grupos de Telegram por evento e palco.</p>
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 4px;">🔔 Notificações & Alertas no Telemóvel</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Configure alertas nativos e envio automático para grupos de Telegram por evento e palco.</p>
           </div>
-          <button id="master-notif-close-top" type="button" class="btn btn-sm" style="background: transparent; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">âœ•</button>
+          <button id="master-notif-close-top" type="button" class="btn btn-sm" style="background: transparent; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
         </div>
 
         <!-- Selector do Palco / Evento a Configurar -->
         <div style="background: rgba(108, 92, 231, 0.12); border: 1px solid rgba(108, 92, 231, 0.4); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
             <label for="master-notif-stage-select" style="font-size: 0.82rem; font-weight: 700; color: #a29bfe; display: flex; align-items: center; gap: 6px;">
-              <span>ðŸŽ¯</span> Palco / Evento Selecionado:
+              <span>🎯</span> Palco / Evento Selecionado:
             </label>
             <span id="master-notif-stage-badge" class="badge" style="background: rgba(85, 239, 196, 0.18); color: #55efc4; font-size: 0.72rem; font-family: var(--font-mono); font-weight: 700;">
               PALCO1
             </span>
           </div>
           <select id="master-notif-stage-select" class="input" style="width: 100%; font-weight: 600; font-size: 0.88rem; background: #131422; color: #fff; border-color: rgba(108, 92, 231, 0.5); cursor: pointer; padding: 8px 10px;">
-            <!-- OpÃ§Ãµes inseridas dinamicamente -->
+            <!-- Opções inseridas dinamicamente -->
           </select>
           <div style="margin-top: 8px; font-size: 0.78rem; color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
             <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
@@ -452,19 +452,19 @@
           </div>
         </div>
 
-        <!-- Section 1: NotificaÃ§Ãµes no TelemÃ³vel (Web / PWA) -->
+        <!-- Section 1: Notificações no Telemóvel (Web / PWA) -->
         <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
             <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
-              <span>ðŸ“±</span> NotificaÃ§Ãµes Neste TelemÃ³vel / PC
+              <span>📱</span> Notificações Neste Telemóvel / PC
             </div>
             <span id="master-browser-status" class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-secondary); font-size: 0.72rem;">Verificando...</span>
           </div>
           <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
-            Receba banners com vibraÃ§Ã£o neste dispositivo quando houver deixas Cues, aviso de 5m/1m ou mensagens urgentes de palco.
+            Receba banners com vibração neste dispositivo quando houver deixas Cues, aviso de 5m/1m ou mensagens urgentes de palco.
           </p>
           <button id="master-btn-enable-browser-notif" type="button" class="btn btn-sm" style="background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4; font-weight: 600;">
-            ðŸ”” Ativar NotificaÃ§Ãµes Neste Dispositivo
+            🔔 Ativar Notificações Neste Dispositivo
           </button>
         </div>
 
@@ -472,7 +472,7 @@
         <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
             <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
-              <span>âœˆï¸</span> Canal / Grupo de Telegram
+              <span>✈️</span> Canal / Grupo de Telegram
             </div>
             <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 8px;">
               <input type="checkbox" id="master-tg-enabled" style="cursor: pointer; width: 18px; height: 18px;">
@@ -480,7 +480,7 @@
             </label>
           </div>
           <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
-            Envia alertas em tempo real para o grupo tÃ©cnico. Crie o bot no <a href="https://t.me/BotFather" target="_blank" style="color: #74b9ff; text-decoration: underline;">@BotFather</a>.
+            Envia alertas em tempo real para o grupo técnico. Crie o bot no <a href="https://t.me/BotFather" target="_blank" style="color: #74b9ff; text-decoration: underline;">@BotFather</a>.
           </p>
 
           <div style="margin-bottom: 10px;">
@@ -494,35 +494,35 @@
           </div>
 
           <div style="margin-bottom: 12px;">
-            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px;">Alertas AutomÃ¡ticos a Enviar:</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px;">Alertas Automáticos a Enviar:</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.82rem; color: #ddd;">
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="master-tg-alert-5m" checked> â³ Faltam 5 Minutos
+                <input type="checkbox" id="master-tg-alert-5m" checked> ⏳ Faltam 5 Minutos
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="master-tg-alert-1m" checked> âš ï¸ Falta 1 Minuto
+                <input type="checkbox" id="master-tg-alert-1m" checked> ⚠️ Falta 1 Minuto
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="master-tg-alert-end" checked> ðŸ›‘ Fim / Overtime
+                <input type="checkbox" id="master-tg-alert-end" checked> 🛑 Fim / Overtime
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="master-tg-alert-regie-call" checked> ðŸ“ž Chamadas de RÃ©gie
+                <input type="checkbox" id="master-tg-alert-regie-call" checked> 📞 Chamadas de Régie
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; grid-column: span 2;">
-                <input type="checkbox" id="master-tg-alert-regie-msg" checked> ðŸ“Ÿ ComunicaÃ§Ãµes RÃ©gies & TÃ©cnicos
+                <input type="checkbox" id="master-tg-alert-regie-msg" checked> 📟 Comunicações Régies & Técnicos
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; grid-column: span 2;">
-                <input type="checkbox" id="master-tg-alert-urgent" checked> ðŸš¨ Mensagens de Palco (Prompter)
+                <input type="checkbox" id="master-tg-alert-urgent" checked> 🚨 Mensagens de Palco (Prompter)
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; grid-column: span 2; opacity: 0.65;">
-                <input type="checkbox" id="master-tg-alert-cues"> ðŸš¦ Deixas CÃªnicas (Cues DC)
+                <input type="checkbox" id="master-tg-alert-cues"> 🚦 Deixas Cênicas (Cues DC)
               </label>
             </div>
           </div>
 
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
             <button id="master-tg-btn-test" type="button" class="btn btn-sm" style="background: rgba(9, 132, 227, 0.2); border-color: #0984e3; color: #74b9ff; font-weight: 600;">
-              ðŸ§ª Testar Envio Telegram
+              🧪 Testar Envio Telegram
             </button>
             <span id="master-tg-feedback" style="font-size: 0.78rem; font-weight: 600;"></span>
           </div>
@@ -530,7 +530,7 @@
 
         <div style="display: flex; justify-content: flex-end; gap: 8px;">
           <button id="master-notif-close-btn" type="button" class="btn">Fechar</button>
-          <button id="master-notif-save-btn" type="button" class="btn btn-primary">ðŸ’¾ Guardar ConfiguraÃ§Ãµes</button>
+          <button id="master-notif-save-btn" type="button" class="btn btn-primary">💾 Guardar Configurações</button>
         </div>
       </div>
     </div>
@@ -540,7 +540,7 @@
       <div style="background: #141d2b; border: 1.5px solid #00ff88; border-radius: 18px; padding: 24px; max-width: 520px; width: 100%; box-shadow: 0 20px 50px rgba(0, 255, 136, 0.25); position: relative;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.8rem;">âŒš</span>
+            <span style="font-size: 1.8rem;">✚</span>
             <div>
               <h3 id="master-watch-modal-title" style="margin: 0; font-size: 1.15rem; color: #55efc4; font-weight: 800;">
                 Link do Apple Watch
@@ -548,20 +548,20 @@
               <span id="master-watch-modal-sub" style="font-size: 0.78rem; color: var(--text-secondary);">Palco selecionado</span>
             </div>
           </div>
-          <button id="master-watch-modal-close" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border-color: var(--border); color: #fff; width: 32px; height: 32px; padding: 0; border-radius: 50%; font-size: 0.9rem;" title="Fechar">âœ•</button>
+          <button id="master-watch-modal-close" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border-color: var(--border); color: #fff; width: 32px; height: 32px; padding: 0; border-radius: 50%; font-size: 0.9rem;" title="Fechar">✕</button>
         </div>
 
         <div style="background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-          <span style="font-size: 0.82rem; color: #55efc4; font-weight: 700;">âœ… Link copiado para a Ã¡rea de transferÃªncia!</span>
+          <span style="font-size: 0.82rem; color: #55efc4; font-weight: 700;">✅ Link copiado para a área de transferência!</span>
           <span class="badge" style="background: rgba(0, 255, 136, 0.2); color: #55efc4; border: 1px solid #00ff88; font-size: 0.7rem; font-weight: 800;">PRONTO</span>
         </div>
 
         <div style="margin-bottom: 16px;">
-          <label style="display: block; font-size: 0.76rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.05em;">Link Direto do RelÃ³gio:</label>
+          <label style="display: block; font-size: 0.76rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.05em;">Link Direto do Relógio:</label>
           <div style="display: flex; gap: 6px;">
             <input id="master-watch-modal-url" type="text" readonly class="input" style="flex: 1; font-family: var(--font-mono); font-size: 0.82rem; background: rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.15); color: #fff; padding: 8px 12px; border-radius: 8px;" />
             <button id="master-watch-modal-copy-btn" type="button" class="btn btn-primary" style="background: #00b894; border-color: #00ff88; color: #000; font-weight: 800; white-space: nowrap;">
-              ðŸ“‹ Copiar
+              📋 Copiar
             </button>
           </div>
         </div>
@@ -571,16 +571,16 @@
             <img id="master-watch-modal-qr" src="" alt="QR Code" style="width: 100px; height: 100px; display: block;" />
           </div>
           <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;">
-            <strong style="color: #fff; display: block; margin-bottom: 4px;">ðŸ“² Como abrir no Apple Watch:</strong>
-            1. Envie o link por <strong>iMessage</strong> ou <strong>WhatsApp</strong> para si prÃ³prio.<br>
-            2. Abra a mensagem no relÃ³gio e toque no link.<br>
-            3. Ou aponte a cÃ¢mara do iPhone ao QR Code.
+            <strong style="color: #fff; display: block; margin-bottom: 4px;">📲 Como abrir no Apple Watch:</strong>
+            1. Envie o link por <strong>iMessage</strong> ou <strong>WhatsApp</strong> para si próprio.<br>
+            2. Abra a mensagem no relógio e toque no link.<br>
+            3. Ou aponte a câmara do iPhone ao QR Code.
           </div>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
           <a id="master-watch-modal-open-link" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border-color: var(--border); color: #c4b5fd; font-weight: 600;">
-            ðŸš€ Testar no Browser â†—
+            🚀 Testar no Browser ↗
           </a>
           <button id="master-watch-modal-done-btn" type="button" class="btn btn-sm btn-primary" style="font-weight: 700; padding: 6px 18px;">
             OK, Fechar
@@ -601,9 +601,9 @@
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
-  <script src="js/pwa.js?v=130"></script>
-  <script src="js/local-sync.js?v=130"></script>
-  <script src="js/notifications.js?v=130"></script>
-  <script src="js/master.js?v=130"></script>
+  <script src="js/pwa.js?v=131"></script>
+  <script src="js/local-sync.js?v=131"></script>
+  <script src="js/notifications.js?v=131"></script>
+  <script src="js/master.js?v=131"></script>
 </body>
 </html>

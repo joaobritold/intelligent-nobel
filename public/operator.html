@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -54,16 +54,16 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <title>StageTimer â€” Modo Operador (Mobile)</title>
-  <link rel="stylesheet" href="css/common-legacy.css?v=130">
-  <link rel="stylesheet" href="css/operator.css?v=130">
+  <title>StageTimer — Modo Operador (Mobile)</title>
+  <link rel="stylesheet" href="css/common-legacy.css?v=131">
+  <link rel="stylesheet" href="css/operator.css?v=131">
 </head>
 <body>
   <div class="op-app">
     <!-- Header -->
     <header class="op-header">
       <div class="op-room-box" style="flex: 1; min-width: 0; gap: 6px; display: flex; align-items: center;">
-        <span style="font-size: 1rem;">ðŸŽª</span>
+        <span style="font-size: 1rem;">🎪</span>
         <span id="op-stage-badge" role="button" tabindex="0" title="Clique para trocar de evento ou palco" style="font-size: 0.82rem; font-weight: 800; color: #55efc4; background: rgba(0, 184, 148, 0.15); border: 1px solid rgba(0, 184, 148, 0.35); padding: 4px 10px; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; cursor: pointer;">Palco</span>
         <select id="op-event-select" class="master-stage-select" style="display: none;" title="Trocar Palco / Evento"></select>
         <input id="op-room-input" class="input input-mono op-room-input" value="PALCO1" aria-label="Room Code" style="display: none;">
@@ -71,25 +71,25 @@
       </div>
 
       <div style="display: flex; align-items: center; gap: 6px;">
-        <button id="op-notify-toggle-btn" class="btn btn-sm" type="button" title="Ativar NotificaÃ§Ãµes no TelemÃ³vel" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); padding: 5px 8px; font-size: 0.9rem; border-radius: 8px; cursor: pointer;">ðŸ””</button>
+        <button id="op-notify-toggle-btn" class="btn btn-sm" type="button" title="Ativar Notificações no Telemóvel" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); padding: 5px 8px; font-size: 0.9rem; border-radius: 8px; cursor: pointer;">🔔</button>
         <div class="st-compact-nav">
-          <a id="nav-hub" href="index.html?portal=1" class="st-nav-home-btn" title="Voltar ao InÃ­cio / Escolher Evento">ðŸ </a>
+          <a id="nav-hub" href="index.html?portal=1" class="st-nav-home-btn" title="Voltar ao Início / Escolher Evento">🏠</a>
           <div class="st-nav-dropdown">
-            <button type="button" class="st-nav-trigger">ðŸ“± EcrÃ£s â–¾</button>
+            <button type="button" class="st-nav-trigger">📱 Ecrãs ▾</button>
             <div class="st-nav-menu">
-              <div class="st-nav-group-label">NavegaÃ§Ã£o</div>
-              <a href="#" id="nav-notif" class="st-nav-item" onclick="event.preventDefault();document.getElementById('op-notify-toggle-btn').click();">ðŸ”” NotificaÃ§Ãµes</a>
-              <a id="nav-portal" href="index.html?portal=1" class="st-nav-item">ðŸ  Escolher Evento (InÃ­cio)</a>
-              <a id="nav-hub-event" href="index.html" class="st-nav-item">ðŸŽª Menu do Evento</a>
-              <div class="st-nav-group-label">Controlo & OperaÃ§Ã£o</div>
-              <a id="nav-operator" href="operator.html" class="st-nav-item active">ðŸ“± Modo Operador</a>
-              <a id="nav-controller" href="controller.html" class="st-nav-item">ðŸŽ›ï¸ Configurador</a>
+              <div class="st-nav-group-label">Navegação</div>
+              <a href="#" id="nav-notif" class="st-nav-item" onclick="event.preventDefault();document.getElementById('op-notify-toggle-btn').click();">🔔 Notificações</a>
+              <a id="nav-portal" href="index.html?portal=1" class="st-nav-item">🏠 Escolher Evento (Início)</a>
+              <a id="nav-hub-event" href="index.html" class="st-nav-item">🎪 Menu do Evento</a>
+              <div class="st-nav-group-label">Controlo & Operação</div>
+              <a id="nav-operator" href="operator.html" class="st-nav-item active">📱 Modo Operador</a>
+              <a id="nav-controller" href="controller.html" class="st-nav-item">🎛️ Configurador</a>
               <div class="st-nav-group-label">Palco & Equipa</div>
-              <a id="nav-viewer" href="viewer.html" class="st-nav-item">ðŸ“º Modo Palco</a>
-              <a id="nav-watch" href="watch.html" class="st-nav-item">âŒš Modo Apple Watch</a>
-              <a id="nav-lineup" href="lineup.html" class="st-nav-item">ðŸ“‹ Modo Lista</a>
-              <a id="nav-regies" href="regies.html" class="st-nav-item">ðŸ“Ÿ Modo RÃ©gies</a>
-              <a id="nav-master" href="master.html" class="st-nav-item st-nav-item-master" style="display: none;">ðŸ‘‘ Super RÃ©gie Master</a>
+              <a id="nav-viewer" href="viewer.html" class="st-nav-item">📺 Modo Palco</a>
+              <a id="nav-watch" href="watch.html" class="st-nav-item">✚ Modo Apple Watch</a>
+              <a id="nav-lineup" href="lineup.html" class="st-nav-item">📋 Modo Lista</a>
+              <a id="nav-regies" href="regies.html" class="st-nav-item">📟 Modo Régies</a>
+              <a id="nav-master" href="master.html" class="st-nav-item st-nav-item-master" style="display: none;">👑 Super Régie Master</a>
             </div>
           </div>
         </div>
@@ -116,7 +116,7 @@
       <div id="op-hero-time" class="op-hero-time">05:00</div>
       <div style="display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;">
         <div id="op-hero-endtime" style="font-size: 0.78rem; color: #cbd5e1; font-family: var(--font-mono); font-weight: 600; background: rgba(255,255,255,0.08); padding: 3px 9px; border-radius: 6px;"></div>
-        <div id="op-event-end-box" style="font-size: 0.85rem; color: #55efc4; font-family: var(--font-mono); font-weight: 800; background: rgba(0, 184, 148, 0.16); border: 1px solid rgba(0, 184, 148, 0.45); padding: 3px 10px; border-radius: 6px;">ðŸ FIM DO EVENTO: <span id="op-event-end">--:--</span></div>
+        <div id="op-event-end-box" style="font-size: 0.85rem; color: #55efc4; font-family: var(--font-mono); font-weight: 800; background: rgba(0, 184, 148, 0.16); border: 1px solid rgba(0, 184, 148, 0.45); padding: 3px 10px; border-radius: 6px;">🏁 FIM DO EVENTO: <span id="op-event-end">--:--</span></div>
       </div>
       <div id="op-hero-notes" style="font-size: 0.8rem; color: #cbd5e1; text-align: center; margin-bottom: 4px;"></div>
       <div id="op-hero-next" style="font-size: 0.72rem; color: #a29bfe; font-weight: 700; letter-spacing: 0.08em;"></div>
@@ -129,20 +129,20 @@
     <section class="op-controls">
       <div class="op-primary-controls">
         <button id="op-btn-toggle" class="btn op-btn-giant op-btn-play">
-          â–¶ INICIAR
+          ▶ INICIAR
         </button>
         <button id="op-btn-reset" class="btn op-btn-giant op-btn-reset">
-          â¹ RESET
+          ⏹ RESET
         </button>
       </div>
 
-      <!-- Passar para trÃ¡s e para a frente -->
+      <!-- Passar para trás e para a frente -->
       <div class="op-step-controls" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
         <button id="op-btn-prev" type="button" class="btn op-btn-giant op-btn-nav" style="padding: 13px 8px; font-size: 0.95rem; font-weight: 700; background: rgba(255, 255, 255, 0.08); border: 1.5px solid rgba(255, 255, 255, 0.18); color: #f1f5f9; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-          â® Anterior
+          ⏮ Anterior
         </button>
         <button id="op-btn-next" type="button" class="btn op-btn-giant op-btn-nav" style="padding: 13px 8px; font-size: 0.95rem; font-weight: 700; background: rgba(255, 255, 255, 0.08); border: 1.5px solid rgba(255, 255, 255, 0.18); color: #f1f5f9; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-          PrÃ³ximo â­
+          Próximo ⏭
         </button>
       </div>
 
@@ -164,81 +164,81 @@
     <!-- Quick Stage Prompter Message -->
     <section class="op-section">
       <div class="op-section-title">
-        <span>ðŸ’¬ Mensagem de Palco</span>
+        <span>💬 Mensagem de Palco</span>
         <span id="op-msg-status" style="color: var(--accent); font-size: 0.7rem;"></span>
       </div>
       <div class="op-msg-row">
         <input id="op-msg-input" class="input op-msg-input" placeholder="Escreva a mensagem...">
-        <button id="op-msg-toggle" class="btn" style="padding: 0 14px; font-weight: 700; white-space: nowrap; min-width: 96px;" title="Mostrar ou ocultar mensagem no ecrÃ£ de palco">ðŸ‘ï¸ Mostrar</button>
+        <button id="op-msg-toggle" class="btn" style="padding: 0 14px; font-weight: 700; white-space: nowrap; min-width: 96px;" title="Mostrar ou ocultar mensagem no ecrã de palco">👁️ Mostrar</button>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-        <button id="op-msg-info" class="btn btn-primary" style="padding: 10px; font-weight: 600; border-radius: 10px;">ðŸ’¬ Informativo</button>
-        <button id="op-msg-urgent" class="btn" style="padding: 10px; font-weight: 600; border-radius: 10px; background: #d63031; border-color: #d63031; color: #fff;">ðŸ”´ Urgente</button>
+        <button id="op-msg-info" class="btn btn-primary" style="padding: 10px; font-weight: 600; border-radius: 10px;">💬 Informativo</button>
+        <button id="op-msg-urgent" class="btn" style="padding: 10px; font-weight: 600; border-radius: 10px; background: #d63031; border-color: #d63031; color: #fff;">🔴 Urgente</button>
       </div>
       <div class="op-presets">
-        <button class="op-preset-chip" data-level="urgent" data-msg="Por favor, conclua!">â³ Concluir!</button>
-        <button class="op-preset-chip" data-level="info" data-msg="Ãšltimos 2 minutos">âš ï¸ 2 Minutos</button>
-        <button class="op-preset-chip" data-level="urgent" data-msg="Tempo Esgotado!">ðŸ›‘ Tempo Esgotado</button>
-        <button class="op-preset-chip" data-level="info" data-msg="Fale mais perto do microfone">ðŸŽ¤ Microfone</button>
+        <button class="op-preset-chip" data-level="urgent" data-msg="Por favor, conclua!">⏳ Concluir!</button>
+        <button class="op-preset-chip" data-level="info" data-msg="Últimos 2 minutos">⚠️ 2 Minutos</button>
+        <button class="op-preset-chip" data-level="urgent" data-msg="Tempo Esgotado!">🛑 Tempo Esgotado</button>
+        <button class="op-preset-chip" data-level="info" data-msg="Fale mais perto do microfone">🎤 Microfone</button>
       </div>
     </section>
 
-    <!-- RÃ©gies Intercom & Technical Messages -->
+    <!-- Régies Intercom & Technical Messages -->
     <section class="op-section" style="border: 1.5px solid rgba(108, 92, 231, 0.45); background: rgba(18, 18, 34, 0.85);">
       <div class="op-section-title">
         <span style="display: flex; align-items: center; gap: 6px;">
-          <span>ðŸ“Ÿ</span>
-          <span>Intercom & RÃ©gies (FOH & Palco)</span>
+          <span>📟</span>
+          <span>Intercom & Régies (FOH & Palco)</span>
         </span>
-        <span id="op-regie-call-status" style="font-size: 0.72rem; font-weight: 700; color: #55efc4;">âœ… Repouso</span>
+        <span id="op-regie-call-status" style="font-size: 0.72rem; font-weight: 700; color: #55efc4;">✅ Repouso</span>
       </div>
 
       <!-- Call Triggers from Stage Manager -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
         <button id="op-call-stage-btn" type="button" class="btn" style="padding: 10px; font-weight: 700; background: rgba(225, 112, 85, 0.2); border: 1px solid #e17055; color: #ff7675;">
-          ðŸš¨ Chamar Palco
+          🚨 Chamar Palco
         </button>
         <button id="op-call-foh-btn" type="button" class="btn" style="padding: 10px; font-weight: 700; background: rgba(225, 112, 85, 0.2); border: 1px solid #e17055; color: #ff7675;">
-          ðŸš¨ Chamar FOH
+          🚨 Chamar FOH
         </button>
       </div>
       <button id="op-call-cancel-btn" type="button" class="btn" style="width: 100%; padding: 8px; font-size: 0.78rem; font-weight: 600; opacity: 0.8; margin-bottom: 14px;">
-        ðŸ”• Cancelar Chamadas Ativas
+        🔕 Cancelar Chamadas Ativas
       </button>
 
       <!-- Technical Message to Regies -->
       <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
         <span style="font-size: 0.75rem; font-weight: 700; color: #a29bfe; text-transform: uppercase; letter-spacing: 0.05em;">
-          Mensagem TÃ©cnica para as RÃ©gies
+          Mensagem Técnica para as Régies
         </span>
         <span id="op-regie-tech-online" style="display: none; font-size: 0.7rem; font-weight: 700; color: #00cec9; background: rgba(0, 206, 201, 0.14); border: 1px solid rgba(0, 206, 201, 0.35); padding: 2px 8px; border-radius: 999px;"></span>
       </div>
       <div class="op-msg-row">
-        <input id="op-regie-msg-input" class="input op-msg-input" placeholder="Escreva aviso para FOH, Palco & TÃ©cnicos...">
-        <button id="op-regie-msg-send" type="button" class="btn btn-primary" style="padding: 0 16px; font-weight: 700; white-space: nowrap;">ðŸ“¢ Enviar</button>
+        <input id="op-regie-msg-input" class="input op-msg-input" placeholder="Escreva aviso para FOH, Palco & Técnicos...">
+        <button id="op-regie-msg-send" type="button" class="btn btn-primary" style="padding: 0 16px; font-weight: 700; white-space: nowrap;">📢 Enviar</button>
       </div>
 
       <!-- Quick Presets for Regies -->
       <div class="op-presets" style="margin-bottom: 10px;">
-        <button type="button" class="op-preset-chip op-regie-chip" data-msg="Vai haver Encore!">ðŸŽµ Vai haver Encore</button>
-        <button type="button" class="op-preset-chip op-regie-chip" data-msg="Atraso de 5 min na entrada">â³ Atraso 5 min</button>
-        <button type="button" class="op-preset-chip op-regie-chip" data-msg="Palco a postos para arrancar">ðŸŽª Palco a postos</button>
-        <button type="button" class="op-preset-chip op-regie-chip" data-msg="FOH pronto para inÃ­cio">ðŸŽšï¸ FOH pronto</button>
-        <button type="button" class="op-preset-chip op-regie-chip" data-msg="Verificar microfone / canal">ðŸŽ¤ Verificar micro</button>
-        <button type="button" class="op-preset-chip op-regie-chip" data-msg="AtenÃ§Ã£o Ã  contagem do relÃ³gio">â±ï¸ AtenÃ§Ã£o relÃ³gio</button>
+        <button type="button" class="op-preset-chip op-regie-chip" data-msg="Vai haver Encore!">🎵 Vai haver Encore</button>
+        <button type="button" class="op-preset-chip op-regie-chip" data-msg="Atraso de 5 min na entrada">⏳ Atraso 5 min</button>
+        <button type="button" class="op-preset-chip op-regie-chip" data-msg="Palco a postos para arrancar">🎪 Palco a postos</button>
+        <button type="button" class="op-preset-chip op-regie-chip" data-msg="FOH pronto para início">🎚️ FOH pronto</button>
+        <button type="button" class="op-preset-chip op-regie-chip" data-msg="Verificar microfone / canal">🎤 Verificar micro</button>
+        <button type="button" class="op-preset-chip op-regie-chip" data-msg="Atenção à contagem do relógio">⏱️ Atenção relógio</button>
       </div>
 
-      <!-- Read Receipts from FOH, Palco & TÃ©cnicos -->
+      <!-- Read Receipts from FOH, Palco & Técnicos -->
       <div id="op-regie-receipt-box" style="display: none; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 10px 14px; margin-top: 6px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <span style="font-size: 0.72rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase;">Estado da Mensagem Ativa</span>
-          <button id="op-regie-msg-clear" type="button" class="btn" style="padding: 2px 8px; font-size: 0.68rem; background: rgba(214, 48, 49, 0.2); color: #ff7675; border: 1px solid rgba(214, 48, 49, 0.4);">ðŸ—‘ï¸ Apagar Mensagem</button>
+          <button id="op-regie-msg-clear" type="button" class="btn" style="padding: 2px 8px; font-size: 0.68rem; background: rgba(214, 48, 49, 0.2); color: #ff7675; border: 1px solid rgba(214, 48, 49, 0.4);">🗑️ Apagar Mensagem</button>
         </div>
         <div id="op-regie-active-text" style="font-size: 0.9rem; font-weight: 700; color: #fff; margin-bottom: 8px;"></div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <span id="op-receipt-foh" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: #cbd5e1;">ðŸŽšï¸ FOH: â³ Pendente</span>
-          <span id="op-receipt-stage" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: #cbd5e1;">ðŸŽ›ï¸ Palco: â³ Pendente</span>
-          <span id="op-receipt-tech" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: #cbd5e1;">ðŸ”§ TÃ©cnico: â³ Pendente</span>
+          <span id="op-receipt-foh" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: #cbd5e1;">🎚️ FOH: ⏳ Pendente</span>
+          <span id="op-receipt-stage" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: #cbd5e1;">🎛️ Palco: ⏳ Pendente</span>
+          <span id="op-receipt-tech" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: #cbd5e1;">🔧 Técnico: ⏳ Pendente</span>
           <span id="op-receipt-tech-list" style="display: contents;"></span>
         </div>
       </div>
@@ -247,17 +247,17 @@
     <!-- Create New Artist / Act -->
     <section class="op-section">
       <div class="op-section-title">
-        <span>ðŸŽ¤ Adicionar Novo Artista / Ato</span>
+        <span>🎤 Adicionar Novo Artista / Ato</span>
       </div>
       <div class="op-msg-row">
         <input id="op-artist-name" class="input op-msg-input" placeholder="Nome do Artista / Banda...">
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-        <input id="op-artist-starttime" class="input input-mono" style="width: 100%; font-size: 16px !important; text-align: center; border-radius: 10px;" placeholder="ðŸ•’ Entrada (23:00)" title="HorÃ¡rio de Entrada">
-        <input id="op-artist-duration" class="input input-mono" style="width: 100%; font-size: 16px !important; text-align: center; border-radius: 10px;" value="30:00" placeholder="â±ï¸ DuraÃ§Ã£o (ex: 60, 1.3)" title="DuraÃ§Ã£o (ex: 60 = 60m, 1.3 = 1h30m, 45, 1:30)">
+        <input id="op-artist-starttime" class="input input-mono" style="width: 100%; font-size: 16px !important; text-align: center; border-radius: 10px;" placeholder="🕒 Entrada (23:00)" title="Horário de Entrada">
+        <input id="op-artist-duration" class="input input-mono" style="width: 100%; font-size: 16px !important; text-align: center; border-radius: 10px;" value="30:00" placeholder="⏱️ Duração (ex: 60, 1.3)" title="Duração (ex: 60 = 60m, 1.3 = 1h30m, 45, 1:30)">
       </div>
       <div class="op-msg-row">
-        <input id="op-artist-notes" class="input op-msg-input" placeholder="ðŸ“ Notas para este artista (opcional)...">
+        <input id="op-artist-notes" class="input op-msg-input" placeholder="📝 Notas para este artista (opcional)...">
       </div>
       <div class="op-presets" style="margin-bottom: 10px;">
         <button type="button" class="op-dur-chip" data-min="5">5m</button>
@@ -268,20 +268,20 @@
         <button type="button" class="op-dur-chip" data-min="90">1h30</button>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-        <button id="op-add-artist-btn" class="btn btn-primary" style="padding: 12px; font-weight: 600; border-radius: 10px;">+ Adicionar Ã  Fila</button>
-        <button id="op-live-artist-btn" class="btn btn-success" style="padding: 12px; font-weight: 600; border-radius: 10px;">ðŸ”´ Criar e PÃ´r no Ar</button>
+        <button id="op-add-artist-btn" class="btn btn-primary" style="padding: 12px; font-weight: 600; border-radius: 10px;">+ Adicionar à Fila</button>
+        <button id="op-live-artist-btn" class="btn btn-success" style="padding: 12px; font-weight: 600; border-radius: 10px;">🔴 Criar e Pôr no Ar</button>
       </div>
     </section>
 
     <!-- Timer Queue List -->
     <section class="op-section" style="margin-bottom: 24px;">
       <div class="op-section-title" style="flex-wrap: wrap; gap: 6px;">
-        <span>ðŸ“‹ Lineup / Fila de Artistas</span>
+        <span>📋 Lineup / Fila de Artistas</span>
         <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center;">
           <div id="op-day-tabs" style="display: flex; gap: 3px; align-items: center; flex-wrap: wrap;"></div>
-          <label for="op-import-file" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.7rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff; cursor: pointer;">ðŸ“‚ Ficheiro</label>
+          <label for="op-import-file" class="btn btn-sm" style="padding: 3px 8px; font-size: 0.7rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #fff; cursor: pointer;">📂 Ficheiro</label>
           <input type="file" id="op-import-file" accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.png,.jpg,.jpeg,.webp,.txt" style="display: none;">
-          <button id="op-clear-event" class="btn btn-sm btn-danger" style="padding: 3px 7px; font-size: 0.7rem;" title="Limpar todos os artistas do dia atual">ðŸ§¹ Limpar</button>
+          <button id="op-clear-event" class="btn btn-sm btn-danger" style="padding: 3px 7px; font-size: 0.7rem;" title="Limpar todos os artistas do dia atual">🧹 Limpar</button>
         </div>
       </div>
       <div id="op-queue-list" class="op-queue-list">
@@ -299,18 +299,18 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=130"></script>
+  <script src="js/schedule-importer.js?v=131"></script>
 
   <!-- Access Control -->
-  <script src="js/auth.js?v=130"></script>
+  <script src="js/auth.js?v=131"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=130"></script>
-  <script src="js/local-sync.js?v=130"></script>
-  <script src="js/notifications.js?v=130"></script>
-  <script src="js/operator.js?v=130"></script>
+  <script src="js/pwa.js?v=131"></script>
+  <script src="js/local-sync.js?v=131"></script>
+  <script src="js/notifications.js?v=131"></script>
+  <script src="js/operator.js?v=131"></script>
   <script>
-    // Screen Wake Lock API â€” Keep Operator Screen Always On
+    // Screen Wake Lock API — Keep Operator Screen Always On
     (function() {
       let wakeLockSentinel = null;
       async function requestOperatorWakeLock() {

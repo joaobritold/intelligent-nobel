@@ -65,7 +65,46 @@
   let state = null;
   let lastMessageId = '';
 
+  function adoptRoomAndState(targetRoom, incomingData) {
+    const cleanTarget = String(targetRoom || '').toUpperCase().trim();
+    if (!cleanTarget) return;
+    if (cleanTarget !== roomId) {
+      roomId = cleanTarget;
+      client.room = cleanTarget;
+      client.cleanRoom = cleanTarget;
+      client.storageKey = `stagetimer_v10_state_${cleanTarget}`;
+      client.mqttTopicState = `stagetimer_v10/${cleanTarget}/state`;
+      client.mqttTopicPresence = `stagetimer_v10/${cleanTarget}/presence`;
+      try {
+        localStorage.setItem('stagetimer_device_room', cleanTarget);
+        localStorage.setItem('stagetimer_last_room', cleanTarget);
+        sessionStorage.setItem('stagetimer_active_room', cleanTarget);
+        const u = new URL(window.location.href);
+        if (u.searchParams.get('room') !== cleanTarget) {
+          u.searchParams.set('room', cleanTarget);
+          history.replaceState(null, '', u.toString());
+        }
+      } catch (_) {}
+      if (client.mqttClient && client.mqttClient.connected) {
+        try {
+          client.mqttClient.subscribe([client.mqttTopicState, client.mqttTopicPresence], { qos: 0 });
+          client.announcePresenceNow();
+        } catch (_) {}
+      }
+    }
+    if (incomingData && Array.isArray(incomingData.timers)) {
+      client._applyIncomingState(incomingData, true);
+    }
+  }
+
   client.on('connected', () => {
+    if ($statusDot && client.mqttClient && client.mqttClient.connected) {
+      $statusDot.classList.remove('disconnected');
+    }
+    updateStageBadge();
+  });
+
+  client.on('p2p-ready', () => {
     if ($statusDot) $statusDot.classList.remove('disconnected');
     updateStageBadge();
   });
@@ -79,10 +118,50 @@
     if (state?.id && state.id !== roomId) {
       roomId = state.id;
     }
+    if ($statusDot && client.mqttClient && client.mqttClient.connected) {
+      $statusDot.classList.remove('disconnected');
+    }
     updateStageBadge();
     handleMessageAlert();
     updateEventEnd();
     render();
+  });
+
+  // Listen to multi-room broadcasts so sub-stages (e.g. RC-VIANA-26-P1) or active stages sync immediately
+  client.on('multi-room-state', ({ room, data }) => {
+    if (!room || !data || !Array.isArray(data.timers)) return;
+    const incomingRoom = String(room).toUpperCase().trim();
+    const cleanCurrent = roomId.replace(/[^A-Z0-9]/g, '');
+    const cleanIncoming = incomingRoom.replace(/[^A-Z0-9]/g, '');
+
+    if (incomingRoom === roomId || cleanIncoming === cleanCurrent) {
+      adoptRoomAndState(incomingRoom, data);
+      return;
+    }
+
+    const isSubStage = incomingRoom.startsWith(roomId + '-') ||
+      roomId.startsWith(incomingRoom + '-') ||
+      (cleanCurrent.length >= 4 && cleanIncoming.startsWith(cleanCurrent));
+
+    const currentHasTimers = Boolean(state && Array.isArray(state.timers) && state.timers.length > 0);
+    const currentIsRunning = Boolean(state && StageTimerClient.getActiveTimer(state)?.state === 'running');
+    const incomingHasTimers = data.timers.length > 0;
+    const incomingIsRunning = Boolean(
+      StageTimerClient.getActiveTimer(data)?.state === 'running' ||
+      data.timers.some(t => t.state === 'running')
+    );
+
+    if (isSubStage) {
+      if ((!currentIsRunning && incomingIsRunning) || (!currentHasTimers && incomingHasTimers)) {
+        adoptRoomAndState(incomingRoom, data);
+      }
+      return;
+    }
+
+    // Fallback: if current room on Watch is completely empty (0 timers) and another room has a timer actively running
+    if (!currentHasTimers && incomingIsRunning) {
+      adoptRoomAndState(incomingRoom, data);
+    }
   });
 
   // Dynamic Room Resolution when Cloud Registry arrives
@@ -103,12 +182,8 @@
       if (!hasCurrent && stages[0]?.code) {
         const targetCode = stages[0].code.toUpperCase();
         if (targetCode !== roomId) {
-          try {
-            localStorage.setItem('stagetimer_device_room', targetCode);
-            localStorage.setItem('stagetimer_last_room', targetCode);
-            sessionStorage.setItem('stagetimer_active_room', targetCode);
-          } catch (_) {}
-          window.location.replace(`watch.html?room=${encodeURIComponent(targetCode)}`);
+          adoptRoomAndState(targetCode, null);
+          client.sendDeviceCommand('ALL', { action: 'request_room_state', room: targetCode });
         }
       }
     }

@@ -824,10 +824,23 @@ class UniversalSyncClient {
       return;
     }
 
-    if (msg.action === 'request_room_state' && msg.room === this.cleanRoom) {
-      const isControllerRole = this.role === 'controller' || this.role === 'operator' || this.role === 'master';
-      if (isControllerRole && this._state && Array.isArray(this._state.timers) && this._state.timers.length > 0) {
-        this._commitStateChange(true);
+    if (msg.action === 'request_room_state' && msg.room) {
+      const reqRoom = String(msg.room).toUpperCase().trim();
+      if (reqRoom === this.cleanRoom) {
+        if (this.role !== 'watch' && this._state && Array.isArray(this._state.timers) && this._state.timers.length > 0) {
+          this._commitStateChange(true);
+        }
+      } else if (this.role === 'master' && this.mqttClient && this.mqttClient.connected) {
+        try {
+          const rawSaved = localStorage.getItem(`stagetimer_v10_state_${reqRoom}`);
+          if (rawSaved) {
+            const parsed = JSON.parse(rawSaved);
+            if (parsed && Array.isArray(parsed.timers) && parsed.timers.length > 0) {
+              const payload = JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: parsed });
+              this.mqttClient.publish(`stagetimer_v10/${reqRoom}/state`, payload, { qos: 0, retain: true });
+            }
+          }
+        } catch (e) {}
       }
       return;
     }
@@ -835,7 +848,20 @@ class UniversalSyncClient {
 
   _initCloudSync() {
     if (typeof mqtt === 'undefined') {
-      console.warn('MQTT library not loaded; using local sync only.');
+      if (typeof document !== 'undefined' && !this._mqttScriptLoading) {
+        this._mqttScriptLoading = true;
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/mqtt@5.10.4/dist/mqtt.min.js';
+        s.onload = () => {
+          this._mqttScriptLoading = false;
+          this._initCloudSync();
+        };
+        s.onerror = () => {
+          this._mqttScriptLoading = false;
+          console.warn('MQTT library not loaded; using local sync only.');
+        };
+        document.head.appendChild(s);
+      }
       return;
     }
 
@@ -883,12 +909,14 @@ class UniversalSyncClient {
         'stagetimer_v10/_device_removed'
       ];
 
-      // If in Master mode, also subscribe to all room state & video broadcasts
+      // If in Master or Watch mode, also subscribe to all room state broadcasts
       if (this.role === 'master') {
         topicsToSubscribe.push('stagetimer_v10/+/state');
         topicsToSubscribe.push('stagetimer_v10/+/video');
         topicsToSubscribe.push('stagetimer_v10/+/telegram');
         topicsToSubscribe.push('stagetimer_v10/+/webrtc_signal');
+      } else if (this.role === 'watch') {
+        topicsToSubscribe.push('stagetimer_v10/+/state');
       }
 
       this.mqttClient.subscribe(topicsToSubscribe, { qos: 0 }, (err) => {

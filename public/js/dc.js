@@ -930,7 +930,7 @@ function renderStagePhase() {
       <div class="empty-state" style="padding: 28px 16px; border: 1.5px dashed rgba(255,255,255,0.15); border-radius: 12px; text-align: center; background: rgba(255,255,255,0.02); margin: 6px 0;">
         <div class="empty-state-icon" style="font-size: 2.2rem; margin-bottom: 6px;">\u23F1\uFE0F</div>
         <div class="empty-state-text" style="font-weight: 800; font-size: 1rem; color: #fff; margin-bottom: 4px;">Nenhum artista ou timer no alinhamento</div>
-        <div class="empty-state-sub" style="font-size: 0.8rem; color: var(--dc-muted); margin-bottom: 14px;">Clique em "+ Add Timer" para comeÃ§ar ou carregue um mapa de horÃ¡rios.</div>
+        <div class="empty-state-sub" style="font-size: 0.8rem; color: var(--dc-muted); margin-bottom: 14px;">Clique em "+ Add Timer" para começar ou carregue um mapa de horários.</div>
         <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
           <button id="dc-empty-add-timer-btn" type="button" class="btn btn-primary btn-sm" style="font-weight: 800;">+ Add Timer</button>
           <button id="dc-btn-stage-empty-demo" type="button" class="btn btn-sm" style="color: #ffeaa7; border-color: rgba(253, 203, 110, 0.4);">\u2728 Carregar Exemplo</button>
@@ -989,8 +989,8 @@ function renderStagePhase() {
               ${endTimeStr ? '<span class="op-end-time" data-end-id="' + timer.id + '" style="color:#55efc4; font-weight:700;">\uD83C\uDFC1 Fim: ' + endTimeStr + '</span>' : ''}
             </div>
             <div style="display: flex; gap: 6px; width: 100%; align-items: center;" onclick="event.stopPropagation()">
-              <input class="input" data-time-id="${timer.id}" data-field="startTime" data-timer-id="${timer.id}" value="${escapeHtml(timer.startTime || '')}" placeholder="23:00 \u2013 00:15" style="padding: 6px 8px; font-size: 14px; width: 120px; text-align:center; flex-shrink: 0;" title="HorÃ¡rio de atuaÃ§Ã£o">
-              <div style="display: flex; align-items: center; gap: 2px; flex-shrink: 0; background: rgba(0, 184, 148, 0.12); border: 1px solid rgba(0, 184, 148, 0.35); border-radius: 8px; padding: 2px 6px;" title="Editar tempo da atuaÃ§Ã£o (ex: 45, 1:30, 60m)">
+              <input class="input" data-time-id="${timer.id}" data-field="startTime" data-timer-id="${timer.id}" value="${escapeHtml(timer.startTime || '')}" placeholder="23:00 \u2013 00:15" style="padding: 6px 8px; font-size: 14px; width: 120px; text-align:center; flex-shrink: 0;" title="Horário de atuação">
+              <div style="display: flex; align-items: center; gap: 2px; flex-shrink: 0; background: rgba(0, 184, 148, 0.12); border: 1px solid rgba(0, 184, 148, 0.35); border-radius: 8px; padding: 2px 6px;" title="Editar tempo da atuação (ex: 45, 1:30, 60m)">
                 <span style="font-size: 0.72rem; color: #55efc4; font-weight: 800;">\u23F1\uFE0F</span>
                 <input class="input input-mono op-item-dur" data-dur-id="${timer.id}" data-field="duration" data-timer-id="${timer.id}" value="${formatTime(timer.duration)}" style="background: transparent; border: none; padding: 4px 2px; font-size: 14px; width: 68px; text-align: center; color: #55efc4; font-weight: 800; outline: none;" placeholder="30:00" spellcheck="false">
               </div>
@@ -1453,7 +1453,7 @@ if ($stageNoteInput) {
   });
 }
 
-// â”€â”€â”€ Rundown Event Listeners & Delegation (Estilo Modo Operador) â”€â”€â”€â”€â”€â”€â”€
+// ─── Rundown Event Listeners & Delegation (Estilo Modo Operador) ───────
 if ($stageArtistsList) {
   // Click delegation: fire, set-live, move-up, move-down, delete
   $stageArtistsList.addEventListener('click', (e) => {

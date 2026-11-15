@@ -169,7 +169,8 @@
 
   if ($topCopyWatchBtn) {
     $topCopyWatchBtn.addEventListener('click', () => {
-      const activeCode = $eventSelect?.value || sessionStorage.getItem('stagetimer_active_room') || localStorage.getItem('stagetimer_device_room') || 'PALCO1';
+      const $sel = document.getElementById('master-event-select');
+      const activeCode = $sel?.value || sessionStorage.getItem('stagetimer_active_room') || localStorage.getItem('stagetimer_device_room') || 'PALCO1';
       copyWatchLink(activeCode, activeCode, $topCopyWatchBtn);
     });
   }
