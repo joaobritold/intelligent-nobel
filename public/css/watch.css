@@ -21,24 +21,28 @@
   touch-action: manipulation;
 }
 
-html, body {
-  position: fixed;
-  inset: 0;
+html {
+  width: 100%;
+  height: 100%;
+  background-color: var(--watch-bg) !important;
+}
+
+body {
   width: 100vw;
-  height: 100vh;
-  height: 100dvh;
+  min-height: calc(100vh + 35px);
+  min-height: calc(100dvh + 35px);
   margin: 0;
   padding: 0;
   background-color: var(--watch-bg) !important;
   color: var(--watch-text);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
   cursor: pointer;
 }
 
 #watch-container {
-  position: fixed;
-  inset: 0;
   width: 100vw;
   height: 100vh;
   height: 100dvh;

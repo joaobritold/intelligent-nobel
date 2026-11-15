@@ -420,4 +420,15 @@
     if (document.visibilityState === 'visible') requestWakeLock();
   });
   document.addEventListener('touchstart', requestWakeLock, { passive: true, once: true });
+
+  // ─── Auto-Collapse watchOS Navigation Header (True Fullscreen) ───────
+  function tryCollapseWatchHeader() {
+    try {
+      window.scrollTo({ top: 32, behavior: 'smooth' });
+    } catch (_) {
+      window.scrollTo(0, 32);
+    }
+  }
+  window.addEventListener('load', () => setTimeout(tryCollapseWatchHeader, 350));
+  document.addEventListener('touchstart', () => setTimeout(tryCollapseWatchHeader, 80), { passive: true, once: true });
 })();
