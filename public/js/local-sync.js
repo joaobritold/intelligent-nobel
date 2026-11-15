@@ -34,19 +34,22 @@ class UniversalSyncClient {
       sessionStorage.setItem('stagetimer_active_room', this.cleanRoom);
     } catch (e) {}
 
+    const orgNs = (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_org_namespace') : null) || '';
+    const prefix = orgNs ? `stagetimer_v10/${orgNs}` : 'stagetimer_v10';
+    this.mqttTopicPrefix = prefix;
     this.channelName = `stagetimer_v10_${this.cleanRoom}`;
     this.cmdChannelName = 'stagetimer_v10_cmds';
     this.storageKey = `stagetimer_v10_state_${this.cleanRoom}`;
     this.videoStorageKey = `stagetimer_v10_video_${this.cleanRoom}`;
     this.telegramStorageKey = `stagetimer_v10_telegram_${this.cleanRoom}`;
-    this.mqttTopicState = `stagetimer_v10/${this.cleanRoom}/state`;
-    this.mqttTopicVideo = `stagetimer_v10/${this.cleanRoom}/video`;
-    this.mqttTopicTelegram = `stagetimer_v10/${this.cleanRoom}/telegram`;
-    this.mqttTopicPresence = `stagetimer_v10/${this.cleanRoom}/presence`;
-    this.mqttTopicRegistry = 'stagetimer_v63_events_registry';
-    this.mqttTopicGlobalPresence = 'stagetimer_v10/_global_presence';
-    this.mqttTopicCommands = 'stagetimer_v10/_commands';
-    this.mqttTopicAllCmd = 'stagetimer_v10/_cmd_all';
+    this.mqttTopicState = `${prefix}/${this.cleanRoom}/state`;
+    this.mqttTopicVideo = `${prefix}/${this.cleanRoom}/video`;
+    this.mqttTopicTelegram = `${prefix}/${this.cleanRoom}/telegram`;
+    this.mqttTopicPresence = `${prefix}/${this.cleanRoom}/presence`;
+    this.mqttTopicRegistry = orgNs ? `${prefix}/events_registry` : 'stagetimer_v63_events_registry';
+    this.mqttTopicGlobalPresence = `${prefix}/_global_presence`;
+    this.mqttTopicCommands = `${prefix}/_commands`;
+    this.mqttTopicAllCmd = `${prefix}/_cmd_all`;
     this.registryStorageKey = 'stagetimer_v63_registry';
     this.deletedStorageKey = 'stagetimer_v63_deleted';
 
@@ -114,9 +117,10 @@ class UniversalSyncClient {
       this.deviceUuid = 'dev_' + Math.random().toString(36).substring(2, 9);
     }
 
-    this.mqttTopicDeviceCmd = `stagetimer_v10/_cmd/${this.deviceUuid}`;
-    this.mqttTopicRoomCmd = `stagetimer_v10/_cmd_room/${this.cleanRoom}`;
-    this.mqttTopicAllCmd = 'stagetimer_v10/_cmd_all';
+    const cmdPrefix = this.mqttTopicPrefix || 'stagetimer_v10';
+    this.mqttTopicDeviceCmd = `${cmdPrefix}/_cmd/${this.deviceUuid}`;
+    this.mqttTopicRoomCmd = `${cmdPrefix}/_cmd_room/${this.cleanRoom}`;
+    this.mqttTopicAllCmd = `${cmdPrefix}/_cmd_all`;
 
     this.clientId = 'st_' + Math.random().toString(36).substring(2, 10);
     this.listeners = new Map();
@@ -519,8 +523,80 @@ class UniversalSyncClient {
     this._initCloudSync();
   }
 
+  _sanitizeStateForNetwork(state) {
+    if (!state || typeof state !== 'object') return state;
+    try {
+      const cloned = JSON.parse(JSON.stringify(state));
+      if (cloned.integrations?.telegram) {
+        cloned.integrations.telegram = {
+          ...cloned.integrations.telegram,
+          hasToken: Boolean(cloned.integrations.telegram.botToken),
+          botToken: '' // NEVER broadcast botToken over public network
+        };
+      }
+      return cloned;
+    } catch (_) {
+      return state;
+    }
+  }
+
+  _computeCommandSignature(cmdObj) {
+    if (!cmdObj || typeof cmdObj !== 'object') return '';
+    try {
+      const action = String(cmdObj.action || '');
+      const target = String(cmdObj.targetUuid || 'ALL');
+      const sentAt = String(cmdObj.sentAt || 0);
+      const sender = String(cmdObj.sender || '');
+      const secret = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('stagetimer_auth_token') : null) ||
+                     (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_auth_token') : null) ||
+                     'st_showflow_cmd_sig_v138';
+      const raw = `${action}:${target}:${sentAt}:${sender}:${secret.slice(-16)}`;
+      let hash = 0x811c9dc5;
+      for (let i = 0; i < raw.length; i++) {
+        hash ^= raw.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193);
+      }
+      return ('00000000' + (hash >>> 0).toString(16)).slice(-8);
+    } catch (_) {
+      return '';
+    }
+  }
+
+  _verifyRemoteCommandSignature(msg) {
+    if (!msg || typeof msg !== 'object') return false;
+    // Local BroadcastChannel messages within the same device/browser origin are implicitly trusted
+    if (msg._via === 'local' || msg._via === 'bc') return true;
+
+    const privileged = ['reload', 'delete_device', 'navigate', 'switch_room', 'purge_all_ghosts', 'restart'];
+    if (!privileged.includes(msg.action)) {
+      return true; // Non-destructive actions (like regie acks and messages) pass without signature
+    }
+
+    const sentAt = Number(msg.sentAt) || 0;
+    const now = Date.now();
+    // Reject replay attacks or commands older than 60s
+    if (!sentAt || Math.abs(now - sentAt) > 60000) {
+      console.warn('[ShowFlow Security] Rejeitado comando remoto desfasado (>60s):', msg.action, sentAt);
+      return false;
+    }
+
+    if (!msg.sig) {
+      console.warn('[ShowFlow Security] Rejeitado comando remoto privilegiado sem assinatura:', msg.action);
+      return false;
+    }
+
+    const expectedSig = this._computeCommandSignature(msg);
+    if (msg.sig !== expectedSig) {
+      console.warn('[ShowFlow Security] Rejeitado comando remoto: assinatura inválida:', msg.action);
+      return false;
+    }
+
+    return true;
+  }
+
   _handleRemoteCommand(msg) {
     if (!msg || typeof msg !== 'object') return;
+    if (!this._verifyRemoteCommandSignature(msg)) return;
 
     // Room-wide atomic Régie ACK & Message commands (processed by all devices in the room)
     if (msg.action === 'regie_ack') {
@@ -878,12 +954,33 @@ class UniversalSyncClient {
       return;
     }
 
-    const primaryClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
-      clientId: this.clientId,
-      clean: true,
-      connectTimeout: 5000,
-      reconnectPeriod: 2000
-    });
+    const customBrokerUrl = (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_custom_mqtt_url') : null) || '';
+    const customBrokerUser = (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_custom_mqtt_user') : null) || '';
+    const customBrokerPass = (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_custom_mqtt_pass') : null) || '';
+
+    let primaryClient = null;
+    if (customBrokerUrl) {
+      try {
+        const opts = {
+          clientId: this.clientId,
+          clean: true,
+          connectTimeout: 5000,
+          reconnectPeriod: 2000
+        };
+        if (customBrokerUser) opts.username = customBrokerUser;
+        if (customBrokerPass) opts.password = customBrokerPass;
+        primaryClient = mqtt.connect(customBrokerUrl, opts);
+      } catch (_) {}
+    }
+
+    if (!primaryClient) {
+      primaryClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+        clientId: this.clientId,
+        clean: true,
+        connectTimeout: 5000,
+        reconnectPeriod: 2000
+      });
+    }
 
     // Dual-Broker Port 443 WSS Relay (Apple Watch / watchOS WebSheet & Firewall-Safe Port 443)
     let port443Client = null;
@@ -1003,7 +1100,7 @@ class UniversalSyncClient {
             if (isPort443 && this.role !== 'watch' && this.role !== 'viewer') {
               try {
                 if (this._state && Array.isArray(this._state.timers) && this._state.timers.length > 0 && !this._state.isEmptyDefault) {
-                  const payload = JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: this._state });
+                  const payload = JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: this._sanitizeStateForNetwork(this._state) });
                   clientInst.publish(this.mqttTopicState, payload, { qos: 0, retain: true });
                 }
                 if (this.role === 'master') {
@@ -1020,7 +1117,8 @@ class UniversalSyncClient {
                       if (!raw) return;
                       const parsed = JSON.parse(raw);
                       if (parsed && Array.isArray(parsed.timers) && parsed.timers.length > 0 && !parsed.isEmptyDefault) {
-                        clientInst.publish(`stagetimer_v10/${rCode}/state`, JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: parsed }), { qos: 0, retain: true });
+                        const topPrefix = this.mqttTopicPrefix || 'stagetimer_v10';
+                        clientInst.publish(`${topPrefix}/${rCode}/state`, JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: this._sanitizeStateForNetwork(parsed) }), { qos: 0, retain: true });
                       }
                     }
                   });
@@ -1309,11 +1407,12 @@ class UniversalSyncClient {
       targetUuid: target,
       ...command
     };
+    payload.sig = this._computeCommandSignature(payload);
 
     // 1. Instant local BroadcastChannel (cross-tab / same machine)
     if (this.cmdChannel) {
       try {
-        this.cmdChannel.postMessage(payload);
+        this.cmdChannel.postMessage({ ...payload, _via: 'local' });
       } catch (e) {}
     }
 
@@ -1324,10 +1423,11 @@ class UniversalSyncClient {
         // Universal command channel so every device receives the command without topic loss
         this.mqttClient.publish(this.mqttTopicCommands, json, { qos: 0, retain: false });
 
+        const cmdPrefix = this.mqttTopicPrefix || 'stagetimer_v10';
         if (target === 'ALL') {
           this.mqttClient.publish(this.mqttTopicAllCmd, json, { qos: 0, retain: false });
         } else {
-          this.mqttClient.publish(`stagetimer_v10/_cmd/${target}`, json, { qos: 0, retain: false });
+          this.mqttClient.publish(`${cmdPrefix}/_cmd/${target}`, json, { qos: 0, retain: false });
         }
       } catch (e) {}
     }
@@ -1342,17 +1442,19 @@ class UniversalSyncClient {
       room: clean,
       ...command
     };
+    payload.sig = this._computeCommandSignature(payload);
 
     if (this.cmdChannel) {
       try {
-        this.cmdChannel.postMessage(payload);
+        this.cmdChannel.postMessage({ ...payload, _via: 'local' });
       } catch (e) {}
     }
 
     if (!this.mqttClient || !this.mqttClient.connected) return;
     try {
       const json = JSON.stringify(payload);
-      const topic = `stagetimer_v10/_cmd_room/${clean}`;
+      const cmdPrefix = this.mqttTopicPrefix || 'stagetimer_v10';
+      const topic = `${cmdPrefix}/_cmd_room/${clean}`;
       this.mqttClient.publish(topic, json, { qos: 0, retain: false });
       this.mqttClient.publish(this.mqttTopicCommands, json, { qos: 0, retain: false });
     } catch (e) {}
@@ -3103,9 +3205,18 @@ class UniversalSyncClient {
     if (preservedTelegram && typeof preservedTelegram === 'object') {
       const incTgUpdated = incoming.integrations?.telegram?.updatedAt || 0;
       const presTgUpdated = preservedTelegram.updatedAt || 0;
-      if (presTgUpdated > incTgUpdated || (!incoming.integrations?.telegram?.botToken && preservedTelegram.botToken && !incTgUpdated)) {
-        this._state.integrations.telegram = { ...this._state.integrations.telegram, ...preservedTelegram };
-      } else if (incTgUpdated >= presTgUpdated && incoming.integrations?.telegram?.botToken) {
+      if (presTgUpdated > incTgUpdated || (!incoming.integrations?.telegram?.botToken && preservedTelegram.botToken)) {
+        this._state.integrations.telegram = {
+          ...this._state.integrations.telegram,
+          ...preservedTelegram,
+          botToken: preservedTelegram.botToken || this._state.integrations.telegram?.botToken || ''
+        };
+      } else if (incTgUpdated >= presTgUpdated && incoming.integrations?.telegram) {
+        // If incoming config is newer, merge but never erase local token if incoming is empty
+        this._state.integrations.telegram = {
+          ...incoming.integrations.telegram,
+          botToken: incoming.integrations.telegram.botToken || preservedTelegram.botToken || ''
+        };
         try {
           localStorage.setItem(this.telegramStorageKey, JSON.stringify(this._state.integrations.telegram));
         } catch (_) {}
@@ -3193,13 +3304,13 @@ class UniversalSyncClient {
       } catch (e) {}
     }
 
-    // 2. Publish to Cloud MQTT
+    // 2. Publish to Cloud MQTT (Sanitized: botToken stripped for network safety)
     if (this.mqttClient && this.mqttClient.connected) {
       try {
         const payload = JSON.stringify({
           sender: this.clientId,
           sentAt: trueNow,
-          data: this._state
+          data: this._sanitizeStateForNetwork(this._state)
         });
         this.mqttClient.publish(this.mqttTopicState, payload, { qos: 0, retain });
       } catch (e) {}
@@ -3763,10 +3874,12 @@ class UniversalSyncClient {
     this._ensureIntegrationsStructure();
     const curUpdatedAt = this._state.integrations.telegram?.updatedAt || 0;
     const incUpdatedAt = tgCfg.updatedAt || 0;
+    const localToken = this._state.integrations.telegram?.botToken || '';
     if (incUpdatedAt >= curUpdatedAt || !this._state.integrations.telegram?.botToken) {
       this._state.integrations.telegram = {
         ...this._state.integrations.telegram,
-        ...tgCfg
+        ...tgCfg,
+        botToken: tgCfg.botToken || localToken
       };
       try {
         localStorage.setItem(this.telegramStorageKey, JSON.stringify(this._state.integrations.telegram));
@@ -3856,20 +3969,27 @@ class UniversalSyncClient {
       } catch (_) {}
     }
 
+    const sanitizedTgCfg = {
+      ...newTgCfg,
+      hasToken: Boolean(newTgCfg.botToken),
+      botToken: '' // NEVER broadcast botToken over public MQTT
+    };
+
     this.sendRoomCommand(cleanTarget, {
       action: 'telegram_config_update',
       room: cleanTarget,
-      telegram: newTgCfg
+      telegram: sanitizedTgCfg
     });
 
     if (this.mqttClient && this.mqttClient.connected) {
-      const tgTopic = `stagetimer_v10/${cleanTarget}/telegram`;
+      const topPrefix = this.mqttTopicPrefix || 'stagetimer_v10';
+      const tgTopic = `${topPrefix}/${cleanTarget}/telegram`;
       try {
         this.mqttClient.publish(tgTopic, JSON.stringify({
           sender: this.clientId,
           sentAt: trueNow,
           room: cleanTarget,
-          telegram: newTgCfg
+          telegram: sanitizedTgCfg
         }), { qos: 1, retain: true });
       } catch (_) {}
     }

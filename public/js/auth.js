@@ -59,14 +59,66 @@
     return diff === 0;
   }
 
+  function parseAndValidateToken(token, requiredRole = 'operator') {
+    if (!token || typeof token !== 'string') return false;
+    const parts = token.split('.');
+    if (parts.length !== 2) return false;
+    const [b64Payload, sig] = parts;
+    if (!b64Payload || !sig || sig.length < 32) return false;
+
+    try {
+      const b64 = b64Payload.replace(/-/g, '+').replace(/_/g, '/');
+      const padLen = (4 - (b64.length % 4)) % 4;
+      const padded = b64 + '='.repeat(padLen);
+      const decoded = atob(padded);
+      const [role, isMasterStr, tsStr] = decoded.split(':');
+      const ts = Number(tsStr);
+      if (!ts || isNaN(ts)) return false;
+
+      const maxAgeMs = 48 * 3600 * 1000;
+      if (Date.now() - ts > maxAgeMs) return false; // Expired
+      if (ts > Date.now() + 60000) return false; // Future timestamp
+
+      if (requiredRole === 'master') {
+        return role === 'master' && isMasterStr === '1';
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function getActiveToken() {
+    try {
+      return sessionStorage.getItem('stagetimer_auth_token') || localStorage.getItem('stagetimer_auth_token') || '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function createOfflineToken(role, isMaster) {
+    const payload = `${role}:${isMaster ? '1' : '0'}:${Date.now()}`;
+    const b64 = btoa(payload).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < payload.length; i++) {
+      hash ^= payload.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    const sig = ('0000000000000000' + (hash >>> 0).toString(16)).repeat(4).slice(0, 64);
+    return `${b64}.${sig}`;
+  }
+
   function isMasterSessionActive() {
     try {
-      return (
+      const flagActive = (
         sessionStorage.getItem('stagetimer_master_active') === '1' ||
         localStorage.getItem('stagetimer_master_active') === '1' ||
         sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
         localStorage.getItem('stagetimer_master_auth_v12') === 'true'
       );
+      if (!flagActive) return false;
+      const token = getActiveToken();
+      return Boolean(token && parseAndValidateToken(token, 'master'));
     } catch (_) {
       return false;
     }
@@ -74,11 +126,14 @@
 
   function isOperatorSessionActive() {
     try {
-      return (
-        isMasterSessionActive() ||
+      if (isMasterSessionActive()) return true;
+      const flagActive = (
         sessionStorage.getItem('stagetimer_auth_unlocked') === 'true' ||
         localStorage.getItem('stagetimer_auth_unlocked') === 'true'
       );
+      if (!flagActive) return false;
+      const token = getActiveToken();
+      return Boolean(token && parseAndValidateToken(token, 'operator'));
     } catch (_) {
       return false;
     }
@@ -86,19 +141,21 @@
 
   function isRegiesSessionActive() {
     try {
-      return (
-        isMasterSessionActive() ||
+      if (isMasterSessionActive() || isOperatorSessionActive()) return true;
+      const flagActive = (
         sessionStorage.getItem('stagetimer_regies_unlocked') === 'true' ||
-        localStorage.getItem('stagetimer_regies_unlocked') === 'true' ||
-        sessionStorage.getItem('stagetimer_auth_unlocked') === 'true' ||
-        localStorage.getItem('stagetimer_auth_unlocked') === 'true'
+        localStorage.getItem('stagetimer_regies_unlocked') === 'true'
       );
+      if (!flagActive) return false;
+      const token = getActiveToken();
+      return Boolean(token && parseAndValidateToken(token, 'regies'));
     } catch (_) {
       return false;
     }
   }
 
   function activateMasterSession(token) {
+    const validToken = token || createOfflineToken('master', true);
     try {
       sessionStorage.setItem('stagetimer_master_active', '1');
       localStorage.setItem('stagetimer_master_active', '1');
@@ -108,31 +165,30 @@
       localStorage.setItem('stagetimer_auth_unlocked', 'true');
       sessionStorage.setItem('stagetimer_regies_unlocked', 'true');
       localStorage.setItem('stagetimer_regies_unlocked', 'true');
-      if (token) {
-        sessionStorage.setItem('stagetimer_auth_token', token);
-      }
+      sessionStorage.setItem('stagetimer_auth_token', validToken);
+      localStorage.setItem('stagetimer_auth_token', validToken);
     } catch (_) {}
   }
 
   function activateOperatorSession(token) {
+    const validToken = token || createOfflineToken('operator', false);
     try {
       sessionStorage.setItem('stagetimer_auth_unlocked', 'true');
       localStorage.setItem('stagetimer_auth_unlocked', 'true');
       sessionStorage.setItem('stagetimer_regies_unlocked', 'true');
       localStorage.setItem('stagetimer_regies_unlocked', 'true');
-      if (token) {
-        sessionStorage.setItem('stagetimer_auth_token', token);
-      }
+      sessionStorage.setItem('stagetimer_auth_token', validToken);
+      localStorage.setItem('stagetimer_auth_token', validToken);
     } catch (_) {}
   }
 
   function activateRegiesSession(token) {
+    const validToken = token || createOfflineToken('regies', false);
     try {
       sessionStorage.setItem('stagetimer_regies_unlocked', 'true');
       localStorage.setItem('stagetimer_regies_unlocked', 'true');
-      if (token) {
-        sessionStorage.setItem('stagetimer_auth_token', token);
-      }
+      sessionStorage.setItem('stagetimer_auth_token', validToken);
+      localStorage.setItem('stagetimer_auth_token', validToken);
     } catch (_) {}
   }
 
@@ -262,19 +318,23 @@
   }
 
   const masterActive = isMasterSessionActive();
-  const pageUnlocked =
-    masterActive ||
-    (isRegiesPage && isRegiesSessionActive()) ||
-    (!isMasterPage && !isRegiesPage && isOperatorSessionActive()) ||
-    sessionStorage.getItem(AUTH_KEY) === 'true' ||
-    localStorage.getItem(AUTH_KEY) === 'true';
+  const regiesActive = isRegiesSessionActive();
+  const operatorActive = isOperatorSessionActive();
+
+  let pageUnlocked = false;
+  if (isMasterPage) {
+    pageUnlocked = masterActive;
+  } else if (isRegiesPage) {
+    pageUnlocked = masterActive || regiesActive;
+  } else {
+    pageUnlocked = masterActive || operatorActive;
+  }
 
   if (pageUnlocked) {
-    if (masterActive) {
-      activateMasterSession();
-    }
     return;
   }
+
+  let isLegitimatelyUnlocked = false;
 
   // Inject lock screen overlay styles
   const style = document.createElement('style');
@@ -531,11 +591,12 @@
       if (submitBtn) submitBtn.disabled = false;
 
       if (result.ok) {
+        isLegitimatelyUnlocked = true;
         try {
           sessionStorage.setItem(AUTH_KEY, 'true');
           localStorage.setItem(AUTH_KEY, 'true');
         } catch (_) {}
-        overlay.remove();
+        if (overlay) overlay.remove();
       } else {
         err.textContent = isMasterPage
           ? 'Credencial Master incorreta!'
@@ -549,9 +610,30 @@
     });
   }
 
+  function startAntiTamperGuard() {
+    if (typeof MutationObserver === 'undefined') return;
+    try {
+      const targetNode = document.body || document.documentElement;
+      const observer = new MutationObserver(() => {
+        if (!isLegitimatelyUnlocked && isProtectedPage) {
+          const el = document.getElementById('st-auth-overlay');
+          if (!el) {
+            console.warn('[ShowFlow Security] Tentativa de bypass por remoção de DOM detetada. Restaurando ecrã de bloqueio.');
+            mountLockScreen();
+          }
+        }
+      });
+      observer.observe(targetNode, { childList: true });
+    } catch (_) {}
+  }
+
   if (document.body) {
     mountLockScreen();
+    startAntiTamperGuard();
   } else {
-    document.addEventListener('DOMContentLoaded', mountLockScreen);
+    document.addEventListener('DOMContentLoaded', () => {
+      mountLockScreen();
+      startAntiTamperGuard();
+    });
   }
 })();

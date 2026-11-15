@@ -71,9 +71,25 @@ async function callTelegramWithRetry(token, method, bodyObj, maxAttempts = 3) {
   return { ok: false, status: lastStatus, data: lastData };
 }
 
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  const o = String(origin).toLowerCase().trim();
+  return (
+    o.includes('localhost') ||
+    o.includes('127.0.0.1') ||
+    o.endsWith('.netlify.app') ||
+    o.endsWith('stagetimer.io') ||
+    o.endsWith('showflow.app') ||
+    o.endsWith('github.io')
+  );
+}
+
 exports.handler = async (event) => {
+  const origin = event.headers.origin || event.headers.Origin || '';
+  const allowed = isOriginAllowed(origin);
+
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': allowed ? (origin || '*') : 'null',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json'
@@ -81,6 +97,14 @@ exports.handler = async (event) => {
 
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: corsHeaders, body: '' };
+  }
+
+  if (!allowed) {
+    return {
+      statusCode: 403,
+      headers: corsHeaders,
+      body: JSON.stringify({ ok: false, error: 'Origem de requisição não autorizada.' })
+    };
   }
 
   if (event.httpMethod !== 'POST') {

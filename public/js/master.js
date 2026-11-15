@@ -665,11 +665,24 @@
     renderDevicesList(devices);
   });
 
+  function isMasterAuthorized() {
+    if (typeof window.isStageTimerMaster === 'function') {
+      return window.isStageTimerMaster();
+    }
+    return Boolean(window.StageTimerAuth?.isMaster?.());
+  }
+
   // Device card actions delegation
   if ($devicesList) {
     $devicesList.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-cmd]');
       if (!btn) return;
+
+      if (!isMasterAuthorized()) {
+        alert('Acesso negado: É necessária autenticação Master válida para executar este comando.');
+        return;
+      }
+
       const card = btn.closest('[data-device-uuid]');
       const uuid = btn.dataset.targetUuid || card?.dataset.deviceUuid;
       const select = card?.querySelector('.device-room-select');
@@ -770,6 +783,10 @@
   // Global Broadcast Buttons
   if ($cmdAllViewer) {
     $cmdAllViewer.addEventListener('click', () => {
+      if (!isMasterAuthorized()) {
+        alert('Acesso negado: Autenticação Master necessária.');
+        return;
+      }
       if (confirm('Mudar TODOS os dispositivos online para o Modo Palco?')) {
         if (navigator.vibrate) { try { navigator.vibrate(35); } catch (e) {} }
         masterClient.globalDevicesMap.forEach(dev => {
@@ -786,6 +803,10 @@
 
   if ($cmdAllLineup) {
     $cmdAllLineup.addEventListener('click', () => {
+      if (!isMasterAuthorized()) {
+        alert('Acesso negado: Autenticação Master necessária.');
+        return;
+      }
       if (confirm('Mudar TODOS os dispositivos online para o Modo Lista?')) {
         if (navigator.vibrate) { try { navigator.vibrate(35); } catch (e) {} }
         masterClient.globalDevicesMap.forEach(dev => {
@@ -802,6 +823,10 @@
 
   if ($cmdAllRegies) {
     $cmdAllRegies.addEventListener('click', () => {
+      if (!isMasterAuthorized()) {
+        alert('Acesso negado: Autenticação Master necessária.');
+        return;
+      }
       if (confirm('Mudar TODOS os dispositivos online para o Modo Régies?')) {
         if (navigator.vibrate) { try { navigator.vibrate(35); } catch (e) {} }
         masterClient.globalDevicesMap.forEach(dev => {
@@ -818,6 +843,10 @@
 
   if ($cmdAllReload) {
     $cmdAllReload.addEventListener('click', () => {
+      if (!isMasterAuthorized()) {
+        alert('Acesso negado: Autenticação Master necessária.');
+        return;
+      }
       if (confirm('Recarregar TODOS os ecrãs e dispositivos remotos agora?')) {
         if (navigator.vibrate) { try { navigator.vibrate(50); } catch (e) {} }
         masterClient.sendDeviceCommand('ALL', { action: 'reload' });
@@ -829,6 +858,10 @@
 
   if ($cmdClearOffline) {
     $cmdClearOffline.addEventListener('click', () => {
+      if (!isMasterAuthorized()) {
+        alert('Acesso negado: Autenticação Master necessária.');
+        return;
+      }
       if (confirm('Eliminar todos os dispositivos inativos (sem sinal há mais de 10 segundos)?')) {
         if (navigator.vibrate) { try { navigator.vibrate(50); } catch (e) {} }
         masterClient.clearInactiveDevices(10000);

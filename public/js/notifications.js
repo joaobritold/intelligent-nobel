@@ -364,8 +364,12 @@
       const token = String(cfg.botToken || '').trim();
       const chatId = String(cfg.chatId || '').trim();
 
-      if (!token || !chatId) {
-        return { success: false, error: 'Token ou Chat ID do Telegram não configurados.' };
+      if (!chatId) {
+        return { success: false, error: 'Chat ID do Telegram não configurado.' };
+      }
+
+      if (!token && !cfg.hasToken) {
+        return { success: false, error: 'Token do Bot Telegram não configurado.' };
       }
 
       const eventKey = options.eventKey || null;
@@ -518,14 +522,16 @@
         payload.allow_sending_without_reply = true;
       }
 
-      // 1. Direct Telegram Bot API Call with AbortController Timeout
-      const directResult = await this._postTelegramApi(job.token, 'sendMessage', payload);
-
-      if (directResult.ok) {
-        return {
-          success: true,
-          messageId: directResult.result?.message_id || null
-        };
+      // 1. Direct Telegram Bot API Call (if token is available locally)
+      let directResult = { ok: false, networkError: true };
+      if (job.token) {
+        directResult = await this._postTelegramApi(job.token, 'sendMessage', payload);
+        if (directResult.ok) {
+          return {
+            success: true,
+            messageId: directResult.result?.message_id || null
+          };
+        }
       }
 
       // 2. Handle Supergroup Migration (migrate_to_chat_id)
