@@ -1,115 +1,51 @@
-/* ⌚ StageTimer PFP — Apple Watch Single Screen (Espelho Fiel do Modo Palco) */
-:root {
-  --watch-bg: #000000;
-  --watch-text: #ffffff;
-  --watch-safe: #00b894;
-  --watch-warn: #fa8231;
-  --watch-danger: #ff4757;
-  --watch-clock: #ffffff;
-  --watch-paused: #ffd32a;
-}
-
-* {
-  box-sizing: border-box;
+/* ⌚ ShowFlow — Modo Palco no Apple Watch (Estilos Diretos de Palco) */
+html, body.watch-body {
+  width: 100%;
+  height: 100%;
   margin: 0;
   padding: 0;
-  -webkit-tap-highlight-color: transparent;
+  background-color: #000000 !important;
+  color: #ffffff;
+  overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
 }
 
-html {
-  width: 100%;
-  height: 100%;
-  background-color: #000000 !important;
-}
-
-body {
-  width: 100vw;
-  min-height: calc(100vh + 30px);
-  min-height: calc(100dvh + 30px);
-  margin: 0;
-  padding: 0;
-  background-color: #000000 !important;
-  color: #ffffff;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
-}
-
-.watch-container {
+.viewer.watch-viewer {
   width: 100vw;
   height: 100vh;
   height: 100dvh;
+  padding: max(2px, env(safe-area-inset-top, 2px)) max(4px, env(safe-area-inset-right, 4px)) max(2px, env(safe-area-inset-bottom, 2px)) max(4px, env(safe-area-inset-left, 4px));
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  align-items: stretch;
-  padding: max(2px, env(safe-area-inset-top, 2px)) max(4px, env(safe-area-inset-right, 4px)) max(2px, env(safe-area-inset-bottom, 2px)) max(4px, env(safe-area-inset-left, 4px));
-  box-sizing: border-box;
-  text-align: center;
-  position: relative;
-  background: #000000;
-}
-
-/* ── Topo: Nome do Artista em Palco (Igual a .viewer-timer-name) ── */
-.watch-header {
-  width: 100%;
-  display: flex;
   align-items: center;
-  justify-content: center;
   position: relative;
-  height: 22px;
-  line-height: 22px;
-  flex-shrink: 0;
-  padding: 0 14px;
+  background-color: #000000 !important;
 }
 
-.watch-status-dot {
-  position: absolute;
-  left: 2px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: var(--watch-safe);
-  box-shadow: 0 0 6px rgba(0, 184, 148, 0.8);
-  transition: background-color 0.3s ease;
-}
-
-.watch-status-dot.disconnected {
-  background-color: var(--watch-danger);
-  box-shadow: 0 0 6px rgba(255, 71, 87, 0.8);
-}
-
-.watch-artist-name {
-  font-size: clamp(0.76rem, 4.8vw, 1.05rem);
+/* Nome do Artista em Palco no Topo */
+.watch-viewer .viewer-timer-name {
+  font-size: clamp(0.78rem, 5vw, 1.1rem);
   font-weight: 800;
   color: #ffffff;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   text-align: center;
+  margin: 0;
+  padding: 2px 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
+  max-width: 96vw;
+  line-height: 1.2;
+  flex-shrink: 0;
 }
 
-/* ── Centro: Cronómetro Gigante (Igual a .viewer-timer) ── */
-.watch-main {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 0;
-  position: relative;
-}
-
-.watch-timer {
+/* Cronómetro Gigante no Centro */
+.watch-viewer .viewer-timer {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", monospace;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
@@ -118,48 +54,40 @@ body {
   line-height: 0.92;
   text-align: center;
   white-space: nowrap;
-  font-size: clamp(3.8rem, 34vw, 6.4rem);
-  width: 100%;
-  display: block;
-  transition: color 0.2s ease;
+  font-size: clamp(3.6rem, 33vw, 6.2rem);
+  margin: auto 0;
 }
 
-.watch-timer.has-hours {
-  font-size: clamp(2.3rem, 20vw, 3.8rem);
+.watch-viewer .viewer-timer.is-long {
+  font-size: clamp(2.2rem, 19vw, 3.6rem);
   letter-spacing: -1px;
 }
 
-/* Cores Idênticas ao Palco (Modo Palco Viewer) */
-.watch-timer.safe {
-  color: var(--watch-safe);
+/* Cores Oficiais do Palco */
+.watch-viewer .viewer-timer.safe {
+  color: #00b894;
   text-shadow: 0 0 25px rgba(0, 184, 148, 0.45);
 }
 
-.watch-timer.warn {
-  color: var(--watch-warn);
+.watch-viewer .viewer-timer.warn {
+  color: #fa8231;
   text-shadow: 0 0 25px rgba(250, 130, 49, 0.45);
 }
 
-/* Overtime / Tempo Negativo: Vermelho Vivo Pulsante */
-.watch-timer.danger,
-.watch-timer.overtime,
-.watch-timer.finished {
-  color: var(--watch-danger);
-  text-shadow: 0 0 30px rgba(255, 71, 87, 0.7);
-  animation: watch-timer-pulse 1s ease-in-out infinite alternate;
+/* Tempo Negativo / Overtime / Fim: Vermelho Vivo Pulsante */
+.watch-viewer .viewer-timer.danger,
+.watch-viewer .viewer-timer.finished {
+  color: #ff4757;
+  text-shadow: 0 0 30px rgba(255, 71, 87, 0.75);
+  animation: watch-viewer-pulse 1s ease-in-out infinite alternate;
 }
 
-.watch-timer.clock {
-  color: var(--watch-clock);
+.watch-viewer .viewer-timer.clock {
+  color: #ffffff;
   letter-spacing: -1px;
 }
 
-.watch-timer.paused {
-  color: var(--watch-paused);
-  opacity: 0.95;
-}
-
-@keyframes watch-timer-pulse {
+@keyframes watch-viewer-pulse {
   0% {
     opacity: 1;
     transform: scale(1);
@@ -172,138 +100,152 @@ body {
   }
 }
 
-/* ── Base: Hora Local à esquerda, NEXT à direita (Igual a .viewer-local-clock e .viewer-next) ── */
-.watch-footer {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  height: 20px;
-  line-height: 20px;
-  padding: 0 4px 2px 4px;
-  flex-shrink: 0;
-  z-index: 10;
-}
-
-.watch-clock {
+/* Base: Hora Local à esquerda, NEXT à direita */
+.watch-viewer .viewer-local-clock {
+  position: absolute;
+  bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  left: calc(6px + env(safe-area-inset-left, 0px));
+  background: transparent;
+  border: none;
+  padding: 0;
   display: flex;
   align-items: center;
   gap: 3px;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Text", monospace;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", monospace;
   font-variant-numeric: tabular-nums;
   font-size: 0.72rem;
   color: #a4b0be;
   font-weight: 700;
-  white-space: nowrap;
+  z-index: 10;
 }
 
-.watch-next {
+.watch-viewer .viewer-clock-label {
+  display: none;
+}
+
+.watch-viewer .viewer-next {
+  position: absolute;
+  bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  right: calc(6px + env(safe-area-inset-right, 0px));
+  background: transparent;
+  border: none;
+  padding: 0;
   display: flex;
   align-items: center;
   gap: 3px;
   font-size: 0.72rem;
   font-weight: 700;
   color: #ffffff;
+  max-width: 55vw;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 58%;
+  z-index: 10;
 }
 
-.watch-footer-label {
-  font-size: 0.55rem;
-  font-weight: 800;
-  color: #55efc4;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.watch-next .watch-footer-label {
+.watch-viewer .viewer-next-label {
+  font-size: 0.58rem;
   color: #a29bfe;
+  font-weight: 800;
+  flex-shrink: 0;
 }
 
-#watch-next-name {
+.watch-viewer #viewer-next-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* ── Barra de Progresso Fina na Base (Igual a .viewer-progress) ── */
-.watch-progress-track {
-  width: 100%;
+/* Barra de Progresso no Fundo */
+.watch-viewer .viewer-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   height: 3px;
   background: rgba(255, 255, 255, 0.12);
-  flex-shrink: 0;
-  overflow: hidden;
+  z-index: 5;
 }
 
-.watch-progress-bar {
+.watch-viewer .viewer-progress-bar {
   height: 100%;
-  width: 0%;
-  background: var(--watch-safe);
+  background: #00b894;
   transition: width 0.3s linear, background-color 0.3s ease;
 }
 
-.watch-progress-bar.warn {
-  background: var(--watch-warn);
+.watch-viewer .viewer-progress-bar.warn {
+  background: #fa8231;
 }
 
-.watch-progress-bar.danger,
-.watch-progress-bar.overtime {
-  background: var(--watch-danger);
+.watch-viewer .viewer-progress-bar.danger,
+.watch-viewer .viewer-progress-bar.finished {
+  background: #ff4757;
   box-shadow: 0 0 6px rgba(255, 71, 87, 0.8);
 }
 
-/* ── Overlay de Mensagem da Régie (Igual a .viewer-message) ── */
-.watch-message-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: #ff4757;
-  color: #ffffff;
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 8px;
-  text-align: center;
-  cursor: pointer;
+/* Ponto de Ligação Discreto no Canto Superior Esquerdo */
+.watch-viewer .viewer-connection {
+  position: absolute;
+  top: max(4px, env(safe-area-inset-top, 4px));
+  left: max(4px, env(safe-area-inset-left, 4px));
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #00b894;
+  box-shadow: 0 0 6px rgba(0, 184, 148, 0.8);
+  z-index: 20;
 }
 
-.watch-message-overlay.visible {
+.watch-viewer .viewer-connection.disconnected {
+  background-color: #ff4757;
+  box-shadow: 0 0 6px rgba(255, 71, 87, 0.8);
+}
+
+/* Standby / Empty State */
+.watch-viewer .viewer-empty {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: auto 0;
 }
 
-.watch-message-overlay.urgent {
-  animation: watch-message-flash 0.8s infinite alternate;
-}
-
-@keyframes watch-message-flash {
-  0% { background-color: #ff4757; }
-  100% { background-color: #000000; }
-}
-
-.watch-msg-badge {
-  font-size: 0.65rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 1px 6px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 6px;
+.watch-viewer .viewer-empty-icon {
+  font-size: 2rem;
   margin-bottom: 4px;
 }
 
-.watch-msg-text {
-  font-size: clamp(1.2rem, 8.5vw, 1.9rem);
+.watch-viewer .viewer-empty-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Prompter Message Overlay */
+.watch-viewer .viewer-message {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(255, 71, 87, 0.95);
+  color: #ffffff;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  font-size: clamp(1.2rem, 8vw, 1.8rem);
   font-weight: 900;
-  line-height: 1.15;
-  word-break: break-word;
-  max-width: 96vw;
+  text-align: center;
+}
+
+.watch-viewer .viewer-message.visible {
+  display: flex;
 }
 
 @media (min-width: 650px) {
-  .watch-container {
+  .viewer.watch-viewer {
     max-width: 320px;
     max-height: 390px;
     margin: auto;
@@ -311,7 +253,7 @@ body {
     border-radius: 46px;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), 0 0 0 10px #1a1a1a;
   }
-  body {
+  body.watch-body {
     display: flex;
     justify-content: center;
     align-items: center;

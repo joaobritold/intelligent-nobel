@@ -49,52 +49,62 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <title>ShowFlow — Apple Watch</title>
-  <link rel="stylesheet" href="css/common.css?v=134">
-  <link rel="stylesheet" href="css/watch.css?v=134">
+  <title>ShowFlow — Apple Watch (Palco)</title>
+  <link rel="stylesheet" href="css/common.css?v=135">
+  <link rel="stylesheet" href="css/viewer.css?v=135">
+  <link rel="stylesheet" href="css/watch.css?v=135">
 </head>
-<body>
-  <!-- Ecrã Apple Watch: Vista de Palco Limpa (Idêntica ao Modo Palco) -->
-  <div id="watch-container" class="watch-container">
-    <!-- Topo: Nome do Artista em Palco + Dot de Conexão -->
-    <header class="watch-header">
-      <div id="watch-status-dot" class="watch-status-dot disconnected" title="Ligação"></div>
-      <div id="watch-artist-name" class="watch-artist-name">A carregar...</div>
-    </header>
+<body class="watch-body">
+  <!-- Ecrã Apple Watch: Idêntico ao Modo Palco (Viewer) -->
+  <div class="viewer watch-viewer">
+    <!-- Ponto discreto de estado de ligação -->
+    <div id="viewer-connection" class="viewer-connection disconnected" title="Estado de Ligação"></div>
 
-    <!-- Centro: Dígitos Gigantes de Palco (Conta Normal & Negativo em Vermelho) -->
-    <main class="watch-main">
-      <div id="watch-timer" class="watch-timer safe">--:--</div>
-    </main>
+    <!-- Nome do Artista em Palco (Topo) -->
+    <div id="viewer-timer-name" class="viewer-timer-name"></div>
 
-    <!-- Base: Hora Local à esquerda, NEXT à direita (Igual ao Modo Palco) -->
-    <footer class="watch-footer">
-      <div class="watch-clock">
-        <span class="watch-footer-label">HORA</span>
-        <span id="watch-clock-time">--:--:--</span>
-      </div>
-      <div id="watch-next" class="watch-next" style="display: none;">
-        <span class="watch-footer-label">NEXT:</span>
-        <span id="watch-next-name">--</span>
-      </div>
-    </footer>
+    <!-- Cronómetro Gigante de Palco (Conta Normal & Negativo em Vermelho) -->
+    <div id="viewer-timer" class="viewer-timer">--:--</div>
+
+    <!-- Notas do Artista -->
+    <div id="viewer-notes" class="viewer-notes"></div>
+
+    <!-- Próximo Artista (Canto Inferior Direito) -->
+    <div id="viewer-next" class="viewer-next" style="display: none;">
+      <span class="viewer-next-label">NEXT:</span>
+      <span id="viewer-next-name" class="viewer-next-name"></span>
+    </div>
+
+    <!-- Hora Local (Canto Inferior Esquerdo) -->
+    <div id="viewer-local-clock" class="viewer-local-clock">
+      <span class="viewer-clock-label">HORA LOCAL</span>
+      <span id="viewer-clock-time">--:--:--</span>
+    </div>
+
+    <!-- Estado de Espera (Standby) -->
+    <div id="viewer-empty" class="viewer-empty" style="display: none;">
+      <div class="viewer-empty-icon">⏳</div>
+      <div class="viewer-empty-text">Standby</div>
+    </div>
 
     <!-- Barra de Progresso Fina na Base -->
-    <div class="watch-progress-track">
-      <div id="watch-progress-bar" class="watch-progress-bar"></div>
+    <div class="viewer-progress">
+      <div id="viewer-progress-bar" class="viewer-progress-bar"></div>
     </div>
+
+    <!-- Overlay de Mensagem da Régie -->
+    <div id="viewer-message" class="viewer-message"></div>
+
+    <!-- Efeito Flash de Fim / Overtime -->
+    <div id="flash-overlay" class="viewer-flash-overlay"></div>
   </div>
 
-  <!-- Overlay de Mensagem da Régie (Igual ao Modo Palco) -->
-  <div id="watch-message-overlay" class="watch-message-overlay">
-    <div id="watch-msg-badge" class="watch-msg-badge">AVISO</div>
-    <div id="watch-msg-text" class="watch-msg-text"></div>
-  </div>
-
-  <!-- Cloud MQTT over WSS -->
+  <!-- Cloud MQTT over WSS (Mesmo motor do Modo Palco) -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=134"></script>
-  <script src="js/local-sync.js?v=134"></script>
-  <script src="js/watch.js?v=134"></script>
+  <!-- Local browser sync + Cloud -->
+  <script src="js/pwa.js?v=135"></script>
+  <script src="js/local-sync.js?v=135"></script>
+  <!-- Motor de Palco (Viewer) Oficial e Testado -->
+  <script src="js/viewer.js?v=135"></script>
 </body>
 </html>
