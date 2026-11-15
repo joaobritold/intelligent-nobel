@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -54,9 +54,9 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <title>StageTimer — Modo Palco</title>
-  <link rel="stylesheet" href="css/common.css?v=127">
-  <link rel="stylesheet" href="css/viewer.css?v=127">
+  <title>StageTimer â€” Modo Palco</title>
+  <link rel="stylesheet" href="css/common.css?v=129">
+  <link rel="stylesheet" href="css/viewer.css?v=129">
 </head>
 <body>
   <div class="viewer">
@@ -66,29 +66,29 @@
     <!-- Top Control Bar (Stage Badge & Fast Navigation) -->
     <div id="viewer-top-bar" class="viewer-top-bar" style="position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: calc(12px + env(safe-area-inset-left, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); padding: 6px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5); z-index: 50; transition: opacity 0.3s ease;">
       <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-        <span style="font-size: 0.95rem;">🎪</span>
+        <span style="font-size: 0.95rem;">ðŸŽª</span>
         <span id="viewer-stage-badge" style="color: #55efc4; font-size: 0.82rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: rgba(0, 184, 148, 0.15); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;" title="Tocar para trocar de palco">Palco</span>
-        <select id="viewer-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco"></select>
+        <select id="viewer-event-select" class="master-stage-select" style="display: none;" title="ðŸ‘‘ Trocar Palco"></select>
         <div id="viewer-stage-pills" class="stage-pills-bar" style="display: none;"></div>
       </div>
       <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
         <div class="st-compact-nav">
-          <a id="viewer-nav-hub" href="index.html?portal=1" class="st-nav-home-btn" title="Ir para o Início / Escolher Evento">🏠 Início</a>
+          <a id="viewer-nav-hub" href="index.html?portal=1" class="st-nav-home-btn" title="Ir para o InÃ­cio / Escolher Evento">ðŸ  InÃ­cio</a>
           <div class="st-nav-dropdown">
-            <button type="button" class="st-nav-trigger">📺 Ecrãs ▾</button>
+            <button type="button" class="st-nav-trigger">ðŸ“º EcrÃ£s â–¾</button>
             <div class="st-nav-menu">
-              <div class="st-nav-group-label">Navegação</div>
-              <a id="viewer-nav-portal" href="index.html?portal=1" class="st-nav-item">🏠 Escolher Evento (Início)</a>
-              <a id="viewer-nav-hub-menu" href="index.html" class="st-nav-item">🎪 Menu do Evento</a>
-              <div class="st-nav-group-label">Controlo & Operação</div>
-              <a id="viewer-nav-operator" href="operator.html" class="st-nav-item">📱 Modo Operador</a>
-              <a id="viewer-nav-controller" href="controller.html" class="st-nav-item">🎛️ Configurador</a>
+              <div class="st-nav-group-label">NavegaÃ§Ã£o</div>
+              <a id="viewer-nav-portal" href="index.html?portal=1" class="st-nav-item">ðŸ  Escolher Evento (InÃ­cio)</a>
+              <a id="viewer-nav-hub-menu" href="index.html" class="st-nav-item">ðŸŽª Menu do Evento</a>
+              <div class="st-nav-group-label">Controlo & OperaÃ§Ã£o</div>
+              <a id="viewer-nav-operator" href="operator.html" class="st-nav-item">ðŸ“± Modo Operador</a>
+              <a id="viewer-nav-controller" href="controller.html" class="st-nav-item">ðŸŽ›ï¸ Configurador</a>
               <div class="st-nav-group-label">Palco & Equipa</div>
-              <a id="viewer-nav-viewer" href="viewer.html" class="st-nav-item active">📺 Modo Palco</a>
-              <a id="viewer-nav-watch" href="watch.html" class="st-nav-item">⌚ Modo Apple Watch</a>
-              <a id="viewer-lineup-btn" href="lineup.html" class="st-nav-item">📋 Modo Lista</a>
-              <a id="viewer-regies-btn" href="regies.html" class="st-nav-item">📟 Modo Régies</a>
-              <a id="viewer-nav-master" href="master.html" class="st-nav-item st-nav-item-master" style="display: none;">👑 Super Régie Master</a>
+              <a id="viewer-nav-viewer" href="viewer.html" class="st-nav-item active">ðŸ“º Modo Palco</a>
+              <a id="viewer-nav-watch" href="watch.html" class="st-nav-item">âŒš Modo Apple Watch</a>
+              <a id="viewer-lineup-btn" href="lineup.html" class="st-nav-item">ðŸ“‹ Modo Lista</a>
+              <a id="viewer-regies-btn" href="regies.html" class="st-nav-item">ðŸ“Ÿ Modo RÃ©gies</a>
+              <a id="viewer-nav-master" href="master.html" class="st-nav-item st-nav-item-master" style="display: none;">ðŸ‘‘ Super RÃ©gie Master</a>
             </div>
           </div>
         </div>
@@ -119,8 +119,8 @@
 
     <!-- Empty state when no timer is active -->
     <div id="viewer-empty" class="viewer-empty" style="display: none;">
-      <div class="viewer-empty-icon">⏳</div>
-      <div class="viewer-empty-text">Standby — Waiting for Timer</div>
+      <div class="viewer-empty-icon">â³</div>
+      <div class="viewer-empty-text">Standby â€” Waiting for Timer</div>
     </div>
 
     <!-- Bottom Progress Bar -->
@@ -138,11 +138,11 @@
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=127"></script>
-  <script src="js/local-sync.js?v=127"></script>
-  <script src="js/viewer.js?v=127"></script>
+  <script src="js/pwa.js?v=129"></script>
+  <script src="js/local-sync.js?v=129"></script>
+  <script src="js/viewer.js?v=129"></script>
   <script>
-    // Screen Wake Lock API — Keep Stage Screen Always On
+    // Screen Wake Lock API â€” Keep Stage Screen Always On
     (function() {
       let wakeLockSentinel = null;
       async function requestStageWakeLock() {
@@ -168,6 +168,6 @@
       });
     })();
   </script>
-<script src="js/view-mode.js?v=127"></script>
+<script src="js/view-mode.js?v=129"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -47,16 +47,16 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="StageTimer Régies">
+  <meta name="apple-mobile-web-app-title" content="StageTimer RÃ©gies">
   <meta name="theme-color" content="#080811">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <title>StageTimer — Modo Régies (FOH & Palco)</title>
-  <link rel="stylesheet" href="css/common.css?v=127">
-  <link rel="stylesheet" href="css/regies.css?v=127">
+  <title>StageTimer â€” Modo RÃ©gies (FOH & Palco)</title>
+  <link rel="stylesheet" href="css/common.css?v=129">
+  <link rel="stylesheet" href="css/regies.css?v=129">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
@@ -64,51 +64,51 @@
     <header class="regie-header">
       <div class="regie-header-left">
         <!-- Home / Brand -->
-        <a id="regie-nav-hub" href="index.html?portal=1" class="regie-home-link" title="Voltar ao Início / Escolher Evento">
-          <span style="font-size: 1.4rem;">📟</span>
-          <span class="regie-header-title">RÉGIES</span>
+        <a id="regie-nav-hub" href="index.html?portal=1" class="regie-home-link" title="Voltar ao InÃ­cio / Escolher Evento">
+          <span style="font-size: 1.4rem;">ðŸ“Ÿ</span>
+          <span class="regie-header-title">RÃ‰GIES</span>
           <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v127</span>
         </a>
 
         <!-- Stage Selector Pill -->
         <div class="regie-stage-pill-box">
-          <span style="font-size: 0.85rem;">🎪</span>
+          <span style="font-size: 0.85rem;">ðŸŽª</span>
           <span id="lineup-stage-badge" class="regie-stage-badge-text" title="Tocar para trocar de palco">Palco</span>
-          <select id="lineup-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco"></select>
+          <select id="lineup-event-select" class="master-stage-select" style="display: none;" title="ðŸ‘‘ Trocar Palco"></select>
         </div>
         <div id="lineup-stage-pills" class="stage-pills-bar" style="display: none;"></div>
 
-        <!-- Sleek Station Toggle (FOH vs Palco vs Técnico) -->
+        <!-- Sleek Station Toggle (FOH vs Palco vs TÃ©cnico) -->
         <div class="regie-station-pill">
-          <button id="regie-btn-foh" class="regie-station-toggle-btn active" type="button" title="Modo Régie de Frente">
-            🎚️ FOH
+          <button id="regie-btn-foh" class="regie-station-toggle-btn active" type="button" title="Modo RÃ©gie de Frente">
+            ðŸŽšï¸ FOH
           </button>
-          <button id="regie-btn-stage" class="regie-station-toggle-btn" type="button" title="Modo Régie de Palco">
-            🎛️ Palco
+          <button id="regie-btn-stage" class="regie-station-toggle-btn" type="button" title="Modo RÃ©gie de Palco">
+            ðŸŽ›ï¸ Palco
           </button>
-          <button id="regie-btn-tech" class="regie-station-toggle-btn" type="button" title="Modo Técnico Mobile (Avisos de SM e Palco sem chamadas sonoras)">
-            🔧 Técnico
+          <button id="regie-btn-tech" class="regie-station-toggle-btn" type="button" title="Modo TÃ©cnico Mobile (Avisos de SM e Palco sem chamadas sonoras)">
+            ðŸ”§ TÃ©cnico
           </button>
         </div>
 
         <!-- Notification Bell -->
-        <button id="regie-notif-btn" type="button" class="btn btn-sm" title="Ativar Notificações no Telemóvel" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); padding: 5px 8px; font-size: 0.9rem; border-radius: 8px; cursor: pointer;">🔔</button>
+        <button id="regie-notif-btn" type="button" class="btn btn-sm" title="Ativar NotificaÃ§Ãµes no TelemÃ³vel" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); padding: 5px 8px; font-size: 0.9rem; border-radius: 8px; cursor: pointer;">ðŸ””</button>
 
-        <!-- Technician User Badge (Visible in Técnico mode) -->
-        <button id="regie-tech-user-btn" class="regie-tech-user-btn" type="button" style="display: none;" title="Tocar para definir ou alterar o seu nome de Técnico">
-          <span>👤</span>
-          <span id="regie-tech-user-label">Identificar Técnico</span>
-          <span class="regie-tech-user-edit">✏️</span>
+        <!-- Technician User Badge (Visible in TÃ©cnico mode) -->
+        <button id="regie-tech-user-btn" class="regie-tech-user-btn" type="button" style="display: none;" title="Tocar para definir ou alterar o seu nome de TÃ©cnico">
+          <span>ðŸ‘¤</span>
+          <span id="regie-tech-user-label">Identificar TÃ©cnico</span>
+          <span class="regie-tech-user-edit">âœï¸</span>
         </button>
       </div>
 
       <!-- Center Hero Call Button (5s Burst) -->
       <div class="regie-header-center">
         <button id="regie-call-btn" class="regie-hero-call-btn" type="button" title="Acionar aviso de 5 segundos no Intercom">
-          <span>🚨</span> <span id="regie-call-btn-text">CALL PALCO</span>
+          <span>ðŸš¨</span> <span id="regie-call-btn-text">CALL PALCO</span>
         </button>
         <button id="regie-audio-btn" class="regie-mini-audio-btn enabled" type="button" title="Ativar ou desativar aviso sonoro">
-          <span id="regie-audio-icon">🔔</span>
+          <span id="regie-audio-icon">ðŸ””</span>
         </button>
       </div>
 
@@ -126,25 +126,25 @@
           <div class="regie-clock-label">HORA CERTA</div>
           <div id="lineup-local-clock" class="regie-clock-value">--:--:--</div>
         </div>
-        <button id="regie-fs-btn" type="button" class="regie-fs-btn" title="Ecrã Completo (F)" aria-label="Ecrã Completo">
-          <span id="regie-fs-icon">⛶</span>
+        <button id="regie-fs-btn" type="button" class="regie-fs-btn" title="EcrÃ£ Completo (F)" aria-label="EcrÃ£ Completo">
+          <span id="regie-fs-icon">â›¶</span>
         </button>
       </div>
     </header>
 
     <!-- Massive Flashing Incoming Call Alert (Full-Screen Alarm Takeover) -->
-    <section id="regie-incoming-alert" class="regie-incoming-alert" role="alert" aria-live="assertive" title="Tocar em qualquer ponto do ecrã para atender">
+    <section id="regie-incoming-alert" class="regie-incoming-alert" role="alert" aria-live="assertive" title="Tocar em qualquer ponto do ecrÃ£ para atender">
       <div class="regie-incoming-inner">
-        <div class="regie-incoming-icon" aria-hidden="true">🚨</div>
+        <div class="regie-incoming-icon" aria-hidden="true">ðŸš¨</div>
         <div class="regie-incoming-text-box">
           <div id="regie-incoming-title" class="regie-incoming-title">CHAMADA INTERCOM!</div>
-          <div id="regie-incoming-sub" class="regie-incoming-sub">A outra régie está a chamar. Por favor verifique o intercomunicador.</div>
+          <div id="regie-incoming-sub" class="regie-incoming-sub">A outra rÃ©gie estÃ¡ a chamar. Por favor verifique o intercomunicador.</div>
         </div>
         <div class="regie-incoming-actions">
           <button id="regie-incoming-ack-btn" class="regie-ack-btn" type="button">
-            ✓ CIENTE / ATENDIDO
+            âœ“ CIENTE / ATENDIDO
           </button>
-          <div class="regie-incoming-hint">Toque no botão, clique no ecrã ou prima [Espaço] / [Enter] para atender</div>
+          <div class="regie-incoming-hint">Toque no botÃ£o, clique no ecrÃ£ ou prima [EspaÃ§o] / [Enter] para atender</div>
         </div>
       </div>
     </section>
@@ -153,29 +153,29 @@
     <section id="regie-msg-banner" class="regie-msg-banner">
       <div class="regie-msg-content">
         <div class="regie-msg-header">
-          <span id="regie-msg-sender-label">📱 MENSAGEM S.MANAGER</span>
+          <span id="regie-msg-sender-label">ðŸ“± MENSAGEM S.MANAGER</span>
           <span id="regie-msg-time" style="opacity: 0.8; font-family: var(--font-mono);"></span>
         </div>
         <div id="regie-msg-text" class="regie-msg-text">--</div>
         <div id="regie-msg-receipts" class="regie-msg-receipts">
-          <span id="regie-receipt-foh" class="regie-msg-receipt-pill">🎚️ FOH: Aguarda</span>
-          <span id="regie-receipt-stage" class="regie-msg-receipt-pill">🎛️ Palco: Aguarda</span>
-          <span id="regie-receipt-tech" class="regie-msg-receipt-pill">🔧 Técnico: Aguarda</span>
+          <span id="regie-receipt-foh" class="regie-msg-receipt-pill">ðŸŽšï¸ FOH: Aguarda</span>
+          <span id="regie-receipt-stage" class="regie-msg-receipt-pill">ðŸŽ›ï¸ Palco: Aguarda</span>
+          <span id="regie-receipt-tech" class="regie-msg-receipt-pill">ðŸ”§ TÃ©cnico: Aguarda</span>
           <span id="regie-receipt-tech-list" style="display: contents;"></span>
         </div>
       </div>
       <button id="regie-msg-ack-btn" class="regie-msg-ack-btn" type="button">
-        ✓ CONFIRMAR LEITURA
+        âœ“ CONFIRMAR LEITURA
       </button>
     </section>
 
-    <!-- Mobile Segment Switcher (Visível em Telemóveis e Tablets) -->
-    <nav id="regie-mobile-tabs" class="regie-mobile-tab-bar" aria-label="Navegação Régie Mobile">
+    <!-- Mobile Segment Switcher (VisÃ­vel em TelemÃ³veis e Tablets) -->
+    <nav id="regie-mobile-tabs" class="regie-mobile-tab-bar" aria-label="NavegaÃ§Ã£o RÃ©gie Mobile">
       <button type="button" class="regie-mobile-tab-btn active" data-regie-view="now">
-        <span>⚡</span> <span>Em Palco & Avisos</span>
+        <span>âš¡</span> <span>Em Palco & Avisos</span>
       </button>
       <button type="button" class="regie-mobile-tab-btn" data-regie-view="lineup">
-        <span>📋</span> <span>Alinhamento & Horários</span>
+        <span>ðŸ“‹</span> <span>Alinhamento & HorÃ¡rios</span>
       </button>
     </nav>
 
@@ -185,7 +185,7 @@
       <div class="regie-left-col">
         <!-- Card 1: Currently on Stage -->
         <aside id="lineup-now-card" class="lineup-now-card">
-          <div id="lineup-now-badge" class="lineup-now-badge">● EM PALCO AGORA</div>
+          <div id="lineup-now-badge" class="lineup-now-badge">â— EM PALCO AGORA</div>
           <div id="lineup-now-name" class="lineup-now-name">--</div>
           <div id="lineup-now-slot" class="lineup-now-slot"></div>
           <div id="lineup-now-timer" class="lineup-now-timer">--:--</div>
@@ -196,13 +196,13 @@
         <aside id="regie-history-card" class="regie-history-card">
           <div class="regie-history-header">
             <div class="regie-history-title">
-              <span>📋</span>
-              <span>HISTÓRICO DE AVISOS & CHAMADAS</span>
+              <span>ðŸ“‹</span>
+              <span>HISTÃ“RICO DE AVISOS & CHAMADAS</span>
             </div>
             <span id="regie-history-count" class="regie-history-count-badge">0</span>
           </div>
           <div id="regie-history-list" class="regie-history-list">
-            <div class="regie-history-empty">Sem avisos ou chamadas registados nesta sessão.</div>
+            <div class="regie-history-empty">Sem avisos ou chamadas registados nesta sessÃ£o.</div>
           </div>
         </aside>
       </div>
@@ -218,59 +218,59 @@
     </div>
   </div>
 
-  <!-- Modal de Identificação de Técnico (Multi-Utilizador no Modo Técnico) -->
+  <!-- Modal de IdentificaÃ§Ã£o de TÃ©cnico (Multi-Utilizador no Modo TÃ©cnico) -->
   <div id="regie-tech-modal" class="regie-tech-modal-overlay" style="display: none;">
     <div class="regie-tech-modal">
       <div class="regie-tech-modal-header">
-        <div class="regie-tech-modal-title">🔧 Identificação do Técnico</div>
+        <div class="regie-tech-modal-title">ðŸ”§ IdentificaÃ§Ã£o do TÃ©cnico</div>
         <p class="regie-tech-modal-sub">
-          Indique o seu nome para que o Stage Manager e as Régies vejam a sua confirmação de leitura individualmente.
+          Indique o seu nome para que o Stage Manager e as RÃ©gies vejam a sua confirmaÃ§Ã£o de leitura individualmente.
         </p>
       </div>
 
       <div class="regie-tech-modal-body">
-        <label class="regie-tech-label" for="regie-tech-name-input">O seu Nome / Função:</label>
+        <label class="regie-tech-label" for="regie-tech-name-input">O seu Nome / FunÃ§Ã£o:</label>
         <input
           id="regie-tech-name-input"
           type="text"
           class="regie-tech-input"
-          placeholder="Ex: Pedro, João (Som), Miguel (Backline)..."
+          placeholder="Ex: Pedro, JoÃ£o (Som), Miguel (Backline)..."
           maxlength="32"
           autocomplete="off"
         />
 
-        <div class="regie-tech-role-chips-label">Especialidade rápida (opcional):</div>
+        <div class="regie-tech-role-chips-label">Especialidade rÃ¡pida (opcional):</div>
         <div class="regie-tech-role-chips">
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="Som">🔊 Som</button>
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="Monitores">🎧 Monitores</button>
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="RF / Micros">🎤 RF / Micros</button>
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="Backline">🎸 Backline</button>
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="Luz">💡 Luz</button>
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="Vídeo">📽️ Vídeo</button>
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="Palco">🎪 Palco</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Som">ðŸ”Š Som</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Monitores">ðŸŽ§ Monitores</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="RF / Micros">ðŸŽ¤ RF / Micros</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Backline">ðŸŽ¸ Backline</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Luz">ðŸ’¡ Luz</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="VÃ­deo">ðŸ“½ï¸ VÃ­deo</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Palco">ðŸŽª Palco</button>
         </div>
 
         <div id="regie-tech-online-box" class="regie-tech-online-box" style="display: none;">
-          <div class="regie-tech-online-title">🟢 Técnicos ativos neste palco:</div>
+          <div class="regie-tech-online-title">ðŸŸ¢ TÃ©cnicos ativos neste palco:</div>
           <div id="regie-tech-online-list" class="regie-tech-online-list"></div>
         </div>
       </div>
 
       <div class="regie-tech-modal-actions">
         <button id="regie-tech-cancel-btn" type="button" class="regie-tech-btn-secondary">Cancelar</button>
-        <button id="regie-tech-save-btn" type="button" class="regie-tech-btn-primary">✓ Guardar Nome</button>
+        <button id="regie-tech-save-btn" type="button" class="regie-tech-btn-primary">âœ“ Guardar Nome</button>
       </div>
     </div>
   </div>
 
   <!-- Access Control -->
-  <script src="js/auth.js?v=127"></script>
+  <script src="js/auth.js?v=129"></script>
   <!-- Cloud MQTT over WSS -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=127"></script>
-  <script src="js/local-sync.js?v=127"></script>
-  <script src="js/notifications.js?v=127"></script>
-  <script src="js/regies.js?v=127"></script>
-<script src="js/view-mode.js?v=127"></script>
+  <script src="js/pwa.js?v=129"></script>
+  <script src="js/local-sync.js?v=129"></script>
+  <script src="js/notifications.js?v=129"></script>
+  <script src="js/regies.js?v=129"></script>
+<script src="js/view-mode.js?v=129"></script>
 </body>
 </html>

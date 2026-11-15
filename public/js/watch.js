@@ -47,6 +47,10 @@
   const $miniClock = document.getElementById('watch-mini-clock');
   const $digits = document.getElementById('watch-digits');
   const $info = document.getElementById('watch-info');
+  const $timerStateBadge = document.getElementById('watch-timer-state-badge');
+  const $nextBox = document.getElementById('watch-next-box');
+  const $nextName = document.getElementById('watch-next-name');
+  const $nextTime = document.getElementById('watch-next-time');
   const $eventEndVal = document.getElementById('watch-event-end-val');
   const $msgOverlay = document.getElementById('watch-message-overlay');
   const $msgBadge = document.getElementById('watch-msg-badge');
@@ -120,17 +124,89 @@
   }
   updateStageBadge();
 
+  // ─── Next Artist Resolution ──────────────────────────────────────────
+  function getNextTimer(state, activeTimer) {
+    if (!state || !Array.isArray(state.timers) || state.timers.length === 0) return null;
+    let list = state.timers;
+    if (activeTimer) {
+      if (!list.some(t => t.id === activeTimer.id) && state.days) {
+        for (const dayList of Object.values(state.days)) {
+          if (Array.isArray(dayList) && dayList.some(t => t.id === activeTimer.id)) {
+            list = dayList;
+            break;
+          }
+        }
+      }
+      const activeIdx = list.findIndex(t => t.id === activeTimer.id);
+      if (activeIdx >= 0 && activeIdx + 1 < list.length) {
+        return list[activeIdx + 1];
+      }
+      return null;
+    }
+
+    // Se nenhum timer estiver ativo, o próximo é o primeiro não concluído
+    const pending = list.filter(t => t.state !== 'finished');
+    if (pending.length > 1) {
+      return pending[1];
+    } else if (pending.length === 1) {
+      return pending[0];
+    }
+    return null;
+  }
+
+  function updateNextArtist(activeTimer, cascade) {
+    if (!$nextBox || !$nextName) return;
+    if (!state || !Array.isArray(state.timers) || state.timers.length === 0) {
+      $nextBox.style.display = 'none';
+      return;
+    }
+
+    const nextTimer = getNextTimer(state, activeTimer);
+    if (!nextTimer) {
+      if (activeTimer) {
+        $nextBox.style.display = 'flex';
+        $nextName.textContent = 'Última atuação';
+        if ($nextTime) $nextTime.textContent = '';
+      } else {
+        $nextBox.style.display = 'none';
+      }
+      return;
+    }
+
+    $nextBox.style.display = 'flex';
+    $nextName.textContent = nextTimer.name || 'Próximo';
+
+    let timeStr = '';
+    if (cascade && Array.isArray(cascade.slots)) {
+      const nextSlot = cascade.slots.find(s => s.id === nextTimer.id);
+      if (nextSlot) {
+        timeStr = nextSlot.real?.startStr || nextSlot.planned?.startStr || '';
+      }
+    }
+    if (!timeStr && nextTimer.startTime) {
+      timeStr = String(nextTimer.startTime).split('–')[0].trim();
+    }
+    if (!timeStr && nextTimer.duration) {
+      const mins = Math.round(nextTimer.duration / 60000);
+      timeStr = mins > 0 ? `${mins}m` : '';
+    }
+
+    if ($nextTime) {
+      $nextTime.textContent = timeStr ? `(${timeStr})` : '';
+    }
+  }
+
   // ─── Projected Event End Time (Fim Previsto do Evento) ───────────────
-  function updateEventEnd() {
+  function updateEventEnd(cascade) {
     if (!$eventEndVal) return;
     if (!state || !Array.isArray(state.timers) || state.timers.length === 0) {
       $eventEndVal.textContent = '🏁 Fim: --:--';
       return;
     }
 
-    const cascade = typeof StageTimerClient.computeCascadeSchedule === 'function'
-      ? StageTimerClient.computeCascadeSchedule(state)
-      : null;
+    if (!cascade && typeof StageTimerClient.computeCascadeSchedule === 'function') {
+      cascade = StageTimerClient.computeCascadeSchedule(state);
+    }
 
     const endStr = cascade?.eventEndStr || (typeof StageTimerClient.computeEventEndTime === 'function' ? StageTimerClient.computeEventEndTime(state) : '--:--');
 
@@ -220,63 +296,133 @@
   // ─── Edge-to-Edge Dynamic Scaling ────────────────────────────────────
   function fitDigits() {
     if (!$digits) return;
-    const isHours = $digits.textContent.length > 5;
-    $digits.style.fontSize = isHours ? '19.5vw' : '31vw';
+    const txt = $digits.textContent || '';
+    const len = txt.length;
+    if (len > 8) {
+      $digits.style.fontSize = 'clamp(1.5rem, 13vw, 2.3rem)';
+    } else if (len > 5) {
+      $digits.style.fontSize = 'clamp(1.9rem, 16vw, 3.0rem)';
+    } else {
+      $digits.style.fontSize = 'clamp(2.7rem, 23vw, 4.3rem)';
+    }
   }
 
   // ─── Render Loop (Single Unified Screen) ─────────────────────────────
   let lastColorState = '';
 
   function render() {
+    // 1. HORAS DO DIA (Relógio Oficial com Segundos em Tempo Real)
     const trueClockStr = getTrueTimeString();
     if ($miniClock) {
-      $miniClock.textContent = trueClockStr.substring(0, 5); // HH:MM no topo
+      $miniClock.textContent = trueClockStr;
     }
 
+    // Calcular horários em cascata e previsão de fim do evento
+    const cascade = (state && typeof StageTimerClient.computeCascadeSchedule === 'function')
+      ? StageTimerClient.computeCascadeSchedule(state)
+      : null;
+
+    // 2. HORAS DO PALCO (Timer Principal & Artista)
     const activeTimer = state ? StageTimerClient.getActiveTimer(state) : null;
 
     if (!activeTimer) {
-      // ── Nenhum timer ativo: Mostra o Relógio Oficial em Gigante ──
+      // Nenhum timer em execução no momento
+      const timersList = Array.isArray(state?.timers) ? state.timers : [];
+      const pendingTimer = timersList.find(t => t.state !== 'finished');
+
+      if (pendingTimer) {
+        if ($digits) {
+          $digits.textContent = formatTime(pendingTimer.duration || 0);
+          $digits.className = 'watch-digits paused';
+        }
+        if ($info) {
+          $info.textContent = `Pronto • ${pendingTimer.name || 'Próximo'}`;
+        }
+        if ($timerStateBadge) {
+          $timerStateBadge.textContent = 'STANDBY';
+          $timerStateBadge.className = 'watch-timer-state-badge state-standby';
+        }
+      } else if (timersList.length > 0 && timersList.every(t => t.state === 'finished')) {
+        if ($digits) {
+          $digits.textContent = '00:00';
+          $digits.className = 'watch-digits finished';
+        }
+        if ($info) {
+          $info.textContent = 'Fim do Espetáculo';
+        }
+        if ($timerStateBadge) {
+          $timerStateBadge.textContent = 'CONCLUÍDO';
+          $timerStateBadge.className = 'watch-timer-state-badge state-finished';
+        }
+      } else {
+        if ($digits) {
+          $digits.textContent = '00:00';
+          $digits.className = 'watch-digits clock';
+        }
+        if ($info) {
+          $info.textContent = 'Palco Livre • Sem Timer';
+        }
+        if ($timerStateBadge) {
+          $timerStateBadge.textContent = 'LIVRE';
+          $timerStateBadge.className = 'watch-timer-state-badge state-standby';
+        }
+      }
+    } else {
+      // Timer ativo em palco (Countdown / Countup / Overtime)
+      const displayVal = getTimerDisplayValue(activeTimer);
+      const colorClass = getTimerColorClass(activeTimer);
+
+      // Vibração tátil ao entrar em tempo excedido (overtime)
+      if (colorClass === 'overtime' && lastColorState !== 'overtime') {
+        if (navigator.vibrate) {
+          try { navigator.vibrate([150, 80, 150]); } catch (_) {}
+        }
+      }
+      lastColorState = colorClass;
+
       if ($digits) {
-        $digits.textContent = trueClockStr;
-        $digits.className = 'watch-digits clock has-hours';
+        $digits.textContent = displayVal;
+        const isLong = displayVal.length > 5;
+        $digits.className = `watch-digits ${colorClass} ${isLong ? 'has-hours' : ''}`;
       }
+
       if ($info) {
-        $info.textContent = 'Palco Livre • Sem Timer';
+        $info.textContent = activeTimer.name || 'Timer de Palco';
       }
-      fitDigits();
-      return;
-    }
 
-    // ── Timer Ativo em Palco (Countdown / Countup / Overtime) ──
-    const displayVal = getTimerDisplayValue(activeTimer);
-    const colorClass = getTimerColorClass(activeTimer);
-
-    // Vibração tátil ao entrar em tempo excedido (overtime)
-    if (colorClass === 'overtime' && lastColorState !== 'overtime') {
-      if (navigator.vibrate) {
-        try { navigator.vibrate([150, 80, 150]); } catch (_) {}
+      if ($timerStateBadge) {
+        if (activeTimer.state === 'running') {
+          if (colorClass === 'overtime') {
+            $timerStateBadge.textContent = '⚠️ OVERTIME';
+            $timerStateBadge.className = 'watch-timer-state-badge state-overtime';
+          } else {
+            $timerStateBadge.textContent = '● ON AIR';
+            $timerStateBadge.className = 'watch-timer-state-badge state-onair';
+          }
+        } else if (activeTimer.state === 'paused') {
+          $timerStateBadge.textContent = '⏸️ PAUSA';
+          $timerStateBadge.className = 'watch-timer-state-badge state-pause';
+        } else if (activeTimer.state === 'finished') {
+          $timerStateBadge.textContent = '🏁 FIM';
+          $timerStateBadge.className = 'watch-timer-state-badge state-finished';
+        } else {
+          $timerStateBadge.textContent = 'STANDBY';
+          $timerStateBadge.className = 'watch-timer-state-badge state-standby';
+        }
       }
     }
-    lastColorState = colorClass;
 
-    if ($digits) {
-      $digits.textContent = displayVal;
-      const isLong = displayVal.length > 5;
-      $digits.className = `watch-digits ${colorClass} ${isLong ? 'has-hours' : ''}`;
-    }
+    // 3. PRÓXIMO ARTISTA
+    updateNextArtist(activeTimer, cascade);
 
-    if ($info) {
-      const prefix = activeTimer.state === 'paused' ? '⏸️ ' : '';
-      $info.textContent = prefix + (activeTimer.name || 'Timer de Palco');
-    }
+    // 4. PREVISÃO DO FIM DO EVENTO
+    updateEventEnd(cascade);
 
     fitDigits();
   }
 
   // Atualização suave a cada 200ms
   setInterval(render, 200);
-  setInterval(updateEventEnd, 2000);
 
   // ─── Screen Wake Lock (Manter Ecrã Ligado) ────────────────────────────
   let wakeLock = null;

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -54,27 +54,27 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <title>StageTimer — Modo Lista (Lineup & Horários)</title>
-  <link rel="stylesheet" href="css/common.css?v=127">
-  <link rel="stylesheet" href="css/lineup.css?v=127">
+  <title>StageTimer â€” Modo Lista (Lineup & HorÃ¡rios)</title>
+  <link rel="stylesheet" href="css/common.css?v=129">
+  <link rel="stylesheet" href="css/lineup.css?v=129">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
     <!-- Top Header -->
     <header class="lineup-header">
       <div class="lineup-title-box" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <span style="font-size: 1.7rem;">📋</span>
+        <span style="font-size: 1.7rem;">ðŸ“‹</span>
         <div>
           <div class="lineup-title">
-            Lineup & Horários
+            Lineup & HorÃ¡rios
             <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 6px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v127</span>
           </div>
         </div>
         <!-- Event / Stage Badge & Pills -->
         <div style="display: flex; align-items: center; gap: 6px; background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.5); padding: 4px 10px; border-radius: 8px;">
-          <span style="font-size: 0.9rem;">🎪</span>
+          <span style="font-size: 0.9rem;">ðŸŽª</span>
           <span id="lineup-stage-badge" style="color: #55efc4; font-size: 0.85rem; font-weight: 800; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;" title="Tocar para trocar de palco">Palco</span>
-          <select id="lineup-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco"></select>
+          <select id="lineup-event-select" class="master-stage-select" style="display: none;" title="ðŸ‘‘ Trocar Palco"></select>
         </div>
         <div id="lineup-stage-pills" class="stage-pills-bar" style="display: none;"></div>
         <span id="lineup-room-badge" class="lineup-room-badge" style="display: none;">PALCO1</span>
@@ -82,22 +82,22 @@
 
       <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
         <div class="st-compact-nav">
-          <a id="ln-nav-hub" href="index.html?portal=1" class="st-nav-home-btn" title="Ir para o Início / Escolher Evento">🏠 Início</a>
+          <a id="ln-nav-hub" href="index.html?portal=1" class="st-nav-home-btn" title="Ir para o InÃ­cio / Escolher Evento">ðŸ  InÃ­cio</a>
           <div class="st-nav-dropdown">
-            <button type="button" class="st-nav-trigger">📋 Ecrãs ▾</button>
+            <button type="button" class="st-nav-trigger">ðŸ“‹ EcrÃ£s â–¾</button>
             <div class="st-nav-menu">
-              <div class="st-nav-group-label">Navegação</div>
-              <a id="ln-nav-portal" href="index.html?portal=1" class="st-nav-item">🏠 Escolher Evento (Início)</a>
-              <a id="ln-nav-hub-menu" href="index.html" class="st-nav-item">🎪 Menu do Evento</a>
-              <div class="st-nav-group-label">Controlo & Operação</div>
-              <a id="ln-nav-operator" href="operator.html" class="st-nav-item">📱 Modo Operador</a>
-              <a id="ln-nav-controller" href="controller.html" class="st-nav-item">🎛️ Configurador</a>
+              <div class="st-nav-group-label">NavegaÃ§Ã£o</div>
+              <a id="ln-nav-portal" href="index.html?portal=1" class="st-nav-item">ðŸ  Escolher Evento (InÃ­cio)</a>
+              <a id="ln-nav-hub-menu" href="index.html" class="st-nav-item">ðŸŽª Menu do Evento</a>
+              <div class="st-nav-group-label">Controlo & OperaÃ§Ã£o</div>
+              <a id="ln-nav-operator" href="operator.html" class="st-nav-item">ðŸ“± Modo Operador</a>
+              <a id="ln-nav-controller" href="controller.html" class="st-nav-item">ðŸŽ›ï¸ Configurador</a>
               <div class="st-nav-group-label">Palco & Equipa</div>
-              <a id="ln-nav-viewer" href="viewer.html" class="st-nav-item">📺 Modo Palco</a>
-              <a id="ln-nav-watch" href="watch.html" class="st-nav-item">⌚ Modo Apple Watch</a>
-              <a id="ln-nav-lineup" href="lineup.html" class="st-nav-item active">📋 Modo Lista</a>
-              <a id="ln-nav-regies" href="regies.html" class="st-nav-item">📟 Modo Régies</a>
-              <a id="ln-nav-master" href="master.html" class="st-nav-item st-nav-item-master" style="display: none;">👑 Super Régie Master</a>
+              <a id="ln-nav-viewer" href="viewer.html" class="st-nav-item">ðŸ“º Modo Palco</a>
+              <a id="ln-nav-watch" href="watch.html" class="st-nav-item">âŒš Modo Apple Watch</a>
+              <a id="ln-nav-lineup" href="lineup.html" class="st-nav-item active">ðŸ“‹ Modo Lista</a>
+              <a id="ln-nav-regies" href="regies.html" class="st-nav-item">ðŸ“Ÿ Modo RÃ©gies</a>
+              <a id="ln-nav-master" href="master.html" class="st-nav-item st-nav-item-master" style="display: none;">ðŸ‘‘ Super RÃ©gie Master</a>
             </div>
           </div>
         </div>
@@ -120,29 +120,29 @@
         <div id="lineup-video-container" class="lineup-video-container" style="display: none;">
           <div class="lineup-video-header">
             <div class="lineup-video-status">
-              <span id="lineup-video-badge" class="video-badge live">● AO VIVO</span>
-              <span id="lineup-video-label" class="lineup-video-label">Câmara Palco</span>
+              <span id="lineup-video-badge" class="video-badge live">â— AO VIVO</span>
+              <span id="lineup-video-label" class="lineup-video-label">CÃ¢mara Palco</span>
             </div>
             <div class="lineup-video-actions">
-              <button type="button" id="lineup-video-size-btn" class="video-action-btn" title="Alternar Tamanho XL do Vídeo">⇔</button>
-              <button type="button" id="lineup-video-mute-btn" class="video-action-btn" title="Ligar/Desligar Áudio">🔇</button>
-              <button type="button" id="lineup-video-pip-btn" class="video-action-btn" title="Janela Flutuante (PiP)">🔲</button>
-              <button type="button" id="lineup-video-fs-btn" class="video-action-btn" title="Ecrã Completo">⛶</button>
-              <button type="button" id="lineup-video-collapse-btn" class="video-action-btn" title="Recolher Vídeo">▲</button>
+              <button type="button" id="lineup-video-size-btn" class="video-action-btn" title="Alternar Tamanho XL do VÃ­deo">â‡”</button>
+              <button type="button" id="lineup-video-mute-btn" class="video-action-btn" title="Ligar/Desligar Ãudio">ðŸ”‡</button>
+              <button type="button" id="lineup-video-pip-btn" class="video-action-btn" title="Janela Flutuante (PiP)">ðŸ”²</button>
+              <button type="button" id="lineup-video-fs-btn" class="video-action-btn" title="EcrÃ£ Completo">â›¶</button>
+              <button type="button" id="lineup-video-collapse-btn" class="video-action-btn" title="Recolher VÃ­deo">â–²</button>
             </div>
           </div>
           <div class="lineup-video-screen">
             <video id="lineup-video-element" playsinline autoplay muted></video>
             <iframe id="lineup-video-iframe" allow="autoplay; fullscreen; picture-in-picture" style="display: none;"></iframe>
             <div id="lineup-video-placeholder" class="lineup-video-placeholder" style="display: none;">
-              <span class="placeholder-icon">📹</span>
+              <span class="placeholder-icon">ðŸ“¹</span>
               <span id="lineup-video-status-text" class="placeholder-text">Aguardando sinal...</span>
             </div>
           </div>
         </div>
-        <button type="button" id="lineup-video-expand-btn" class="lineup-video-expand-pill" style="display: none;">📹 Mostrar Vídeo de Palco</button>
+        <button type="button" id="lineup-video-expand-btn" class="lineup-video-expand-pill" style="display: none;">ðŸ“¹ Mostrar VÃ­deo de Palco</button>
 
-        <div id="lineup-now-badge" class="lineup-now-badge">● EM PALCO AGORA</div>
+        <div id="lineup-now-badge" class="lineup-now-badge">â— EM PALCO AGORA</div>
         <div id="lineup-now-name" class="lineup-now-name">--</div>
         <div id="lineup-now-slot" class="lineup-now-slot"></div>
         <div id="lineup-now-timer" class="lineup-now-timer">--:--</div>
@@ -161,9 +161,9 @@
   <!-- Cloud MQTT over WSS & HLS Engine -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
-  <script src="js/pwa.js?v=127"></script>
-  <script src="js/local-sync.js?v=127"></script>
-  <script src="js/lineup.js?v=127"></script>
-<script src="js/view-mode.js?v=127"></script>
+  <script src="js/pwa.js?v=129"></script>
+  <script src="js/local-sync.js?v=129"></script>
+  <script src="js/lineup.js?v=129"></script>
+<script src="js/view-mode.js?v=129"></script>
 </body>
 </html>

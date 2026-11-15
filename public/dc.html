@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -54,20 +54,20 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <title>StageTimer — Modo Jess (Diretora de Cena)</title>
-  <link rel="stylesheet" href="css/common.css?v=127">
-  <link rel="stylesheet" href="css/controller.css?v=127">
-  <link rel="stylesheet" href="css/dc.css?v=127">
+  <title>StageTimer â€” Modo Jess (Diretora de Cena)</title>
+  <link rel="stylesheet" href="css/common.css?v=129">
+  <link rel="stylesheet" href="css/controller.css?v=129">
+  <link rel="stylesheet" href="css/dc.css?v=129">
 </head>
 <body>
   <div id="dc-screen" class="dc-screen">
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- 1. FIXED TOP HUD: Telemetria de Espetáculo & Relógios           -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- 1. FIXED TOP HUD: Telemetria de EspetÃ¡culo & RelÃ³gios           -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
     <header class="dc-hud">
       <div class="dc-hud-left">
-        <a href="index.html?portal=1" class="dc-brand-link" title="Voltar ao Início / Escolher Evento">
-          <span style="font-size: 1.5rem;">🎭</span>
+        <a href="index.html?portal=1" class="dc-brand-link" title="Voltar ao InÃ­cio / Escolher Evento">
+          <span style="font-size: 1.5rem;">ðŸŽ­</span>
           <div>
             <div class="dc-brand-title">MODO JESS</div>
             <div class="dc-brand-sub">Diretora de Cena</div>
@@ -77,7 +77,7 @@
 
         <!-- Stage / Room Pill -->
         <div class="dc-stage-pill" id="dc-stage-badge-container">
-          <span style="font-size: 0.85rem;">🎪</span>
+          <span style="font-size: 0.85rem;">ðŸŽª</span>
           <span id="dc-stage-badge" class="dc-stage-badge-text">Palco</span>
           <select id="dc-stage-select" class="dc-stage-select-hidden" title="Trocar Palco"></select>
         </div>
@@ -86,28 +86,28 @@
       <!-- Center: Show State Controller -->
       <div class="dc-hud-center">
         <div class="dc-show-status-pill" id="dc-show-status-badge">
-          <span class="dc-status-dot">●</span>
-          <span id="dc-show-status-text">PRÉ-SHOW</span>
+          <span class="dc-status-dot">â—</span>
+          <span id="dc-show-status-text">PRÃ‰-SHOW</span>
         </div>
 
         <div class="dc-show-btn-group">
-          <button id="dc-btn-start-show" type="button" class="dc-hud-btn dc-hud-btn-start" title="Iniciar espetáculo e contagem">
-            ▶ Iniciar
+          <button id="dc-btn-start-show" type="button" class="dc-hud-btn dc-hud-btn-start" title="Iniciar espetÃ¡culo e contagem">
+            â–¶ Iniciar
           </button>
           <button id="dc-btn-pause-show" type="button" class="dc-hud-btn" style="display: none;" title="Pausar contagem">
-            ⏸ Pausa
+            â¸ Pausa
           </button>
-          <button id="dc-btn-end-show" type="button" class="dc-hud-btn dc-hud-btn-end" style="display: none;" title="Terminar espetáculo e fechar relatório">
-            ⏹ Terminar
+          <button id="dc-btn-end-show" type="button" class="dc-hud-btn dc-hud-btn-end" style="display: none;" title="Terminar espetÃ¡culo e fechar relatÃ³rio">
+            â¹ Terminar
           </button>
-          <button id="dc-btn-reset-show" type="button" class="dc-hud-btn dc-hud-btn-reset" title="Reiniciar espetáculo e limpar deixas">
-            🔄 Reset
+          <button id="dc-btn-reset-show" type="button" class="dc-hud-btn dc-hud-btn-reset" title="Reiniciar espetÃ¡culo e limpar deixas">
+            ðŸ”„ Reset
           </button>
         </div>
 
         <!-- Broadcast Urgent Notice Button -->
-        <button id="dc-btn-urgent-toggle" type="button" class="dc-hud-btn dc-hud-btn-warn" title="Enviar aviso imediato para todos os postos técnicos">
-          🚨 Aviso Rápido
+        <button id="dc-btn-urgent-toggle" type="button" class="dc-hud-btn dc-hud-btn-warn" title="Enviar aviso imediato para todos os postos tÃ©cnicos">
+          ðŸš¨ Aviso RÃ¡pido
         </button>
       </div>
 
@@ -128,62 +128,62 @@
       </div>
     </header>
 
-    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
     <!-- URGENT NOTICE BAR (DC TO ALL STATIONS)                          -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
     <div id="dc-urgent-bar" class="dc-urgent-broadcast-bar" style="display: none;">
       <div class="dc-urgent-input-row">
-        <span style="font-size: 1.2rem;">📢</span>
-        <input id="dc-urgent-input" class="dc-urgent-input" placeholder="Escreva aviso urgente para todos os postos técnicos (ex: Aguardar 2 min antes da vara 4)..." autocomplete="off">
-        <button id="dc-urgent-send-btn" type="button" class="dc-btn-primary">⚡ Enviar Aviso</button>
-        <button id="dc-urgent-clear-btn" type="button" class="dc-btn-danger">🗑️ Limpar</button>
+        <span style="font-size: 1.2rem;">ðŸ“¢</span>
+        <input id="dc-urgent-input" class="dc-urgent-input" placeholder="Escreva aviso urgente para todos os postos tÃ©cnicos (ex: Aguardar 2 min antes da vara 4)..." autocomplete="off">
+        <button id="dc-urgent-send-btn" type="button" class="dc-btn-primary">âš¡ Enviar Aviso</button>
+        <button id="dc-urgent-clear-btn" type="button" class="dc-btn-danger">ðŸ—‘ï¸ Limpar</button>
       </div>
       <div id="dc-urgent-active-tag" style="display: none;" class="dc-urgent-active-text"></div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- FASE DO ESPETÁCULO: PREPARAÇÃO/AFINAÇÕES vs DECORRER DO SHOW    -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <nav id="dc-phase-bar" class="dc-phase-bar" aria-label="Fase do Espetáculo" style="margin-bottom: 12px;">
-      <button id="dc-phase-btn-prep" type="button" class="dc-phase-btn active" data-phase="prep" title="Fase 1: Preparação de Palco, Elenco/Artistas, Notas e Checklists">
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- FASE DO ESPETÃCULO: PREPARAÃ‡ÃƒO/AFINAÃ‡Ã•ES vs DECORRER DO SHOW    -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <nav id="dc-phase-bar" class="dc-phase-bar" aria-label="Fase do EspetÃ¡culo" style="margin-bottom: 12px;">
+      <button id="dc-phase-btn-prep" type="button" class="dc-phase-btn active" data-phase="prep" title="Fase 1: PreparaÃ§Ã£o de Palco, Elenco/Artistas, Notas e Checklists">
         <div class="dc-phase-btn-left">
-          <span style="font-size: 1.3rem;">🛠️</span>
+          <span style="font-size: 1.3rem;">ðŸ› ï¸</span>
           <div>
-            <div class="dc-phase-title">FASE 1: TRABALHOS DE PALCO & AFINAÇÕES</div>
-            <div class="dc-phase-desc">Artistas, alinhamento, notas de palco e verificação de equipamentos</div>
+            <div class="dc-phase-title">FASE 1: TRABALHOS DE PALCO & AFINAÃ‡Ã•ES</div>
+            <div class="dc-phase-desc">Artistas, alinhamento, notas de palco e verificaÃ§Ã£o de equipamentos</div>
           </div>
         </div>
-        <span id="dc-phase-prep-badge" class="dc-phase-pill prep">PRONTIDÃO 0%</span>
+        <span id="dc-phase-prep-badge" class="dc-phase-pill prep">PRONTIDÃƒO 0%</span>
       </button>
 
-      <button id="dc-phase-btn-live" type="button" class="dc-phase-btn" data-phase="live" title="Fase 2: Espetáculo ao Vivo com Disparo de Deixas (STANDBY e GO)">
+      <button id="dc-phase-btn-live" type="button" class="dc-phase-btn" data-phase="live" title="Fase 2: EspetÃ¡culo ao Vivo com Disparo de Deixas (STANDBY e GO)">
         <div class="dc-phase-btn-left">
-          <span style="font-size: 1.3rem;">🎭</span>
+          <span style="font-size: 1.3rem;">ðŸŽ­</span>
           <div>
             <div class="dc-phase-title">FASE 2: MODO DEIXAS (EM CENA / LIVE)</div>
-            <div class="dc-phase-desc">Execução em direto: Standby, GO (Barra de Espaço), Recuar Deixa e Timecodes</div>
+            <div class="dc-phase-desc">ExecuÃ§Ã£o em direto: Standby, GO (Barra de EspaÃ§o), Recuar Deixa e Timecodes</div>
           </div>
         </div>
         <span id="dc-phase-live-badge" class="dc-phase-pill live">EM CENA</span>
       </button>
     </nav>
 
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- VIEW 1: FASE DE PALCO & PRÉ-SHOW                                -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- VIEW 1: FASE DE PALCO & PRÃ‰-SHOW                                -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
     <div id="dc-view-stage" class="dc-stage-view">
       <!-- Stage Hero Banner -->
       <div class="dc-stage-header-banner">
         <div style="display: flex; align-items: center; gap: 14px;">
-          <div style="font-size: 2.3rem; line-height: 1;">🛠️</div>
+          <div style="font-size: 2.3rem; line-height: 1;">ðŸ› ï¸</div>
           <div>
-            <div style="font-weight: 900; font-size: 1.15rem; color: #ffeaa7;">TRABALHOS DE PALCO, ARTISTAS & AFINAÇÕES</div>
-            <div style="font-size: 0.82rem; color: #cbd5e1;">Acompanhe o elenco e horários, aponte notas de palco e confirme as afinações de cada posto técnico.</div>
+            <div style="font-weight: 900; font-size: 1.15rem; color: #ffeaa7;">TRABALHOS DE PALCO, ARTISTAS & AFINAÃ‡Ã•ES</div>
+            <div style="font-size: 0.82rem; color: #cbd5e1;">Acompanhe o elenco e horÃ¡rios, aponte notas de palco e confirme as afinaÃ§Ãµes de cada posto tÃ©cnico.</div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
           <button id="dc-btn-start-show-prep" type="button" class="dc-hero-start-btn">
-            🎬 DAR ARRANQUE AO ESPETÁCULO ▶
+            ðŸŽ¬ DAR ARRANQUE AO ESPETÃCULO â–¶
           </button>
         </div>
       </div>
@@ -196,14 +196,14 @@
           <div class="dc-stage-card">
             <div class="dc-stage-card-title">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span>🎭</span>
+                <span>ðŸŽ­</span>
                 <span>Alinhamento & Artistas de Palco</span>
                 <span id="dc-stage-artists-count" style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--dc-muted);">0 Artistas</span>
               </div>
               <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                 <button id="dc-btn-stage-add-artist" type="button" class="btn btn-primary btn-sm btn-add-main" style="font-weight: 800; font-size: 0.8rem; padding: 4px 12px; box-shadow: 0 2px 8px rgba(108, 92, 231, 0.4);">+ Add Timer</button>
-                <button id="dc-btn-stage-import-schedule" type="button" class="btn btn-sm btn-import-outline" style="font-size: 0.75rem; padding: 4px 10px;">📂 Importar</button>
-                <button id="dc-btn-stage-clear-schedule" type="button" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 10px;">🧹 Limpar</button>
+                <button id="dc-btn-stage-import-schedule" type="button" class="btn btn-sm btn-import-outline" style="font-size: 0.75rem; padding: 4px 10px;">ðŸ“‚ Importar</button>
+                <button id="dc-btn-stage-clear-schedule" type="button" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 10px;">ðŸ§¹ Limpar</button>
               </div>
             </div>
 
@@ -259,44 +259,44 @@
 
             <!-- Quick Add Line (Complementary) -->
             <div style="display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); align-items: center;">
-              <input id="dc-stage-artist-name-input" class="input input-sm" style="flex: 1; font-size: 0.85rem;" placeholder="Ou adicione rápido: Nome do artista / ato...">
+              <input id="dc-stage-artist-name-input" class="input input-sm" style="flex: 1; font-size: 0.85rem;" placeholder="Ou adicione rÃ¡pido: Nome do artista / ato...">
               <input id="dc-stage-artist-dur-input" class="input input-mono input-sm" type="number" min="1" max="300" style="width: 84px; text-align: center;" placeholder="Minutos">
-              <button id="dc-stage-artist-add-btn" type="button" class="btn btn-primary btn-sm" style="white-space: nowrap; font-weight: 700;">➕ Adicionar</button>
+              <button id="dc-stage-artist-add-btn" type="button" class="btn btn-primary btn-sm" style="white-space: nowrap; font-weight: 700;">âž• Adicionar</button>
             </div>
           </div>
 
-          <!-- Card Notas Rápidas de Palco -->
+          <!-- Card Notas RÃ¡pidas de Palco -->
           <div class="dc-stage-card">
             <div class="dc-stage-card-title">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span>📝</span>
-                <span>Notas Rápidas de Palco & Camarins</span>
+                <span>ðŸ“</span>
+                <span>Notas RÃ¡pidas de Palco & Camarins</span>
               </div>
-              <span style="font-size: 0.72rem; color: var(--dc-muted);">Visíveis na régie</span>
+              <span style="font-size: 0.72rem; color: var(--dc-muted);">VisÃ­veis na rÃ©gie</span>
             </div>
             <div id="dc-stage-notes-list" class="dc-notes-list">
               <!-- Injected by dc.js -->
             </div>
             <div style="display: flex; gap: 8px; margin-top: 6px;">
               <input id="dc-stage-note-input" class="dc-input-sm" style="flex: 1;" placeholder="Nota de palco (ex: Atriz X entra com capa vermelha pela coxia esquerda)...">
-              <button id="dc-stage-note-add-btn" type="button" class="dc-btn-primary dc-btn-sm" style="white-space: nowrap;">➕ Adicionar</button>
+              <button id="dc-stage-note-add-btn" type="button" class="dc-btn-primary dc-btn-sm" style="white-space: nowrap;">âž• Adicionar</button>
             </div>
           </div>
 
-          <!-- Card Pré-Deixas -->
+          <!-- Card PrÃ©-Deixas -->
           <div class="dc-stage-card" style="border-color: rgba(253, 203, 110, 0.3);">
             <div class="dc-stage-card-title">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span>⚡</span>
-                <span>Folha de Deixas do Espetáculo</span>
+                <span>âš¡</span>
+                <span>Folha de Deixas do EspetÃ¡culo</span>
               </div>
               <span id="dc-prep-cues-count" style="font-size: 0.75rem; font-family: var(--font-mono); color: #ffeaa7;">0 Deixas</span>
             </div>
             <p style="font-size: 0.8rem; color: #cbd5e1; margin: 0;">Pode importar a folha de deixas em PDF, Excel, Word ou texto antes de arrancar.</p>
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
-              <button id="dc-btn-prep-import-cues" type="button" class="dc-btn-primary dc-btn-sm">📥 Importar Folha de Deixas</button>
-              <button id="dc-btn-prep-add-cue" type="button" class="dc-tool-btn">➕ Nova Deixa</button>
-              <button id="dc-btn-prep-view-script" type="button" class="dc-tool-btn">📖 Guião / Texto</button>
+              <button id="dc-btn-prep-import-cues" type="button" class="dc-btn-primary dc-btn-sm">ðŸ“¥ Importar Folha de Deixas</button>
+              <button id="dc-btn-prep-add-cue" type="button" class="dc-tool-btn">âž• Nova Deixa</button>
+              <button id="dc-btn-prep-view-script" type="button" class="dc-tool-btn">ðŸ“– GuiÃ£o / Texto</button>
             </div>
           </div>
         </div>
@@ -305,7 +305,7 @@
         <div class="dc-stage-card">
           <div class="dc-stage-card-title">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span>📋</span>
+              <span>ðŸ“‹</span>
               <span>Checklists de Equipas & Presets</span>
             </div>
             <span id="dc-readiness-percent" class="dc-readiness-pill">0% PRONTO</span>
@@ -323,16 +323,16 @@
           <!-- Add Item Bar -->
           <div class="dc-add-task-row">
             <select id="dc-task-dept-select" class="dc-select-sm">
-              <option value="Luz">💡 Luz</option>
-              <option value="Som">🔊 Som</option>
-              <option value="Maquinaria">⚙️ Maquinaria</option>
-              <option value="Vídeo">🎥 Vídeo</option>
-              <option value="Coxias">🎭 Coxias</option>
+              <option value="Luz">ðŸ’¡ Luz</option>
+              <option value="Som">ðŸ”Š Som</option>
+              <option value="Maquinaria">âš™ï¸ Maquinaria</option>
+              <option value="VÃ­deo">ðŸŽ¥ VÃ­deo</option>
+              <option value="Coxias">ðŸŽ­ Coxias</option>
             </select>
-            <input id="dc-task-label-input" class="dc-input-sm" placeholder="Nova verificação de equipa...">
-            <label class="dc-checkbox-label" title="Marcar como tarefa pontual que só se aplica a esta récita">
+            <input id="dc-task-label-input" class="dc-input-sm" placeholder="Nova verificaÃ§Ã£o de equipa...">
+            <label class="dc-checkbox-label" title="Marcar como tarefa pontual que sÃ³ se aplica a esta rÃ©cita">
               <input type="checkbox" id="dc-task-oneoff-check">
-              <span>Só Hoje</span>
+              <span>SÃ³ Hoje</span>
             </label>
             <button id="dc-task-add-btn" type="button" class="dc-btn-primary dc-btn-sm">Adicionar</button>
           </div>
@@ -345,31 +345,31 @@
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- VIEW 2: MODO DEIXAS (EM CENA / LIVE) — OPÇÃO A IMPECÁVEL        -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- VIEW 2: MODO DEIXAS (EM CENA / LIVE) â€” OPÃ‡ÃƒO A IMPECÃVEL        -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
     <div id="dc-view-cues" class="dc-cues-view" style="display: none;">
       <!-- Live Status & Sub-navigation Bar -->
       <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(20,20,36,0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px 16px; flex-wrap: wrap; gap: 10px;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <span style="font-size: 1.1rem; color: #00b894;">●</span>
+          <span style="font-size: 1.1rem; color: #00b894;">â—</span>
           <strong style="color: #fff; font-size: 0.95rem; letter-spacing: 0.04em;">MODO DEIXAS EM CENA</strong>
-          <span style="font-size: 0.75rem; color: var(--dc-muted);">Disparo ao milissegundo • Ecrã total sem distrações</span>
+          <span style="font-size: 0.75rem; color: var(--dc-muted);">Disparo ao milissegundo â€¢ EcrÃ£ total sem distraÃ§Ãµes</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <button id="dc-btn-return-stage" type="button" class="dc-tool-btn" title="Consultar elenco de artistas, notas ou afinações de palco">
-            🛠️ Ver Trabalhos de Palco
+          <button id="dc-btn-return-stage" type="button" class="dc-tool-btn" title="Consultar elenco de artistas, notas ou afinaÃ§Ãµes de palco">
+            ðŸ› ï¸ Ver Trabalhos de Palco
           </button>
-          <button id="dc-btn-toggle-script-modal" type="button" class="dc-tool-btn" title="Abrir guião de leitura em janela dedicada">
-            📖 Guião da Peça
+          <button id="dc-btn-toggle-script-modal" type="button" class="dc-tool-btn" title="Abrir guiÃ£o de leitura em janela dedicada">
+            ðŸ“– GuiÃ£o da PeÃ§a
           </button>
-          <button id="dc-btn-toggle-telemetry" type="button" class="dc-tool-btn" title="Ver telemetria e relatórios gravados">
-            📊 Relatórios & Histórico
+          <button id="dc-btn-toggle-telemetry" type="button" class="dc-tool-btn" title="Ver telemetria e relatÃ³rios gravados">
+            ðŸ“Š RelatÃ³rios & HistÃ³rico
           </button>
         </div>
       </div>
 
-      <!-- Giant Hero Cue Action Box (Opção A) -->
+      <!-- Giant Hero Cue Action Box (OpÃ§Ã£o A) -->
             <!-- Mini Live Stage Timer Bar in Cue View -->
       <div id="dc-cue-stage-timer-bar" class="dc-cue-stage-timer-bar" style="display: flex;">
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -388,7 +388,7 @@
       <div class="dc-action-box" style="padding: 18px 20px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
           <div>
-            <span class="dc-action-hint">⚡ DEIXA ATUAL A DISPARAR:</span>
+            <span class="dc-action-hint">âš¡ DEIXA ATUAL A DISPARAR:</span>
             <div style="display: flex; align-items: baseline; gap: 14px; margin-top: 4px;">
               <span id="dc-hero-cue-num" style="font-family: var(--font-mono); font-size: 2.4rem; font-weight: 900; color: #55efc4; line-height: 1;">Q1</span>
               <span id="dc-hero-cue-name" style="font-size: 1.35rem; font-weight: 800; color: #fff;">Abertura de Sala</span>
@@ -403,7 +403,7 @@
         <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; margin: 4px 0;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
             <span style="font-size: 0.74rem; font-weight: 800; color: #ffeaa7;">PONTO DE DISPARO / FALA:</span>
-            <span id="dc-hero-cue-target" style="font-size: 0.95rem; color: #fff; font-weight: 700;">No 3º Sinal da Sala</span>
+            <span id="dc-hero-cue-target" style="font-size: 0.95rem; color: #fff; font-weight: 700;">No 3Âº Sinal da Sala</span>
           </div>
           <div style="font-size: 0.78rem; color: var(--dc-muted);">
             <strong style="color: #cbd5e1;">Notas:</strong> <span id="dc-hero-cue-notes">Fade in suave de 4 segundos</span>
@@ -412,38 +412,38 @@
 
         <!-- Giant Buttons Row -->
         <div class="dc-action-btn-row" style="margin-top: 4px;">
-          <button id="dc-btn-standby" type="button" class="dc-hero-btn dc-btn-standby" style="flex: 1; padding: 20px 14px; font-size: 1.15rem;" title="Colocar a próxima deixa em Standby (Sinal Amarelo no telemóvel dos técnicos)">
-            <span class="dc-hero-icon" style="font-size: 1.6rem;">🟡</span>
+          <button id="dc-btn-standby" type="button" class="dc-hero-btn dc-btn-standby" style="flex: 1; padding: 20px 14px; font-size: 1.15rem;" title="Colocar a prÃ³xima deixa em Standby (Sinal Amarelo no telemÃ³vel dos tÃ©cnicos)">
+            <span class="dc-hero-icon" style="font-size: 1.6rem;">ðŸŸ¡</span>
             <span class="dc-hero-text" style="font-size: 1.25rem;">STANDBY</span>
           </button>
-          <button id="dc-btn-go" type="button" class="dc-hero-btn dc-btn-go" style="flex: 1.4; padding: 20px 14px; font-size: 1.25rem;" title="Executar deixa ativa (Sinal Verde). Atalho: BARRA DE ESPAÇO">
-            <span class="dc-hero-icon" style="font-size: 1.8rem;">🟢</span>
-            <span class="dc-hero-text" style="font-size: 1.35rem;">GO (BARRA DE ESPAÇO)</span>
+          <button id="dc-btn-go" type="button" class="dc-hero-btn dc-btn-go" style="flex: 1.4; padding: 20px 14px; font-size: 1.25rem;" title="Executar deixa ativa (Sinal Verde). Atalho: BARRA DE ESPAÃ‡O">
+            <span class="dc-hero-icon" style="font-size: 1.8rem;">ðŸŸ¢</span>
+            <span class="dc-hero-text" style="font-size: 1.35rem;">GO (BARRA DE ESPAÃ‡O)</span>
           </button>
         </div>
 
         <!-- Safety, Navigation & Control Row -->
         <div class="dc-action-subtools" style="margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button id="dc-btn-undo-cue" type="button" class="dc-mini-btn" style="background: rgba(255, 118, 117, 0.15); border-color: rgba(255, 118, 117, 0.4); color: #ff7675; font-weight: 800;" title="Desfazer último GO e voltar a colocar a deixa anterior em Standby">
-              ↩️ Recuar Deixa (Desfazer)
+            <button id="dc-btn-undo-cue" type="button" class="dc-mini-btn" style="background: rgba(255, 118, 117, 0.15); border-color: rgba(255, 118, 117, 0.4); color: #ff7675; font-weight: 800;" title="Desfazer Ãºltimo GO e voltar a colocar a deixa anterior em Standby">
+              â†©ï¸ Recuar Deixa (Desfazer)
             </button>
             <button id="dc-btn-skip-cue" type="button" class="dc-mini-btn" title="Saltar deixa sem disparar">
-              ⏭️ Saltar Deixa
+              â­ï¸ Saltar Deixa
             </button>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button id="dc-btn-add-cue" type="button" class="dc-mini-btn" title="Adicionar nova deixa">
-              ➕ Nova Deixa
+              âž• Nova Deixa
             </button>
             <button id="dc-btn-import-cues" type="button" class="dc-mini-btn" title="Importar lista de deixas via PDF, Excel, Word ou CSV">
-              📥 Importar Deixas
+              ðŸ“¥ Importar Deixas
             </button>
             <button id="dc-btn-reset-cues" type="button" class="dc-mini-btn" title="Voltar todas as deixas a pendente">
-              🔄 Reset Deixas
+              ðŸ”„ Reset Deixas
             </button>
             <button id="dc-btn-clear-cues" type="button" class="dc-mini-btn" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4);" title="Eliminar todas as deixas">
-              🗑️ Limpar
+              ðŸ—‘ï¸ Limpar
             </button>
           </div>
         </div>
@@ -453,7 +453,7 @@
       <div class="dc-stage-card" style="padding: 16px 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
           <div>
-            <strong style="color: #fff; font-size: 1.05rem; letter-spacing: 0.02em;">📋 Fila de Deixas do Espetáculo (<span id="dc-cues-count-badge">0</span>)</strong>
+            <strong style="color: #fff; font-size: 1.05rem; letter-spacing: 0.02em;">ðŸ“‹ Fila de Deixas do EspetÃ¡culo (<span id="dc-cues-count-badge">0</span>)</strong>
             <div style="font-size: 0.74rem; color: var(--dc-muted);">Clique em qualquer deixa para a focar ou colocar em Standby manual.</div>
           </div>
           <div id="dc-next-cue-summary" style="font-family: var(--font-mono); font-weight: 800; font-size: 0.88rem; color: #ffeaa7;">
@@ -475,24 +475,24 @@
               <span id="dc-telemetry-fired-count" class="dc-stat-val">0</span>
             </div>
             <div class="dc-stat-box">
-              <span class="dc-stat-label">DURAÇÃO TOTAL</span>
+              <span class="dc-stat-label">DURAÃ‡ÃƒO TOTAL</span>
               <span id="dc-telemetry-duration" class="dc-stat-val">00:00:00</span>
             </div>
             <div class="dc-stat-box">
-              <span class="dc-stat-label">FEEDBACKS TÉCNICOS</span>
+              <span class="dc-stat-label">FEEDBACKS TÃ‰CNICOS</span>
               <span id="dc-telemetry-feedback-count" class="dc-stat-val">0</span>
             </div>
           </div>
 
           <div class="dc-telemetry-actions">
             <button id="dc-btn-save-report" type="button" class="btn btn-sm" style="background: #00b894; border: 1.5px solid #00b894; color: #000; font-weight: 800; padding: 7px 12px; border-radius: 8px; cursor: pointer;">
-              💾 Guardar no Evento
+              ðŸ’¾ Guardar no Evento
             </button>
             <button id="dc-btn-copy-report" type="button" class="dc-btn-primary dc-btn-sm">
-              📋 Copiar Relatório
+              ðŸ“‹ Copiar RelatÃ³rio
             </button>
             <button id="dc-btn-download-report" type="button" class="dc-tool-btn">
-              📥 Descarregar TXT
+              ðŸ“¥ Descarregar TXT
             </button>
           </div>
         </div>
@@ -500,41 +500,41 @@
         <!-- Saved Reports History Section -->
         <div class="dc-saved-reports-section" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <strong style="font-size: 0.9rem; color: #ffeaa7;">📜 Relatórios Gravados deste Evento (<span id="dc-saved-reports-count">0</span>)</strong>
+            <strong style="font-size: 0.9rem; color: #ffeaa7;">ðŸ“œ RelatÃ³rios Gravados deste Evento (<span id="dc-saved-reports-count">0</span>)</strong>
           </div>
           <div id="dc-saved-reports-list" class="dc-saved-reports-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;"></div>
         </div>
 
         <!-- Live Telemetry List -->
         <div>
-          <strong style="font-size: 0.85rem; color: #fff;">⚡ Telemetria da Sessão em Direto</strong>
+          <strong style="font-size: 0.85rem; color: #fff;">âš¡ Telemetria da SessÃ£o em Direto</strong>
           <div id="dc-telemetry-list" class="dc-telemetry-list" style="margin-top: 8px;"></div>
         </div>
       </div>
     </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- MODAL: GUIÃO DA PEÇA & LEITURA (TELEPROMPTER)                   -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!-- MODAL: GUIÃƒO DA PEÃ‡A & LEITURA (TELEPROMPTER)                   -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <div id="dc-modal-view-script" class="dc-modal" style="display: none;">
     <div class="dc-modal-content" style="max-width: 840px; width: 94%;">
       <div class="dc-modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dc-border); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.25rem;">📖</span>
-          <h3 style="margin: 0; font-size: 1.15rem; color: #ffeaa7;">Guião da Peça & Acompanhamento de Texto</h3>
+          <span style="font-size: 1.25rem;">ðŸ“–</span>
+          <h3 style="margin: 0; font-size: 1.15rem; color: #ffeaa7;">GuiÃ£o da PeÃ§a & Acompanhamento de Texto</h3>
         </div>
         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-          <button id="dc-script-font-minus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Diminuir letra">A−</button>
+          <button id="dc-script-font-minus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Diminuir letra">Aâˆ’</button>
           <button id="dc-script-font-plus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Aumentar letra">A+</button>
-          <button id="dc-script-scroll-toggle" type="button" class="dc-tool-btn" title="Iniciar/pausar rolagem contínua">▶ Rolar Texto</button>
+          <button id="dc-script-scroll-toggle" type="button" class="dc-tool-btn" title="Iniciar/pausar rolagem contÃ­nua">â–¶ Rolar Texto</button>
           <select id="dc-script-scroll-speed" class="dc-tool-btn" style="padding: 4px 6px; font-size: 0.72rem; outline: none; background: rgba(255,255,255,0.06); color: #fff;">
             <option value="1">Lento</option>
-            <option value="2" selected>Médio</option>
-            <option value="3">Rápido</option>
+            <option value="2" selected>MÃ©dio</option>
+            <option value="3">RÃ¡pido</option>
           </select>
-          <button id="dc-btn-edit-script-text" type="button" class="dc-tool-btn">✏️ Editar</button>
-          <button id="dc-btn-import-script" type="button" class="dc-tool-btn">📥 Importar</button>
-          <button type="button" class="dc-modal-close" data-close-modal="dc-modal-view-script" style="margin-left: 8px;">✕</button>
+          <button id="dc-btn-edit-script-text" type="button" class="dc-tool-btn">âœï¸ Editar</button>
+          <button id="dc-btn-import-script" type="button" class="dc-tool-btn">ðŸ“¥ Importar</button>
+          <button type="button" class="dc-modal-close" data-close-modal="dc-modal-view-script" style="margin-left: 8px;">âœ•</button>
         </div>
       </div>
       <div class="dc-modal-body" style="padding: 0;">
@@ -543,58 +543,58 @@
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- MODAL: VER RELATÓRIO GRAVADO                                    -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!-- MODAL: VER RELATÃ“RIO GRAVADO                                    -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <div id="dc-modal-view-report" class="dc-modal" style="display: none;">
     <div class="dc-modal-content" style="max-width: 680px; width: 92%;">
       <div class="dc-modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dc-border); padding-bottom: 10px; margin-bottom: 12px;">
-        <h3 id="dc-modal-view-report-title" style="margin: 0; font-size: 1.1rem; color: #ffeaa7;">📜 Relatório de Régie</h3>
-        <button id="dc-modal-view-report-close" type="button" class="dc-tool-btn" style="font-size: 1.1rem;">✕</button>
+        <h3 id="dc-modal-view-report-title" style="margin: 0; font-size: 1.1rem; color: #ffeaa7;">ðŸ“œ RelatÃ³rio de RÃ©gie</h3>
+        <button id="dc-modal-view-report-close" type="button" class="dc-tool-btn" style="font-size: 1.1rem;">âœ•</button>
       </div>
       <pre id="dc-modal-view-report-body" style="background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.08); padding: 14px; border-radius: 8px; font-family: var(--font-mono); font-size: 0.82rem; color: #cbd5e1; white-space: pre-wrap; max-height: 420px; overflow-y: auto; line-height: 1.5;"></pre>
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;">
-        <button id="dc-modal-view-report-copy" type="button" class="dc-btn-primary dc-btn-sm">📋 Copiar Texto</button>
-        <button id="dc-modal-view-report-download" type="button" class="dc-tool-btn">📥 Descarregar TXT</button>
+        <button id="dc-modal-view-report-copy" type="button" class="dc-btn-primary dc-btn-sm">ðŸ“‹ Copiar Texto</button>
+        <button id="dc-modal-view-report-download" type="button" class="dc-tool-btn">ðŸ“¥ Descarregar TXT</button>
       </div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- MODALS: IMPORTADOR & CRIAÇÃO                                    -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!-- MODALS: IMPORTADOR & CRIAÃ‡ÃƒO                                    -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 
-  <!-- Modal Importar Guião -->
+  <!-- Modal Importar GuiÃ£o -->
   <div id="dc-modal-import-script" class="dc-modal" style="display: none;">
     <div class="dc-modal-content" style="max-width: 720px; width: 94%;">
       <div class="dc-modal-header">
-        <h3>📥 Importar Guião & Texto (PDF, Word, Excel, Docs, TXT)</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-script">✕</button>
+        <h3>ðŸ“¥ Importar GuiÃ£o & Texto (PDF, Word, Excel, Docs, TXT)</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-script">âœ•</button>
       </div>
       <div class="dc-modal-body">
         <div class="dc-import-tabs">
-          <button type="button" class="dc-import-tab-btn active" data-tab-panel="script-import-file-panel">📁 Ficheiro (PDF, Word, Excel, Docs, TXT)</button>
-          <button type="button" class="dc-import-tab-btn" data-tab-panel="script-import-paste-panel">✏️ Colar Texto Direto</button>
+          <button type="button" class="dc-import-tab-btn active" data-tab-panel="script-import-file-panel">ðŸ“ Ficheiro (PDF, Word, Excel, Docs, TXT)</button>
+          <button type="button" class="dc-import-tab-btn" data-tab-panel="script-import-paste-panel">âœï¸ Colar Texto Direto</button>
         </div>
 
         <div id="script-import-file-panel" class="dc-import-panel">
           <div id="dc-script-dropzone" class="dc-import-dropzone">
-            <div class="dc-import-dropzone-icon">📄</div>
-            <div class="dc-import-dropzone-title">Clique ou arraste um ficheiro com o guião</div>
+            <div class="dc-import-dropzone-icon">ðŸ“„</div>
+            <div class="dc-import-dropzone-title">Clique ou arraste um ficheiro com o guiÃ£o</div>
             <div class="dc-import-dropzone-sub">Suporta <strong>PDF (.pdf)</strong>, <strong>Word (.docx)</strong>, <strong>Excel (.xlsx, .csv)</strong> ou <strong>Texto (.txt)</strong></div>
             <input type="file" id="dc-script-file-input" accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.rtf" style="display: none;">
           </div>
         </div>
 
         <div id="script-import-paste-panel" class="dc-import-panel" style="display: none;">
-          <p class="dc-modal-desc">Cole o texto da peça. Linhas com <code>ATOR: Texto</code> serão identificadas como falas e <code>[Texto]</code> como didascálias:</p>
+          <p class="dc-modal-desc">Cole o texto da peÃ§a. Linhas com <code>ATOR: Texto</code> serÃ£o identificadas como falas e <code>[Texto]</code> como didascÃ¡lias:</p>
           <textarea id="dc-script-import-textarea" class="dc-textarea" placeholder="DIRETOR: Tudo pronto nas coxias?&#10;ATOR 1: Estamos a postos.&#10;[Ouve-se o terceiro sinal.]"></textarea>
         </div>
 
         <!-- Preview Box -->
         <div id="dc-script-preview-container" style="display: none; margin-top: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <strong style="font-size: 0.82rem; color: #ffeaa7;">Pré-visualização (<span id="dc-script-preview-count">0</span> falas / rubricas detetadas)</strong>
+            <strong style="font-size: 0.82rem; color: #ffeaa7;">PrÃ©-visualizaÃ§Ã£o (<span id="dc-script-preview-count">0</span> falas / rubricas detetadas)</strong>
             <span id="dc-script-preview-file-info" style="font-size: 0.72rem; color: var(--dc-muted);"></span>
           </div>
           <div id="dc-script-preview-box" class="dc-import-preview-box"></div>
@@ -604,17 +604,17 @@
         <div style="display: flex; gap: 16px; margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px;">
           <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer;">
             <input type="radio" name="dc-script-import-mode" value="replace" checked>
-            <span>Substituir guião atual</span>
+            <span>Substituir guiÃ£o atual</span>
           </label>
           <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer;">
             <input type="radio" name="dc-script-import-mode" value="append">
-            <span>Acrescentar ao guião existente</span>
+            <span>Acrescentar ao guiÃ£o existente</span>
           </label>
         </div>
       </div>
       <div class="dc-modal-footer">
         <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-import-script">Cancelar</button>
-        <button id="dc-script-import-confirm" type="button" class="dc-btn-primary">Carregar no Guião</button>
+        <button id="dc-script-import-confirm" type="button" class="dc-btn-primary">Carregar no GuiÃ£o</button>
       </div>
     </div>
   </div>
@@ -623,18 +623,18 @@
   <div id="dc-modal-import-cues" class="dc-modal" style="display: none;">
     <div class="dc-modal-content" style="max-width: 760px; width: 94%;">
       <div class="dc-modal-header">
-        <h3>📥 Importar Folha de Deixas / Cues</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-cues">✕</button>
+        <h3>ðŸ“¥ Importar Folha de Deixas / Cues</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-cues">âœ•</button>
       </div>
       <div class="dc-modal-body">
         <div class="dc-import-tabs">
-          <button type="button" class="dc-import-cues-tab-btn active" data-tab-panel="cues-import-file-panel">📁 Ficheiro (Excel, PDF, Word, CSV)</button>
-          <button type="button" class="dc-import-cues-tab-btn" data-tab-panel="cues-import-paste-panel">✏️ Colar Tabela / Texto</button>
+          <button type="button" class="dc-import-cues-tab-btn active" data-tab-panel="cues-import-file-panel">ðŸ“ Ficheiro (Excel, PDF, Word, CSV)</button>
+          <button type="button" class="dc-import-cues-tab-btn" data-tab-panel="cues-import-paste-panel">âœï¸ Colar Tabela / Texto</button>
         </div>
 
         <div id="cues-import-file-panel" class="dc-import-panel">
           <div id="dc-cues-dropzone" class="dc-import-dropzone">
-            <div class="dc-import-dropzone-icon">📊</div>
+            <div class="dc-import-dropzone-icon">ðŸ“Š</div>
             <div class="dc-import-dropzone-title">Clique ou arraste folha Excel, PDF ou Word com deixas</div>
             <div class="dc-import-dropzone-sub">Colunas recomendadas: <strong>Q# | Nome | Departamentos (Luz, Som, etc.) | Ponto / Fala | Notas</strong></div>
             <input type="file" id="dc-cues-file-input" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc,.txt" style="display: none;">
@@ -643,13 +643,13 @@
 
         <div id="cues-import-paste-panel" class="dc-import-panel" style="display: none;">
           <p class="dc-modal-desc">Cole as deixas no formato <code>Q1; Nome; Departamentos (Luz,Som); Ponto/Texto; Notas</code>:</p>
-          <textarea id="dc-cues-import-textarea" class="dc-textarea" placeholder="Q1; Abertura de Sala; Luz,Som; 3º Sinal; Sala a 80%&#10;Q2; Blackout Inicial; Luz,Som,Coxias; Silêncio; Fade suave"></textarea>
+          <textarea id="dc-cues-import-textarea" class="dc-textarea" placeholder="Q1; Abertura de Sala; Luz,Som; 3Âº Sinal; Sala a 80%&#10;Q2; Blackout Inicial; Luz,Som,Coxias; SilÃªncio; Fade suave"></textarea>
         </div>
 
         <!-- Preview Table Box -->
         <div id="dc-cues-preview-container" style="display: none; margin-top: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <strong style="font-size: 0.82rem; color: #ffeaa7;">Pré-visualização (<span id="dc-cues-preview-count">0</span> deixas detetadas)</strong>
+            <strong style="font-size: 0.82rem; color: #ffeaa7;">PrÃ©-visualizaÃ§Ã£o (<span id="dc-cues-preview-count">0</span> deixas detetadas)</strong>
             <span id="dc-cues-preview-file-info" style="font-size: 0.72rem; color: var(--dc-muted);"></span>
           </div>
           <div id="dc-cues-preview-box" class="dc-import-preview-box" style="padding: 0;"></div>
@@ -663,7 +663,7 @@
           </label>
           <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer;">
             <input type="radio" name="dc-cues-import-mode" value="append">
-            <span>Acrescentar às deixas existentes</span>
+            <span>Acrescentar Ã s deixas existentes</span>
           </label>
         </div>
       </div>
@@ -678,8 +678,8 @@
   <div id="dc-modal-new-cue" class="dc-modal" style="display: none;">
     <div class="dc-modal-content">
       <div class="dc-modal-header">
-        <h3>➕ Nova Deixa / Cue</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-new-cue">✕</button>
+        <h3>âž• Nova Deixa / Cue</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-new-cue">âœ•</button>
       </div>
       <div class="dc-modal-body">
         <div class="dc-form-group">
@@ -687,25 +687,25 @@
           <input id="dc-new-cue-num" class="dc-input" placeholder="ex: Q8">
         </div>
         <div class="dc-form-group">
-          <label>Nome / Ação da Deixa:</label>
+          <label>Nome / AÃ§Ã£o da Deixa:</label>
           <input id="dc-new-cue-name" class="dc-input" placeholder="ex: Entrada do Coro & Luz Vermelha">
         </div>
         <div class="dc-form-group">
-          <label>Ponto do Guião / Fala Desencadeadora:</label>
-          <input id="dc-new-cue-target" class="dc-input" placeholder="ex: Na palavra 'Libertação'...">
+          <label>Ponto do GuiÃ£o / Fala Desencadeadora:</label>
+          <input id="dc-new-cue-target" class="dc-input" placeholder="ex: Na palavra 'LibertaÃ§Ã£o'...">
         </div>
         <div class="dc-form-group">
-          <label>Departamentos Destinatários:</label>
+          <label>Departamentos DestinatÃ¡rios:</label>
           <div class="dc-dept-checkbox-row">
-            <label><input type="checkbox" name="dc-dept" value="Luz" checked> 💡 Luz</label>
-            <label><input type="checkbox" name="dc-dept" value="Som"> 🔊 Som</label>
-            <label><input type="checkbox" name="dc-dept" value="Maquinaria"> ⚙️ Maquinaria</label>
-            <label><input type="checkbox" name="dc-dept" value="Vídeo"> 🎥 Vídeo</label>
-            <label><input type="checkbox" name="dc-dept" value="Coxias"> 🎭 Coxias</label>
+            <label><input type="checkbox" name="dc-dept" value="Luz" checked> ðŸ’¡ Luz</label>
+            <label><input type="checkbox" name="dc-dept" value="Som"> ðŸ”Š Som</label>
+            <label><input type="checkbox" name="dc-dept" value="Maquinaria"> âš™ï¸ Maquinaria</label>
+            <label><input type="checkbox" name="dc-dept" value="VÃ­deo"> ðŸŽ¥ VÃ­deo</label>
+            <label><input type="checkbox" name="dc-dept" value="Coxias"> ðŸŽ­ Coxias</label>
           </div>
         </div>
         <div class="dc-form-group">
-          <label>Notas Técnicas / Advertências:</label>
+          <label>Notas TÃ©cnicas / AdvertÃªncias:</label>
           <input id="dc-new-cue-notes" class="dc-input" placeholder="ex: Fade in lento de 4 segundos">
         </div>
       </div>
@@ -720,8 +720,8 @@
   <div id="dc-modal-edit-cue" class="dc-modal" style="display: none;">
     <div class="dc-modal-content">
       <div class="dc-modal-header">
-        <h3>✏️ Editar Deixa / Cue</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-cue">✕</button>
+        <h3>âœï¸ Editar Deixa / Cue</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-cue">âœ•</button>
       </div>
       <div class="dc-modal-body">
         <input type="hidden" id="dc-edit-cue-id">
@@ -731,53 +731,53 @@
             <input id="dc-edit-cue-num" class="dc-input" placeholder="ex: Q1">
           </div>
           <div class="dc-form-group" style="flex: 2;">
-            <label>Nome / Ação da Deixa:</label>
+            <label>Nome / AÃ§Ã£o da Deixa:</label>
             <input id="dc-edit-cue-name" class="dc-input" placeholder="ex: Abertura de Sala">
           </div>
         </div>
         <div class="dc-form-group">
-          <label>Ponto do Guião / Fala Desencadeadora:</label>
+          <label>Ponto do GuiÃ£o / Fala Desencadeadora:</label>
           <input id="dc-edit-cue-target" class="dc-input" placeholder="ex: Na fala 'quando a tempestade...'">
         </div>
         <div class="dc-form-group">
-          <label>Departamentos Destinatários:</label>
+          <label>Departamentos DestinatÃ¡rios:</label>
           <div class="dc-dept-checkbox-row">
-            <label><input type="checkbox" name="dc-edit-dept" value="Luz"> 💡 Luz</label>
-            <label><input type="checkbox" name="dc-edit-dept" value="Som"> 🔊 Som</label>
-            <label><input type="checkbox" name="dc-edit-dept" value="Maquinaria"> ⚙️ Maquinaria</label>
-            <label><input type="checkbox" name="dc-edit-dept" value="Vídeo"> 🎥 Vídeo</label>
-            <label><input type="checkbox" name="dc-edit-dept" value="Coxias"> 🎭 Coxias</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="Luz"> ðŸ’¡ Luz</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="Som"> ðŸ”Š Som</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="Maquinaria"> âš™ï¸ Maquinaria</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="VÃ­deo"> ðŸŽ¥ VÃ­deo</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="Coxias"> ðŸŽ­ Coxias</label>
           </div>
         </div>
         <div class="dc-form-group">
-          <label>Notas Técnicas / Advertências:</label>
+          <label>Notas TÃ©cnicas / AdvertÃªncias:</label>
           <input id="dc-edit-cue-notes" class="dc-input" placeholder="ex: Fade suave de 3s; Sala a 80%">
         </div>
       </div>
       <div class="dc-modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <button id="dc-edit-cue-delete-btn" type="button" class="dc-btn-secondary" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4); font-weight: 700;">🗑️ Eliminar Deixa</button>
+        <button id="dc-edit-cue-delete-btn" type="button" class="dc-btn-secondary" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4); font-weight: 700;">ðŸ—‘ï¸ Eliminar Deixa</button>
         <div style="display: flex; gap: 8px;">
           <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-edit-cue">Cancelar</button>
-          <button id="dc-edit-cue-confirm" type="button" class="dc-btn-primary">Guardar Alterações</button>
+          <button id="dc-edit-cue-confirm" type="button" class="dc-btn-primary">Guardar AlteraÃ§Ãµes</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal Editar Texto Completo do Guião -->
+  <!-- Modal Editar Texto Completo do GuiÃ£o -->
   <div id="dc-modal-edit-script-text" class="dc-modal" style="display: none;">
     <div class="dc-modal-content" style="max-width: 700px;">
       <div class="dc-modal-header">
-        <h3>✏️ Texto Completo do Guião da Peça</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-script-text">✕</button>
+        <h3>âœï¸ Texto Completo do GuiÃ£o da PeÃ§a</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-script-text">âœ•</button>
       </div>
       <div class="dc-modal-body">
-        <p class="dc-modal-desc">Edite ou cole aqui o texto da peça. Pode escrever falas no formato <code>NOME: Fala</code> e indicações/rubricas cénicas entre parênteses retos <code>[A cortina abre...]</code>:</p>
+        <p class="dc-modal-desc">Edite ou cole aqui o texto da peÃ§a. Pode escrever falas no formato <code>NOME: Fala</code> e indicaÃ§Ãµes/rubricas cÃ©nicas entre parÃªnteses retos <code>[A cortina abre...]</code>:</p>
         <textarea id="dc-full-script-textarea" class="dc-textarea" style="min-height: 280px; font-family: inherit; font-size: 0.95rem; line-height: 1.6;" placeholder="DIRETOR: Tudo pronto nas coxias?&#10;ATOR 1: Estamos a postos.&#10;[Ouve-se o terceiro sinal.]"></textarea>
       </div>
       <div class="dc-modal-footer">
         <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-edit-script-text">Cancelar</button>
-        <button id="dc-full-script-save" type="button" class="dc-btn-primary">💾 Guardar Texto no Guião</button>
+        <button id="dc-full-script-save" type="button" class="dc-btn-primary">ðŸ’¾ Guardar Texto no GuiÃ£o</button>
       </div>
     </div>
   </div>
@@ -786,18 +786,18 @@
   <div id="dc-modal-import-schedule" class="dc-modal" style="display: none;">
     <div class="dc-modal-content" style="max-width: 760px; width: 94%;">
       <div class="dc-modal-header">
-        <h3>📂 Importar Alinhamento de Palco (Artistas & Horários)</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-schedule">✕</button>
+        <h3>ðŸ“‚ Importar Alinhamento de Palco (Artistas & HorÃ¡rios)</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-schedule">âœ•</button>
       </div>
       <div class="dc-modal-body">
         <div class="dc-import-tabs">
-          <button type="button" class="dc-import-sched-tab-btn active" data-tab-panel="sched-import-file-panel">📁 Ficheiro (Excel, PDF, Word, CSV)</button>
-          <button type="button" class="dc-import-sched-tab-btn" data-tab-panel="sched-import-paste-panel">✏️ Colar Texto / Horários</button>
+          <button type="button" class="dc-import-sched-tab-btn active" data-tab-panel="sched-import-file-panel">ðŸ“ Ficheiro (Excel, PDF, Word, CSV)</button>
+          <button type="button" class="dc-import-sched-tab-btn" data-tab-panel="sched-import-paste-panel">âœï¸ Colar Texto / HorÃ¡rios</button>
         </div>
 
         <div id="sched-import-file-panel" class="dc-import-panel">
           <div id="dc-sched-dropzone" class="dc-import-dropzone">
-            <div class="dc-import-dropzone-icon">📋</div>
+            <div class="dc-import-dropzone-icon">ðŸ“‹</div>
             <div class="dc-import-dropzone-title">Clique ou arraste um ficheiro com o alinhamento de palco</div>
             <div class="dc-import-dropzone-sub">Suporta <strong>Excel (.xlsx, .xls, .csv)</strong>, <strong>PDF (.pdf texto ou imagem)</strong>, <strong>Word (.docx)</strong>, <strong>Imagem (.png, .jpg)</strong> ou <strong>Texto (.txt)</strong></div>
             <input type="file" id="dc-sched-file-input" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc,.png,.jpg,.jpeg,.webp,.txt" style="display: none;">
@@ -805,14 +805,14 @@
         </div>
 
         <div id="sched-import-paste-panel" class="dc-import-panel" style="display: none;">
-          <p class="dc-modal-desc">Cole as linhas com os horários e nomes dos artistas (ex: <code>21:00 - Abertura de Sala - 15m</code> ou <code>21h30 Banda Principal 45 min</code>):</p>
-          <textarea id="dc-sched-import-textarea" class="dc-textarea" placeholder="21:00 - Chegada e Abertura de Portas (15 min)&#10;21:15 - Ato 1: O Começo (30 min)&#10;21:45 - Intervalo de Palco (10 min)&#10;21:55 - Ato 2: O Desfecho (40 min)"></textarea>
+          <p class="dc-modal-desc">Cole as linhas com os horÃ¡rios e nomes dos artistas (ex: <code>21:00 - Abertura de Sala - 15m</code> ou <code>21h30 Banda Principal 45 min</code>):</p>
+          <textarea id="dc-sched-import-textarea" class="dc-textarea" placeholder="21:00 - Chegada e Abertura de Portas (15 min)&#10;21:15 - Ato 1: O ComeÃ§o (30 min)&#10;21:45 - Intervalo de Palco (10 min)&#10;21:55 - Ato 2: O Desfecho (40 min)"></textarea>
         </div>
 
         <!-- Preview Box -->
         <div id="dc-sched-preview-container" style="display: none; margin-top: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <strong style="font-size: 0.82rem; color: #ffeaa7;">Pré-visualização (<span id="dc-sched-preview-count">0</span> artistas/atos detetados)</strong>
+            <strong style="font-size: 0.82rem; color: #ffeaa7;">PrÃ©-visualizaÃ§Ã£o (<span id="dc-sched-preview-count">0</span> artistas/atos detetados)</strong>
             <span id="dc-sched-preview-file-info" style="font-size: 0.72rem; color: var(--dc-muted);"></span>
           </div>
           <div id="dc-sched-preview-box" class="dc-import-preview-box"></div>
@@ -840,22 +840,22 @@
   <div id="dc-modal-edit-artist" class="dc-modal" style="display: none;">
     <div class="dc-modal-content" style="max-width: 520px;">
       <div class="dc-modal-header">
-        <h3>✏️ Editar Artista / Ato de Palco</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-artist">✕</button>
+        <h3>âœï¸ Editar Artista / Ato de Palco</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-artist">âœ•</button>
       </div>
       <div class="dc-modal-body">
         <input type="hidden" id="dc-edit-artist-id">
         <div class="dc-form-group">
-          <label>Nome do Artista / Ato / Intervenção:</label>
+          <label>Nome do Artista / Ato / IntervenÃ§Ã£o:</label>
           <input id="dc-edit-artist-name" class="dc-input" placeholder="ex: Banda de Abertura / Ato 1">
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div class="dc-form-group">
-            <label>Duração Prevista (Minutos):</label>
+            <label>DuraÃ§Ã£o Prevista (Minutos):</label>
             <input id="dc-edit-artist-dur" class="dc-input" type="number" min="1" max="600" placeholder="ex: 20">
           </div>
           <div class="dc-form-group">
-            <label>Hora de Início (opcional):</label>
+            <label>Hora de InÃ­cio (opcional):</label>
             <input id="dc-edit-artist-start" class="dc-input" placeholder="ex: 21:00">
           </div>
         </div>
@@ -865,10 +865,10 @@
         </div>
       </div>
       <div class="dc-modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <button id="dc-edit-artist-delete-btn" type="button" class="dc-btn-secondary" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4); font-weight: 700;">🗑️ Eliminar</button>
+        <button id="dc-edit-artist-delete-btn" type="button" class="dc-btn-secondary" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4); font-weight: 700;">ðŸ—‘ï¸ Eliminar</button>
         <div style="display: flex; gap: 8px;">
           <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-edit-artist">Cancelar</button>
-          <button id="dc-edit-artist-confirm" type="button" class="dc-btn-primary">Guardar Alterações</button>
+          <button id="dc-edit-artist-confirm" type="button" class="dc-btn-primary">Guardar AlteraÃ§Ãµes</button>
         </div>
       </div>
     </div>
@@ -907,12 +907,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=127"></script>
-  <script src="js/theatre-importer.js?v=127"></script>
-  <script src="js/pwa.js?v=127"></script>
-  <script src="js/local-sync.js?v=127"></script>
-  <script src="js/notifications.js?v=127"></script>
-  <script src="js/dc.js?v=127"></script>
-<script src="js/view-mode.js?v=127"></script>
+  <script src="js/schedule-importer.js?v=129"></script>
+  <script src="js/theatre-importer.js?v=129"></script>
+  <script src="js/pwa.js?v=129"></script>
+  <script src="js/local-sync.js?v=129"></script>
+  <script src="js/notifications.js?v=129"></script>
+  <script src="js/dc.js?v=129"></script>
+<script src="js/view-mode.js?v=129"></script>
 </body>
 </html>

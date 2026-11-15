@@ -104,11 +104,11 @@ class UniversalSyncClient {
 
     // Give each distinct device/browser a persistent UUID (persists across navigation/reloads)
     try {
-      this.deviceUuid = localStorage.getItem('stagetimer_device_uuid') || sessionStorage.getItem('stagetimer_screen_uuid');
+      this.deviceUuid = sessionStorage.getItem('stagetimer_screen_uuid') || localStorage.getItem('stagetimer_device_uuid');
       if (!this.deviceUuid) {
         this.deviceUuid = 'dev_' + Math.random().toString(36).substring(2, 7) + '_' + Math.random().toString(36).substring(2, 6);
       }
-      localStorage.setItem('stagetimer_device_uuid', this.deviceUuid);
+      if (!localStorage.getItem('stagetimer_device_uuid')) localStorage.setItem('stagetimer_device_uuid', this.deviceUuid);
       sessionStorage.setItem('stagetimer_screen_uuid', this.deviceUuid);
     } catch (e) {
       this.deviceUuid = 'dev_' + Math.random().toString(36).substring(2, 9);
@@ -356,6 +356,14 @@ class UniversalSyncClient {
           const msg = event.data;
           if (!msg || msg.sender === this.clientId) return;
           if (msg.type === 'local-presence' && msg.payload && msg.payload.deviceUuid) {
+            // Colisão de UUID: outro separador do mesmo browser partilha o nosso deviceUuid
+            // (ex.: Master + Palco abertos em simultâneo) → a vista alternava ("flick").
+            if (msg.payload.deviceUuid === this.deviceUuid && msg.payload.clientId !== this.clientId) {
+              const otherFirst = msg.payload.firstSeen || 0;
+              const iAmNewer = this.firstSeen > otherFirst ||
+                (this.firstSeen === otherFirst && String(this.clientId) > String(msg.payload.clientId));
+              if (iAmNewer) { this._regenerateTabUuid(); return; }
+            }
             if (!this.purgedDevicesSet.has(msg.payload.deviceUuid)) {
               const existing = this.globalDevicesMap.get(msg.payload.deviceUuid);
               this.globalDevicesMap.set(msg.payload.deviceUuid, {
@@ -1198,6 +1206,20 @@ class UniversalSyncClient {
       }
     });
     return names;
+  }
+
+  _regenerateTabUuid() {
+    const oldUuid = this.deviceUuid;
+    const oldTopic = this.mqttTopicDeviceCmd;
+    this.deviceUuid = 'dev_' + Math.random().toString(36).substring(2, 7) + '_' + Math.random().toString(36).substring(2, 6);
+    try { sessionStorage.setItem('stagetimer_screen_uuid', this.deviceUuid); } catch (e) {}
+    this.mqttTopicDeviceCmd = `stagetimer_v10/_cmd/${this.deviceUuid}`;
+    if (this.mqttClient && this.mqttClient.connected) {
+      try { this.mqttClient.unsubscribe(oldTopic); } catch (e) {}
+      try { this.mqttClient.subscribe(this.mqttTopicDeviceCmd, { qos: 0 }); } catch (e) {}
+    }
+    console.warn('[Sync] UUID partilhado com outro separador; novo UUID deste separador:', oldUuid, '→', this.deviceUuid);
+    this._announcePresence();
   }
 
   _announcePresence() {

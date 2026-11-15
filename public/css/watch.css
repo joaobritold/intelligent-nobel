@@ -100,12 +100,30 @@ body {
   letter-spacing: 0.3px;
 }
 
+.watch-clock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0, 255, 136, 0.12);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  border-radius: 6px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+
+.watch-clock-ico {
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
 .watch-mini-clock {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", monospace;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Text", monospace;
   font-variant-numeric: tabular-nums;
-  color: var(--watch-dim);
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-feature-settings: "tnum";
+  color: #55efc4;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 /* ── Center Stage Display (Números Gigantes) ── */
@@ -119,6 +137,63 @@ body {
   position: relative;
   overflow: hidden;
   padding: 2px 0;
+  min-height: 0;
+}
+
+.watch-stage-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 2px;
+}
+
+.watch-stage-tag {
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.watch-timer-state-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.watch-timer-state-badge.state-onair {
+  background: rgba(0, 255, 136, 0.2);
+  color: #00ff88;
+  border: 1px solid rgba(0, 255, 136, 0.5);
+}
+
+.watch-timer-state-badge.state-pause {
+  background: rgba(255, 211, 42, 0.2);
+  color: #ffd32a;
+  border: 1px solid rgba(255, 211, 42, 0.5);
+}
+
+.watch-timer-state-badge.state-overtime {
+  background: rgba(255, 17, 51, 0.25);
+  color: #ff3344;
+  border: 1px solid rgba(255, 51, 68, 0.7);
+  animation: watch-pulse 1s infinite alternate;
+}
+
+.watch-timer-state-badge.state-standby {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.watch-timer-state-badge.state-finished {
+  background: rgba(116, 125, 140, 0.2);
+  color: #a4b0be;
+  border: 1px solid rgba(116, 125, 140, 0.4);
 }
 
 .watch-digits {
@@ -190,8 +265,8 @@ body {
 
 /* ── Sub info (Nome do Artista / Item) ── */
 .watch-info {
-  margin-top: 4px;
-  font-size: clamp(0.78rem, 4.8vw, 1.05rem);
+  margin-top: 3px;
+  font-size: clamp(0.74rem, 4.4vw, 0.95rem);
   font-weight: 700;
   color: #f1f2f6;
   max-width: 98vw;
@@ -199,8 +274,63 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   opacity: 0.92;
-  height: 20px;
-  line-height: 20px;
+  height: 18px;
+  line-height: 18px;
+}
+
+/* ── Bottom Section (Próximo Artista & Fim Previsto) ── */
+.watch-bottom-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  flex-shrink: 0;
+  padding-bottom: 2px;
+  z-index: 10;
+}
+
+.watch-next-box {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 2px 6px;
+  max-width: 98vw;
+  overflow: hidden;
+}
+
+.watch-next-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #a29bfe;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+}
+
+.watch-next-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.watch-next-time {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #fdcb6e;
+  font-family: -apple-system, BlinkMacSystemFont, monospace;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ── Bottom Bar (Fim Previsto) ── */
@@ -209,10 +339,9 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 24px;
+  height: 18px;
   padding: 0 2px;
   flex-shrink: 0;
-  z-index: 10;
 }
 
 .watch-event-end {
@@ -222,7 +351,7 @@ body {
   color: #55efc4;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 800;
   white-space: nowrap;
   overflow: hidden;
@@ -232,7 +361,7 @@ body {
 .watch-delay {
   color: #fdcb6e;
   font-weight: 700;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   margin-left: 2px;
 }
 

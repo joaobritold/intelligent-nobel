@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt">
 <head>
   <script>
@@ -54,9 +54,9 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <title>StageTimer — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=127">
-  <link rel="stylesheet" href="css/controller.css?v=127">
+  <title>StageTimer â€” Controlador</title>
+  <link rel="stylesheet" href="css/common.css?v=129">
+  <link rel="stylesheet" href="css/controller.css?v=129">
 </head>
 <body>
   <div class="app">
@@ -65,36 +65,36 @@
       <div class="header-left">
         <div class="header-brand-row">
           <div class="logo">
-            <img src="icon.svg?v=127" alt="StageTimer Logo" class="logo-icon" width="26" height="26" style="vertical-align: middle; border-radius: 6px; margin-right: 6px;">
+            <img src="icon.svg?v=129" alt="StageTimer Logo" class="logo-icon" width="26" height="26" style="vertical-align: middle; border-radius: 6px; margin-right: 6px;">
             <span>StageTimer</span>
             <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 4px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v127</span>
           </div>
           <div class="room-info" id="ctrl-room-box" style="display: flex; align-items: center; gap: 6px;">
-            <span>🎪</span>
+            <span>ðŸŽª</span>
             <span id="ctrl-stage-badge" class="ctrl-stage-badge-btn" role="button" tabindex="0" title="Clique para trocar ou gerir eventos" style="font-size: 0.85rem; font-weight: 800; color: #55efc4; background: rgba(0, 184, 148, 0.15); border: 1px solid rgba(0, 184, 148, 0.35); padding: 4px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">Palco</span>
             <select id="ctrl-event-select" class="master-stage-select" style="display: none;" title="Trocar de Palco ou Evento"></select>
-            <button id="ctrl-switch-event-btn" type="button" class="btn btn-sm btn-switch-event" title="Trocar ou Gerir Eventos" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; font-size: 0.74rem; font-weight: 700; background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.5); color: #c4b5fd; border-radius: 8px; cursor: pointer; white-space: nowrap;">🎪 Trocar</button>
-            <span id="room-id" class="room-id" title="Código desta sessão (clique para copiar)" style="display: none;">------</span>
+            <button id="ctrl-switch-event-btn" type="button" class="btn btn-sm btn-switch-event" title="Trocar ou Gerir Eventos" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; font-size: 0.74rem; font-weight: 700; background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.5); color: #c4b5fd; border-radius: 8px; cursor: pointer; white-space: nowrap;">ðŸŽª Trocar</button>
+            <span id="room-id" class="room-id" title="CÃ³digo desta sessÃ£o (clique para copiar)" style="display: none;">------</span>
           </div>
         </div>
         <!-- Compact Modes Navigation -->
         <div class="top-nav-modes st-compact-nav">
-          <a id="top-nav-hub" href="index.html?portal=1" class="st-nav-home-btn" title="Ir para o Início / Escolher Evento">🏠 Início</a>
+          <a id="top-nav-hub" href="index.html?portal=1" class="st-nav-home-btn" title="Ir para o InÃ­cio / Escolher Evento">ðŸ  InÃ­cio</a>
           <div class="st-nav-dropdown align-left">
-            <button type="button" class="st-nav-trigger">🎛️ Configurador ▾</button>
+            <button type="button" class="st-nav-trigger">ðŸŽ›ï¸ Configurador â–¾</button>
             <div class="st-nav-menu">
-              <div class="st-nav-group-label">Navegação</div>
-              <a id="top-nav-portal" href="index.html?portal=1" class="st-nav-item">🏠 Escolher Evento (Início)</a>
-              <a id="top-nav-hub-menu" href="index.html" class="st-nav-item">🎪 Menu do Evento</a>
-              <div class="st-nav-group-label">Controlo & Operação</div>
-              <a id="top-nav-controller" href="controller.html" class="st-nav-item active">🎛️ Configurador</a>
-              <a id="top-nav-operator" href="operator.html" class="st-nav-item">📱 Modo Operador</a>
+              <div class="st-nav-group-label">NavegaÃ§Ã£o</div>
+              <a id="top-nav-portal" href="index.html?portal=1" class="st-nav-item">ðŸ  Escolher Evento (InÃ­cio)</a>
+              <a id="top-nav-hub-menu" href="index.html" class="st-nav-item">ðŸŽª Menu do Evento</a>
+              <div class="st-nav-group-label">Controlo & OperaÃ§Ã£o</div>
+              <a id="top-nav-controller" href="controller.html" class="st-nav-item active">ðŸŽ›ï¸ Configurador</a>
+              <a id="top-nav-operator" href="operator.html" class="st-nav-item">ðŸ“± Modo Operador</a>
               <div class="st-nav-group-label">Palco & Equipa</div>
-              <a id="top-nav-viewer" href="viewer.html" class="st-nav-item">📺 Modo Palco</a>
-              <a id="top-nav-watch" href="watch.html" class="st-nav-item">⌚ Modo Apple Watch</a>
-              <a id="top-nav-lineup" href="lineup.html" class="st-nav-item">📋 Modo Lista</a>
-              <a id="top-nav-regies" href="regies.html" class="st-nav-item">📟 Modo Régies</a>
-              <a id="top-nav-master" href="master.html" class="st-nav-item st-nav-item-master" style="display: none;">👑 Super Régie Master</a>
+              <a id="top-nav-viewer" href="viewer.html" class="st-nav-item">ðŸ“º Modo Palco</a>
+              <a id="top-nav-watch" href="watch.html" class="st-nav-item">âŒš Modo Apple Watch</a>
+              <a id="top-nav-lineup" href="lineup.html" class="st-nav-item">ðŸ“‹ Modo Lista</a>
+              <a id="top-nav-regies" href="regies.html" class="st-nav-item">ðŸ“Ÿ Modo RÃ©gies</a>
+              <a id="top-nav-master" href="master.html" class="st-nav-item st-nav-item-master" style="display: none;">ðŸ‘‘ Super RÃ©gie Master</a>
             </div>
           </div>
         </div>
@@ -123,7 +123,7 @@
           <div class="panel-header-title-row">
             <div class="panel-title">Timers Rundown</div>
             <div class="event-end-badge">
-              <span class="end-label">🏁 Fim do Evento:</span>
+              <span class="end-label">ðŸ Fim do Evento:</span>
               <strong id="ctrl-event-end">--:--</strong>
             </div>
           </div>
@@ -133,13 +133,13 @@
           </div>
           <div class="panel-header-actions-row">
             <div class="panel-header-btn-group nav-group">
-              <button id="ctrl-nav-prev" type="button" class="btn btn-sm" title="Passar para o Artista Anterior">⏮ Anterior</button>
-              <button id="ctrl-nav-next" type="button" class="btn btn-sm" title="Passar para o Próximo Artista">Próximo ⏭</button>
+              <button id="ctrl-nav-prev" type="button" class="btn btn-sm" title="Passar para o Artista Anterior">â® Anterior</button>
+              <button id="ctrl-nav-next" type="button" class="btn btn-sm" title="Passar para o PrÃ³ximo Artista">PrÃ³ximo â­</button>
             </div>
             <div class="panel-header-btn-group util-group">
-              <button id="open-import-btn" class="btn btn-sm btn-import-outline">📂 Importar</button>
-              <button id="open-notif-btn" type="button" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border: 1px solid rgba(108, 92, 231, 0.5); color: #c4b5fd; font-weight: 700;" title="Configurar Alertas Telegram e Notificações no Telemóvel">🔔 Alertas</button>
-              <button id="clear-event-btn" class="btn btn-sm btn-danger" title="Apagar todos os artistas do dia atual">🧹 Limpar</button>
+              <button id="open-import-btn" class="btn btn-sm btn-import-outline">ðŸ“‚ Importar</button>
+              <button id="open-notif-btn" type="button" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border: 1px solid rgba(108, 92, 231, 0.5); color: #c4b5fd; font-weight: 700;" title="Configurar Alertas Telegram e NotificaÃ§Ãµes no TelemÃ³vel">ðŸ”” Alertas</button>
+              <button id="clear-event-btn" class="btn btn-sm btn-danger" title="Apagar todos os artistas do dia atual">ðŸ§¹ Limpar</button>
             </div>
             <button id="add-timer-btn" class="btn btn-primary btn-sm btn-add-main">+ Add Timer</button>
           </div>
@@ -156,7 +156,7 @@
         <div class="preview-section">
           <div class="preview-title">
             <span>Stage Preview</span>
-            <a id="viewer-link-btn" class="preview-link" href="#" target="_blank" rel="noopener">Open Screen ↗</a>
+            <a id="viewer-link-btn" class="preview-link" href="#" target="_blank" rel="noopener">Open Screen â†—</a>
           </div>
           <div class="preview-frame">
             <div id="preview-name" class="preview-timer-name" style="font-size: 0.8rem; font-weight: 700; color: #fff; margin-bottom: 6px;"></div>
@@ -167,10 +167,10 @@
             <div id="preview-message" class="preview-message"></div>
           </div>
           <div class="preview-transport-bar" style="display: flex; gap: 6px; margin-top: 10px; align-items: center; justify-content: center; flex-wrap: wrap;">
-            <button id="ctrl-preview-prev" type="button" class="btn btn-sm" title="Passar para o Artista Anterior" style="padding: 6px 12px; font-weight: 600;">⏮ Anterior</button>
-            <button id="ctrl-preview-toggle" type="button" class="btn btn-sm btn-primary" style="padding: 6px 14px; font-weight: 700;">▶ Iniciar</button>
-            <button id="ctrl-preview-reset" type="button" class="btn btn-sm" style="padding: 6px 10px;">⏹ Reset</button>
-            <button id="ctrl-preview-next" type="button" class="btn btn-sm" title="Passar para o Próximo Artista" style="padding: 6px 12px; font-weight: 600;">Próximo ⏭</button>
+            <button id="ctrl-preview-prev" type="button" class="btn btn-sm" title="Passar para o Artista Anterior" style="padding: 6px 12px; font-weight: 600;">â® Anterior</button>
+            <button id="ctrl-preview-toggle" type="button" class="btn btn-sm btn-primary" style="padding: 6px 14px; font-weight: 700;">â–¶ Iniciar</button>
+            <button id="ctrl-preview-reset" type="button" class="btn btn-sm" style="padding: 6px 10px;">â¹ Reset</button>
+            <button id="ctrl-preview-next" type="button" class="btn btn-sm" title="Passar para o PrÃ³ximo Artista" style="padding: 6px 12px; font-weight: 600;">PrÃ³ximo â­</button>
           </div>
         </div>
 
@@ -184,22 +184,22 @@
               placeholder="Escreva uma mensagem para o palco..."
             ></textarea>
             <div class="message-actions" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px;">
-              <button id="send-info-btn" class="btn btn-primary" title="Mensagem Informativa (Leve)">💬 Info</button>
-              <button id="send-urgent-btn" class="btn" style="background: #d63031; border-color: #d63031; color: #fff;" title="Mensagem Urgente (Destaque)">🔴 Urgente</button>
-              <button id="toggle-msg-btn" class="btn" style="min-width: 96px; font-weight: 700; white-space: nowrap;" title="Mostrar ou ocultar mensagem no ecrã de palco">👁️ Mostrar</button>
+              <button id="send-info-btn" class="btn btn-primary" title="Mensagem Informativa (Leve)">ðŸ’¬ Info</button>
+              <button id="send-urgent-btn" class="btn" style="background: #d63031; border-color: #d63031; color: #fff;" title="Mensagem Urgente (Destaque)">ðŸ”´ Urgente</button>
+              <button id="toggle-msg-btn" class="btn" style="min-width: 96px; font-weight: 700; white-space: nowrap;" title="Mostrar ou ocultar mensagem no ecrÃ£ de palco">ðŸ‘ï¸ Mostrar</button>
             </div>
             <div class="ctrl-presets" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
-              <button type="button" class="ctrl-preset-chip" data-level="urgent" data-msg="Por favor, conclua!">⏳ Concluir!</button>
-              <button type="button" class="ctrl-preset-chip" data-level="info" data-msg="Últimos 2 minutos">⚠️ 2 Minutos</button>
-              <button type="button" class="ctrl-preset-chip" data-level="urgent" data-msg="Tempo Esgotado!">🛑 Tempo Esgotado</button>
-              <button type="button" class="ctrl-preset-chip" data-level="info" data-msg="Fale mais perto do microfone">🎤 Microfone</button>
+              <button type="button" class="ctrl-preset-chip" data-level="urgent" data-msg="Por favor, conclua!">â³ Concluir!</button>
+              <button type="button" class="ctrl-preset-chip" data-level="info" data-msg="Ãšltimos 2 minutos">âš ï¸ 2 Minutos</button>
+              <button type="button" class="ctrl-preset-chip" data-level="urgent" data-msg="Tempo Esgotado!">ðŸ›‘ Tempo Esgotado</button>
+              <button type="button" class="ctrl-preset-chip" data-level="info" data-msg="Fale mais perto do microfone">ðŸŽ¤ Microfone</button>
             </div>
           </div>
         </div>
 
         <!-- Online Room / Multi-Device Sync -->
         <div class="links-section">
-          <div class="links-title">🌐 Multi-Device & Online Sync</div>
+          <div class="links-title">ðŸŒ Multi-Device & Online Sync</div>
           <div style="margin-bottom: 12px;">
             <label style="display: block; font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 4px;">Room Code (Use same code on any device/network):</label>
             <div style="display: flex; gap: 6px;">
@@ -216,11 +216,11 @@
           <div class="links-title" style="margin-top: 8px;">Quick Open</div>
           <div class="link-row">
             <span class="link-label">Stage:</span>
-            <a id="viewer-link" href="#" target="_blank" rel="noopener">Open Stage Viewer ↗</a>
+            <a id="viewer-link" href="#" target="_blank" rel="noopener">Open Stage Viewer â†—</a>
           </div>
           <div class="link-row">
             <span class="link-label">Operator:</span>
-            <a id="controller-link" href="#" target="_blank" rel="noopener">Open Operator ↗</a>
+            <a id="controller-link" href="#" target="_blank" rel="noopener">Open Operator â†—</a>
           </div>
         </div>
       </aside>
@@ -259,16 +259,16 @@
   <div id="import-modal" class="modal-overlay">
     <div class="modal modal-import">
       <div class="modal-header">
-        <h3 class="modal-title">📂 Importar Mapa de Horários Inteligente</h3>
+        <h3 class="modal-title">ðŸ“‚ Importar Mapa de HorÃ¡rios Inteligente</h3>
         <p class="modal-subtitle">
-          Arraste ou carregue um ficheiro <strong>PDF, Excel ou TXT</strong> (ou cole o texto abaixo). O sistema deteta artistas, horários e todos os dias do festival!
+          Arraste ou carregue um ficheiro <strong>PDF, Excel ou TXT</strong> (ou cole o texto abaixo). O sistema deteta artistas, horÃ¡rios e todos os dias do festival!
         </p>
       </div>
 
       <div class="modal-scroll-content">
         <!-- Drag & Drop Zone -->
         <div id="import-drop-zone" class="import-drop-zone">
-          <div class="import-drop-icon">📄</div>
+          <div class="import-drop-icon">ðŸ“„</div>
           <div class="import-drop-title">Toque para escolher ou arraste o ficheiro</div>
           <div class="import-drop-sub">PDF (texto ou imagem), Excel (.xlsx, .xls, .csv), Word (.docx), Imagem ou TXT</div>
           <input type="file" id="import-file-input" accept=".pdf,.xlsx,.xls,.csv,.docx,.doc,.png,.jpg,.jpeg,.webp,.txt" style="display: none;">
@@ -282,10 +282,10 @@
           </label>
           <label class="import-toggle-item">
             <input type="checkbox" id="import-include-changeovers" checked>
-            <span><strong>Incluir Changeovers</strong> (mudanças de palco e testes)</span>
+            <span><strong>Incluir Changeovers</strong> (mudanÃ§as de palco e testes)</span>
           </label>
           <div class="import-toggle-tip">
-            ✓ A atuação principal (On Stage) tem sempre prioridade máxima.
+            âœ“ A atuaÃ§Ã£o principal (On Stage) tem sempre prioridade mÃ¡xima.
           </div>
         </div>
 
@@ -295,7 +295,7 @@
         </div>
 
         <div class="modal-field">
-          <label class="modal-label">Ou cole / ajuste aqui o texto da programação:</label>
+          <label class="modal-label">Ou cole / ajuste aqui o texto da programaÃ§Ã£o:</label>
           <textarea id="import-text-area" class="input input-mono" placeholder="Exemplo:&#10;Dj Residente   23h00 - 00h15&#10;Tunas          23h30 - 01h30&#10;Minhotos       01:45 - 03h15"></textarea>
         </div>
 
@@ -304,7 +304,7 @@
 
       <div class="modal-actions modal-actions-sticky">
         <button id="import-cancel" type="button" class="btn">Cancelar</button>
-        <button id="import-confirm" type="button" class="btn btn-primary">⚡ Importar Horários e Artistas</button>
+        <button id="import-confirm" type="button" class="btn btn-primary">âš¡ Importar HorÃ¡rios e Artistas</button>
       </div>
     </div>
   </div>
@@ -313,31 +313,31 @@
   <div id="new-event-modal" class="modal-overlay">
     <div class="modal modal-manage-events">
       <div class="modal-header">
-        <h3 class="modal-title">🎪 Criar Novo Palco / Evento</h3>
+        <h3 class="modal-title">ðŸŽª Criar Novo Palco / Evento</h3>
         <p class="modal-subtitle">
-          Crie uma nova sessão limpa e independente (com Dia 1 a 0 artistas).
+          Crie uma nova sessÃ£o limpa e independente (com Dia 1 a 0 artistas).
         </p>
       </div>
 
       <div class="modal-scroll-content">
         <div class="modal-field">
           <label class="modal-label" for="new-event-title-input">Nome do Evento / Palco:</label>
-          <input id="new-event-title-input" class="input" placeholder="Ex: Palco 2, Palco Secundário, RC26" autocomplete="off">
+          <input id="new-event-title-input" class="input" placeholder="Ex: Palco 2, Palco SecundÃ¡rio, RC26" autocomplete="off">
         </div>
 
         <div style="margin-top: 14px; margin-bottom: 6px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
             <div class="modal-label" style="margin-bottom: 0;">Palcos / Eventos Ativos:</div>
-            <button id="ctrl-delete-all-events-btn" type="button" class="btn btn-sm btn-danger" style="padding: 2px 7px; font-size: 0.7rem;">🗑️ Apagar Todos</button>
+            <button id="ctrl-delete-all-events-btn" type="button" class="btn btn-sm btn-danger" style="padding: 2px 7px; font-size: 0.7rem;">ðŸ—‘ï¸ Apagar Todos</button>
           </div>
           <div id="ctrl-events-manage-list" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
         </div>
       </div>
 
       <div class="modal-actions modal-actions-sticky">
-        <a href="index.html?portal=1" class="btn" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #cbd5e1; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 700;">🏠 Ir para o Início (Portal)</a>
+        <a href="index.html?portal=1" class="btn" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #cbd5e1; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 700;">ðŸ  Ir para o InÃ­cio (Portal)</a>
         <button id="new-event-cancel" type="button" class="btn">Fechar</button>
-        <button id="new-event-confirm" type="button" class="btn btn-primary">✨ Criar Palco Limpo</button>
+        <button id="new-event-confirm" type="button" class="btn btn-primary">âœ¨ Criar Palco Limpo</button>
       </div>
     </div>
   </div>
@@ -346,33 +346,33 @@
   <div id="notifications-modal" class="modal-overlay">
     <div class="modal" style="max-width: 540px;">
       <div class="modal-header">
-        <h3 class="modal-title">🔔 Notificações & Alertas no Telemóvel</h3>
-        <p class="modal-subtitle">Configure alertas nativos para telemóveis e envio automático para grupos de Telegram da equipa.</p>
+        <h3 class="modal-title">ðŸ”” NotificaÃ§Ãµes & Alertas no TelemÃ³vel</h3>
+        <p class="modal-subtitle">Configure alertas nativos para telemÃ³veis e envio automÃ¡tico para grupos de Telegram da equipa.</p>
       </div>
 
       <div class="modal-scroll-content">
-        <!-- Section 1: Notificações no Telemóvel (Web / PWA) -->
+        <!-- Section 1: NotificaÃ§Ãµes no TelemÃ³vel (Web / PWA) -->
         <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
             <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
-              <span>📱</span> Notificações Neste Telemóvel / PC
+              <span>ðŸ“±</span> NotificaÃ§Ãµes Neste TelemÃ³vel / PC
             </div>
             <span id="notif-browser-status" class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-secondary); font-size: 0.72rem;">Verificando...</span>
           </div>
           <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
-            Receba banners com vibração neste telemóvel quando houver Cues (<code>STANDBY</code> / <code>GO</code>), aviso de 5m/1m ou mensagens urgentes.
-            <em style="display: block; margin-top: 4px; color: #fdcb6e;">(No iPhone: requer adicionar ao Ecrã Principal pelo Safari).</em>
+            Receba banners com vibraÃ§Ã£o neste telemÃ³vel quando houver Cues (<code>STANDBY</code> / <code>GO</code>), aviso de 5m/1m ou mensagens urgentes.
+            <em style="display: block; margin-top: 4px; color: #fdcb6e;">(No iPhone: requer adicionar ao EcrÃ£ Principal pelo Safari).</em>
           </p>
           <button id="btn-enable-browser-notif" type="button" class="btn btn-sm" style="background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4; font-weight: 600;">
-            🔔 Ativar Notificações Neste Dispositivo
+            ðŸ”” Ativar NotificaÃ§Ãµes Neste Dispositivo
           </button>
         </div>
 
-        <!-- Section 2: Integração Telegram Bot -->
+        <!-- Section 2: IntegraÃ§Ã£o Telegram Bot -->
         <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 14px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
             <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
-              <span>✈️</span> Canal / Grupo de Telegram
+              <span>âœˆï¸</span> Canal / Grupo de Telegram
             </div>
             <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 8px;">
               <input type="checkbox" id="notif-tg-enabled" style="cursor: pointer; width: 18px; height: 18px;">
@@ -380,7 +380,7 @@
             </label>
           </div>
           <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
-            Envia alertas em tempo real para o grupo da equipa técnica (Som, Luz, Vídeo, Produção). Crie o bot no <a href="https://t.me/BotFather" target="_blank" style="color: #74b9ff; text-decoration: underline;">@BotFather</a> e obtenha o Chat ID.
+            Envia alertas em tempo real para o grupo da equipa tÃ©cnica (Som, Luz, VÃ­deo, ProduÃ§Ã£o). Crie o bot no <a href="https://t.me/BotFather" target="_blank" style="color: #74b9ff; text-decoration: underline;">@BotFather</a> e obtenha o Chat ID.
           </p>
 
           <div class="modal-field" style="margin-bottom: 10px;">
@@ -391,39 +391,39 @@
           <div class="modal-field" style="margin-bottom: 12px;">
             <label class="modal-label" for="notif-tg-chat" style="font-size: 0.8rem;">Chat ID (Grupo, Canal ou Utilizador):</label>
             <input id="notif-tg-chat" class="input input-mono" placeholder="Ex: -1001234567890 ou @meucanal" autocomplete="off">
-            <small style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-top: 4px;">Dica: Adicione o bot ao grupo e use o ID do grupo (número negativo para grupos/supergrupos).</small>
+            <small style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-top: 4px;">Dica: Adicione o bot ao grupo e use o ID do grupo (nÃºmero negativo para grupos/supergrupos).</small>
           </div>
 
           <div style="margin-bottom: 12px;">
-            <div class="modal-label" style="font-size: 0.8rem; margin-bottom: 6px;">Alertas Automáticos a Enviar:</div>
+            <div class="modal-label" style="font-size: 0.8rem; margin-bottom: 6px;">Alertas AutomÃ¡ticos a Enviar:</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.82rem; color: #ddd;">
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="notif-tg-alert-5m" checked> ⏳ Faltam 5 Minutos
+                <input type="checkbox" id="notif-tg-alert-5m" checked> â³ Faltam 5 Minutos
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="notif-tg-alert-1m" checked> ⚠️ Falta 1 Minuto
+                <input type="checkbox" id="notif-tg-alert-1m" checked> âš ï¸ Falta 1 Minuto
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="notif-tg-alert-end" checked> 🛑 Fim / Overtime
+                <input type="checkbox" id="notif-tg-alert-end" checked> ðŸ›‘ Fim / Overtime
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="notif-tg-alert-regie-call" checked> 📞 Chamadas de Régie
+                <input type="checkbox" id="notif-tg-alert-regie-call" checked> ðŸ“ž Chamadas de RÃ©gie
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; grid-column: span 2;">
-                <input type="checkbox" id="notif-tg-alert-regie-msg" checked> 📟 Comunicações Régies & Técnicos
+                <input type="checkbox" id="notif-tg-alert-regie-msg" checked> ðŸ“Ÿ ComunicaÃ§Ãµes RÃ©gies & TÃ©cnicos
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; grid-column: span 2;">
-                <input type="checkbox" id="notif-tg-alert-urgent" checked> 🚨 Mensagens de Palco (Prompter)
+                <input type="checkbox" id="notif-tg-alert-urgent" checked> ðŸš¨ Mensagens de Palco (Prompter)
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; grid-column: span 2; opacity: 0.65;">
-                <input type="checkbox" id="notif-tg-alert-cues"> 🚦 Deixas Cênicas (Cues DC)
+                <input type="checkbox" id="notif-tg-alert-cues"> ðŸš¦ Deixas CÃªnicas (Cues DC)
               </label>
             </div>
           </div>
 
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
             <button id="notif-tg-btn-test" type="button" class="btn btn-sm" style="background: rgba(9, 132, 227, 0.2); border-color: #0984e3; color: #74b9ff; font-weight: 600;">
-              🧪 Testar Envio Telegram
+              ðŸ§ª Testar Envio Telegram
             </button>
             <span id="notif-tg-feedback" style="font-size: 0.78rem; font-weight: 600;"></span>
           </div>
@@ -432,7 +432,7 @@
 
       <div class="modal-actions modal-actions-sticky">
         <button id="notif-modal-close" type="button" class="btn">Fechar</button>
-        <button id="notif-modal-save" type="button" class="btn btn-primary">💾 Guardar Configurações</button>
+        <button id="notif-modal-save" type="button" class="btn btn-primary">ðŸ’¾ Guardar ConfiguraÃ§Ãµes</button>
       </div>
     </div>
   </div>
@@ -444,17 +444,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=127"></script>
+  <script src="js/schedule-importer.js?v=129"></script>
 
   <!-- Access Control -->
-  <script src="js/auth.js?v=127"></script>
+  <script src="js/auth.js?v=129"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=127"></script>
-  <script src="js/local-sync.js?v=127"></script>
-  <script src="js/notifications.js?v=127"></script>
-  <script src="js/controller.js?v=127"></script>
-<script src="js/view-mode.js?v=127"></script>
+  <script src="js/pwa.js?v=129"></script>
+  <script src="js/local-sync.js?v=129"></script>
+  <script src="js/notifications.js?v=129"></script>
+  <script src="js/controller.js?v=129"></script>
+<script src="js/view-mode.js?v=129"></script>
 </body>
 </html>
