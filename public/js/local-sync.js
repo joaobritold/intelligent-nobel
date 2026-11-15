@@ -135,6 +135,12 @@ class UniversalSyncClient {
     this.connectedPeersCount = 1;
     this._needsInitialPublish = false;
     this.timeOffset = window._stagetimer_time_offset || 0;
+    this.localHubWs = null;
+    this.isLocalHubConnected = false;
+    this.localHubUrl = null;
+    this._localHubBackoff = 1000;
+    this._localHubClosing = false;
+    this._serverTimeDrift = 0;
   }
 
   // ─── Deleted Events Tombstones ──────────────────────────────────────
@@ -258,7 +264,7 @@ class UniversalSyncClient {
   }
 
   getTrueTime() {
-    const off = Number(this.timeOffset || window._stagetimer_time_offset || 0);
+    const off = Number(this.timeOffset || window._stagetimer_time_offset || this._serverTimeDrift || 0);
     return Date.now() + (Number.isFinite(off) ? off : 0);
   }
 
@@ -521,6 +527,9 @@ class UniversalSyncClient {
 
     // 5. Connect to Cloud MQTT over Secure WebSocket (WSS)
     this._initCloudSync();
+
+    // 6. Connect to Local Hub (Offline LAN WebSocket)
+    this._initLocalHubSync();
   }
 
   _sanitizeStateForNetwork(state) {
@@ -549,7 +558,7 @@ class UniversalSyncClient {
       const sender = String(cmdObj.sender || '');
       const secret = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('stagetimer_auth_token') : null) ||
                      (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_auth_token') : null) ||
-                     'st_showflow_cmd_sig_v138';
+                     'st_showflow_cmd_sig_v139';
       const raw = `${action}:${target}:${sentAt}:${sender}:${secret.slice(-16)}`;
       let hash = 0x811c9dc5;
       for (let i = 0; i < raw.length; i++) {
@@ -931,7 +940,7 @@ class UniversalSyncClient {
       if (typeof document !== 'undefined' && !this._mqttScriptLoading) {
         this._mqttScriptLoading = true;
         const s = document.createElement('script');
-        s.src = 'js/mqtt.min.js?v=137';
+        s.src = 'js/mqtt.min.js?v=139';
         s.onload = () => {
           this._mqttScriptLoading = false;
           this._initCloudSync();
@@ -1320,6 +1329,185 @@ class UniversalSyncClient {
     }, 1500);
   }
 
+  _initLocalHubSync() {
+    if (typeof window === 'undefined' || typeof WebSocket === 'undefined') return;
+
+    let targetHubUrl = null;
+
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hubParam = urlParams.get('hub') || urlParams.get('lan');
+      if (hubParam) {
+        if (hubParam.startsWith('ws://') || hubParam.startsWith('wss://')) {
+          targetHubUrl = hubParam;
+        } else if (hubParam === '1' || hubParam === 'true') {
+          targetHubUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
+        } else {
+          const port = hubParam.includes(':') ? hubParam : `${hubParam}:3000`;
+          targetHubUrl = `ws://${port}/ws`;
+        }
+        try { localStorage.setItem('stagetimer_local_hub_url', targetHubUrl); } catch (_) {}
+      } else {
+        const storedHub = localStorage.getItem('stagetimer_local_hub_url');
+        if (storedHub && (storedHub.startsWith('ws://') || storedHub.startsWith('wss://'))) {
+          targetHubUrl = storedHub;
+        } else {
+          const hostname = window.location.hostname || '';
+          const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local');
+          const isPrivateIp = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(hostname);
+          const isCustomPort = window.location.port === '3000' || window.location.port === '8080';
+
+          if (isLocalhost || (isPrivateIp && isCustomPort)) {
+            targetHubUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
+          }
+        }
+      }
+    } catch (_) {}
+
+    if (targetHubUrl) {
+      this._connectLocalHubWs(targetHubUrl);
+    }
+  }
+
+  _connectLocalHubWs(hubUrl) {
+    if (!hubUrl || typeof WebSocket === 'undefined') return;
+    this.localHubUrl = hubUrl;
+    this._localHubClosing = false;
+
+    try {
+      if (this.localHubWs) {
+        try { this.localHubWs.close(); } catch (_) {}
+      }
+
+      const ws = new WebSocket(hubUrl);
+      this.localHubWs = ws;
+
+      ws.onopen = () => {
+        this.isLocalHubConnected = true;
+        this._localHubBackoff = 1000;
+        console.log('[ShowFlow Hub] Ligado com sucesso ao Hub Local LAN:', hubUrl);
+
+        // Join room channel
+        this._sendLocalHub({
+          type: 'join',
+          room: this.cleanRoom,
+          client: {
+            clientId: this.clientId,
+            deviceUuid: this.deviceUuid,
+            role: this.role
+          }
+        });
+
+        // NTP Sync (time ping)
+        this._sendLocalHub({
+          type: 'time_ping',
+          clientSentAt: Date.now()
+        });
+
+        // Announce presence immediately
+        this._announcePresence();
+
+        // Push state if active controller/operator
+        if (this._state && Array.isArray(this._state.timers) && this._state.timers.length > 0 && !this._state.isEmptyDefault) {
+          this._sendLocalHub({
+            type: 'sync_state',
+            room: this.cleanRoom,
+            data: this._sanitizeStateForNetwork(this._state),
+            sender: this.clientId,
+            sentAt: this.getTrueTime()
+          });
+        }
+
+        this._emit('local-hub-connected', { url: hubUrl });
+      };
+
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (!msg || typeof msg !== 'object') return;
+
+          if (msg.type === 'time_pong') {
+            const now = Date.now();
+            const rtt = Math.max(0, now - (msg.clientSentAt || now));
+            const serverMidpoint = msg.serverNow || now;
+            this._serverTimeDrift = serverMidpoint - (now - Math.round(rtt / 2));
+            return;
+          }
+
+          if (msg.type === 'sync_state') {
+            const incRoom = String(msg.room || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+            if (incRoom === this.cleanRoom && msg.data) {
+              this._applyIncomingState(msg.data, true, msg.sentAt);
+            } else if (this.role === 'master' && msg.data) {
+              this._emit('multi-room-state', { room: incRoom, data: msg.data });
+            }
+            return;
+          }
+
+          if (msg.type === 'remote_cmd') {
+            const cmd = msg.command || msg;
+            this._handleRemoteCommand(cmd);
+            return;
+          }
+
+          if (msg.type === 'presence') {
+            const dev = msg.device;
+            if (dev && dev.deviceUuid) {
+              if (this.purgedDevicesSet.has(dev.deviceUuid)) return;
+              const existing = this.globalDevicesMap.get(dev.deviceUuid);
+              this.globalDevicesMap.set(dev.deviceUuid, {
+                ...dev,
+                firstSeen: existing?.firstSeen || dev.firstSeen || Date.now(),
+                lastSeen: Date.now()
+              });
+              this._cleanupGlobalDevices();
+              this._emit('devices-update', this.getOnlineDevices());
+            }
+            return;
+          }
+        } catch (_) {}
+      };
+
+      ws.onclose = () => {
+        this.isLocalHubConnected = false;
+        if (!this._localHubClosing) {
+          setTimeout(() => {
+            if (!this._localHubClosing) {
+              this._connectLocalHubWs(hubUrl);
+            }
+          }, this._localHubBackoff);
+          this._localHubBackoff = Math.min(10000, Math.round(this._localHubBackoff * 1.5));
+        }
+        this._emit('local-hub-disconnected');
+      };
+
+      ws.onerror = () => {
+        this.isLocalHubConnected = false;
+      };
+    } catch (err) {
+      this.isLocalHubConnected = false;
+    }
+  }
+
+  _sendLocalHub(payload) {
+    if (!this.localHubWs || this.localHubWs.readyState !== 1) return false;
+    try {
+      this.localHubWs.send(JSON.stringify(payload));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  getSyncStatus() {
+    const isCloud = Boolean(this.mqttClient && this.mqttClient.connected);
+    const isHub = Boolean(this.isLocalHubConnected);
+    if (isCloud && isHub) return 'hybrid';
+    if (isHub) return 'local_hub';
+    if (isCloud) return 'cloud';
+    return 'offline';
+  }
+
   _cleanupGlobalDevices() {
     const now = Date.now();
     for (const [uuid, dev] of this.globalDevicesMap.entries()) {
@@ -1416,7 +1604,15 @@ class UniversalSyncClient {
       } catch (e) {}
     }
 
-    // 2. Cloud MQTT (cross-device over network)
+    // 2. Local Hub WebSocket (Offline LAN)
+    this._sendLocalHub({
+      type: 'remote_cmd',
+      room: this.cleanRoom,
+      command: payload,
+      sender: this.clientId
+    });
+
+    // 3. Cloud MQTT (cross-device over network)
     if (this.mqttClient && this.mqttClient.connected) {
       try {
         const json = JSON.stringify(payload);
@@ -1449,6 +1645,14 @@ class UniversalSyncClient {
         this.cmdChannel.postMessage({ ...payload, _via: 'local' });
       } catch (e) {}
     }
+
+    // Local Hub WebSocket (Offline LAN)
+    this._sendLocalHub({
+      type: 'remote_cmd',
+      room: clean,
+      command: payload,
+      sender: this.clientId
+    });
 
     if (!this.mqttClient || !this.mqttClient.connected) return;
     try {
@@ -1542,6 +1746,14 @@ class UniversalSyncClient {
         });
       } catch (e) {}
     }
+
+    // Local Hub WebSocket (Offline LAN)
+    this._sendLocalHub({
+      type: 'presence',
+      room: this.cleanRoom,
+      device: devPayload,
+      sender: this.clientId
+    });
 
     if (this.mqttClient && this.mqttClient.connected) {
       this.peersMap.set(this.clientId, Date.now());
@@ -3315,6 +3527,15 @@ class UniversalSyncClient {
         this.mqttClient.publish(this.mqttTopicState, payload, { qos: 0, retain });
       } catch (e) {}
     }
+
+    // 3. Relay to Local Hub (Offline LAN WebSocket)
+    this._sendLocalHub({
+      type: 'sync_state',
+      room: this.cleanRoom,
+      data: this._sanitizeStateForNetwork(this._state),
+      sender: this.clientId,
+      sentAt: trueNow
+    });
 
     this._emit('room-state', this._state);
   }

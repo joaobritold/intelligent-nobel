@@ -1,18 +1,35 @@
-const express = require('express');
+/**
+ * ShowFlow — Hub Local de Régie & Palco (Servidor Híbrido LAN / Offline)
+ * 
+ * Permite a sincronização em tempo real de todos os 10 ecrãs na rede local
+ * mesmo em recintos com corte total de Internet / 4G.
+ * 
+ * Modos de Operação:
+ * - 100% Plug-and-Play (Zero dependências externas obrigatórias, com fallback nativo)
+ * - Compatível com express + ws se instalados
+ * - Sincronização de Estado (State), Comandos Remotos (Cmds), Intercom Régies e Presença
+ * - Sincronização de Milissegundos em LAN (NTP Local)
+ * - Persistência automática em disco local (pasta ./data/)
+ */
+
 const http = require('http');
-const { WebSocketServer } = require('ws');
 const crypto = require('crypto');
+const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
-const app = express();
-const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
-
-app.use(express.json({ limit: '16kb' }));
-
-// ─── Authentication & Security Configuration (Env / Salted Hash) ────
+// ─── Configurações & Segurança ──────────────────────────────────────────
+const PORT = process.env.PORT || 3000;
 const AUTH_SALT = process.env.AUTH_SALT || 'st_pfp_v1_salt_9f8e7d6c';
-const AUTH_SECRET = process.env.AUTH_SECRET || crypto.randomBytes(32).toString('hex');
+const AUTH_SECRET = process.env.AUTH_SECRET || 'st_pfp_serverless_hmac_secret';
+const DATA_DIR = path.join(__dirname, 'data');
+
+// Garantir pasta de persistência local
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (_) {}
 
 function computePasswordHash(plainText) {
   const normalized = String(plainText || '').trim().toLowerCase();
@@ -30,23 +47,25 @@ function safeCompareHex(hashA, hashB) {
   }
 }
 
-// Hashes can be overridden via environment variables (MASTER_PASSWORD, OPERATOR_PASSWORD, or pre-hashed *_HASH)
-const MASTER_HASHES = (
-  process.env.MASTER_PASSWORD
-    ? [computePasswordHash(process.env.MASTER_PASSWORD)]
-    : (process.env.MASTER_PASSWORD_HASH ? process.env.MASTER_PASSWORD_HASH.split(',').map(s => s.trim()) : [
-        'fb2e5f099f5a42d505f0e1114d2f0e28c667852ebcecb6f7202d3fe9d955f346'
-      ])
-);
+const MASTER_HASHES = process.env.MASTER_PASSWORD
+  ? [computePasswordHash(process.env.MASTER_PASSWORD)]
+  : (process.env.MASTER_PASSWORD_HASH
+      ? process.env.MASTER_PASSWORD_HASH.split(',').map(s => s.trim())
+      : ['fb2e5f099f5a42d505f0e1114d2f0e28c667852ebcecb6f7202d3fe9d955f346']);
 
-const OPERATOR_HASHES = (
-  process.env.OPERATOR_PASSWORD
-    ? [computePasswordHash(process.env.OPERATOR_PASSWORD)]
-    : (process.env.OPERATOR_PASSWORD_HASH ? process.env.OPERATOR_PASSWORD_HASH.split(',').map(s => s.trim()) : [
-        'f62cd1e7b7ab0ba4e545477674d5e8788c8119d17be4e2e1367cd27b29f55972',
-        'c823786caa78b9c35b7719b058021956a1cf8406a7ac466d9b91e1cf62683a65'
-      ])
-);
+const OPERATOR_HASHES = process.env.OPERATOR_PASSWORD
+  ? [computePasswordHash(process.env.OPERATOR_PASSWORD)]
+  : (process.env.OPERATOR_PASSWORD_HASH
+      ? process.env.OPERATOR_PASSWORD_HASH.split(',').map(s => s.trim())
+      : [
+          'f62cd1e7b7ab0ba4e545477674d5e8788c8119d17be4e2e1367cd27b29f55972',
+          'c823786caa78b9c35b7719b058021956a1cf8406a7ac466d9b91e1cf62683a65'
+        ]);
+
+const REGIES_HASHES = [
+  '08db75a469b66d3614c20f1dda8366634e22d549d46bdfdf0c75dc72657a1d73', // 0000
+  ...MASTER_HASHES
+];
 
 function createSessionToken(role, isMaster) {
   const payload = `${role}:${isMaster ? '1' : '0'}:${Date.now()}`;
@@ -54,332 +73,493 @@ function createSessionToken(role, isMaster) {
   return `${Buffer.from(payload).toString('base64url')}.${sig}`;
 }
 
-app.post('/api/auth/verify', (req, res) => {
-  const { password, role } = req.body || {};
-  if (!password || typeof password !== 'string') {
-    return res.status(400).json({ ok: false, error: 'Palavra-passe obrigatória.' });
-  }
+// ─── MIME Types para Servir Ficheiros Estáticos ─────────────────────────
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf'
+};
 
-  const candidateHash = computePasswordHash(password);
-  const isMasterMatch = MASTER_HASHES.some(h => safeCompareHex(candidateHash, h));
-  const isOperatorMatch = OPERATOR_HASHES.some(h => safeCompareHex(candidateHash, h));
+// ─── Armazenamento em Memória & Persistência Local ──────────────────────
+const roomStates = new Map(); // roomCode -> state object
+const roomClients = new Map(); // roomCode -> Set of ws clients
+const allClients = new Set(); // all connected ws clients
 
-  if (role === 'master') {
-    if (isMasterMatch) {
-      return res.json({
-        ok: true,
-        role: 'master',
-        isMaster: true,
-        token: createSessionToken('master', true)
-      });
+function loadPersistedState(roomCode) {
+  const clean = String(roomCode || 'PALCO1').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  const filePath = path.join(DATA_DIR, `state_${clean}.json`);
+  try {
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, 'utf8');
+      return JSON.parse(raw);
     }
-    return res.status(401).json({ ok: false, error: 'Credencial Master inválida.' });
+  } catch (_) {}
+  return null;
+}
+
+function persistRoomState(roomCode, state) {
+  if (!state || typeof state !== 'object') return;
+  const clean = String(roomCode || 'PALCO1').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  const filePath = path.join(DATA_DIR, `state_${clean}.json`);
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(state, null, 2), 'utf8');
+  } catch (_) {}
+}
+
+function getRoomState(roomCode) {
+  const clean = String(roomCode || 'PALCO1').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  if (!roomStates.has(clean)) {
+    const fromDisk = loadPersistedState(clean);
+    if (fromDisk) {
+      roomStates.set(clean, fromDisk);
+    }
+  }
+  return roomStates.get(clean) || null;
+}
+
+// ─── Servidor HTTP & Handlers de Rotas ──────────────────────────────────
+const server = http.createServer((req, res) => {
+  const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const pathname = parsedUrl.pathname;
+
+  // CORS Headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    return res.end();
   }
 
-  if (isMasterMatch || isOperatorMatch) {
-    return res.json({
-      ok: true,
-      role: isMasterMatch ? 'master' : 'operator',
-      isMaster: isMasterMatch,
-      token: createSessionToken(isMasterMatch ? 'master' : 'operator', isMasterMatch)
+  // 1. API: /api/auth/verify (Idêntico ao Netlify Serverless Auth)
+  if (pathname === '/api/auth/verify' && req.method === 'POST') {
+    let bodyRaw = '';
+    req.on('data', chunk => { bodyRaw += chunk; });
+    req.on('end', () => {
+      try {
+        const body = JSON.parse(bodyRaw || '{}');
+        const password = String(body.password || '').trim();
+        const role = body.role || 'operator';
+
+        if (!password) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({ ok: false, error: 'Palavra-passe obrigatória.' }));
+        }
+
+        const candidateHash = computePasswordHash(password);
+        const isMasterMatch = MASTER_HASHES.some(h => safeCompareHex(candidateHash, h));
+        const isOperatorMatch = OPERATOR_HASHES.some(h => safeCompareHex(candidateHash, h));
+        const isRegiesMatch = REGIES_HASHES.some(h => safeCompareHex(candidateHash, h));
+
+        if (role === 'master' && !isMasterMatch) {
+          res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({ ok: false, error: 'Credencial Master inválida.' }));
+        }
+
+        if (role === 'regies' && !isRegiesMatch && !isOperatorMatch && !isMasterMatch) {
+          res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({ ok: false, error: 'Credencial Régies inválida.' }));
+        }
+
+        if (isMasterMatch || isOperatorMatch || (role === 'regies' && isRegiesMatch)) {
+          const assignedRole = isMasterMatch ? 'master' : (role === 'regies' ? 'regies' : 'operator');
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({
+            ok: true,
+            role: assignedRole,
+            isMaster: isMasterMatch,
+            token: createSessionToken(assignedRole, isMasterMatch)
+          }));
+        }
+
+        res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({ ok: false, error: 'Credencial de acesso inválida.' }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({ ok: false, error: 'Erro no servidor de autenticação.' }));
+      }
     });
+    return;
   }
 
-  return res.status(401).json({ ok: false, error: 'Credencial de acesso inválida.' });
-});
+  // 2. API: /api/hub/status
+  if (pathname === '/api/hub/status' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    return res.end(JSON.stringify({
+      ok: true,
+      service: 'ShowFlow Local Hub',
+      version: 'v139',
+      connectedClients: allClients.size,
+      roomsActive: roomClients.size,
+      uptimeSecs: Math.round(process.uptime()),
+      trueTime: Date.now()
+    }));
+  }
 
-// Serve static files with no-cache for scripts/styles so updates apply immediately
-app.use(express.static(path.join(__dirname, 'public'), {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html') || filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('sw.js')) {
+  // 3. API: /api/hub/state/:room (GET & POST)
+  if (pathname.startsWith('/api/hub/state/')) {
+    const roomCode = pathname.replace('/api/hub/state/', '').toUpperCase().trim();
+    if (req.method === 'GET') {
+      const state = getRoomState(roomCode);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ ok: true, room: roomCode, data: state }));
+    }
+    if (req.method === 'POST') {
+      let bodyRaw = '';
+      req.on('data', chunk => { bodyRaw += chunk; });
+      req.on('end', () => {
+        try {
+          const body = JSON.parse(bodyRaw || '{}');
+          if (body.data) {
+            roomStates.set(roomCode, body.data);
+            persistRoomState(roomCode, body.data);
+            broadcastToRoom(roomCode, null, {
+              type: 'sync_state',
+              room: roomCode,
+              sender: 'hub_rest_api',
+              sentAt: Date.now(),
+              data: body.data
+            });
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({ ok: true, room: roomCode }));
+        } catch (_) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({ ok: false, error: 'Corpo JSON inválido.' }));
+        }
+      });
+      return;
+    }
+  }
+
+  // 4. Servir Ficheiros Estáticos da pasta public/
+  let filePath = path.join(__dirname, 'public', pathname === '/' ? 'index.html' : pathname);
+
+  // Prevenir Directory Traversal
+  if (!filePath.startsWith(path.join(__dirname, 'public'))) {
+    res.writeHead(403);
+    return res.end('Acesso Proibido');
+  }
+
+  fs.stat(filePath, (err, stats) => {
+    if (err || !stats.isFile()) {
+      // Se não encontrar o ficheiro exato, tentar fallback com .html
+      const htmlFallback = filePath + '.html';
+      if (fs.existsSync(htmlFallback)) {
+        filePath = htmlFallback;
+      } else {
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+        return res.end('Ficheiro não encontrado no ShowFlow Hub');
+      }
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+    // No-cache para assets dinâmicos garantindo atualizações instantâneas no recinto
+    res.setHeader('Content-Type', contentType);
+    if (ext === '.html' || ext === '.js' || ext === '.css' || filePath.endsWith('sw.js')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
     }
-  }
-}));
 
-// Redirect root to controller
-app.get('/', (req, res) => {
-  res.redirect('/controller.html');
+    const stream = fs.createReadStream(filePath);
+    stream.pipe(res);
+  });
 });
 
-// ─── State Management ────────────────────────────────────────────────
+// ─── WebSocket Hub Relay (Suporte a biblioteca 'ws' ou Upgrade Nativo) ──
+let wss = null;
+try {
+  const { WebSocketServer } = require('ws');
+  wss = new WebSocketServer({ noServer: true });
+} catch (_) {}
 
-const rooms = new Map();
+function broadcastToRoom(roomCode, senderWs, payloadObj) {
+  const clean = String(roomCode || 'PALCO1').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  const clients = roomClients.get(clean);
+  if (!clients || clients.size === 0) return;
 
-function generateRoomId() {
-  return crypto.randomBytes(3).toString('hex'); // 6-char hex id
-}
-
-function createRoom(id) {
-  return {
-    id,
-    name: 'Stage Timer',
-    activeTimerId: null,
-    message: { text: '', visible: false },
-    timers: [],
-    clients: new Set(),
-  };
-}
-
-function createTimer(data = {}) {
-  return {
-    id: crypto.randomUUID(),
-    name: data.name || 'New Timer',
-    mode: data.mode || 'countdown',       // countdown | countup | clock
-    duration: data.duration || 300000,     // 5 min default (ms)
-    elapsed: 0,
-    state: 'stopped',                      // stopped | running | finished
-    warnAt: data.warnAt ?? 60000,          // 1 min warning
-    dangerAt: data.dangerAt ?? 10000,      // 10s danger
-    startedAt: null,                       // internal: timestamp
-  };
-}
-
-function getRoom(roomId) {
-  if (!rooms.has(roomId)) {
-    rooms.set(roomId, createRoom(roomId));
-  }
-  return rooms.get(roomId);
-}
-
-function getRoomState(room) {
-  return {
-    id: room.id,
-    name: room.name,
-    activeTimerId: room.activeTimerId,
-    message: { ...room.message },
-    timers: room.timers.map(t => {
-      const { startedAt, ...rest } = t;
-      // For running timers, compute current elapsed on the fly
-      if (t.state === 'running' && t.startedAt) {
-        rest.elapsed = t.elapsed + (Date.now() - t.startedAt);
-        if (t.mode === 'countdown' && rest.elapsed >= t.duration) {
-          rest.elapsed = t.duration;
+  const rawJson = typeof payloadObj === 'string' ? payloadObj : JSON.stringify(payloadObj);
+  for (const client of clients) {
+    if (client !== senderWs && (client.readyState === 1 || client._isOpen)) {
+      try {
+        if (typeof client.send === 'function') {
+          client.send(rawJson);
+        } else if (typeof client._sendRaw === 'function') {
+          client._sendRaw(rawJson);
         }
-      }
-      return rest;
-    }),
-  };
-}
-
-function broadcastRoomState(room) {
-  const state = getRoomState(room);
-  const msg = JSON.stringify({ type: 'room-state', data: state });
-  for (const client of room.clients) {
-    if (client.readyState === 1) {
-      client.send(msg);
+      } catch (_) {}
     }
   }
 }
 
-// ─── Timer Tick Loop ─────────────────────────────────────────────────
-
-setInterval(() => {
-  const now = Date.now();
-  for (const room of rooms.values()) {
-    let hasRunning = false;
-    for (const timer of room.timers) {
-      if (timer.state === 'running' && timer.startedAt) {
-        hasRunning = true;
-        const totalElapsed = timer.elapsed + (now - timer.startedAt);
-
-        // Check if countdown finished
-        if (timer.mode === 'countdown' && totalElapsed >= timer.duration) {
-          timer.elapsed = timer.duration;
-          timer.state = 'finished';
-          timer.startedAt = null;
+function broadcastToAll(senderWs, payloadObj) {
+  const rawJson = typeof payloadObj === 'string' ? payloadObj : JSON.stringify(payloadObj);
+  for (const client of allClients) {
+    if (client !== senderWs && (client.readyState === 1 || client._isOpen)) {
+      try {
+        if (typeof client.send === 'function') {
+          client.send(rawJson);
+        } else if (typeof client._sendRaw === 'function') {
+          client._sendRaw(rawJson);
         }
-      }
+      } catch (_) {}
     }
-    if (hasRunning || room.timers.some(t => t.state === 'finished')) {
-      broadcastRoomState(room);
-      // Clear finished flag after broadcasting (keep state as finished)
-    }
-  }
-}, 100);
-
-// ─── Timer Actions ───────────────────────────────────────────────────
-
-function handleTimerAction(timer, action) {
-  const now = Date.now();
-  switch (action) {
-    case 'start':
-      if (timer.state !== 'running') {
-        if (timer.state === 'finished') {
-          timer.elapsed = 0;
-        }
-        timer.state = 'running';
-        timer.startedAt = now;
-      }
-      break;
-    case 'pause':
-      if (timer.state === 'running') {
-        if (timer.startedAt) {
-          timer.elapsed += now - timer.startedAt;
-        }
-        timer.state = 'stopped';
-        timer.startedAt = null;
-      }
-      break;
-    case 'reset':
-      timer.state = 'stopped';
-      timer.elapsed = 0;
-      timer.startedAt = null;
-      break;
-    case 'toggle':
-      if (timer.state === 'running') {
-        handleTimerAction(timer, 'pause');
-      } else {
-        handleTimerAction(timer, 'start');
-      }
-      break;
   }
 }
 
-// ─── WebSocket Handling ──────────────────────────────────────────────
+function handleClientMessage(ws, rawData) {
+  try {
+    const msg = JSON.parse(rawData.toString('utf8'));
+    if (!msg || typeof msg !== 'object') return;
 
-wss.on('connection', (ws, req) => {
+    const roomCode = String(msg.room || ws.roomCode || 'PALCO1').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+
+    // 1. Time Sync Ping / Pong (NTP de Milissegundo em LAN)
+    if (msg.type === 'time_ping') {
+      const pong = JSON.stringify({
+        type: 'time_pong',
+        clientTs: msg.clientTs,
+        serverTs: Date.now()
+      });
+      if (typeof ws.send === 'function') ws.send(pong);
+      else if (typeof ws._sendRaw === 'function') ws._sendRaw(pong);
+      return;
+    }
+
+    // 2. State Sync (Distribuição atómica de alinhamentos e timers)
+    if (msg.type === 'sync_state' && msg.data) {
+      roomStates.set(roomCode, msg.data);
+      persistRoomState(roomCode, msg.data);
+      broadcastToRoom(roomCode, ws, {
+        type: 'sync_state',
+        room: roomCode,
+        sender: ws.clientId,
+        sentAt: msg.sentAt || Date.now(),
+        data: msg.data
+      });
+      return;
+    }
+
+    // 3. Comandos Remotos de Palco (Navegação, Reload, etc.)
+    if (msg.type === 'remote_cmd') {
+      broadcastToRoom(roomCode, ws, msg);
+      return;
+    }
+
+    // 4. Intercom de Régies (Mensagens, ACKs e Chamadas Gerais)
+    if (msg.type === 'regie_msg' || msg.type === 'regie_ack' || msg.type === 'regie_call') {
+      broadcastToRoom(roomCode, ws, msg);
+      return;
+    }
+
+    // 5. Presença em Tempo Real de Dispositivos Técnicos
+    if (msg.type === 'presence') {
+      broadcastToRoom(roomCode, ws, msg);
+      broadcastToAll(ws, msg); // Para a Super Régie Master ver todos os palcos
+      return;
+    }
+
+    // 6. Registo de Eventos (Multi-Room)
+    if (msg.type === 'events_registry') {
+      broadcastToAll(ws, msg);
+      return;
+    }
+  } catch (_) {}
+}
+
+function registerConnectedWs(ws, req) {
   const url = new URL(req.url, 'http://localhost');
-  const roomId = url.searchParams.get('room') || generateRoomId();
+  const roomCode = String(url.searchParams.get('room') || 'PALCO1').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  const clientId = url.searchParams.get('clientId') || ('client_' + Math.random().toString(36).substring(2, 8));
   const role = url.searchParams.get('role') || 'viewer';
 
-  const room = getRoom(roomId);
-  room.clients.add(ws);
-  ws.roomId = roomId;
+  ws.roomCode = roomCode;
+  ws.clientId = clientId;
   ws.role = role;
+  ws._isOpen = true;
 
-  // Send initial state with the actual room ID
-  ws.send(JSON.stringify({
-    type: 'room-state',
-    data: getRoomState(room),
-  }));
+  if (!roomClients.has(roomCode)) {
+    roomClients.set(roomCode, new Set());
+  }
+  roomClients.get(roomCode).add(ws);
+  allClients.add(ws);
 
-  ws.on('message', (raw) => {
+  // Enviar estado atual em memória ou disco assim que o ecrã se liga
+  const curState = getRoomState(roomCode);
+  if (curState) {
+    const initPayload = JSON.stringify({
+      type: 'sync_state',
+      room: roomCode,
+      sender: 'hub_server',
+      sentAt: Date.now(),
+      data: curState
+    });
     try {
-      const msg = JSON.parse(raw.toString());
-      handleMessage(ws, room, msg);
-    } catch (e) {
-      console.error('Invalid message:', e.message);
-    }
-  });
-
-  ws.on('close', () => {
-    room.clients.delete(ws);
-    // Clean up empty rooms after 5 minutes
-    if (room.clients.size === 0) {
-      setTimeout(() => {
-        if (room.clients.size === 0) {
-          rooms.delete(room.id);
-        }
-      }, 5 * 60 * 1000);
-    }
-  });
-});
-
-function handleMessage(ws, room, msg) {
-  switch (msg.type) {
-    case 'create-timer': {
-      const timer = createTimer(msg.data || {});
-      room.timers.push(timer);
-      if (!room.activeTimerId) {
-        room.activeTimerId = timer.id;
-      }
-      break;
-    }
-
-    case 'update-timer': {
-      const timer = room.timers.find(t => t.id === msg.data?.id);
-      if (timer) {
-        const allowed = ['name', 'mode', 'duration', 'warnAt', 'dangerAt'];
-        for (const key of allowed) {
-          if (msg.data[key] !== undefined) {
-            timer[key] = msg.data[key];
-          }
-        }
-      }
-      break;
-    }
-
-    case 'delete-timer': {
-      const idx = room.timers.findIndex(t => t.id === msg.data?.id);
-      if (idx >= 0) {
-        const deletedId = room.timers[idx].id;
-        room.timers.splice(idx, 1);
-        if (room.activeTimerId === deletedId) {
-          room.activeTimerId = room.timers[0]?.id || null;
-        }
-      }
-      break;
-    }
-
-    case 'timer-action': {
-      const timer = room.timers.find(t => t.id === msg.data?.id);
-      if (timer) {
-        handleTimerAction(timer, msg.data.action);
-      }
-      break;
-    }
-
-    case 'set-active-timer': {
-      if (room.timers.find(t => t.id === msg.data?.id)) {
-        room.activeTimerId = msg.data.id;
-      }
-      break;
-    }
-
-    case 'send-message': {
-      room.message = {
-        text: msg.data?.text || '',
-        visible: !!msg.data?.visible,
-      };
-      break;
-    }
-
-    case 'reorder-timers': {
-      const order = msg.data?.order;
-      if (Array.isArray(order)) {
-        const reordered = [];
-        for (const id of order) {
-          const t = room.timers.find(t => t.id === id);
-          if (t) reordered.push(t);
-        }
-        for (const t of room.timers) {
-          if (!reordered.includes(t)) reordered.push(t);
-        }
-        room.timers = reordered;
-      }
-      break;
-    }
-
-    case 'global-action': {
-      for (const timer of room.timers) {
-        handleTimerAction(timer, msg.data?.action);
-      }
-      break;
-    }
-
-    case 'update-room': {
-      if (msg.data?.name) room.name = msg.data.name;
-      break;
-    }
-
-    default:
-      return; // Don't broadcast unknown messages
+      if (typeof ws.send === 'function') ws.send(initPayload);
+      else if (typeof ws._sendRaw === 'function') ws._sendRaw(initPayload);
+    } catch (_) {}
   }
 
-  broadcastRoomState(room);
+  const onClose = () => {
+    ws._isOpen = false;
+    allClients.delete(ws);
+    const roomSet = roomClients.get(roomCode);
+    if (roomSet) {
+      roomSet.delete(ws);
+      if (roomSet.size === 0) roomClients.delete(roomCode);
+    }
+  };
+
+  if (typeof ws.on === 'function') {
+    ws.on('message', data => handleClientMessage(ws, data));
+    ws.on('close', onClose);
+    ws.on('error', onClose);
+  }
+
+  return onClose;
 }
 
-// ─── Start Server ────────────────────────────────────────────────────
+// Suporte a Upgrade HTTP -> WebSocket
+server.on('upgrade', (req, socket, head) => {
+  const pathname = new URL(req.url, 'http://localhost').pathname;
+  if (pathname !== '/ws' && pathname !== '/') {
+    socket.destroy();
+    return;
+  }
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log('');
-  console.log('  🎭 StageTimer is running!');
-  console.log('');
-  console.log(`  Controller → http://localhost:${PORT}/controller.html`);
-  console.log(`  Viewer     → http://localhost:${PORT}/viewer.html`);
-  console.log('');
+  // 1. Se o pacote 'ws' estiver disponível, usar a sua implementação
+  if (wss) {
+    wss.handleUpgrade(req, socket, head, ws => {
+      registerConnectedWs(ws, req);
+    });
+    return;
+  }
+
+  // 2. Fallback Nativo RFC 6455 (Zero dependências externas)
+  const key = req.headers['sec-websocket-key'];
+  if (!key) {
+    socket.destroy();
+    return;
+  }
+
+  const acceptKey = crypto
+    .createHash('sha1')
+    .update(key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')
+    .digest('base64');
+
+  const headers = [
+    'HTTP/1.1 101 Switching Protocols',
+    'Upgrade: websocket',
+    'Connection: Upgrade',
+    `Sec-WebSocket-Accept: ${acceptKey}`,
+    ''
+  ].join('\r\n');
+
+  socket.write(headers + '\r\n');
+
+  const customWs = {
+    readyState: 1,
+    _isOpen: true,
+    _sendRaw: text => {
+      const payload = Buffer.from(text, 'utf8');
+      const len = payload.length;
+      let header;
+      if (len < 126) {
+        header = Buffer.from([0x81, len]);
+      } else if (len < 65536) {
+        header = Buffer.alloc(4);
+        header[0] = 0x81;
+        header[1] = 126;
+        header.writeUInt16BE(len, 2);
+      } else {
+        header = Buffer.alloc(10);
+        header[0] = 0x81;
+        header[1] = 127;
+        header.writeBigUInt64BE(BigInt(len), 2);
+      }
+      socket.write(Buffer.concat([header, payload]));
+    },
+    close: () => socket.end()
+  };
+
+  const cleanup = registerConnectedWs(customWs, req);
+
+  // Descodificador simples de frames WebSocket
+  let buffer = Buffer.alloc(0);
+  socket.on('data', chunk => {
+    buffer = Buffer.concat([buffer, chunk]);
+    while (buffer.length >= 2) {
+      const isMasked = (buffer[1] & 0x80) === 0x80;
+      let payloadLen = buffer[1] & 0x7f;
+      let offset = 2;
+
+      if (payloadLen === 126) {
+        if (buffer.length < 4) return;
+        payloadLen = buffer.readUInt16BE(2);
+        offset = 4;
+      } else if (payloadLen === 127) {
+        if (buffer.length < 10) return;
+        payloadLen = Number(buffer.readBigUInt64BE(2));
+        offset = 10;
+      }
+
+      const maskOffset = offset;
+      const dataOffset = isMasked ? maskOffset + 4 : maskOffset;
+      const totalLen = dataOffset + payloadLen;
+      if (buffer.length < totalLen) return;
+
+      const dataBuf = buffer.slice(dataOffset, totalLen);
+      if (isMasked) {
+        const maskKey = buffer.slice(maskOffset, maskOffset + 4);
+        for (let i = 0; i < dataBuf.length; i++) {
+          dataBuf[i] ^= maskKey[i % 4];
+        }
+      }
+
+      handleClientMessage(customWs, dataBuf);
+      buffer = buffer.slice(totalLen);
+    }
+  });
+
+  socket.on('close', cleanup);
+  socket.on('error', cleanup);
+});
+
+// ─── Iniciar Servidor & Apresentar IPs de Rede ──────────────────────────
+server.listen(PORT, '0.0.0.0', () => {
+  const nets = os.networkInterfaces();
+  const ips = [];
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        ips.push(net.address);
+      }
+    }
+  }
+
+  console.log('\n  ╔═══════════════════════════════════════════════════════════════════╗');
+  console.log('  ║             🎪 SHOWFLOW — HUB LOCAL DE RÉGIE & PALCO              ║');
+  console.log('  ║                    MODO HÍBRIDO LAN / OFFLINE                     ║');
+  console.log('  ╚═══════════════════════════════════════════════════════════════════╝\n');
+  console.log(`  🚀 Servidor ativo na porta ${PORT} com sincronização LAN ativada.\n`);
+  console.log('  Aceda nos ecrãs de palco, iPads e telemóveis ligados à mesma rede:');
+  console.log(`  ➜ Local (este PC):  http://localhost:${PORT}`);
+  ips.forEach(ip => {
+    console.log(`  ➜ Na Rede Wi-Fi:    http://${ip}:${PORT}`);
+    console.log(`  ➜ WebSocket LAN:    ws://${ip}:${PORT}/ws`);
+  });
+  console.log('\n  💡 Se a Internet falhar no recinto, a sincronização LAN mantém-se 100% ativa!\n');
 });
