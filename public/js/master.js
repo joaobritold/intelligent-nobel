@@ -70,7 +70,7 @@
 
   function getWatchFullUrl(roomCode) {
     const clean = (roomCode || 'PALCO1').toUpperCase().trim();
-    return new URL(`watch.html?room=${encodeURIComponent(clean)}`, window.location.href).href;
+    return new URL(`watch.html?room=${encodeURIComponent(clean)}&v=137`, window.location.href).href;
   }
 
   function openWatchModal(roomCode, stageTitle, url) {

@@ -30,8 +30,10 @@ try {
   sessionStorage.setItem('stagetimer_active_room', roomId);
 } catch (e) {}
 
+const isWatchPage = typeof location !== 'undefined' && location.pathname.toLowerCase().includes('watch');
+
 const client = new StageTimerClient({
-  role: 'viewer',
+  role: isWatchPage ? 'watch' : 'viewer',
   room: roomId,
 });
 
@@ -264,6 +266,28 @@ if ($viewerEventSelect) {
 }
 
 client.on('events-list-update', (list) => {
+  try {
+    if (Array.isArray(list)) {
+      const matchedEv = list.find(e => (e.code || '').toUpperCase() === roomId);
+      if (matchedEv && Array.isArray(matchedEv.stages) && matchedEv.stages.length > 0) {
+        const hasCurrent = matchedEv.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId);
+        if (!hasCurrent && matchedEv.stages[0]?.code) {
+          const resolvedStage = matchedEv.stages[0].code.toUpperCase();
+          if (resolvedStage !== roomId && (!state || state.isEmptyDefault || !Array.isArray(state.timers) || state.timers.length === 0)) {
+            roomId = resolvedStage;
+            client.cleanRoom = resolvedStage;
+            client.mqttTopicState = `stagetimer_v10/${resolvedStage}/state`;
+            try {
+              if (client.mqttClient) {
+                client.mqttClient.subscribe(client.mqttTopicState, { qos: 0 });
+                client.sendDeviceCommand('ALL', { action: 'request_room_state', room: resolvedStage });
+              }
+            } catch (_) {}
+          }
+        }
+      }
+    }
+  } catch (_) {}
   renderViewerEventSelector(true);
 });
 
@@ -305,9 +329,29 @@ client.on('room-state', (data) => {
   if (state?.id && state.id !== roomId) {
     roomId = state.id;
   }
+  if (state && Array.isArray(state.timers) && state.timers.length > 0 && !state.isEmptyDefault && $connection) {
+    $connection.className = 'viewer-connection';
+  }
   updateViewerNavLinks(roomId);
   renderViewerEventSelector();
   render();
+});
+
+client.on('multi-room-state', ({ room, data }) => {
+  if (!room || !data) return;
+  const incomingCode = String(room).toUpperCase().trim();
+  const currentEmpty = !state || state.isEmptyDefault || !Array.isArray(state.timers) || state.timers.length === 0;
+  const incomingHasRunning = Array.isArray(data.timers) && data.timers.some(t => t.state === 'running');
+
+  if (incomingCode === roomId || incomingCode === client.cleanRoom) {
+    if ($connection) $connection.className = 'viewer-connection';
+    client._applyIncomingState(data, false);
+  } else if (isWatchPage && currentEmpty && (incomingCode.startsWith(roomId) || (!paramRoom && incomingHasRunning))) {
+    roomId = incomingCode;
+    client.cleanRoom = incomingCode;
+    if ($connection) $connection.className = 'viewer-connection';
+    client._applyIncomingState(data, false);
+  }
 });
 
 renderViewerEventSelector();
@@ -388,6 +432,11 @@ function render() {
     if ($viewerNotes) $viewerNotes.classList.remove('visible');
     if ($viewerNext) $viewerNext.style.display = 'none';
     $emptyState.style.display = 'flex';
+    const $emptyText = $emptyState.querySelector('.viewer-empty-text');
+    if ($emptyText) {
+      const stageLabel = (state?.name && state.name !== roomId) ? state.name : roomId;
+      $emptyText.textContent = `${stageLabel} • Standby`;
+    }
     $progress.style.width = '0%';
     $flashOverlay.classList.remove('active');
 
@@ -444,7 +493,7 @@ function render() {
   // Timer display
   const color = getTimerColor(activeTimer);
   const display = getTimerDisplayValue(activeTimer);
-  const isLong = (display || '').length > 5;
+  const isLong = (display || '').length > 6;
 
   $timer.textContent = display;
   $timer.className = `viewer-timer ${color}${isLong ? ' is-long' : ''}`;

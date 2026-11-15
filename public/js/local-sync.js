@@ -507,7 +507,11 @@ class UniversalSyncClient {
     this._startRenderLoop();
 
     setTimeout(() => {
-      this._emit('connected');
+      if (this.role !== 'watch') {
+        this._emit('connected');
+      } else if (this._state && Array.isArray(this._state.timers) && this._state.timers.length > 0 && !this._state.isEmptyDefault) {
+        this._emit('connected');
+      }
       this._emit('room-state', this._state);
     }, 30);
 
@@ -830,7 +834,7 @@ class UniversalSyncClient {
         if (this.role !== 'watch' && this._state && Array.isArray(this._state.timers) && this._state.timers.length > 0) {
           this._commitStateChange(true);
         }
-      } else if (this.role === 'master' && this.mqttClient && this.mqttClient.connected) {
+      } else if ((this.role === 'master' || this.role === 'controller' || this.role === 'regies') && this.mqttClient && this.mqttClient.connected) {
         try {
           const rawSaved = localStorage.getItem(`stagetimer_v10_state_${reqRoom}`);
           if (rawSaved) {
@@ -851,48 +855,97 @@ class UniversalSyncClient {
       if (typeof document !== 'undefined' && !this._mqttScriptLoading) {
         this._mqttScriptLoading = true;
         const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/mqtt@5.10.4/dist/mqtt.min.js';
+        s.src = 'js/mqtt.min.js?v=137';
         s.onload = () => {
           this._mqttScriptLoading = false;
           this._initCloudSync();
         };
         s.onerror = () => {
-          this._mqttScriptLoading = false;
-          console.warn('MQTT library not loaded; using local sync only.');
+          const fallback = document.createElement('script');
+          fallback.src = 'https://cdn.jsdelivr.net/npm/mqtt@5.10.4/dist/mqtt.min.js';
+          fallback.onload = () => {
+            this._mqttScriptLoading = false;
+            this._initCloudSync();
+          };
+          fallback.onerror = () => {
+            this._mqttScriptLoading = false;
+            console.warn('MQTT library not loaded; using local sync only.');
+          };
+          document.head.appendChild(fallback);
         };
         document.head.appendChild(s);
       }
       return;
     }
 
-    const brokers = [
-      'wss://broker.emqx.io:8084/mqtt',
-      'wss://broker.hivemq.com:8884/mqtt'
-    ];
-
-    this.mqttClient = mqtt.connect(brokers[0], {
+    const primaryClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
       clientId: this.clientId,
       clean: true,
       connectTimeout: 5000,
       reconnectPeriod: 2000
     });
 
-    this.mqttClient.on('connect', () => {
-      this._emit('connected');
-
-      if (this._needsInitialPublish && this._state) {
-        this._needsInitialPublish = false;
-        this._commitStateChange(true);
-      }
-
-      // Erase legacy retained registry topics on MQTT broker
-      ['stagetimer_live/_events_list', 'stagetimer_live/_events_list_v6', 'stagetimer_live/_events_list_v7', 'stagetimer_live/_events_list_v8', 'stagetimer_v8/_events_list'].forEach(top => {
-        try {
-          this.mqttClient.publish(top, JSON.stringify({ sender: this.clientId, forceReplace: true, events: [] }), { qos: 0, retain: true });
-        } catch (_) {}
+    // Dual-Broker Port 443 WSS Relay (Apple Watch / watchOS WebSheet & Firewall-Safe Port 443)
+    let port443Client = null;
+    try {
+      port443Client = mqtt.connect('wss://public.cloud.shiftr.io:443', {
+        clientId: `${this.clientId}_w`,
+        username: 'public',
+        password: 'public',
+        clean: true,
+        connectTimeout: 5000,
+        reconnectPeriod: 2500
       });
+    } catch (_) {}
 
-      const topicsToSubscribe = [
+    const allClients = [primaryClient, port443Client].filter(Boolean);
+    this._mqttClients = allClients;
+    this._bridgedMsgCache = new Map();
+
+    this.mqttClient = {
+      get connected() {
+        return allClients.some(c => Boolean(c && c.connected));
+      },
+      publish: (topic, message, opts, cb) => {
+        allClients.forEach(c => {
+          try {
+            if (c && c.connected) c.publish(topic, message, opts, cb);
+          } catch (_) {}
+        });
+      },
+      subscribe: (topics, opts, cb) => {
+        let cbDone = false;
+        allClients.forEach(c => {
+          try {
+            if (c) {
+              c.subscribe(topics, opts, (err) => {
+                if (!cbDone && !err && typeof cb === 'function') {
+                  cbDone = true;
+                  cb(null);
+                }
+              });
+            }
+          } catch (_) {}
+        });
+      },
+      unsubscribe: (topics, opts, cb) => {
+        allClients.forEach(c => {
+          try {
+            if (c) c.unsubscribe(topics, opts, cb);
+          } catch (_) {}
+        });
+      },
+      on: (ev, fn) => {
+        allClients.forEach(c => {
+          try {
+            if (c) c.on(ev, fn);
+          } catch (_) {}
+        });
+      }
+    };
+
+    const buildTopicsToSubscribe = () => {
+      const topics = [
         this.mqttTopicState,
         this.mqttTopicVideo,
         this.mqttTopicTelegram,
@@ -909,168 +962,262 @@ class UniversalSyncClient {
         'stagetimer_v10/_device_removed'
       ];
 
-      // If in Master or Watch mode, also subscribe to all room state broadcasts
       if (this.role === 'master') {
-        topicsToSubscribe.push('stagetimer_v10/+/state');
-        topicsToSubscribe.push('stagetimer_v10/+/video');
-        topicsToSubscribe.push('stagetimer_v10/+/telegram');
-        topicsToSubscribe.push('stagetimer_v10/+/webrtc_signal');
-      } else if (this.role === 'watch') {
-        topicsToSubscribe.push('stagetimer_v10/+/state');
+        topics.push('stagetimer_v10/+/state');
+        topics.push('stagetimer_v10/+/video');
+        topics.push('stagetimer_v10/+/telegram');
+        topics.push('stagetimer_v10/+/webrtc_signal');
+      } else if (this.role === 'watch' || this._getCurrentViewKey() === 'watch') {
+        topics.push('stagetimer_v10/+/state');
       }
+      return topics;
+    };
 
-      this.mqttClient.subscribe(topicsToSubscribe, { qos: 0 }, (err) => {
-        if (!err) {
-          this._emit('p2p-ready', { id: this.cleanRoom, count: this.connectedPeersCount });
-          this._announcePresence();
-          setTimeout(() => {
-            try {
-              this.sendDeviceCommand('ALL', { action: 'request_registry' });
-              this.sendDeviceCommand('ALL', { action: 'request_room_state', room: this.cleanRoom });
-            } catch (_) {}
-          }, 350);
+    const attachClientHandlers = (clientInst, isPort443) => {
+      if (!clientInst) return;
+
+      clientInst.on('connect', () => {
+        this._emit('connected');
+
+        if (this._needsInitialPublish && this._state) {
+          this._needsInitialPublish = false;
+          this._commitStateChange(true);
         }
+
+        if (!isPort443) {
+          // Erase legacy retained registry topics on primary MQTT broker
+          ['stagetimer_live/_events_list', 'stagetimer_live/_events_list_v6', 'stagetimer_live/_events_list_v7', 'stagetimer_live/_events_list_v8', 'stagetimer_v8/_events_list'].forEach(top => {
+            try {
+              clientInst.publish(top, JSON.stringify({ sender: this.clientId, forceReplace: true, events: [] }), { qos: 0, retain: true });
+            } catch (_) {}
+          });
+        }
+
+        const topicsToSubscribe = buildTopicsToSubscribe();
+        clientInst.subscribe(topicsToSubscribe, { qos: 0 }, (err) => {
+          if (!err) {
+            this._emit('p2p-ready', { id: this.cleanRoom, count: this.connectedPeersCount });
+            this._announcePresence();
+
+            // When Port 443 connects on an active PC/Phone screen, seed current room & Master rooms onto Port 443
+            if (isPort443 && this.role !== 'watch' && this.role !== 'viewer') {
+              try {
+                if (this._state && Array.isArray(this._state.timers) && this._state.timers.length > 0 && !this._state.isEmptyDefault) {
+                  const payload = JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: this._state });
+                  clientInst.publish(this.mqttTopicState, payload, { qos: 0, retain: true });
+                }
+                if (this.role === 'master') {
+                  const list = this.getEventsList();
+                  const deletedCodes = Array.from(this._getDeletedEvents());
+                  if (list && list.length > 0) {
+                    clientInst.publish(this.mqttTopicRegistry, JSON.stringify({ sender: this.clientId, forceReplace: false, events: list, deleted: deletedCodes }), { qos: 0, retain: true });
+                  }
+                  Object.keys(localStorage).forEach(k => {
+                    if (k.startsWith('stagetimer_v10_state_')) {
+                      const rCode = k.replace('stagetimer_v10_state_', '').toUpperCase().trim();
+                      if (!rCode || this._getDeletedEvents().has(rCode)) return;
+                      const raw = localStorage.getItem(k);
+                      if (!raw) return;
+                      const parsed = JSON.parse(raw);
+                      if (parsed && Array.isArray(parsed.timers) && parsed.timers.length > 0 && !parsed.isEmptyDefault) {
+                        clientInst.publish(`stagetimer_v10/${rCode}/state`, JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: parsed }), { qos: 0, retain: true });
+                      }
+                    }
+                  });
+                }
+              } catch (_) {}
+            }
+
+            setTimeout(() => {
+              try {
+                this.sendDeviceCommand('ALL', { action: 'request_registry' });
+                this.sendDeviceCommand('ALL', { action: 'request_room_state', room: this.cleanRoom });
+              } catch (_) {}
+            }, 350);
+          }
+        });
       });
-    });
 
-    this.mqttClient.on('message', (topic, payload) => {
-      try {
-        const payloadStr = payload.toString();
-        this._emit('mqtt-raw-message', { topic, payload: payloadStr });
+      clientInst.on('message', (topic, payload) => {
+        try {
+          const payloadStr = payload.toString();
+          this._emit('mqtt-raw-message', { topic, payload: payloadStr });
 
-        let msg = null;
-        try { msg = JSON.parse(payloadStr); } catch (_) {}
-        if (!msg) return;
+          let msg = null;
+          try { msg = JSON.parse(payloadStr); } catch (_) {}
+          if (!msg) return;
 
-        if (topic.includes('/webrtc_signal')) {
-          if (msg.sender === this.clientId) return;
-          if (!this._seenWebRtcSigs) this._seenWebRtcSigs = new Set();
-          if (msg.sigId) {
-            if (this._seenWebRtcSigs.has(msg.sigId)) return;
-            this._seenWebRtcSigs.add(msg.sigId);
-            if (this._seenWebRtcSigs.size > 300) {
-              const first = this._seenWebRtcSigs.values().next().value;
-              this._seenWebRtcSigs.delete(first);
+          // Bridge state & registry from Port 8084 to Port 443 automatically if this client is an active station
+          if (!isPort443 && port443Client && port443Client.connected && msg.sender !== this.clientId) {
+            if ((this.role === 'master' || this.role === 'regies' || this.role === 'controller' || this.role === 'operator') &&
+                ((topic.startsWith('stagetimer_v10/') && topic.endsWith('/state')) || topic === this.mqttTopicRegistry)) {
+              const sigKey = `${topic}:${msg.data?.updatedAt || msg.sentAt || payloadStr.length}`;
+              const nowMs = Date.now();
+              if (!this._bridgedMsgCache.has(sigKey) || (nowMs - this._bridgedMsgCache.get(sigKey)) > 2000) {
+                this._bridgedMsgCache.set(sigKey, nowMs);
+                if (this._bridgedMsgCache.size > 150) {
+                  const oldest = this._bridgedMsgCache.keys().next().value;
+                  this._bridgedMsgCache.delete(oldest);
+                }
+                try {
+                  port443Client.publish(topic, payloadStr, { qos: 0, retain: true });
+                } catch (_) {}
+              }
             }
           }
-          this._emit('webrtc-signal', { topic, msg });
-          return;
-        }
 
-        // Remote device commands (switch view, change room, reload, purge)
-        if (topic === this.mqttTopicCommands ||
-            topic === this.mqttTopicAllCmd ||
-            topic === this.mqttTopicDeviceCmd ||
-            topic === this.mqttTopicRoomCmd ||
-            topic.startsWith('stagetimer_v10/_cmd/') ||
-            topic.startsWith('stagetimer_v10/_cmd_room/')) {
-          if (msg.sender === this.clientId) return;
-          this._handleRemoteCommand(msg);
-          return;
-        }
-
-        // Room video config update (dedicated topic so video never overwrites timers)
-        if (topic === this.mqttTopicVideo) {
-          if (msg.sender === this.clientId) return;
-          const vidData = msg.video || msg.data || msg;
-          if (vidData && typeof vidData === 'object') {
-            this._applyIncomingVideoConfig(vidData, true);
-          }
-          return;
-        } else if (topic.startsWith('stagetimer_v10/') && topic.endsWith('/video')) {
-          const parts = topic.split('/');
-          const roomCode = parts[1];
-          const vidData = msg.video || msg.data || msg;
-          if (roomCode && vidData && typeof vidData === 'object') {
-            this._emit('multi-room-video', { room: roomCode, video: vidData });
-          }
-          return;
-        }
-
-        // Room Telegram config update (dedicated retained topic so config never gets overwritten)
-        if (topic === this.mqttTopicTelegram) {
-          if (msg.sender === this.clientId) return;
-          const tgData = msg.telegram || msg.data || msg;
-          if (tgData && typeof tgData === 'object') {
-            this._applyIncomingTelegramConfig(tgData, true);
-          }
-          return;
-        } else if (topic.startsWith('stagetimer_v10/') && topic.endsWith('/telegram')) {
-          const parts = topic.split('/');
-          const roomCode = parts[1];
-          const tgData = msg.telegram || msg.data || msg;
-          if (roomCode && tgData && typeof tgData === 'object') {
-            this._emit('multi-room-telegram', { room: roomCode, telegram: tgData });
-          }
-          return;
-        }
-
-        // Room state update
-        if (topic === this.mqttTopicState) {
-          if (msg.sender === this.clientId) return;
-          if (msg.deleted) {
-            this._recordDeletedEvent(this.cleanRoom);
+          if (topic.includes('/webrtc_signal')) {
+            if (msg.sender === this.clientId) return;
+            if (!this._seenWebRtcSigs) this._seenWebRtcSigs = new Set();
+            if (msg.sigId) {
+              if (this._seenWebRtcSigs.has(msg.sigId)) return;
+              this._seenWebRtcSigs.add(msg.sigId);
+              if (this._seenWebRtcSigs.size > 300) {
+                const first = this._seenWebRtcSigs.values().next().value;
+                this._seenWebRtcSigs.delete(first);
+              }
+            }
+            this._emit('webrtc-signal', { topic, msg });
             return;
           }
-          if (msg.data) {
-            this._applyIncomingState(msg.data, true);
+
+          // Remote device commands (switch view, change room, reload, purge)
+          if (topic === this.mqttTopicCommands ||
+              topic === this.mqttTopicAllCmd ||
+              topic === this.mqttTopicDeviceCmd ||
+              topic === this.mqttTopicRoomCmd ||
+              topic.startsWith('stagetimer_v10/_cmd/') ||
+              topic.startsWith('stagetimer_v10/_cmd_room/')) {
+            if (msg.sender === this.clientId) return;
+            this._handleRemoteCommand(msg);
+            return;
           }
-        } else if (topic.startsWith('stagetimer_v10/') && topic.endsWith('/state')) {
-          // Multi-room state for Master Régie
-          const parts = topic.split('/');
-          const roomCode = parts[1];
-          if (roomCode && roomCode !== '_events_list') {
-            if (msg.deleted) {
-              this._recordDeletedEvent(roomCode);
-              this._emit('multi-room-deleted', { room: roomCode });
-            } else if (msg.data) {
-              this._emit('multi-room-state', { room: roomCode, data: msg.data });
+
+          // Room video config update (dedicated topic so video never overwrites timers)
+          if (topic === this.mqttTopicVideo) {
+            if (msg.sender === this.clientId) return;
+            const vidData = msg.video || msg.data || msg;
+            if (vidData && typeof vidData === 'object') {
+              this._applyIncomingVideoConfig(vidData, true);
             }
+            return;
+          } else if (topic.startsWith('stagetimer_v10/') && topic.endsWith('/video')) {
+            const parts = topic.split('/');
+            const roomCode = parts[1];
+            const vidData = msg.video || msg.data || msg;
+            if (roomCode && vidData && typeof vidData === 'object') {
+              this._emit('multi-room-video', { room: roomCode, video: vidData });
+            }
+            return;
           }
-        } else if (topic === this.mqttTopicRegistry) {
-          if (msg && msg.sender === this.clientId) return; // Prevent echo feedback loops
-          if (msg && Array.isArray(msg.events)) {
-            this._mergeIncomingRegistry(msg.events, Boolean(msg.forceReplace), msg.deleted || []);
+
+          // Room Telegram config update (dedicated retained topic so config never gets overwritten)
+          if (topic === this.mqttTopicTelegram) {
+            if (msg.sender === this.clientId) return;
+            const tgData = msg.telegram || msg.data || msg;
+            if (tgData && typeof tgData === 'object') {
+              this._applyIncomingTelegramConfig(tgData, true);
+            }
+            return;
+          } else if (topic.startsWith('stagetimer_v10/') && topic.endsWith('/telegram')) {
+            const parts = topic.split('/');
+            const roomCode = parts[1];
+            const tgData = msg.telegram || msg.data || msg;
+            if (roomCode && tgData && typeof tgData === 'object') {
+              this._emit('multi-room-telegram', { room: roomCode, telegram: tgData });
+            }
+            return;
           }
-        } else if (topic === this.mqttTopicPresence) {
-          if (msg.clientId) {
-            this.peersMap.set(msg.clientId, Date.now());
-            this._cleanupPeers();
-          }
-        } else if (topic === 'stagetimer_v10/_device_removed') {
-          if (msg && msg.deviceUuid) {
-            this.purgedDevicesSet.add(msg.deviceUuid);
-            this.globalDevicesMap.delete(msg.deviceUuid);
-            this._emit('devices-update', this.getOnlineDevices());
-          }
-        } else if (topic === this.mqttTopicGlobalPresence) {
-          if (msg.deviceUuid && msg.ts) {
-            if (this.purgedDevicesSet.has(msg.deviceUuid)) {
+
+          // Room state update
+          if (topic === this.mqttTopicState) {
+            if (msg.sender === this.clientId) return;
+            if (msg.deleted) {
+              this._recordDeletedEvent(this.cleanRoom);
               return;
             }
-            const existing = this.globalDevicesMap.get(msg.deviceUuid);
-            this.globalDevicesMap.set(msg.deviceUuid, {
-              ...msg,
-              firstSeen: existing?.firstSeen || msg.firstSeen || Date.now(),
-              lastSeen: Date.now()
-            });
-            this._cleanupGlobalDevices();
-            this._emit('devices-update', this.getOnlineDevices());
+            if (msg.data) {
+              this._emit('connected');
+              this._applyIncomingState(msg.data, true);
+            }
+          } else if (topic.startsWith('stagetimer_v10/') && topic.endsWith('/state')) {
+            // Multi-room state for Master Régie and Watch
+            const parts = topic.split('/');
+            const roomCode = parts[1];
+            if (roomCode && roomCode !== '_events_list') {
+              if (msg.deleted) {
+                this._recordDeletedEvent(roomCode);
+                this._emit('multi-room-deleted', { room: roomCode });
+              } else if (msg.data) {
+                this._emit('multi-room-state', { room: roomCode, data: msg.data });
+              }
+            }
+          } else if (topic === this.mqttTopicRegistry) {
+            if (msg && msg.sender === this.clientId) return; // Prevent echo feedback loops
+            if (msg && Array.isArray(msg.events)) {
+              this._mergeIncomingRegistry(msg.events, Boolean(msg.forceReplace), msg.deleted || []);
+            }
+          } else if (topic === this.mqttTopicPresence) {
+            if (msg.clientId) {
+              this.peersMap.set(msg.clientId, Date.now());
+              this._cleanupPeers();
+            }
+          } else if (topic === 'stagetimer_v10/_device_removed') {
+            if (msg && msg.deviceUuid) {
+              this.purgedDevicesSet.add(msg.deviceUuid);
+              this.globalDevicesMap.delete(msg.deviceUuid);
+              this._emit('devices-update', this.getOnlineDevices());
+            }
+          } else if (topic === this.mqttTopicGlobalPresence) {
+            if (msg.deviceUuid && msg.ts) {
+              if (this.purgedDevicesSet.has(msg.deviceUuid)) {
+                return;
+              }
+              const existing = this.globalDevicesMap.get(msg.deviceUuid);
+              this.globalDevicesMap.set(msg.deviceUuid, {
+                ...msg,
+                firstSeen: existing?.firstSeen || msg.firstSeen || Date.now(),
+                lastSeen: Date.now()
+              });
+              this._cleanupGlobalDevices();
+              this._emit('devices-update', this.getOnlineDevices());
+            }
           }
-        }
-      } catch (e) {}
-    });
+        } catch (e) {}
+      });
 
-    this.mqttClient.on('offline', () => {
-      this._emit('disconnected');
-    });
+      clientInst.on('offline', () => {
+        if (!this.mqttClient.connected) {
+          this._emit('disconnected');
+        }
+      });
+    };
+
+    attachClientHandlers(primaryClient, false);
+    attachClientHandlers(port443Client, true);
 
     setInterval(() => this._announcePresence(), 5000);
     setInterval(() => this._cleanupGlobalDevices(), 4000);
     setInterval(() => {
-      const isControllerRole = this.role === 'controller' || this.role === 'operator' || this.role === 'master';
+      const isControllerRole = this.role === 'controller' || this.role === 'operator' || this.role === 'master' || this.role === 'regies' || this.role === 'dc';
       if (isControllerRole && this._state?.timers?.some(t => t.state === 'running')) {
         this._commitStateChange(true);
+      }
+      if (this.role === 'master' && this.mqttClient && this.mqttClient.connected) {
+        try {
+          Object.keys(localStorage).forEach(k => {
+            if (!k.startsWith('stagetimer_v10_state_')) return;
+            const rCode = k.replace('stagetimer_v10_state_', '').toUpperCase().trim();
+            if (!rCode || rCode === this.cleanRoom || this._getDeletedEvents().has(rCode)) return;
+            const raw = localStorage.getItem(k);
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if (parsed && Array.isArray(parsed.timers) && parsed.timers.some(t => t.state === 'running')) {
+              const payload = JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: parsed });
+              this.mqttClient.publish(`stagetimer_v10/${rCode}/state`, payload, { qos: 0, retain: true });
+            }
+          });
+        } catch (_) {}
       }
     }, 1500);
   }

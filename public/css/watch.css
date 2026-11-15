@@ -103,12 +103,14 @@ html, body.watch-body {
 /* Base: Hora Local à esquerda, NEXT à direita */
 .watch-viewer .viewer-local-clock {
   position: absolute;
-  bottom: calc(6px + env(safe-area-inset-bottom, 0px));
-  left: calc(6px + env(safe-area-inset-left, 0px));
-  background: transparent;
-  border: none;
-  padding: 0;
+  top: auto !important;
+  bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+  left: calc(6px + env(safe-area-inset-left, 0px)) !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
   display: flex;
+  flex-direction: row !important;
   align-items: center;
   gap: 3px;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", monospace;
@@ -120,20 +122,38 @@ html, body.watch-body {
 }
 
 .watch-viewer .viewer-clock-label {
-  display: none;
+  display: none !important;
+}
+
+.watch-viewer #viewer-clock-time {
+  font-size: 0.72rem !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+.watch-viewer .viewer-notes {
+  font-size: 0.65rem !important;
+  padding: 2px 6px !important;
+  margin-top: 2px !important;
+  max-width: 92vw !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 .watch-viewer .viewer-next {
   position: absolute;
-  bottom: calc(6px + env(safe-area-inset-bottom, 0px));
-  right: calc(6px + env(safe-area-inset-right, 0px));
-  background: transparent;
-  border: none;
-  padding: 0;
+  top: auto !important;
+  bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+  right: calc(6px + env(safe-area-inset-right, 0px)) !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
   display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 0.72rem;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 3px !important;
+  font-size: 0.72rem !important;
   font-weight: 700;
   color: #ffffff;
   max-width: 55vw;
@@ -144,13 +164,16 @@ html, body.watch-body {
 }
 
 .watch-viewer .viewer-next-label {
-  font-size: 0.58rem;
+  font-size: 0.58rem !important;
   color: #a29bfe;
   font-weight: 800;
   flex-shrink: 0;
 }
 
-.watch-viewer #viewer-next-name {
+.watch-viewer #viewer-next-name,
+.watch-viewer .viewer-next-name {
+  font-size: 0.72rem !important;
+  max-width: 44vw !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
