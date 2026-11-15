@@ -1,7 +1,10 @@
 /**
  * ⌚ StageTimer PFP — Apple Watch Single Screen Controller
- * One unified, automatic display: Giant Stage Timer when running, Official Clock when idle,
- * Artist name, Projected event end & instant presence in Master panel.
+ * Espelho fiel do Modo Palco (Viewer):
+ * - Nome do Artista no topo
+ * - Dígitos gigantes com contagem decrescente E contagem negativa no tempo excedido (-00:01, -00:02...)
+ * - Cores do palco: Verde -> Laranja -> Vermelho Vivo Pulsante no overtime
+ * - Hora Local e Próximo Artista na base
  */
 
 (function() {
@@ -10,7 +13,6 @@
   // ─── Room & Device Resolution ─────────────────────────────────────────
   const params = new URLSearchParams(location.search);
   const rawParamRoom = (params.get('room') || '').trim();
-  // Normalize spaces to hyphens so "rc viana" automatically matches "RC-VIANA"
   const normalizedParam = rawParamRoom.replace(/\s+/g, '-').toUpperCase();
   const savedActiveRoom = (sessionStorage.getItem('stagetimer_active_room') || '').trim();
   const savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim();
@@ -43,15 +45,12 @@
 
   // ─── DOM References ──────────────────────────────────────────────────
   const $statusDot = document.getElementById('watch-status-dot');
-  const $stageBadge = document.getElementById('watch-stage-badge');
-  const $miniClock = document.getElementById('watch-mini-clock');
-  const $digits = document.getElementById('watch-digits');
-  const $info = document.getElementById('watch-info');
-  const $timerStateBadge = document.getElementById('watch-timer-state-badge');
-  const $nextBox = document.getElementById('watch-next-box');
+  const $artistName = document.getElementById('watch-artist-name');
+  const $timer = document.getElementById('watch-timer');
+  const $clockTime = document.getElementById('watch-clock-time');
+  const $next = document.getElementById('watch-next');
   const $nextName = document.getElementById('watch-next-name');
-  const $nextTime = document.getElementById('watch-next-time');
-  const $eventEndVal = document.getElementById('watch-event-end-val');
+  const $progressBar = document.getElementById('watch-progress-bar');
   const $msgOverlay = document.getElementById('watch-message-overlay');
   const $msgBadge = document.getElementById('watch-msg-badge');
   const $msgText = document.getElementById('watch-msg-text');
@@ -101,12 +100,12 @@
     if ($statusDot && client.mqttClient && client.mqttClient.connected) {
       $statusDot.classList.remove('disconnected');
     }
-    updateStageBadge();
+    render();
   });
 
   client.on('p2p-ready', () => {
     if ($statusDot) $statusDot.classList.remove('disconnected');
-    updateStageBadge();
+    render();
   });
 
   client.on('disconnected', () => {
@@ -121,13 +120,11 @@
     if ($statusDot && client.mqttClient && client.mqttClient.connected) {
       $statusDot.classList.remove('disconnected');
     }
-    updateStageBadge();
     handleMessageAlert();
-    updateEventEnd();
     render();
   });
 
-  // Listen to multi-room broadcasts so sub-stages (e.g. RC-VIANA-26-P1) or active stages sync immediately
+  // Multi-room state listening: if sub-stage (e.g. RC-VIANA-26-P1) has a running timer, adopt it automatically
   client.on('multi-room-state', ({ room, data }) => {
     if (!room || !data || !Array.isArray(data.timers)) return;
     const incomingRoom = String(room).toUpperCase().trim();
@@ -158,7 +155,6 @@
       return;
     }
 
-    // Fallback: if current room on Watch is completely empty (0 timers) and another room has a timer actively running
     if (!currentHasTimers && incomingIsRunning) {
       adoptRoomAndState(incomingRoom, data);
     }
@@ -191,13 +187,48 @@
 
   client.connect();
 
-  // ─── Stage Badge Display ─────────────────────────────────────────────
-  function updateStageBadge() {
-    if (!$stageBadge) return;
-    const currentCode = (state?.id || roomId).toUpperCase();
-    $stageBadge.textContent = state?.name || currentCode;
+  // ─── Format & Timing Helpers (Idênticos ao Modo Palco) ───────────────
+  function formatTime(ms) {
+    return StageTimerClient.formatTime(ms);
   }
-  updateStageBadge();
+
+  function getTimerElapsed(timer) {
+    return StageTimerClient.getTimerElapsed(timer);
+  }
+
+  function getTimerColor(timer) {
+    if (timer.mode === 'clock') return 'clock';
+    if (timer.state === 'paused') return 'paused';
+    if (timer.state === 'finished') return 'danger';
+    if (timer.mode === 'countdown') {
+      const elapsed = getTimerElapsed(timer);
+      const remaining = timer.duration - elapsed;
+      if (remaining <= 0) return 'danger'; // Overtime / negativo em vermelho vivo
+      if (timer.duration > 0) {
+        const pct = (elapsed / timer.duration) * 100;
+        if (pct > 95) return 'danger';
+        if (pct > 80) return 'warn';
+        return 'safe';
+      }
+      if (remaining <= (timer.dangerAt || 60000)) return 'danger';
+      if (remaining <= (timer.warnAt || 180000)) return 'warn';
+      return 'safe';
+    }
+    return 'safe';
+  }
+
+  // Contagem fiel do tempo: no countdown, conta decrescente e continua em negativo (-00:01, -00:02...)
+  function getTimerDisplayValue(timer) {
+    if (timer.mode === 'clock') {
+      return StageTimerClient.getTrueTimeString();
+    }
+    const elapsed = getTimerElapsed(timer);
+    if (timer.mode === 'countdown') {
+      const remaining = timer.duration - elapsed;
+      return formatTime(remaining);
+    }
+    return formatTime(elapsed);
+  }
 
   // ─── Next Artist Resolution ──────────────────────────────────────────
   function getNextTimer(state, activeTimer) {
@@ -219,80 +250,13 @@
       return null;
     }
 
-    // Se nenhum timer estiver ativo, o próximo é o primeiro não concluído
     const pending = list.filter(t => t.state !== 'finished');
-    if (pending.length > 1) {
-      return pending[1];
-    } else if (pending.length === 1) {
-      return pending[0];
-    }
+    if (pending.length > 1) return pending[1];
+    if (pending.length === 1) return pending[0];
     return null;
   }
 
-  function updateNextArtist(activeTimer, cascade) {
-    if (!$nextBox || !$nextName) return;
-    if (!state || !Array.isArray(state.timers) || state.timers.length === 0) {
-      $nextBox.style.display = 'none';
-      return;
-    }
-
-    const nextTimer = getNextTimer(state, activeTimer);
-    if (!nextTimer) {
-      if (activeTimer) {
-        $nextBox.style.display = 'flex';
-        $nextName.textContent = 'Última atuação';
-        if ($nextTime) $nextTime.textContent = '';
-      } else {
-        $nextBox.style.display = 'none';
-      }
-      return;
-    }
-
-    $nextBox.style.display = 'flex';
-    $nextName.textContent = nextTimer.name || 'Próximo';
-
-    let timeStr = '';
-    if (cascade && Array.isArray(cascade.slots)) {
-      const nextSlot = cascade.slots.find(s => s.id === nextTimer.id);
-      if (nextSlot) {
-        timeStr = nextSlot.real?.startStr || nextSlot.planned?.startStr || '';
-      }
-    }
-    if (!timeStr && nextTimer.startTime) {
-      timeStr = String(nextTimer.startTime).split('–')[0].trim();
-    }
-    if (!timeStr && nextTimer.duration) {
-      const mins = Math.round(nextTimer.duration / 60000);
-      timeStr = mins > 0 ? `${mins}m` : '';
-    }
-
-    if ($nextTime) {
-      $nextTime.textContent = timeStr ? `(${timeStr})` : '';
-    }
-  }
-
-  // ─── Projected Event End Time (Fim Previsto do Evento) ───────────────
-  function updateEventEnd(cascade) {
-    if (!$eventEndVal) return;
-    if (!state || !Array.isArray(state.timers) || state.timers.length === 0) {
-      $eventEndVal.textContent = '🏁 Fim: --:--';
-      return;
-    }
-
-    if (!cascade && typeof StageTimerClient.computeCascadeSchedule === 'function') {
-      cascade = StageTimerClient.computeCascadeSchedule(state);
-    }
-
-    const endStr = cascade?.eventEndStr || (typeof StageTimerClient.computeEventEndTime === 'function' ? StageTimerClient.computeEventEndTime(state) : '--:--');
-
-    if (cascade && cascade.isDelayed && cascade.globalDelayStr && cascade.globalDelayStr !== '0m') {
-      $eventEndVal.innerHTML = `🏁 Fim: ${endStr} <span class="watch-delay">(${cascade.globalDelayStr})</span>`;
-    } else {
-      $eventEndVal.textContent = `🏁 Fim: ${endStr}`;
-    }
-  }
-
-  // ─── Message Overlay & Vibration ─────────────────────────────────────
+  // ─── Message Overlay & Vibration (Idêntico ao Modo Palco) ─────────────
   function handleMessageAlert() {
     if (!state) return;
     const msg = state.message;
@@ -309,7 +273,7 @@
         }
       }
     } else {
-      if ($msgOverlay) $msgOverlay.className = '';
+      if ($msgOverlay) $msgOverlay.className = 'watch-message-overlay';
       lastMessageId = '';
     }
   }
@@ -320,183 +284,119 @@
     });
   }
 
-  // ─── Format & Calculation Helpers ────────────────────────────────────
-  function formatTime(ms) {
-    return StageTimerClient.formatTime(ms);
-  }
-
-  function getTimerElapsed(timer) {
-    return StageTimerClient.getTimerElapsed(timer);
-  }
-
-  function getTrueTimeString() {
-    return StageTimerClient.getTrueTimeString();
-  }
-
-  function getTimerColorClass(timer) {
-    if (timer.mode === 'clock') return 'clock';
-    if (timer.state === 'paused') return 'paused';
-    if (timer.state === 'finished') return 'finished';
-    if (timer.mode === 'countdown') {
-      const elapsed = getTimerElapsed(timer);
-      const remaining = timer.duration - elapsed;
-      if (remaining <= 0) return 'overtime';
-      if (timer.duration > 0) {
-        const pct = (elapsed / timer.duration) * 100;
-        if (pct > 95) return 'danger';
-        if (pct > 80) return 'warn';
-        return 'safe';
-      }
-      return 'safe';
-    }
-    return 'safe';
-  }
-
-  function getTimerDisplayValue(timer) {
-    if (timer.mode === 'clock') {
-      return getTrueTimeString();
-    }
-    const elapsed = getTimerElapsed(timer);
-    if (timer.mode === 'countdown') {
-      const remaining = timer.duration - elapsed;
-      if (remaining <= 0) {
-        const overdue = Math.abs(remaining);
-        return `-${formatTime(overdue)}`;
-      }
-      return formatTime(remaining);
-    }
-    return formatTime(elapsed);
-  }
-
   // ─── Edge-to-Edge Dynamic Scaling ────────────────────────────────────
   function fitDigits() {
-    if (!$digits) return;
-    const txt = $digits.textContent || '';
+    if (!$timer) return;
+    const txt = $timer.textContent || '';
     const len = txt.length;
     if (len > 8) {
-      $digits.style.fontSize = 'clamp(1.5rem, 13vw, 2.3rem)';
+      $timer.style.fontSize = 'clamp(1.8rem, 15vw, 2.7rem)';
     } else if (len > 5) {
-      $digits.style.fontSize = 'clamp(1.9rem, 16vw, 3.0rem)';
+      $timer.style.fontSize = 'clamp(2.3rem, 20vw, 3.8rem)';
     } else {
-      $digits.style.fontSize = 'clamp(2.7rem, 23vw, 4.3rem)';
+      $timer.style.fontSize = 'clamp(3.8rem, 34vw, 6.4rem)';
     }
   }
 
-  // ─── Render Loop (Single Unified Screen) ─────────────────────────────
+  // ─── Render Loop (Idêntico ao Modo Palco) ────────────────────────────
   let lastColorState = '';
 
   function render() {
-    // 1. HORAS DO DIA (Relógio Oficial com Segundos em Tempo Real)
-    const trueClockStr = getTrueTimeString();
-    if ($miniClock) {
-      $miniClock.textContent = trueClockStr;
+    // 1. HORA LOCAL (Canto Inferior Esquerdo)
+    if ($clockTime) {
+      $clockTime.textContent = StageTimerClient.getTrueTimeString();
     }
 
-    // Calcular horários em cascata e previsão de fim do evento
-    const cascade = (state && typeof StageTimerClient.computeCascadeSchedule === 'function')
-      ? StageTimerClient.computeCascadeSchedule(state)
-      : null;
-
-    // 2. HORAS DO PALCO (Timer Principal & Artista)
     const activeTimer = state ? StageTimerClient.getActiveTimer(state) : null;
 
     if (!activeTimer) {
-      // Nenhum timer em execução no momento
+      // Nenhum timer ativo no momento
       const timersList = Array.isArray(state?.timers) ? state.timers : [];
       const pendingTimer = timersList.find(t => t.state !== 'finished');
 
       if (pendingTimer) {
-        if ($digits) {
-          $digits.textContent = formatTime(pendingTimer.duration || 0);
-          $digits.className = 'watch-digits paused';
-        }
-        if ($info) {
-          $info.textContent = `Pronto • ${pendingTimer.name || 'Próximo'}`;
-        }
-        if ($timerStateBadge) {
-          $timerStateBadge.textContent = 'STANDBY';
-          $timerStateBadge.className = 'watch-timer-state-badge state-standby';
+        if ($artistName) $artistName.textContent = pendingTimer.name || 'Próximo';
+        if ($timer) {
+          $timer.textContent = formatTime(pendingTimer.duration || 0);
+          $timer.className = 'watch-timer paused';
         }
       } else if (timersList.length > 0 && timersList.every(t => t.state === 'finished')) {
-        if ($digits) {
-          $digits.textContent = '00:00';
-          $digits.className = 'watch-digits finished';
-        }
-        if ($info) {
-          $info.textContent = 'Fim do Espetáculo';
-        }
-        if ($timerStateBadge) {
-          $timerStateBadge.textContent = 'CONCLUÍDO';
-          $timerStateBadge.className = 'watch-timer-state-badge state-finished';
+        if ($artistName) $artistName.textContent = 'Fim do Espetáculo';
+        if ($timer) {
+          $timer.textContent = '00:00';
+          $timer.className = 'watch-timer danger';
         }
       } else {
-        if ($digits) {
-          $digits.textContent = '00:00';
-          $digits.className = 'watch-digits clock';
-        }
-        if ($info) {
-          $info.textContent = 'Palco Livre • Sem Timer';
-        }
-        if ($timerStateBadge) {
-          $timerStateBadge.textContent = 'LIVRE';
-          $timerStateBadge.className = 'watch-timer-state-badge state-standby';
+        if ($artistName) $artistName.textContent = state?.name || roomId;
+        if ($timer) {
+          $timer.textContent = '00:00';
+          $timer.className = 'watch-timer clock';
         }
       }
-    } else {
-      // Timer ativo em palco (Countdown / Countup / Overtime)
-      const displayVal = getTimerDisplayValue(activeTimer);
-      const colorClass = getTimerColorClass(activeTimer);
 
-      // Vibração tátil ao entrar em tempo excedido (overtime)
-      if (colorClass === 'overtime' && lastColorState !== 'overtime') {
-        if (navigator.vibrate) {
-          try { navigator.vibrate([150, 80, 150]); } catch (_) {}
-        }
+      if ($next) $next.style.display = 'none';
+      if ($progressBar) $progressBar.style.width = '0%';
+      fitDigits();
+      return;
+    }
+
+    // 2. NOME DO ARTISTA EM PALCO (Topo)
+    if ($artistName) {
+      $artistName.textContent = activeTimer.name || 'Artista em Palco';
+    }
+
+    // 3. DÍGITOS GIGANTES COM CONTAGEM DECIDIDA & CONTAGEM NEGATIVA (-00:01, -00:02...)
+    const displayVal = getTimerDisplayValue(activeTimer);
+    const color = getTimerColor(activeTimer);
+    const isLong = (displayVal || '').length > 5;
+
+    // Vibração tátil ao entrar em tempo negativo
+    if (color === 'danger' && lastColorState !== 'danger' && activeTimer.mode === 'countdown') {
+      if (navigator.vibrate) {
+        try { navigator.vibrate([150, 80, 150]); } catch (_) {}
       }
-      lastColorState = colorClass;
+    }
+    lastColorState = color;
 
-      if ($digits) {
-        $digits.textContent = displayVal;
-        const isLong = displayVal.length > 5;
-        $digits.className = `watch-digits ${colorClass} ${isLong ? 'has-hours' : ''}`;
-      }
+    if ($timer) {
+      $timer.textContent = displayVal;
+      $timer.className = `watch-timer ${color}${isLong ? ' has-hours' : ''}`;
+    }
 
-      if ($info) {
-        $info.textContent = activeTimer.name || 'Timer de Palco';
-      }
-
-      if ($timerStateBadge) {
-        if (activeTimer.state === 'running') {
-          if (colorClass === 'overtime') {
-            $timerStateBadge.textContent = '⚠️ OVERTIME';
-            $timerStateBadge.className = 'watch-timer-state-badge state-overtime';
-          } else {
-            $timerStateBadge.textContent = '● ON AIR';
-            $timerStateBadge.className = 'watch-timer-state-badge state-onair';
-          }
-        } else if (activeTimer.state === 'paused') {
-          $timerStateBadge.textContent = '⏸️ PAUSA';
-          $timerStateBadge.className = 'watch-timer-state-badge state-pause';
-        } else if (activeTimer.state === 'finished') {
-          $timerStateBadge.textContent = '🏁 FIM';
-          $timerStateBadge.className = 'watch-timer-state-badge state-finished';
-        } else {
-          $timerStateBadge.textContent = 'STANDBY';
-          $timerStateBadge.className = 'watch-timer-state-badge state-standby';
-        }
+    // 4. PRÓXIMO ARTISTA (Canto Inferior Direito)
+    const nextTimer = getNextTimer(state, activeTimer);
+    if ($next && $nextName) {
+      if (nextTimer) {
+        $nextName.textContent = nextTimer.name || 'A seguir';
+        $next.style.display = 'flex';
+      } else {
+        $nextName.textContent = 'Último';
+        $next.style.display = 'flex';
       }
     }
 
-    // 3. PRÓXIMO ARTISTA
-    updateNextArtist(activeTimer, cascade);
-
-    // 4. PREVISÃO DO FIM DO EVENTO
-    updateEventEnd(cascade);
+    // 5. BARRA DE PROGRESSO NA BASE (Verde -> Laranja -> Vermelho Vivo)
+    if ($progressBar) {
+      if (activeTimer.duration > 0 && activeTimer.mode === 'countdown') {
+        const elapsed = getTimerElapsed(activeTimer);
+        const pct = Math.min(100, (elapsed / activeTimer.duration) * 100);
+        $progressBar.style.width = `${pct}%`;
+        if (pct >= 100) {
+          $progressBar.className = 'watch-progress-bar overtime';
+        } else if (pct > 80) {
+          $progressBar.className = 'watch-progress-bar warn';
+        } else {
+          $progressBar.className = 'watch-progress-bar';
+        }
+      } else {
+        $progressBar.style.width = '0%';
+      }
+    }
 
     fitDigits();
   }
 
-  // Atualização suave a cada 200ms
+  // Atualização em alta frequência a cada 200ms
   setInterval(render, 200);
 
   // ─── Screen Wake Lock (Manter Ecrã Ligado) ────────────────────────────

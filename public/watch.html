@@ -50,62 +50,51 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Apple Watch</title>
-  <link rel="stylesheet" href="css/common.css?v=132">
-  <link rel="stylesheet" href="css/watch.css?v=132">
+  <link rel="stylesheet" href="css/common.css?v=133">
+  <link rel="stylesheet" href="css/watch.css?v=133">
 </head>
 <body>
-  <!-- Ecrã Apple Watch: Palco, Horas do Dia, Próximo Artista & Fim do Evento -->
+  <!-- Ecrã Apple Watch: Vista de Palco Limpa (Idêntica ao Modo Palco) -->
   <div id="watch-container" class="watch-container">
-    <!-- 1. BARRA SUPERIOR: Nome do Palco & Horas do Dia (Relógio Oficial) -->
-    <header class="watch-top">
-      <div class="watch-top-left">
-        <div id="watch-status-dot" class="watch-status-dot disconnected" title="Estado de Ligação"></div>
-        <span id="watch-stage-badge" class="watch-stage-badge">A carregar...</span>
-      </div>
-      <div class="watch-clock-pill" title="Horas do Dia">
-        <span class="watch-clock-ico">🕒</span>
-        <span id="watch-mini-clock" class="watch-mini-clock">--:--:--</span>
-      </div>
+    <!-- Topo: Nome do Artista em Palco + Dot de Conexão -->
+    <header class="watch-header">
+      <div id="watch-status-dot" class="watch-status-dot disconnected" title="Ligação"></div>
+      <div id="watch-artist-name" class="watch-artist-name">A carregar...</div>
     </header>
 
-    <!-- 2. CENTRO: Horas do Palco (Timer) & Artista em Palco -->
-    <main id="watch-center" class="watch-center">
-      <div class="watch-stage-meta">
-        <span class="watch-stage-tag">⏱️ PALCO</span>
-        <span id="watch-timer-state-badge" class="watch-timer-state-badge state-standby">STANDBY</span>
-      </div>
-      <div id="watch-digits" class="watch-digits clock">--:--</div>
-      <div id="watch-info" class="watch-info">A sincronizar...</div>
+    <!-- Centro: Dígitos Gigantes de Palco (Conta Normal & Negativo em Vermelho) -->
+    <main class="watch-main">
+      <div id="watch-timer" class="watch-timer safe">--:--</div>
     </main>
 
-    <!-- 3. BASE: Próximo Artista & Previsão do Fim do Evento -->
-    <footer class="watch-bottom-section">
-      <!-- Próximo Artista -->
-      <div id="watch-next-box" class="watch-next-box">
-        <span class="watch-next-label">⏭️ A SEGUIR:</span>
-        <span id="watch-next-name" class="watch-next-name">--</span>
-        <span id="watch-next-time" class="watch-next-time"></span>
+    <!-- Base: Hora Local à esquerda, NEXT à direita (Igual ao Modo Palco) -->
+    <footer class="watch-footer">
+      <div class="watch-clock">
+        <span class="watch-footer-label">HORA</span>
+        <span id="watch-clock-time">--:--:--</span>
       </div>
-
-      <!-- Previsão do Fim do Evento -->
-      <div class="watch-bottom">
-        <div id="watch-event-end" class="watch-event-end" title="Previsão do Fim do Evento">
-          <span id="watch-event-end-val">🏁 Fim: --:--</span>
-        </div>
+      <div id="watch-next" class="watch-next" style="display: none;">
+        <span class="watch-footer-label">NEXT:</span>
+        <span id="watch-next-name">--</span>
       </div>
     </footer>
+
+    <!-- Barra de Progresso Fina na Base -->
+    <div class="watch-progress-track">
+      <div id="watch-progress-bar" class="watch-progress-bar"></div>
+    </div>
   </div>
 
-  <!-- Overlay de Alerta / Mensagem Flash da Régie -->
-  <div id="watch-message-overlay">
+  <!-- Overlay de Mensagem da Régie (Igual ao Modo Palco) -->
+  <div id="watch-message-overlay" class="watch-message-overlay">
     <div id="watch-msg-badge" class="watch-msg-badge">AVISO</div>
-    <div id="watch-msg-text" class="watch-msg-text">MENSAGEM DE PALCO</div>
+    <div id="watch-msg-text" class="watch-msg-text"></div>
   </div>
 
-  <!-- Cloud MQTT over WSS for reliable multi-network sync -->
+  <!-- Cloud MQTT over WSS -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=132"></script>
-  <script src="js/local-sync.js?v=132"></script>
-  <script src="js/watch.js?v=132"></script>
+  <script src="js/pwa.js?v=133"></script>
+  <script src="js/local-sync.js?v=133"></script>
+  <script src="js/watch.js?v=133"></script>
 </body>
 </html>
