@@ -49,21 +49,21 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <title>StageTimer â€” Apple Watch</title>
-  <link rel="stylesheet" href="css/common.css?v=129">
-  <link rel="stylesheet" href="css/watch.css?v=129">
+  <title>StageTimer — Apple Watch</title>
+  <link rel="stylesheet" href="css/common.css?v=130">
+  <link rel="stylesheet" href="css/watch.css?v=130">
 </head>
 <body>
-  <!-- EcrÃ£ Apple Watch: Palco, Horas do Dia, PrÃ³ximo Artista & Fim do Evento -->
+  <!-- Ecrã Apple Watch: Palco, Horas do Dia, Próximo Artista & Fim do Evento -->
   <div id="watch-container" class="watch-container">
-    <!-- 1. BARRA SUPERIOR: Nome do Palco & Horas do Dia (RelÃ³gio Oficial) -->
+    <!-- 1. BARRA SUPERIOR: Nome do Palco & Horas do Dia (Relógio Oficial) -->
     <header class="watch-top">
       <div class="watch-top-left">
-        <div id="watch-status-dot" class="watch-status-dot disconnected" title="Estado de LigaÃ§Ã£o"></div>
+        <div id="watch-status-dot" class="watch-status-dot disconnected" title="Estado de Ligação"></div>
         <span id="watch-stage-badge" class="watch-stage-badge">A carregar...</span>
       </div>
       <div class="watch-clock-pill" title="Horas do Dia">
-        <span class="watch-clock-ico">ðŸ•’</span>
+        <span class="watch-clock-ico">🕒</span>
         <span id="watch-mini-clock" class="watch-mini-clock">--:--:--</span>
       </div>
     </header>
@@ -71,38 +71,38 @@
     <!-- 2. CENTRO: Horas do Palco (Timer) & Artista em Palco -->
     <main id="watch-center" class="watch-center">
       <div class="watch-stage-meta">
-        <span class="watch-stage-tag">â±ï¸ PALCO</span>
+        <span class="watch-stage-tag">⏱️ PALCO</span>
         <span id="watch-timer-state-badge" class="watch-timer-state-badge state-standby">STANDBY</span>
       </div>
       <div id="watch-digits" class="watch-digits clock">--:--</div>
       <div id="watch-info" class="watch-info">A sincronizar...</div>
     </main>
 
-    <!-- 3. BASE: PrÃ³ximo Artista & PrevisÃ£o do Fim do Evento -->
+    <!-- 3. BASE: Próximo Artista & Previsão do Fim do Evento -->
     <footer class="watch-bottom-section">
-      <!-- PrÃ³ximo Artista -->
+      <!-- Próximo Artista -->
       <div id="watch-next-box" class="watch-next-box">
-        <span class="watch-next-label">â­ï¸ A SEGUIR:</span>
+        <span class="watch-next-label">⏭️ A SEGUIR:</span>
         <span id="watch-next-name" class="watch-next-name">--</span>
         <span id="watch-next-time" class="watch-next-time"></span>
       </div>
 
-      <!-- PrevisÃ£o do Fim do Evento -->
+      <!-- Previsão do Fim do Evento -->
       <div class="watch-bottom">
-        <div id="watch-event-end" class="watch-event-end" title="PrevisÃ£o do Fim do Evento">
-          <span id="watch-event-end-val">ðŸ Fim: --:--</span>
+        <div id="watch-event-end" class="watch-event-end" title="Previsão do Fim do Evento">
+          <span id="watch-event-end-val">🏁 Fim: --:--</span>
         </div>
       </div>
     </footer>
   </div>
 
-  <!-- Overlay de Alerta / Mensagem Flash da RÃ©gie -->
+  <!-- Overlay de Alerta / Mensagem Flash da Régie -->
   <div id="watch-message-overlay">
     <div id="watch-msg-badge" class="watch-msg-badge">AVISO</div>
     <div id="watch-msg-text" class="watch-msg-text">MENSAGEM DE PALCO</div>
   </div>
 
-  <script src="js/local-sync.js?v=129"></script>
-  <script src="js/watch.js?v=129"></script>
+  <script src="js/local-sync.js?v=130"></script>
+  <script src="js/watch.js?v=130"></script>
 </body>
 </html>
