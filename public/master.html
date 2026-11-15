@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Painel Master (Super Régie)</title>
-  <link rel="stylesheet" href="css/master.css?v=126">
-  <script src="js/auth.js?v=126"></script>
+  <link rel="stylesheet" href="css/master.css?v=127">
+  <script src="js/auth.js?v=127"></script>
 </head>
 <body>
   <div class="master-container">
@@ -70,7 +70,7 @@
             <h1 class="master-header-title">
               Painel Master
               <span class="badge">Super Régie</span>
-              <span class="badge" style="background: rgba(253, 203, 110, 0.18); color: #fdcb6e; border-color: #fdcb6e; font-family: var(--font-mono); font-weight: 700;">v126</span>
+              <span class="badge" style="background: rgba(253, 203, 110, 0.18); color: #fdcb6e; border-color: #fdcb6e; font-family: var(--font-mono); font-weight: 700;">v127</span>
             </h1>
             <div class="master-header-sub">
               Gestão Central de Ecrãs e Palcos
@@ -82,6 +82,7 @@
           <div style="display: flex; align-items: center; gap: 6px;">
             <span style="font-size: 0.95rem;">🎪</span>
             <select id="master-event-select" class="master-stage-select" style="min-width: 170px; font-weight: 700; color: #55efc4; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #00b894; border-radius: 8px; padding: 6px 10px; font-size: 0.85rem;" title="👑 Escolher Palco / Sessão Ativa"></select>
+            <button id="master-top-copy-watch-btn" type="button" class="btn btn-sm btn-master-copy-watch" style="background: rgba(0, 255, 136, 0.2); border: 1.5px solid #00ff88; color: #55efc4; font-weight: 700; padding: 6px 10px; border-radius: 8px;" title="Copiar link do Relógio (Apple Watch) para o palco ativo">⌚ Relógio</button>
             <button id="master-notif-btn" type="button" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border: 1px solid rgba(108, 92, 231, 0.5); color: #c4b5fd; font-weight: 700; padding: 6px 10px; border-radius: 8px;" title="Configurar Alertas Telegram e Notificações no Telemóvel">🔔 Alertas</button>
           </div>
           <div class="st-compact-nav">
@@ -534,18 +535,75 @@
       </div>
     </div>
 
+    <!-- Master Apple Watch Link & QR Modal -->
+    <div id="master-watch-modal" style="display: none; position: fixed; inset: 0; background: rgba(5, 7, 15, 0.88); backdrop-filter: blur(8px); z-index: 10002; align-items: center; justify-content: center; padding: 16px;">
+      <div style="background: #141d2b; border: 1.5px solid #00ff88; border-radius: 18px; padding: 24px; max-width: 520px; width: 100%; box-shadow: 0 20px 50px rgba(0, 255, 136, 0.25); position: relative;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.8rem;">⌚</span>
+            <div>
+              <h3 id="master-watch-modal-title" style="margin: 0; font-size: 1.15rem; color: #55efc4; font-weight: 800;">
+                Link do Apple Watch
+              </h3>
+              <span id="master-watch-modal-sub" style="font-size: 0.78rem; color: var(--text-secondary);">Palco selecionado</span>
+            </div>
+          </div>
+          <button id="master-watch-modal-close" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border-color: var(--border); color: #fff; width: 32px; height: 32px; padding: 0; border-radius: 50%; font-size: 0.9rem;" title="Fechar">✕</button>
+        </div>
+
+        <div style="background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <span style="font-size: 0.82rem; color: #55efc4; font-weight: 700;">✅ Link copiado para a área de transferência!</span>
+          <span class="badge" style="background: rgba(0, 255, 136, 0.2); color: #55efc4; border: 1px solid #00ff88; font-size: 0.7rem; font-weight: 800;">PRONTO</span>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.76rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.05em;">Link Direto do Relógio:</label>
+          <div style="display: flex; gap: 6px;">
+            <input id="master-watch-modal-url" type="text" readonly class="input" style="flex: 1; font-family: var(--font-mono); font-size: 0.82rem; background: rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.15); color: #fff; padding: 8px 12px; border-radius: 8px;" />
+            <button id="master-watch-modal-copy-btn" type="button" class="btn btn-primary" style="background: #00b894; border-color: #00ff88; color: #000; font-weight: 800; white-space: nowrap;">
+              📋 Copiar
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 18px;">
+          <div style="background: #fff; padding: 6px; border-radius: 8px; flex-shrink: 0; line-height: 0;">
+            <img id="master-watch-modal-qr" src="" alt="QR Code" style="width: 100px; height: 100px; display: block;" />
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;">
+            <strong style="color: #fff; display: block; margin-bottom: 4px;">📲 Como abrir no Apple Watch:</strong>
+            1. Envie o link por <strong>iMessage</strong> ou <strong>WhatsApp</strong> para si próprio.<br>
+            2. Abra a mensagem no relógio e toque no link.<br>
+            3. Ou aponte a câmara do iPhone ao QR Code.
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+          <a id="master-watch-modal-open-link" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border-color: var(--border); color: #c4b5fd; font-weight: 600;">
+            🚀 Testar no Browser ↗
+          </a>
+          <button id="master-watch-modal-done-btn" type="button" class="btn btn-sm btn-primary" style="font-weight: 700; padding: 6px 18px;">
+            OK, Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="master-toast" class="master-toast"></div>
+
     <!-- Footer Version Indicator -->
     <footer style="text-align: center; padding: 24px 0 12px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-      StageTimer Super Régie Master • <span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(253, 203, 110, 0.4); font-weight: 700;">v126</span>
+      StageTimer Super Régie Master • <span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(253, 203, 110, 0.4); font-weight: 700;">v127</span>
     </footer>
 
   </div>
 
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
-  <script src="js/pwa.js?v=126"></script>
-  <script src="js/local-sync.js?v=126"></script>
-  <script src="js/notifications.js?v=126"></script>
-  <script src="js/master.js?v=126"></script>
+  <script src="js/pwa.js?v=127"></script>
+  <script src="js/local-sync.js?v=127"></script>
+  <script src="js/notifications.js?v=127"></script>
+  <script src="js/master.js?v=127"></script>
 </body>
 </html>

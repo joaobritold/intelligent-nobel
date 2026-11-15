@@ -1215,3 +1215,81 @@
 .mvm-source-pill.active {
   box-shadow: 0 0 12px rgba(108, 92, 231, 0.35);
 }
+
+
+/* ─── Apple Watch Link Button & Feedback ─────────────────────────── */
+
+.btn-master-copy-watch {
+  background: rgba(0, 255, 136, 0.18) !important;
+  border: 1px solid #00ff88 !important;
+  color: #55efc4 !important;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.btn-master-copy-watch:hover {
+  background: rgba(0, 255, 136, 0.32) !important;
+  border-color: #55efc4 !important;
+  color: #fff !important;
+  box-shadow: 0 0 14px rgba(0, 255, 136, 0.45);
+}
+
+.btn-master-copy-watch.copied {
+  background: #00b894 !important;
+  border-color: #55efc4 !important;
+  color: #0b0f19 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 16px rgba(0, 184, 148, 0.7) !important;
+}
+
+/* ─── Master Toast Notification ──────────────────────────────────── */
+
+.master-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: rgba(15, 23, 42, 0.96);
+  border: 1.5px solid #00b894;
+  border-radius: 12px;
+  padding: 12px 22px;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+  z-index: 100000;
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+  max-width: 90vw;
+  text-align: center;
+  white-space: pre-wrap;
+  backdrop-filter: blur(10px);
+}
+
+.master-toast.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.master-toast.toast-success {
+  border-color: #00ff88;
+  box-shadow: 0 12px 36px rgba(0, 255, 136, 0.3);
+}
+
+.master-toast.toast-warn {
+  border-color: #fdcb6e;
+  box-shadow: 0 12px 36px rgba(253, 203, 110, 0.3);
+}
+
+.master-toast.toast-error {
+  border-color: #ff7675;
+  box-shadow: 0 12px 36px rgba(255, 118, 117, 0.3);
+}

@@ -43,6 +43,137 @@
     return StageTimerClient.formatTime(ms);
   }
 
+  // ─── Master Toast Notifications ─────────────────────────────────────
+  const $masterToast = document.getElementById('master-toast');
+  let masterToastTimeout = null;
+  function showToast(msg, type = 'success') {
+    if (!$masterToast) return;
+    $masterToast.textContent = msg;
+    $masterToast.className = `master-toast visible toast-${type}`;
+    if (masterToastTimeout) clearTimeout(masterToastTimeout);
+    masterToastTimeout = setTimeout(() => {
+      $masterToast.classList.remove('visible');
+    }, 3500);
+  }
+
+  // ─── Apple Watch Link Helper & Modal ────────────────────────────────
+  const $watchModal = document.getElementById('master-watch-modal');
+  const $watchModalTitle = document.getElementById('master-watch-modal-title');
+  const $watchModalSub = document.getElementById('master-watch-modal-sub');
+  const $watchModalUrl = document.getElementById('master-watch-modal-url');
+  const $watchModalQr = document.getElementById('master-watch-modal-qr');
+  const $watchModalOpenLink = document.getElementById('master-watch-modal-open-link');
+  const $watchModalCopyBtn = document.getElementById('master-watch-modal-copy-btn');
+  const $watchModalClose = document.getElementById('master-watch-modal-close');
+  const $watchModalDoneBtn = document.getElementById('master-watch-modal-done-btn');
+  const $topCopyWatchBtn = document.getElementById('master-top-copy-watch-btn');
+
+  function getWatchFullUrl(roomCode) {
+    const clean = (roomCode || 'PALCO1').toUpperCase().trim();
+    return new URL(`watch.html?room=${encodeURIComponent(clean)}`, window.location.href).href;
+  }
+
+  function openWatchModal(roomCode, stageTitle, url) {
+    if (!$watchModal) return;
+    if ($watchModalTitle) $watchModalTitle.textContent = `Link do Apple Watch — ${stageTitle || roomCode}`;
+    if ($watchModalSub) $watchModalSub.textContent = `Palco: ${roomCode}`;
+    if ($watchModalUrl) $watchModalUrl.value = url;
+    if ($watchModalOpenLink) $watchModalOpenLink.href = url;
+    if ($watchModalQr) {
+      $watchModalQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}`;
+      $watchModalQr.onerror = () => { $watchModalQr.style.display = 'none'; };
+      $watchModalQr.onload = () => { $watchModalQr.style.display = 'block'; };
+    }
+    $watchModal.style.display = 'flex';
+  }
+
+  function closeWatchModal() {
+    if ($watchModal) $watchModal.style.display = 'none';
+  }
+
+  if ($watchModalClose) $watchModalClose.addEventListener('click', closeWatchModal);
+  if ($watchModalDoneBtn) $watchModalDoneBtn.addEventListener('click', closeWatchModal);
+  if ($watchModal) {
+    $watchModal.addEventListener('click', (e) => {
+      if (e.target === $watchModal) closeWatchModal();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && $watchModal && $watchModal.style.display === 'flex') {
+      closeWatchModal();
+    }
+  });
+
+  if ($watchModalCopyBtn && $watchModalUrl) {
+    $watchModalCopyBtn.addEventListener('click', async () => {
+      const url = $watchModalUrl.value;
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch (_) {
+        $watchModalUrl.select();
+        document.execCommand('copy');
+      }
+      $watchModalCopyBtn.textContent = '✓ Copiado!';
+      showToast('Link do Relógio copiado!', 'success');
+      setTimeout(() => {
+        $watchModalCopyBtn.textContent = '📋 Copiar';
+      }, 2000);
+    });
+  }
+
+  async function copyWatchLink(roomCode, stageTitle, triggerBtn) {
+    const url = getWatchFullUrl(roomCode);
+    let copied = false;
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+        copied = true;
+      } else {
+        throw new Error('Clipboard API indisponível');
+      }
+    } catch (_) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        copied = document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch (err) {
+        copied = false;
+      }
+    }
+
+    if (navigator.vibrate) {
+      try { navigator.vibrate(35); } catch (_) {}
+    }
+
+    if (triggerBtn) {
+      const originalHtml = triggerBtn.innerHTML;
+      triggerBtn.classList.add('copied');
+      triggerBtn.innerHTML = '✅ Copiado!';
+      setTimeout(() => {
+        triggerBtn.classList.remove('copied');
+        triggerBtn.innerHTML = originalHtml;
+      }, 2500);
+    }
+
+    showToast(`⌚ Link do Relógio copiado para "${stageTitle || roomCode}"!\nCole no iMessage ou WhatsApp para o Apple Watch.`, 'success');
+    openWatchModal(roomCode, stageTitle, url);
+  }
+
+  if ($topCopyWatchBtn) {
+    $topCopyWatchBtn.addEventListener('click', () => {
+      const activeCode = $eventSelect?.value || sessionStorage.getItem('stagetimer_active_room') || localStorage.getItem('stagetimer_device_room') || 'PALCO1';
+      copyWatchLink(activeCode, activeCode, $topCopyWatchBtn);
+    });
+  }
+
   // ─── Live Master Clock ─────────────────────────────────────────────
 
   function updateMasterClock() {
@@ -345,6 +476,9 @@
               <button type="button" class="device-btn ${viewInfo.key === 'controller' ? 'is-current-view' : ''}" data-cmd="controller" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Configurador">
                 🎛️ Configurador ${viewInfo.key === 'controller' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
               </button>
+              <button type="button" class="device-btn ${viewInfo.key === 'watch' ? 'is-current-view' : ''}" data-cmd="watch" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Apple Watch">
+                ⌚ Watch ${viewInfo.key === 'watch' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
+              </button>
               <button type="button" class="device-btn btn-warning-action" data-cmd="reload" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Recarregar página no dispositivo">
                 🔄 Recarregar Ecrã Remoto
               </button>
@@ -602,7 +736,7 @@
         }, 800);
       }
 
-      if (cmd === 'viewer' || cmd === 'lineup' || cmd === 'regies' || cmd === 'operator' || cmd === 'controller' || cmd === 'dc' || cmd === 'cue-station') {
+      if (cmd === 'viewer' || cmd === 'lineup' || cmd === 'regies' || cmd === 'operator' || cmd === 'controller' || cmd === 'dc' || cmd === 'cue-station' || cmd === 'watch') {
         masterClient.sendDeviceCommand(uuid, {
           action: 'navigate',
           url: `${cmd}.html?room=${encodeURIComponent(room)}`,
@@ -788,6 +922,9 @@
                 📋 Lista
               </a>
             `}
+            <button type="button" class="btn btn-sm btn-master-copy-watch" data-room="${encodeURIComponent(primaryTargetRoom)}" data-title="${escapeHtml(ev.title || ev.code)}" title="Copiar link do Relógio (Apple Watch) para este evento">
+              ⌚ Copiar Link Relógio
+            </button>
             <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(primaryTargetRoom)}" data-title="${escapeHtml(ev.title || ev.code)}" style="background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
               📹 Vídeo
             </button>
@@ -823,6 +960,9 @@
                     <a href="viewer.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Palco">📺</a>
                     <a href="lineup.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Lista">📋</a>
                   `}
+                  <button type="button" class="btn btn-sm btn-master-copy-watch" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem;" title="Copiar link do Relógio para o palco ${escapeHtml(st.name || st.code)}">
+                    ⌚ Relógio
+                  </button>
                   <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
                     📹
                   </button>
@@ -1296,6 +1436,9 @@
               🏁 Fim: <span class="multiview-end-badge">${eventEndTime}</span>
             </div>
             <div style="display: flex; gap: 6px; align-items: center;">
+              <button type="button" class="btn btn-sm btn-master-copy-watch" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" style="padding: 4px 8px; font-size: 0.75rem;" title="Copiar link do Relógio para este palco">
+                ⌚ Relógio
+              </button>
               <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
                 📹 Vídeo
               </button>
@@ -2166,6 +2309,16 @@
   }
 
   document.addEventListener('click', (e) => {
+    const copyWatchBtn = e.target.closest('.btn-master-copy-watch');
+    if (copyWatchBtn) {
+      const room = decodeURIComponent(copyWatchBtn.dataset.room || '');
+      const title = copyWatchBtn.dataset.title || room;
+      if (room) {
+        copyWatchLink(room, title, copyWatchBtn);
+      }
+      return;
+    }
+
     const vidBtn = e.target.closest('.btn-master-stage-video');
     if (vidBtn) {
       const room = decodeURIComponent(vidBtn.dataset.room || '');
