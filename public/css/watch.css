@@ -1,0 +1,322 @@
+/* ⌚ StageTimer PFP — Apple Watch Micro-Viewer CSS */
+:root {
+  --watch-bg: #000000;
+  --watch-text: #ffffff;
+  --watch-safe: #00ff88;
+  --watch-warn: #ffaa00;
+  --watch-danger: #ff3344;
+  --watch-overtime: #ff1133;
+  --watch-clock: #ffffff;
+  --watch-paused: #ffd32a;
+  --watch-dim: rgba(255, 255, 255, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  background-color: var(--watch-bg) !important;
+  color: var(--watch-text);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  touch-action: manipulation;
+}
+
+#watch-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 100vw;
+  height: 100dvh;
+  padding: max(4px, env(safe-area-inset-top, 4px)) max(6px, env(safe-area-inset-right, 6px)) max(4px, env(safe-area-inset-bottom, 4px)) max(6px, env(safe-area-inset-left, 6px));
+  position: relative;
+  text-align: center;
+}
+
+/* ── Top Bar ── */
+.watch-top {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
+  height: 22px;
+  line-height: 22px;
+  padding: 0 4px;
+}
+
+.watch-top-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 60%;
+}
+
+.watch-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--watch-safe);
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(0, 255, 136, 0.6);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.watch-status-dot.disconnected {
+  background-color: var(--watch-danger);
+  box-shadow: 0 0 6px rgba(255, 51, 68, 0.6);
+}
+
+.watch-stage-badge {
+  color: #55efc4;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.watch-mini-clock {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--watch-dim);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ── Center Stage Display ── */
+.watch-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  cursor: pointer;
+  position: relative;
+}
+
+.watch-digits {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 0.95;
+  text-align: center;
+  transition: color 0.2s ease;
+  font-size: clamp(2.4rem, 19vw, 4.2rem);
+}
+
+.watch-digits.has-hours {
+  font-size: clamp(1.7rem, 13.5vw, 2.8rem);
+  letter-spacing: -0.5px;
+}
+
+/* Color states */
+.watch-digits.safe {
+  color: var(--watch-safe);
+  text-shadow: 0 0 16px rgba(0, 255, 136, 0.25);
+}
+
+.watch-digits.warn {
+  color: var(--watch-warn);
+  text-shadow: 0 0 16px rgba(255, 170, 0, 0.3);
+}
+
+.watch-digits.danger {
+  color: var(--watch-danger);
+  text-shadow: 0 0 18px rgba(255, 51, 68, 0.4);
+}
+
+.watch-digits.overtime {
+  color: var(--watch-overtime);
+  animation: watch-pulse 1s ease-in-out infinite alternate;
+}
+
+.watch-digits.clock {
+  color: var(--watch-clock);
+}
+
+.watch-digits.paused {
+  color: var(--watch-paused);
+  opacity: 0.9;
+}
+
+.watch-digits.finished {
+  color: #747d8c;
+}
+
+@keyframes watch-pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    text-shadow: 0 0 24px rgba(255, 17, 51, 0.8);
+  }
+  100% {
+    opacity: 0.45;
+    transform: scale(0.98);
+    text-shadow: 0 0 4px rgba(255, 17, 51, 0.2);
+  }
+}
+
+/* ── Sub info (Artist / Event item) ── */
+.watch-info {
+  margin-top: 4px;
+  font-size: clamp(0.72rem, 4.2vw, 0.92rem);
+  font-weight: 600;
+  color: #dfe6e9;
+  max-width: 94vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.88;
+  height: 18px;
+  line-height: 18px;
+}
+
+/* ── Secondary Digits (Dual Mode) ── */
+.watch-secondary {
+  display: none;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.2rem, 9.5vw, 1.8rem);
+  font-weight: 700;
+  color: var(--watch-dim);
+  margin-top: 3px;
+  letter-spacing: -0.5px;
+}
+
+.watch-container.mode-dual .watch-secondary {
+  display: block;
+}
+
+.watch-container.mode-dual .watch-digits {
+  font-size: clamp(2.0rem, 15vw, 3.2rem);
+}
+
+/* ── Bottom Bar / Mode Hint ── */
+.watch-bottom {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  height: 18px;
+  font-size: 0.65rem;
+  color: var(--watch-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.watch-mode-pill {
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 0.62rem;
+}
+
+/* ── Message Alert Overlay ── */
+#watch-message-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #e74c3c;
+  color: #ffffff;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+  text-align: center;
+}
+
+#watch-message-overlay.visible {
+  display: flex;
+}
+
+#watch-message-overlay.urgent {
+  animation: watch-flash-overlay 0.8s infinite alternate;
+}
+
+@keyframes watch-flash-overlay {
+  0% { background-color: #d63031; }
+  100% { background-color: #000000; }
+}
+
+.watch-msg-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+
+.watch-msg-text {
+  font-size: clamp(1.2rem, 8vw, 1.9rem);
+  font-weight: 900;
+  line-height: 1.15;
+  word-break: break-word;
+  max-width: 95vw;
+}
+
+/* ── Setup Info for Desktop / iPhone preview ── */
+#watch-desktop-banner {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #111422;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  text-align: center;
+  z-index: 50;
+}
+
+#watch-desktop-banner a {
+  color: #55efc4;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (min-width: 500px) {
+  #watch-container {
+    max-width: 320px;
+    max-height: 380px;
+    margin: auto;
+    border: 3px solid #333;
+    border-radius: 46px;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), 0 0 0 10px #1a1a1a;
+  }
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #0b0d17 !important;
+  }
+  #watch-desktop-banner {
+    display: block;
+  }
+}

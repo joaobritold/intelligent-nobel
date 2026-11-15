@@ -225,6 +225,7 @@ function updateViewerNavLinks(code) {
   const $ctrl = document.getElementById('viewer-nav-controller');
   const $op = document.getElementById('viewer-nav-operator');
   const $vw = document.getElementById('viewer-nav-viewer');
+  const $watch = document.getElementById('viewer-nav-watch');
   const $ln = document.getElementById('viewer-lineup-btn');
   const $rg = document.getElementById('viewer-regies-btn');
   const $master = document.getElementById('viewer-nav-master');
@@ -234,6 +235,7 @@ function updateViewerNavLinks(code) {
   if ($ctrl) $ctrl.href = `controller.html${q}`;
   if ($op) $op.href = `operator.html${q}`;
   if ($vw) $vw.href = `viewer.html${q}`;
+  if ($watch) $watch.href = `watch.html${q}`;
   if ($ln) $ln.href = `lineup.html${q}`;
   if ($rg) $rg.href = `regies.html${q}`;
   if ($master) {

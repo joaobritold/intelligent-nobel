@@ -376,6 +376,7 @@
         this._markEventDispatched(eventKey, roomCode);
       }
 
+      const delayMs = Math.max(0, Number(options.delayMs) || 0);
       const job = {
         id: 'tgjob_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
         eventKey,
@@ -387,7 +388,7 @@
         replyToMessageId: options.replyToMessageId || null,
         attempts: 0,
         createdAt: Date.now(),
-        nextAttemptAt: Date.now()
+        nextAttemptAt: Date.now() + delayMs
       };
 
       // If immediate interactive call (like Test button), execute and return directly
@@ -469,7 +470,43 @@
       }
     },
 
+    _isDuplicateBodyWithinWindow(chatId, text, windowMs = 15000) {
+      if (!chatId || !text) return false;
+      const sig = `${chatId}::${String(text).trim()}`;
+      const now = Date.now();
+      if (!this._bodyDedupMap) this._bodyDedupMap = new Map();
+      const prevTs = this._bodyDedupMap.get(sig) || 0;
+      if (now - prevTs < windowMs) return true;
+      try {
+        const raw = localStorage.getItem('stagetimer_tg_body_dedup_v1');
+        if (raw) {
+          const obj = JSON.parse(raw);
+          if (obj && obj[sig] && (now - obj[sig] < windowMs)) {
+            this._bodyDedupMap.set(sig, obj[sig]);
+            return true;
+          }
+        }
+      } catch (_) {}
+      this._bodyDedupMap.set(sig, now);
+      try {
+        const obj = {};
+        for (const [k, ts] of this._bodyDedupMap.entries()) {
+          if (now - ts < windowMs) obj[k] = ts;
+          else this._bodyDedupMap.delete(k);
+        }
+        localStorage.setItem('stagetimer_tg_body_dedup_v1', JSON.stringify(obj));
+      } catch (_) {}
+      return false;
+    },
+
     async _executeTelegramJob(job) {
+      if (job.eventKey && this._isEventClaimedByPeer(job.eventKey)) {
+        return { success: true, deduplicated: true };
+      }
+      if (!job.replyToMessageId && this._isDuplicateBodyWithinWindow(job.chatId, job.text, 15000)) {
+        return { success: true, deduplicated: true };
+      }
+
       const payload = {
         chat_id: job.chatId,
         text: job.text,
@@ -752,6 +789,54 @@
       }
     },
 
+    _getTimerArbitrationDelayMs(room) {
+      const cleanRoom = String(room || 'PALCO1').toUpperCase().trim();
+      const myRole = String(this._role || this._syncClient?.role || '').toLowerCase();
+      // Only control screens dispatch timer alerts to Telegram
+      if (myRole !== 'operator' && myRole !== 'controller' && myRole !== 'master') {
+        return -1; // Disabled for passive screens (regies, viewer, lineup, cue-station, dc)
+      }
+
+      const myUuid = String(this._syncClient?.deviceUuid || '').trim();
+      const online = (this._syncClient && typeof this._syncClient.getOnlineDevices === 'function')
+        ? this._syncClient.getOnlineDevices()
+        : [];
+
+      const rankOf = (r) => {
+        const rl = String(r || '').toLowerCase();
+        if (rl === 'operator') return 1;
+        if (rl === 'controller') return 2;
+        if (rl === 'master') return 3;
+        return 99;
+      };
+
+      const candidates = online.filter(d => {
+        const dRoom = String(d.room || '').toUpperCase().trim();
+        const dRole = String(d.view || d.role || '').toLowerCase();
+        if (dRole === 'master') return true;
+        return dRoom === cleanRoom && (dRole === 'operator' || dRole === 'controller');
+      });
+
+      if (candidates.length <= 1) {
+        return 0;
+      }
+
+      const myRank = rankOf(myRole);
+      let hasHigherPriorityPeer = false;
+      for (const peer of candidates) {
+        if (!peer.deviceUuid || peer.deviceUuid === myUuid) continue;
+        const pRole = String(peer.view || peer.role || '').toLowerCase();
+        const pRank = rankOf(pRole);
+        if (pRank < myRank || (pRank === myRank && String(peer.deviceUuid) < myUuid)) {
+          hasHigherPriorityPeer = true;
+          break;
+        }
+      }
+
+      // Primary device fires at 0ms; backup device waits 1500ms and cancels when tg_event_claimed arrives
+      return hasHigherPriorityPeer ? 1500 : 0;
+    },
+
     // ──────────────────────────────────────────────────────────────────────
     // 5. AUTOMATED REAL-TIME EVENT & TIMER WATCHER
     // ──────────────────────────────────────────────────────────────────────
@@ -841,22 +926,10 @@
         // Listen to multi-room updates (Master Mode)
         syncClient.on('multi-room-state', ({ room, data }) => {
           if (data && typeof data === 'object') {
-            if (!data.id && room) data.id = room;
-            this._seedInitialRoomSnapshot(data);
-            this.checkStateEvents(data);
-            this.checkTimerTick(data);
-          }
-        });
-
-        syncClient.on('multi-room-regie-call', ({ room, regieCall }) => {
-          if (room && regieCall) {
-            this.checkStateEvents({ id: room, name: room, regieCall });
-          }
-        });
-
-        syncClient.on('multi-room-regie-msg', ({ room, regieMessage }) => {
-          if (room && regieMessage) {
-            this.checkStateEvents({ id: room, name: room, regieMessage });
+            const normalized = room ? { ...data, id: room } : data;
+            this._seedInitialRoomSnapshot(normalized);
+            this.checkStateEvents(normalized, { isOrigin: false });
+            this.checkTimerTick(normalized);
           }
         });
       }
@@ -934,6 +1007,8 @@
       const safeArtist = escapeHtml(timerTitle);
       const tgCfg = this._resolveTelegramConfig(roomCode, state.integrations?.telegram);
       const isLeader = this._isTelegramLeader(roomCode);
+      const timerDelayMs = this._getTimerArbitrationDelayMs(roomCode);
+      const canSendTimerTg = isLeader && timerDelayMs >= 0 && tgCfg && tgCfg.enabled;
       const nowStr = getNowTimeStr(false);
 
       // Reset flags if user added time (+1m / +5m) back above threshold
@@ -944,7 +1019,7 @@
       // ⏳ 1. Aviso 5 Minutos (<= 300,000ms and > 60,000ms, for timers >= 5m30s)
       if (durationMs >= 330000 && remainingMs <= 300000 && remainingMs > 60000 && !rState.sent5m) {
         rState.sent5m = true;
-        const eventKey = `tg_5m_${roomCode}_${activeTimer.id}`;
+        const eventKey = `tg_5m_${activeTimer.id}`;
         _playChime('warning');
 
         this.showLocalNotification(`⏳ Faltam 5 Minutos — ${stageName}`, {
@@ -953,14 +1028,14 @@
           vibrate: [200, 100, 200]
         });
 
-        if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alert5m !== false) {
+        if (canSendTimerTg && tgCfg.alert5m !== false) {
           this.sendTelegramMessage(
             `⏳ <b>AVISO 5 MINUTOS</b> • <code>${safeStage}</code> • ⏰ <b>${nowStr}</b>\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `🎤 <b>Em Palco:</b> ${safeArtist}\n` +
             `⏱️ <b>Tempo Restante:</b> <code>05:00</code>`,
             tgCfg,
-            { eventKey, room: roomCode, priority: 'normal' }
+            { eventKey, room: roomCode, priority: 'normal', delayMs: timerDelayMs }
           );
         }
       }
@@ -968,7 +1043,7 @@
       // ⚠️ 2. Aviso 1 Minuto (<= 60,000ms and > 0ms, for timers >= 1m10s)
       if (durationMs >= 70000 && remainingMs <= 60000 && remainingMs > 0 && !rState.sent1m) {
         rState.sent1m = true;
-        const eventKey = `tg_1m_${roomCode}_${activeTimer.id}`;
+        const eventKey = `tg_1m_${activeTimer.id}`;
         _playChime('warning');
 
         this.showLocalNotification(`⚠️ Falta 1 Minuto — ${stageName}`, {
@@ -977,7 +1052,7 @@
           vibrate: [300, 100, 300]
         });
 
-        if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alert1m !== false) {
+        if (canSendTimerTg && tgCfg.alert1m !== false) {
           this.sendTelegramMessage(
             `⚠️ <b>AVISO 1 MINUTO</b> • <code>${safeStage}</code> • ⏰ <b>${nowStr}</b>\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -985,7 +1060,7 @@
             `⏱️ <b>Tempo Restante:</b> <code>01:00</code> (Reta Final)\n` +
             `⏭️ <i>Próxima atuação / mudança de palco a postos!</i>`,
             tgCfg,
-            { eventKey, room: roomCode, priority: 'high' }
+            { eventKey, room: roomCode, priority: 'high', delayMs: timerDelayMs }
           );
         }
       }
@@ -993,7 +1068,7 @@
       // 🛑 3. Fim do Tempo / Overtime (<= 0ms)
       if (durationMs > 0 && remainingMs <= 0 && !rState.sentEnd) {
         rState.sentEnd = true;
-        const eventKey = `tg_end_${roomCode}_${activeTimer.id}`;
+        const eventKey = `tg_end_${activeTimer.id}`;
         _playChime('warning');
 
         this.showLocalNotification(`🛑 Tempo Esgotado — ${stageName}`, {
@@ -1002,21 +1077,22 @@
           vibrate: [500, 150, 500]
         });
 
-        if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertEnd !== false) {
+        if (canSendTimerTg && tgCfg.alertEnd !== false) {
           this.sendTelegramMessage(
             `🛑 <b>TEMPO ESGOTADO (OVERTIME)</b> • <code>${safeStage}</code> • ⏰ <b>${nowStr}</b>\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `🎤 <b>Artista:</b> ${safeArtist}\n` +
             `⏱️ <b>Estado:</b> Tempo regulamentar concluído (<code>00:00</code>)`,
             tgCfg,
-            { eventKey, room: roomCode, priority: 'high' }
+            { eventKey, room: roomCode, priority: 'high', delayMs: timerDelayMs }
           );
         }
       }
     },
 
-    checkStateEvents(state) {
+    checkStateEvents(state, opts = {}) {
       if (!state) return;
+      const isOrigin = Boolean(opts && opts.isOrigin);
       const roomCode = String(state.id || this._syncClient?.cleanRoom || 'PALCO1').toUpperCase().trim();
       const rState = this._getRoomWatchState(roomCode);
       const stageName = state.name || roomCode || 'Palco';
@@ -1029,7 +1105,7 @@
       if (state.regieCall && state.regieCall.triggeredAt && (state.regieCall.fohCallingStage || state.regieCall.stageCallingFoh)) {
         if (state.regieCall.triggeredAt !== rState.lastRegieCallAt) {
           rState.lastRegieCallAt = state.regieCall.triggeredAt;
-          const eventKey = `tg_rcall_${roomCode}_${state.regieCall.triggeredAt}`;
+          const eventKey = `tg_rcall_${state.regieCall.triggeredAt}`;
           _playChime('warning');
 
           const rawCaller = String(state.regieCall.triggeredBy || '').trim();
@@ -1081,7 +1157,9 @@
             vibrate: [300, 100, 300, 100, 300]
           });
 
-          if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertRegieCalls !== false) {
+          const alreadySentByOrigin = !isOrigin && Boolean(state.regieCall.tgSent);
+          if (!alreadySentByOrigin && (isOrigin || isLeader) && tgCfg && tgCfg.enabled && tgCfg.alertRegieCalls !== false) {
+            if (isOrigin) state.regieCall.tgSent = true;
             this.sendTelegramMessage(
               `${tgHeader}\n` +
               `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -1089,7 +1167,7 @@
               `📡 <b>Direção:</b> <b>${callRoute}</b>\n` +
               `🚨 <i>${escapeHtml(callBody)}</i>`,
               tgCfg,
-              { eventKey, room: roomCode, priority: 'high' }
+              { eventKey, room: roomCode, priority: 'high', delayMs: isOrigin ? 0 : 1400 }
             );
           }
         }
@@ -1099,7 +1177,7 @@
       if (state.regieMessage && state.regieMessage.visible && state.regieMessage.text) {
         if (state.regieMessage.id && state.regieMessage.id !== rState.lastRegieMsgId) {
           rState.lastRegieMsgId = state.regieMessage.id;
-          const eventKey = `tg_rmsg_${roomCode}_${state.regieMessage.id}`;
+          const eventKey = `tg_rmsg_${state.regieMessage.id}`;
           _playChime('warning');
 
           const rawFrom = String(state.regieMessage.from || '').trim();
@@ -1118,7 +1196,9 @@
             vibrate: [200, 100, 200]
           });
 
-          if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertRegieMsg !== false) {
+          const alreadySentByOrigin = !isOrigin && Boolean(state.regieMessage.tgSent);
+          if (!alreadySentByOrigin && (isOrigin || isLeader) && tgCfg && tgCfg.enabled && tgCfg.alertRegieMsg !== false) {
+            if (isOrigin) state.regieMessage.tgSent = true;
             const safeMsg = escapeHtml(state.regieMessage.text);
             const msgTime = escapeHtml(state.regieMessage.sentTimeStr || timeStr);
             const tgHeader = isFromOperator
@@ -1131,7 +1211,7 @@
               `💬 <b>"${safeMsg}"</b>\n` +
               `👤 <b>Origem:</b> ${safeSender}`,
               tgCfg,
-              { eventKey, room: roomCode, priority: 'high' }
+              { eventKey, room: roomCode, priority: 'high', delayMs: isOrigin ? 0 : 1400 }
             );
           }
         }
@@ -1142,7 +1222,7 @@
         const noticeTs = state.theatre.urgentNotice.sentAt || 1;
         if (noticeTs !== rState.lastTheatreNoticeAt) {
           rState.lastTheatreNoticeAt = noticeTs;
-          const eventKey = `tg_dcnotice_${roomCode}_${noticeTs}`;
+          const eventKey = `tg_dcnotice_${noticeTs}`;
           _playChime('warning');
 
           this.showLocalNotification(`📢 Aviso de Cena — ${stageName}`, {
@@ -1151,14 +1231,16 @@
             vibrate: [250, 100, 250]
           });
 
-          if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertRegieMsg !== false) {
+          const alreadySentByOrigin = !isOrigin && Boolean(state.theatre.urgentNotice.tgSent);
+          if (!alreadySentByOrigin && (isOrigin || isLeader) && tgCfg && tgCfg.enabled && tgCfg.alertRegieMsg !== false) {
+            if (isOrigin) state.theatre.urgentNotice.tgSent = true;
             const safeNotice = escapeHtml(state.theatre.urgentNotice.text);
             this.sendTelegramMessage(
               `📢 <b>AVISO DIREÇÃO DE CENA</b> • <code>${safeStage}</code> • ⏰ <b>${timeStr}</b>\n` +
               `━━━━━━━━━━━━━━━━━━━━\n` +
               `💬 <b>"${safeNotice}"</b>`,
               tgCfg,
-              { eventKey, room: roomCode, priority: 'high' }
+              { eventKey, room: roomCode, priority: 'high', delayMs: isOrigin ? 0 : 1400 }
             );
           }
         }
@@ -1170,7 +1252,7 @@
         const msgKey = state.message.id || `${state.message.text}_${state.message.sentAt || ''}`;
         if (msgKey !== rState.lastStageMsgKey) {
           rState.lastStageMsgKey = msgKey;
-          const eventKey = `tg_smsg_${roomCode}_${msgKey}`;
+          const eventKey = `tg_smsg_${msgKey}`;
           _playChime('warning');
 
           this.showLocalNotification(`🚨 Mensagem de Palco — ${stageName}`, {
@@ -1179,7 +1261,9 @@
             vibrate: [250, 100, 250, 100, 250]
           });
 
-          if (isLeader && tgCfg && tgCfg.enabled && tgCfg.alertUrgent !== false) {
+          const alreadySentByOrigin = !isOrigin && Boolean(state.message.tgSent);
+          if (!alreadySentByOrigin && (isOrigin || isLeader) && tgCfg && tgCfg.enabled && tgCfg.alertUrgent !== false) {
+            if (isOrigin) state.message.tgSent = true;
             const safePrompter = escapeHtml(state.message.text);
             const rawPrompterFrom = String(state.message.from || '').trim();
             const prompterSender = (!rawPrompterFrom || /^(operador|stage manager|sm|s\.m\.|s\.manager|operator)$/i.test(rawPrompterFrom))
@@ -1194,7 +1278,7 @@
               `📺 <b>[${lvl}]:</b> <b>"${safePrompter}"</b>\n` +
               `👤 <b>Enviado por:</b> ${escapeHtml(prompterSender)}`,
               tgCfg,
-              { eventKey, room: roomCode, priority: 'high' }
+              { eventKey, room: roomCode, priority: 'high', delayMs: isOrigin ? 0 : 1400 }
             );
           }
         }

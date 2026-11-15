@@ -533,6 +533,7 @@ class UniversalSyncClient {
               text: incMsg.text || '',
               from: resolvedFrom,
               senderRole: resolvedRole,
+              tgSent: Boolean(incMsg.tgSent),
               visible: Boolean(incMsg.visible),
               sentAt: incMsg.sentAt || Date.now(),
               sentTimeStr: incMsg.sentTimeStr || '',
@@ -3303,7 +3304,7 @@ class UniversalSyncClient {
           window.StageTimerNotifications.claimLeadership(this.cleanRoom);
         }
         if (typeof window.StageTimerNotifications.checkStateEvents === 'function') {
-          window.StageTimerNotifications.checkStateEvents(this._state);
+          window.StageTimerNotifications.checkStateEvents(this._state, { isOrigin: true });
         }
       } catch (_) {}
     }
@@ -4063,6 +4064,7 @@ class UniversalSyncClient {
       visible: true,
       sentAt: Date.now()
     };
+    this._dispatchImmediateTelegramEvent();
     this._commitStateChange();
   }
 
