@@ -1,8 +1,8 @@
 {
-  "id": "stagetimer-pfp-app",
-  "name": "StageTimer PFP — Controlo de Palco",
-  "short_name": "StageTimer",
-  "description": "App leve de controlo de tempos de palco, alinhamento de artistas, deixas técnicas e régie em tempo real.",
+  "id": "showflow-app",
+  "name": "ShowFlow App — Controlo de Palco e Régie",
+  "short_name": "ShowFlow",
+  "description": "ShowFlow App: Sistema profissional de controlo de tempos de palco, alinhamento de artistas, deixas técnicas e régie em tempo real.",
   "lang": "pt-PT",
   "start_url": "./index.html",
   "scope": "./",
