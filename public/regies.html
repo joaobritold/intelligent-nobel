@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Modo Régies (FOH & Palco)</title>
-  <link rel="stylesheet" href="css/common.css?v=124">
-  <link rel="stylesheet" href="css/regies.css?v=124">
+  <link rel="stylesheet" href="css/common.css?v=125">
+  <link rel="stylesheet" href="css/regies.css?v=125">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
@@ -67,7 +67,7 @@
         <a id="regie-nav-hub" href="index.html?portal=1" class="regie-home-link" title="Voltar ao Início / Escolher Evento">
           <span style="font-size: 1.4rem;">📟</span>
           <span class="regie-header-title">RÉGIES</span>
-          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v124</span>
+          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v125</span>
         </a>
 
         <!-- Stage Selector Pill -->
@@ -129,18 +129,21 @@
       </div>
     </header>
 
-    <!-- Massive Flashing Incoming Call Alert -->
-    <section id="regie-incoming-alert" class="regie-incoming-alert">
-      <div class="regie-incoming-text-box">
-        <div class="regie-incoming-icon">🚨</div>
-        <div>
+    <!-- Massive Flashing Incoming Call Alert (Full-Screen Alarm Takeover) -->
+    <section id="regie-incoming-alert" class="regie-incoming-alert" role="alert" aria-live="assertive" title="Tocar em qualquer ponto do ecrã para atender">
+      <div class="regie-incoming-inner">
+        <div class="regie-incoming-icon" aria-hidden="true">🚨</div>
+        <div class="regie-incoming-text-box">
           <div id="regie-incoming-title" class="regie-incoming-title">CHAMADA INTERCOM!</div>
           <div id="regie-incoming-sub" class="regie-incoming-sub">A outra régie está a chamar. Por favor verifique o intercomunicador.</div>
         </div>
+        <div class="regie-incoming-actions">
+          <button id="regie-incoming-ack-btn" class="regie-ack-btn" type="button">
+            ✓ CIENTE / ATENDIDO
+          </button>
+          <div class="regie-incoming-hint">Toque no botão, clique no ecrã ou prima [Espaço] / [Enter] para atender</div>
+        </div>
       </div>
-      <button id="regie-incoming-ack-btn" class="regie-ack-btn" type="button">
-        ✓ CIENTE / ATENDIDO
-      </button>
     </section>
 
     <!-- Stage Manager Technical Message Banner -->
@@ -258,13 +261,13 @@
   </div>
 
   <!-- Access Control -->
-  <script src="js/auth.js?v=124"></script>
+  <script src="js/auth.js?v=125"></script>
   <!-- Cloud MQTT over WSS -->
   <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
-  <script src="js/pwa.js?v=124"></script>
-  <script src="js/local-sync.js?v=124"></script>
-  <script src="js/notifications.js?v=124"></script>
-  <script src="js/regies.js?v=124"></script>
-<script src="js/view-mode.js?v=124"></script>
+  <script src="js/pwa.js?v=125"></script>
+  <script src="js/local-sync.js?v=125"></script>
+  <script src="js/notifications.js?v=125"></script>
+  <script src="js/regies.js?v=125"></script>
+<script src="js/view-mode.js?v=125"></script>
 </body>
 </html>

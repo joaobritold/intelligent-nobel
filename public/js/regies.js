@@ -322,6 +322,8 @@ function setStation(station, isInitial = false) {
     dismissCountdownTimer = null;
   }
 
+  stopIncomingSoundInterval();
+
   updateTechUserBadge();
   if (typeof client.announcePresenceNow === 'function') {
     client.announcePresenceNow();
@@ -366,6 +368,8 @@ if ($btnAudio) {
     if (audioEnabled) {
       getAudioContext();
       playIntercomChime();
+    } else {
+      stopIncomingSoundInterval();
     }
     updateAudioUI();
   });
@@ -408,18 +412,39 @@ if ($btnCall) {
   });
 }
 
+function acknowledgeIncomingCall() {
+  stopIncomingSoundInterval();
+  if (!state) return;
+  if (currentStation === 'foh') {
+    client.clearRegieCall('foh');
+  } else if (currentStation === 'stage') {
+    client.clearRegieCall('stage');
+  } else {
+    client.clearRegieCall('all');
+  }
+}
+
 if ($incomingAckBtn) {
-  $incomingAckBtn.addEventListener('click', () => {
-    if (!state) return;
-    if (currentStation === 'foh') {
-      client.clearRegieCall('foh');
-    } else if (currentStation === 'stage') {
-      client.clearRegieCall('stage');
-    } else {
-      client.clearRegieCall('all');
-    }
+  $incomingAckBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    acknowledgeIncomingCall();
   });
 }
+
+if ($incomingAlert) {
+  $incomingAlert.addEventListener('click', () => {
+    acknowledgeIncomingCall();
+  });
+}
+
+window.addEventListener('keydown', (e) => {
+  if ($incomingAlert && $incomingAlert.classList.contains('visible')) {
+    if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      acknowledgeIncomingCall();
+    }
+  }
+});
 
 // ─── Mobile Segment Tabs (Now vs Lineup) ─────────────────────────────
 document.querySelectorAll('.regie-mobile-tab-btn').forEach(btn => {
@@ -501,6 +526,14 @@ if ($msgAckBtn) {
 // ─── Regie Controls & Alerts Update ──────────────────────────────────
 
 let lastIncomingCallState = false;
+let incomingSoundInterval = null;
+
+function stopIncomingSoundInterval() {
+  if (incomingSoundInterval) {
+    clearInterval(incomingSoundInterval);
+    incomingSoundInterval = null;
+  }
+}
 
 function updateRegieControls() {
   if (!state) return;
@@ -559,12 +592,21 @@ function updateRegieControls() {
       $incomingSub.textContent = 'A Régie da Frente está a chamar no intercomunicador. Por favor coloque os auscultadores.';
     }
 
-    // Play chime when new incoming call begins
+    // Play chime when new incoming call begins and repeat every 1.2s while active
     if (!lastIncomingCallState) {
       playIntercomChime();
+      stopIncomingSoundInterval();
+      incomingSoundInterval = setInterval(() => {
+        if (lastIncomingCallState && audioEnabled) {
+          playIntercomChime();
+        } else {
+          stopIncomingSoundInterval();
+        }
+      }, 1200);
     }
   } else {
     $incomingAlert.classList.remove('visible');
+    stopIncomingSoundInterval();
   }
   lastIncomingCallState = isIncoming;
 
