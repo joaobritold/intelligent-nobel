@@ -17,10 +17,12 @@ Este ficheiro define as **regras obrigatórias de arquitetura, desenvolvimento e
 4. **Preservação de Sessão e Identidade**: Qualquer limpeza de cache ou reset de estado **tem obrigatoriamente de preservar**:
    - `stagetimer_device_uuid` e `stagetimer_screen_uuid` (identidade do dispositivo)
    - `stagetimer_master_active`, `stagetimer_master_auth_v12` e `stagetimer_auth_unlocked` (sessão de autenticação)
-5. **Versão Unificada Global e Cache-Busting Obrigatório**: Sempre que houver qualquer atualização de código ou estilos em `public/`:
-   - A nova versão tem obrigatoriamente de sair **em simultâneo para todos os 9 modos/ecrãs** (`index`, `master`, `controller`, `operator`, `dc`, `cue-station`, `regies`, `lineup`, `viewer`). É expressamente proibido deixar modos em versões díspares.
-   - Atualize todos os parâmetros `?v=XX` nas referências `<script src="...">` e `<link href="...">` de **todos os ficheiros `.html`** para a mesma versão global sincronizada.
-   - Incremente o `CACHE_NAME` em [public/sw.js](public/sw.js) para exatamente a mesma versão (ex.: `stagetimer-pfp-v112` ➔ `stagetimer-pfp-v113`).
+5. **Versão Unificada Global, Badges Visuais e Cache-Busting Obrigatório**: Sempre que houver qualquer atualização de código, estilos ou estrutura em `public/`:
+   - A nova versão tem obrigatoriamente de sair **em simultâneo para todos os 10 modos/ecrãs** (`index`, `master`, `controller`, `operator`, `dc`, `cue-station`, `regies`, `lineup`, `viewer` e `watch`). É expressamente proibido deixar modos em versões díspares.
+   - **Badges Visuais de Versão Obrigatórios**: Atualize obrigatoriamente os textos/badges visuais de versão exibidos nos cabeçalhos e rodapés dos ficheiros `.html` (ex.: `<span class="badge">vXX</span>` ou `ShowFlow App • vXX`) para refletir a nova versão. NUNCA atualize apenas os scripts/sw.js deixando os badges visuais na versão antiga.
+   - **Cache-Busting Sincronizado**: Atualize todos os parâmetros `?v=XX` nas referências `<script src="...">` e `<link href="...">` de **todos os ficheiros `.html`** para a mesma versão global sincronizada.
+   - **Service Worker**: Incremente o `CACHE_NAME` em [public/sw.js](public/sw.js) para exatamente a mesma versão (ex.: `stagetimer-pfp-v135` ➔ `stagetimer-pfp-v136`).
+   - **Verificação Obrigatória Pré-Commit**: Execute sempre uma busca com `git grep` pela versão anterior em `public/` para certificar que nenhum ficheiro ficou esquecido numa versão anterior antes de commitar.
 6. **Codificação UTF-8 Obrigatória (Proibido Corromper Acentos)**: Todos os ficheiros do projeto são **UTF-8 sem BOM**. Ao editar ficheiros via PowerShell (ex.: cache-busting em massa), é **proibido** usar `Get-Content`/`Set-Content`/`Out-File` sem encoding explícito (o Windows PowerShell 5 lê como ANSI/cp1252 e gera mojibake: `Ã£`, `Ã§`, `âŒš`). Usar sempre `[System.IO.File]::ReadAllText($p, [System.Text.UTF8Encoding]::new($false))` e `[System.IO.File]::WriteAllText($p, $txt, [System.Text.UTF8Encoding]::new($false))`, ou preferencialmente a ferramenta de edição de ficheiros do agente. Antes de commitar, verificar com `git diff` que não surgem sequências `Ã`/`â€`/`ðŸ` em linhas não relacionadas com a alteração. Está ativo um hook de proteção em `.git/hooks/pre-commit` que bloqueia automaticamente qualquer commit que contenha estas sequências corrompidas.
 
 ---
@@ -38,6 +40,7 @@ Este ficheiro define as **regras obrigatórias de arquitetura, desenvolvimento e
 | [public/regies.html](public/regies.html) | [regies.js](public/js/regies.js) | [regies.css](public/css/regies.css) | **Modo Régies (FOH / Palco / Técnico)**: Comunicação rápida entre régies, alertas de departamento, confirmação de prontidão e monitorização do alinhamento. |
 | [public/lineup.html](public/lineup.html) | [lineup.js](public/js/lineup.js) | [lineup.css](public/css/lineup.css) | **Modo Lista (Lineup)**: Visualização limpa do alinhamento, horários previstos vs. reais e estado de cada atuação. |
 | [public/viewer.html](public/viewer.html) | [viewer.js](public/js/viewer.js) | [viewer.css](public/css/viewer.css) | **Ecrã de Palco (Fullscreen)**: Countdown/Countup gigante de alto contraste, cores dinâmicas (verde/amarelo/vermelho/flash) e prompter de mensagens. |
+| [public/watch.html](public/watch.html) | [viewer.js](public/js/viewer.js) | [watch.css](public/css/watch.css) | **Modo Apple Watch**: Relógio de pulso ultra-otimizado com o motor oficial de palco. |
 
 ---
 
@@ -92,6 +95,7 @@ Este ficheiro define as **regras obrigatórias de arquitetura, desenvolvimento e
 
 - [ ] A alteração funciona sem o servidor Node.js (apenas com os ficheiros estáticos de `public/` e `local-sync.js`)?
 - [ ] A estrutura de `state` em `local-sync.js` mantém retrocompatibilidade com `master`, `controller`, `operator`, `dc`, `cue-station`, `regies`, `lineup` e `viewer`?
-- [ ] As versões `?v=XX` nos `.html` e o `CACHE_NAME` em `public/sw.js` foram atualizados se algum `.js` ou `.css` mudou?
+- [ ] As versões `?v=XX` nos `.html`, os **badges visuais** no texto dos ecrãs (`<span>vXX</span>`) e o `CACHE_NAME` em `public/sw.js` foram todos atualizados em uníssono para a mesma versão?
+- [ ] O comando `git grep` para a versão anterior (`vXX-1`) não devolve nenhuma ocorrência esquecida em `public/`?
 - [ ] O layout continua responsivo em mobile/tablet sem scroll horizontal e sem auto-zoom em inputs no iOS?
 - [ ] **Zero Mojibake / Integridade UTF-8**: Verificado antes de commitar que nenhum caractere corrompido (`Ã`, `ðŸ`, `â€`, `âš`) foi introduzido (salvaguardado pelo hook `.git/hooks/pre-commit`).
