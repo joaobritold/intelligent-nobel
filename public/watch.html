@@ -38,7 +38,7 @@
     })();
   </script>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -50,11 +50,11 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>StageTimer — Apple Watch</title>
-  <link rel="stylesheet" href="css/common.css?v=122">
-  <link rel="stylesheet" href="css/watch.css?v=122">
+  <link rel="stylesheet" href="css/common.css?v=123">
+  <link rel="stylesheet" href="css/watch.css?v=123">
 </head>
 <body>
-  <!-- Container principal otimizado para o ecrã do Apple Watch -->
+  <!-- Container principal otimizado para preencher 100% do ecrã do Apple Watch -->
   <div id="watch-container" class="watch-container mode-timer">
     <!-- Barra Superior (Status, Palco, Mini-Relógio) -->
     <div class="watch-top">
@@ -65,18 +65,23 @@
       <div id="watch-mini-clock" class="watch-mini-clock">--:--</div>
     </div>
 
-    <!-- Ecrã Central (Toque alterna: Timer / Relógio Oficial / Duplo) -->
-    <div id="watch-center" class="watch-center" title="Tocar no ecrã para alternar modos">
+    <!-- Ecrã Central (Números Gigantes preenchendo a tela toda) -->
+    <div id="watch-center" class="watch-center">
       <div id="watch-digits" class="watch-digits clock">--:--</div>
       <div id="watch-secondary" class="watch-secondary"></div>
       <div id="watch-info" class="watch-info">A carregar...</div>
     </div>
 
-    <!-- Barra Inferior (Indicador do Modo Ativo) -->
+    <!-- Barra Inferior (Fim Previsto do Evento & Indicador de Modo) -->
     <div class="watch-bottom">
-      <span>Modo:</span>
+      <div id="watch-event-end" class="watch-event-end" title="Fim Previsto do Evento">
+        <span id="watch-event-end-val">🏁 Fim: --:--</span>
+      </div>
       <span id="watch-mode-pill" class="watch-mode-pill">Timer</span>
     </div>
+
+    <!-- Toast de Feedback Rápido ao Tocar no Ecrã -->
+    <div id="watch-mode-toast" class="watch-mode-toast">⏱️ Modo Timer</div>
   </div>
 
   <!-- Overlay de Mensagem Flash / Urgente da Régie -->
@@ -91,7 +96,7 @@
     &nbsp;<a href="index.html">← Voltar ao Início</a>
   </div>
 
-  <script src="js/local-sync.js?v=122"></script>
-  <script src="js/watch.js?v=122"></script>
+  <script src="js/local-sync.js?v=123"></script>
+  <script src="js/watch.js?v=123"></script>
 </body>
 </html>
