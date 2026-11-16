@@ -122,6 +122,9 @@
     const cleanTarget = String(targetRoom || '').toUpperCase().trim();
     if (!cleanTarget) return;
     if ($statusDot) $statusDot.classList.remove('disconnected');
+    if (incomingData && Array.isArray(incomingData.timers)) {
+      state = incomingData;
+    }
     if (cleanTarget !== roomId) {
       roomId = cleanTarget;
       client.room = cleanTarget;
@@ -149,6 +152,7 @@
     if (incomingData && Array.isArray(incomingData.timers)) {
       client._applyIncomingState(incomingData, true);
     }
+    handleMessageAlert();
     render();
   }
 
@@ -249,6 +253,82 @@
   });
 
   client.connect();
+
+  // ─── HTTPS Cloud Relay Poller (Zero-WebSocket Fallback para watchOS) ───
+  // O watchOS WebSheet (WebKit sobre Bluetooth IDS) bloqueia WebSockets puros.
+  // Este poller HTTPS através da porta padrão 443 assegura sincronização 100% contínua.
+  let isPolling = false;
+  let lastStateUpdate = 0;
+
+  async function pollHttpsRelay() {
+    if (isPolling) return;
+    isPolling = true;
+    try {
+      const cleanRoom = roomId.replace(/[^A-Z0-9_-]/g, '');
+      const topic = `showflow_v10_${cleanRoom}`;
+      const url = `https://ntfy.sh/${topic}/json?poll=1`;
+
+      const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const tid = controller ? setTimeout(() => controller.abort(), 2500) : null;
+
+      const opts = { cache: 'no-store' };
+      if (controller) opts.signal = controller.signal;
+
+      const res = await fetch(url, opts);
+      if (tid) clearTimeout(tid);
+
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.trim()) {
+          const lines = text.trim().split('\n');
+          for (let i = lines.length - 1; i >= 0; i--) {
+            try {
+              const item = JSON.parse(lines[i]);
+              if (item.event === 'message' && item.message) {
+                const incoming = JSON.parse(item.message);
+                if (incoming && Array.isArray(incoming.timers)) {
+                  lastStateUpdate = Date.now();
+                  if ($statusDot) $statusDot.classList.remove('disconnected');
+                  adoptRoomAndState(incoming.id || roomId, incoming);
+                  break;
+                }
+              }
+            } catch (_) {}
+          }
+        }
+      }
+    } catch (_) {
+      if (Date.now() - lastStateUpdate > 10000 && (!client.mqttClient || !client.mqttClient.connected)) {
+        if ($statusDot) $statusDot.classList.add('disconnected');
+      }
+    } finally {
+      isPolling = false;
+    }
+  }
+
+  // Se o script inline rápido já recolheu o estado inicial, adota imediatamente
+  if (typeof window !== 'undefined' && window.__INITIAL_WATCH_STATE__) {
+    try {
+      const initS = window.__INITIAL_WATCH_STATE__;
+      if (initS && Array.isArray(initS.timers)) {
+        lastStateUpdate = Date.now();
+        adoptRoomAndState(initS.id || roomId, initS);
+      }
+    } catch (_) {}
+  }
+
+  // Polling contínuo imediato e a cada 1000ms
+  pollHttpsRelay();
+  setInterval(pollHttpsRelay, 1000);
+
+  // Recarga instantânea ao levantar o pulso / focar / tocar no ecrã
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      pollHttpsRelay();
+    }
+  });
+  window.addEventListener('focus', pollHttpsRelay);
+  document.addEventListener('touchstart', pollHttpsRelay, { passive: true });
 
   // ─── Format & Timing Helpers (Idênticos ao Modo Palco) ───────────────
   function formatTime(ms) {

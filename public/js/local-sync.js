@@ -1055,17 +1055,6 @@ class UniversalSyncClient {
       } catch (_) {}
     }
 
-    // Standard Port 443 WSS Relay (Eclipse IoT - 100% firewall & Apple Watch Bluetooth WebSheet safe)
-    let port443Client = null;
-    try {
-      port443Client = mqtt.connect('wss://mqtt.eclipseprojects.io:443/mqtt', {
-        clientId: `${this.clientId}_443`,
-        clean: true,
-        connectTimeout: 6000,
-        reconnectPeriod: 2500
-      });
-    } catch (_) {}
-
     // Backup WSS Broker (HiveMQ Public Sandbox)
     let backupClient = null;
     try {
@@ -1077,7 +1066,7 @@ class UniversalSyncClient {
       });
     } catch (_) {}
 
-    const allClients = [primaryClient, port443Client, backupClient].filter(Boolean);
+    const allClients = [primaryClient, backupClient].filter(Boolean);
     this._mqttClients = allClients;
     this._bridgedMsgCache = new Map();
 
@@ -1371,6 +1360,10 @@ class UniversalSyncClient {
           this._emit('disconnected');
         }
       });
+
+      clientInst.on('error', () => {
+        // Silently swallow broker connection errors to prevent unhandled EventEmitter throws
+      });
     };
 
     allClients.forEach((cInst, idx) => {
@@ -1385,7 +1378,7 @@ class UniversalSyncClient {
       if (isControllerRole && this._state?.timers?.some(t => t.state === 'running')) {
         this._commitStateChange(true);
       }
-      if (this.role === 'master' && this.mqttClient && this.mqttClient.connected) {
+      if (this.role === 'master') {
         _masterPeriodicCycle++;
         const shouldBroadcastAll = (_masterPeriodicCycle % 3 === 0);
         try {
@@ -1399,7 +1392,10 @@ class UniversalSyncClient {
             const parsed = JSON.parse(raw);
             if (parsed && Array.isArray(parsed.timers) && parsed.timers.length > 0 && !parsed.isEmptyDefault) {
               const isRunning = parsed.timers.some(t => t.state === 'running');
-              if (isRunning || shouldBroadcastAll) {
+              if (isRunning && typeof this._publishHttpsRelayPayload === 'function') {
+                this._publishHttpsRelayPayload(rCode, parsed);
+              }
+              if (this.mqttClient && this.mqttClient.connected && (isRunning || shouldBroadcastAll)) {
                 const payload = JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: this._sanitizeStateForNetwork(parsed) });
                 this.mqttClient.publish(`${prefix}/${rCode}/state`, payload, { qos: 0, retain: true });
               }
@@ -3877,7 +3873,77 @@ class UniversalSyncClient {
     // 4. Debounced Cloud Store Backup (Serverless Persistence)
     this._scheduleCloudBackup();
 
+    // 5. Cloud HTTP Relay for watchOS & Restrictive Firewalls (Port 443 HTTPS)
+    this._publishHttpsRelayState();
+
     this._emit('room-state', this._state);
+  }
+
+  _publishHttpsRelayPayload(roomCode, rawState) {
+    if (!rawState || typeof rawState !== 'object') return;
+    const cleanR = String(roomCode || '').toUpperCase().trim().replace(/[^A-Z0-9_-]/g, '');
+    if (!cleanR) return;
+
+    try {
+      const sanitized = this._sanitizeStateForNetwork(rawState);
+      const payload = JSON.stringify({
+        id: cleanR,
+        name: sanitized.name || cleanR,
+        activeTimerId: sanitized.activeTimerId,
+        timers: (sanitized.timers || []).map(t => ({
+          id: t.id,
+          name: t.name,
+          duration: t.duration,
+          elapsed: t.elapsed,
+          state: t.state,
+          mode: t.mode,
+          startedAt: t.startedAt,
+          serverStartedAt: t.serverStartedAt,
+          warnAt: t.warnAt,
+          dangerAt: t.dangerAt
+        })),
+        message: sanitized.message || null,
+        updatedAt: sanitized.updatedAt || Date.now()
+      });
+
+      const topic = `showflow_v10_${cleanR}`;
+      if (typeof fetch === 'function') {
+        fetch(`https://ntfy.sh/${topic}`, {
+          method: 'POST',
+          headers: { 'Title': `ShowFlow ${cleanR}` },
+          body: payload
+        }).catch(() => {});
+
+        // If sub-stage (e.g. GALA-P1), also mirror to base event topic (e.g. showflow_v10_GALA)
+        const baseMatch = cleanR.match(/^([A-Z0-9]+)-P\d+$/);
+        if (baseMatch && baseMatch[1]) {
+          fetch(`https://ntfy.sh/showflow_v10_${baseMatch[1]}`, {
+            method: 'POST',
+            headers: { 'Title': `ShowFlow ${baseMatch[1]}` },
+            body: payload
+          }).catch(() => {});
+        }
+      }
+    } catch (_) {}
+  }
+
+  _publishHttpsRelayState() {
+    if (!this._state || this._state.isEmptyDefault) return;
+    const isWriter = this.role === 'controller' || this.role === 'operator' || this.role === 'master' || this.role === 'dc' || this.role === 'regies';
+    if (!isWriter) return;
+
+    const now = Date.now();
+    if (this._lastHttpsRelayPost && (now - this._lastHttpsRelayPost < 800)) {
+      if (this._httpsRelayTimer) return;
+      this._httpsRelayTimer = setTimeout(() => {
+        this._httpsRelayTimer = null;
+        this._publishHttpsRelayState();
+      }, 850);
+      return;
+    }
+    this._lastHttpsRelayPost = now;
+
+    this._publishHttpsRelayPayload(this.cleanRoom, this._state);
   }
 
   _startRenderLoop() {

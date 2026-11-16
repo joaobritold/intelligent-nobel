@@ -18,6 +18,7 @@
         var r = (p.get('room') || 'PALCO1').toUpperCase().trim();
         var $name = document.getElementById('watch-artist-name');
         var $clock = document.getElementById('watch-clock-time');
+        var $dot = document.getElementById('watch-status-dot');
         if ($name) $name.textContent = r;
         function updateFastClock() {
           if ($clock) {
@@ -30,6 +31,33 @@
         }
         updateFastClock();
         setInterval(updateFastClock, 1000);
+
+        // Pré-carregamento imediato via HTTPS Relay (100% seguro para Apple Watch sobre Bluetooth)
+        var cleanRoom = r.replace(/[^A-Z0-9_-]/g, '');
+        fetch('https://ntfy.sh/showflow_v10_' + cleanRoom + '/json?poll=1', { cache: 'no-store' })
+          .then(function(res) { return res.text(); })
+          .then(function(text) {
+            if (!text || !text.trim()) return;
+            var lines = text.trim().split('\n');
+            for (var i = lines.length - 1; i >= 0; i--) {
+              try {
+                var item = JSON.parse(lines[i]);
+                if (item.event === 'message' && item.message) {
+                  var incoming = JSON.parse(item.message);
+                  if (incoming && Array.isArray(incoming.timers)) {
+                    window.__INITIAL_WATCH_STATE__ = incoming;
+                    if ($dot) $dot.classList.remove('disconnected');
+                    var activeT = incoming.timers.find(function(t) { return t.id === incoming.activeTimerId; }) ||
+                                  incoming.timers.find(function(t) { return t.state === 'running'; });
+                    if (activeT && $name) {
+                      $name.textContent = activeT.name || incoming.name || r;
+                    }
+                    break;
+                  }
+                }
+              } catch (_) {}
+            }
+          }).catch(function() {});
       } catch (_) {}
     });
   </script>
