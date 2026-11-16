@@ -1,6 +1,6 @@
 {
   "name": "stagetimer",
-  "version": "1.0.0",
+  "version": "2.0.1",
   "description": "Professional stage timer for events and presentations",
   "main": "server.js",
   "scripts": {
