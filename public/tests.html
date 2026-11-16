@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>ShowFlow — Suíte de Testes Automatizados (v143)</title>
-  <link rel="stylesheet" href="css/common.css?v=143">
+  <title>ShowFlow — Suíte de Testes Automatizados (v144)</title>
+  <link rel="stylesheet" href="css/common.css?v=144">
   <style>
     body {
       background: #0f172a;
@@ -132,7 +132,7 @@
       <div class="test-title">
         <svg class="st-icon" viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#388bfd;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         <span>ShowFlow — Suíte de Testes Automatizados</span>
-        <span class="badge" style="background: rgba(56, 139, 253, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.3);">v143</span>
+        <span class="badge" style="background: rgba(56, 139, 253, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.3);">v144</span>
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
         <button id="btn-rerun" class="btn-run" type="button">Executar Novamente</button>
@@ -164,7 +164,8 @@
     </div>
   </div>
 
-  <script src="js/local-sync.js?v=143"></script>
+  <script src="js/local-sync.js?v=144"></script>
+  <script src="js/notifications.js?v=144"></script>
   <script>
     (function() {
       const tests = [];
@@ -475,6 +476,44 @@
         assert(links.operator && links.operator.includes('room=PALCO_ORG'), 'Link de operador deve conter sala');
         assert(links.operator.includes('org=FMM2026'), 'Link de operador deve conter namespace org');
         assert(links.cueSom && links.cueSom.includes('dept=Som'), 'Link de Som deve conter dept=Som');
+      });
+
+      it('T18 - Arbitragem de Telegram com Fallback de Presenca (Lineup / Viewer)',
+         'Garante lideranca do Lineup quando nao ha controladores, e cedencia perante Operador',
+         () => {
+        assert(typeof window.StageTimerNotifications === 'object', 'StageTimerNotifications deve estar disponivel');
+        const notif = window.StageTimerNotifications;
+
+        const mockLineupClient = {
+          role: 'lineup',
+          cleanRoom: 'PALCO_TEST',
+          deviceUuid: 'uuid_lineup_1',
+          getOnlineDevices: () => [
+            { deviceUuid: 'uuid_lineup_1', room: 'PALCO_TEST', view: 'lineup' }
+          ]
+        };
+        notif._syncClient = mockLineupClient;
+        notif._role = 'lineup';
+
+        // 1. Apenas Lineup online na sala -> Deve assumir a lideranca (0ms)
+        const delayAlone = notif._getTimerArbitrationDelayMs('PALCO_TEST');
+        assert(delayAlone === 0, 'Lineup isolado deve ter delay 0ms para disparar alertas');
+
+        // 2. Operador entra online na sala -> Lineup deve ceder (-1)
+        mockLineupClient.getOnlineDevices = () => [
+          { deviceUuid: 'uuid_lineup_1', room: 'PALCO_TEST', view: 'lineup' },
+          { deviceUuid: 'uuid_operator_1', room: 'PALCO_TEST', view: 'operator' }
+        ];
+        const delayWithOperator = notif._getTimerArbitrationDelayMs('PALCO_TEST');
+        assert(delayWithOperator === -1, 'Lineup deve ceder (-1) quando ha operador online');
+
+        // 3. Dois ecras passivos online (Lineup + Viewer) -> Lineup tem prioridade superior (rank 7 vs 8)
+        mockLineupClient.getOnlineDevices = () => [
+          { deviceUuid: 'uuid_lineup_1', room: 'PALCO_TEST', view: 'lineup' },
+          { deviceUuid: 'uuid_viewer_1', room: 'PALCO_TEST', view: 'viewer' }
+        ];
+        const delayLineupVsViewer = notif._getTimerArbitrationDelayMs('PALCO_TEST');
+        assert(delayLineupVsViewer === 0, 'Lineup tem prioridade sobre Viewer no modo Fallback');
       });
 
       // === EXECUTOR DE TESTES =========================================

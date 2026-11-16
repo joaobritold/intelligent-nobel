@@ -55,9 +55,9 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>ShowFlow — Painel Master (Super Régie)</title>
-  <link rel="stylesheet" href="css/master.css?v=143">
-  <script src="js/st-icons.js?v=143"></script>
-  <script src="js/auth.js?v=143"></script>
+  <link rel="stylesheet" href="css/master.css?v=144">
+  <script src="js/st-icons.js?v=144"></script>
+  <script src="js/auth.js?v=144"></script>
 </head>
 <body>
   <div class="master-container">
@@ -67,11 +67,11 @@
       <div class="master-header-main">
         <div class="master-header-left">
           <div class="master-crown"><svg class="st-icon text-accent" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></div>
-          <div>
+          <div class="master-header-titles">
             <h1 class="master-header-title">
-              Painel Master
+              <span class="master-title-text">Painel Master</span>
               <span class="badge">Super Régie</span>
-              <span class="badge" style="background: rgba(31, 111, 235, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.4); font-family: var(--font-mono); font-weight: 700;">v143</span>
+              <span class="badge" style="background: rgba(31, 111, 235, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.4); font-family: var(--font-mono); font-weight: 700;">v144</span>
             </h1>
             <div class="master-header-sub">
               Gestão Central de Ecrãs e Palcos
@@ -79,37 +79,43 @@
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <svg class="st-icon text-accent" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-            <select id="master-event-select" class="master-stage-select" style="min-width: 170px; font-weight: 700; color: #fff; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 0.85rem;" title="Escolher Palco / Sessão Ativa"></select>
-            <button id="master-top-copy-watch-btn" type="button" class="btn btn-sm btn-master-copy-watch" style="font-weight: 600; padding: 6px 10px; border-radius: 6px;" title="Copiar link do Relógio (Apple Watch) para o palco ativo"><svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16.51 17.35l-.85 4.65H8.34l-.85-4.65"></path><path d="M7.49 6.65l.85-4.65h7.32l.85 4.65"></path></svg> Relógio</button>
-            <button id="master-notif-btn" type="button" class="btn btn-sm" style="font-weight: 600; padding: 6px 10px; border-radius: 6px;" title="Configurar Alertas Telegram e Notificações no Telemóvel"><svg class="st-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg> Alertas</button>
-            <button id="master-org-btn" type="button" class="btn btn-sm" style="font-weight: 600; padding: 6px 10px; border-radius: 6px;" title="Configurar Organização, Namespace Multi-Tenant e Convites da Equipa"><svg class="st-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Organização & RBAC</button>
-          </div>
-          <div class="st-compact-nav">
-            <a href="index.html?portal=1" class="st-nav-home-btn master-nav-btn" title="Ir para o Início / Escolher Evento"><svg class="st-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Início</a>
-            <div class="st-nav-dropdown">
-              <button type="button" class="st-nav-trigger"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Ecrãs ▾</button>
-              <div class="st-nav-menu">
-                <div class="st-nav-group-label">Navegação</div>
-                <a href="index.html?portal=1" class="st-nav-item master-nav-btn"><svg class="st-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Escolher Evento (Início)</a>
-                <a href="index.html" class="st-nav-item master-nav-btn"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg> Menu do Evento</a>
-                <div class="st-nav-group-label" data-suite="concert">Controlo & Operação</div>
-                <a href="controller.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg> Configurador</a>
-                <a href="operator.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg> Modo Operador</a>
-                <div class="st-nav-group-label" data-suite="concert">Palco & Equipa</div>
-                <a href="viewer.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg> Modo Palco</a>
-                <a href="watch.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16.51 17.35l-.85 4.65H8.34l-.85-4.65"></path><path d="M7.49 6.65l.85-4.65h7.32l.85 4.65"></path></svg> Modo Apple Watch</a>
-                <a href="lineup.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg> Modo Lista</a>
-                <a href="regies.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg> Modo Régies</a>
-                <div class="st-nav-group-label" data-suite="theatre" style="display: none;">Teatro & Artes Cénicas</div>
-                <a href="dc.html" class="st-nav-item master-nav-btn" data-suite="theatre" style="display: none;"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg> Modo Jess (DC)</a>
-                <a href="cue-station.html" class="st-nav-item master-nav-btn" data-suite="theatre" style="display: none;"><svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Posto Técnico (Cue)</a>
-              </div>
+        <div class="master-header-right">
+          <div class="master-header-stage-group">
+            <div class="master-stage-select-wrap">
+              <svg class="st-icon text-accent" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+              <select id="master-event-select" class="master-stage-select" title="Escolher Palco / Sessão Ativa"></select>
+            </div>
+            <div class="master-header-quick-btns">
+              <button id="master-top-copy-watch-btn" type="button" class="btn btn-sm btn-master-copy-watch" title="Copiar link do Relógio (Apple Watch) para o palco ativo"><svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16.51 17.35l-.85 4.65H8.34l-.85-4.65"></path><path d="M7.49 6.65l.85-4.65h7.32l.85 4.65"></path></svg> <span>Relógio</span></button>
+              <button id="master-notif-btn" type="button" class="btn btn-sm" title="Configurar Alertas Telegram e Notificações no Telemóvel"><svg class="st-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg> <span>Alertas</span></button>
+              <button id="master-org-btn" type="button" class="btn btn-sm" title="Configurar Organização, Namespace Multi-Tenant e Convites da Equipa"><svg class="st-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> <span>Organização</span></button>
             </div>
           </div>
-          <div id="master-live-clock" class="master-clock-box">--:--:--</div>
+          <div class="master-header-nav-row">
+            <div class="st-compact-nav">
+              <a href="index.html?portal=1" class="st-nav-home-btn master-nav-btn" title="Ir para o Início / Escolher Evento"><svg class="st-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Início</a>
+              <div class="st-nav-dropdown">
+                <button type="button" class="st-nav-trigger"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Ecrãs ▾</button>
+                <div class="st-nav-menu">
+                  <div class="st-nav-group-label">Navegação</div>
+                  <a href="index.html?portal=1" class="st-nav-item master-nav-btn"><svg class="st-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Escolher Evento (Início)</a>
+                  <a href="index.html" class="st-nav-item master-nav-btn"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg> Menu do Evento</a>
+                  <div class="st-nav-group-label" data-suite="concert">Controlo & Operação</div>
+                  <a href="controller.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg> Configurador</a>
+                  <a href="operator.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg> Modo Operador</a>
+                  <div class="st-nav-group-label" data-suite="concert">Palco & Equipa</div>
+                  <a href="viewer.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg> Modo Palco</a>
+                  <a href="watch.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16.51 17.35l-.85 4.65H8.34l-.85-4.65"></path><path d="M7.49 6.65l.85-4.65h7.32l.85 4.65"></path></svg> Modo Apple Watch</a>
+                  <a href="lineup.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg> Modo Lista</a>
+                  <a href="regies.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg> Modo Régies</a>
+                  <div class="st-nav-group-label" data-suite="theatre" style="display: none;">Teatro & Artes Cénicas</div>
+                  <a href="dc.html" class="st-nav-item master-nav-btn" data-suite="theatre" style="display: none;"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg> Modo Jess (DC)</a>
+                  <a href="cue-station.html" class="st-nav-item master-nav-btn" data-suite="theatre" style="display: none;"><svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Posto Técnico (Cue)</a>
+                </div>
+              </div>
+            </div>
+            <div id="master-live-clock" class="master-clock-box">--:--:--</div>
+          </div>
         </div>
       </div>
     </header>
@@ -230,29 +236,31 @@
       </div>
 
       <!-- Quick Add Stage / Event Bar -->
-      <div class="master-quick-add" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 20px;">
-        <input id="master-new-stage-input" class="input" placeholder="Nome do novo evento (ex: Festival Rock, Peça Hamlet, Gala...)" autocomplete="off" style="flex: 2; min-width: 180px;">
-        <div style="display: flex; align-items: center; gap: 6px;">
-          <label for="master-new-event-type" style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap;">Tipo:</label>
-          <select id="master-new-event-type" class="input" style="width: auto; padding: 6px 10px; font-weight: 600;">
-            <option value="concert">Concerto</option>
-            <option value="theatre">Teatro</option>
-          </select>
+      <div class="master-quick-add">
+        <input id="master-new-stage-input" class="input master-quick-add-input" placeholder="Nome do novo evento (ex: Festival Rock, Peça Hamlet, Gala...)" autocomplete="off">
+        <div class="master-quick-add-selects">
+          <div class="master-quick-add-field">
+            <label for="master-new-event-type">Tipo:</label>
+            <select id="master-new-event-type" class="input">
+              <option value="concert">Concerto</option>
+              <option value="theatre">Teatro</option>
+            </select>
+          </div>
+          <div class="master-quick-add-field">
+            <label for="master-new-stages-count">Nº Palcos:</label>
+            <select id="master-new-stages-count" class="input master-stages-count-select">
+              <option value="1">1 Palco</option>
+              <option value="2">2 Palcos</option>
+              <option value="3">3 Palcos</option>
+              <option value="4">4 Palcos</option>
+              <option value="5">5 Palcos</option>
+              <option value="6">6 Palcos</option>
+              <option value="8">8 Palcos</option>
+              <option value="10">10 Palcos</option>
+            </select>
+          </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 6px;">
-          <label for="master-new-stages-count" style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap;">Nº Palcos:</label>
-          <select id="master-new-stages-count" class="input" style="width: auto; padding: 6px 10px; font-weight: 700; background: rgba(15, 23, 42, 0.95); border: 1.5px solid var(--accent); border-radius: 8px; color: #fff;">
-            <option value="1">1 Palco</option>
-            <option value="2">2 Palcos</option>
-            <option value="3">3 Palcos</option>
-            <option value="4">4 Palcos</option>
-            <option value="5">5 Palcos</option>
-            <option value="6">6 Palcos</option>
-            <option value="8">8 Palcos</option>
-            <option value="10">10 Palcos</option>
-          </select>
-        </div>
-        <button id="master-create-stage-btn" type="button" class="btn btn-primary" style="font-weight: 600; white-space: nowrap;">
+        <button id="master-create-stage-btn" type="button" class="btn btn-primary master-create-stage-btn">
           <svg class="st-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Criar Evento
         </button>
       </div>
@@ -407,7 +415,7 @@
           </div>
 
           <!-- Actions -->
-          <div style="display: flex; gap: 10px; margin-top: 8px;">
+          <div class="master-modal-actions" style="display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap;">
             <button type="button" id="mvm-save-btn" class="btn btn-primary" style="flex: 2; font-weight: 600; padding: 12px;">
               <svg class="st-icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Aplicar no Palco
             </button>
@@ -415,48 +423,6 @@
               <svg class="st-icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect></svg> Desativar
             </button>
             <button type="button" id="mvm-close-btn" class="btn">
-              Fechar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-            </button>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-              <span class="badge" style="font-size: 0.68rem; background: rgba(85,239,196,0.15); color: #55efc4; border: 1px solid rgba(85,239,196,0.3);">VDO.Ninja</span>
-              <span class="badge" style="font-size: 0.68rem; background: rgba(255,0,0,0.15); color: #ff7675; border: 1px solid rgba(255,0,0,0.3);">YouTube Live</span>
-              <span class="badge" style="font-size: 0.68rem; background: rgba(108,92,231,0.15); color: #c4b5fd; border: 1px solid rgba(108,92,231,0.3);">HLS (.m3u8)</span>
-            </div>
-            <p style="font-size: 0.74rem; color: #94a3b8; line-height: 1.4; margin: 2px 0 0;">
-              Clique em <strong>Gerar Link &amp; Abrir VDO.Ninja</strong> para preencher o URL automaticamente e abrir o emissor. No VDO.Ninja escolha a <strong>OBS Virtual Camera</strong> e clique em <strong>START</strong>. Depois basta clicar em <strong>Aplicar no Palco</strong> (pode fechar o Master a seguir).
-            </p>
-          </div>
-
-          <!-- Live Preview Screen inside Master -->
-          <div style="margin-top: 4px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1;">Pré-visualização da Régie:</span>
-              <span id="mvm-preview-status" class="badge" style="font-size: 0.65rem; background: rgba(56, 139, 253, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.3);">Aguardando</span>
-            </div>
-            <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.12);">
-              <video id="mvm-preview-video" playsinline autoplay muted style="width: 100%; height: 100%; object-fit: contain;"></video>
-              <iframe id="mvm-preview-iframe" allow="autoplay; fullscreen" style="width: 100%; height: 100%; border: none; display: none;"></iframe>
-              <div id="mvm-preview-placeholder" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #090b14; color: #64748b; font-size: 0.8rem; gap: 6px; text-align: center; padding: 10px;">
-                <svg class="st-icon" viewBox="0 0 24 24" style="width:24px;height:24px;stroke:#388bfd;"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                <span>Selecione a Virtual Cam ou insira o URL para pré-visualizar</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Actions -->
-          <div style="display: flex; gap: 10px; margin-top: 8px;">
-            <button type="button" id="mvm-save-btn" class="btn btn-primary" style="flex: 2; font-weight: 700; padding: 12px;">
-              Aplicar no Palco
-            </button>
-            <button type="button" id="mvm-disable-btn" class="btn btn-danger" style="flex: 1; font-weight: 700; padding: 12px;">
-              Desativar
-            </button>
-            <button type="button" id="mvm-close-btn" class="btn" style="background: rgba(255, 255, 255, 0.08); border-color: var(--border);">
               Fechar
             </button>
           </div>
@@ -698,17 +664,17 @@
 
     <!-- Footer Version Indicator -->
     <footer style="text-align: center; padding: 24px 0 12px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-      ShowFlow Super Régie Master • <span class="badge" style="background: rgba(31, 111, 235, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.4); padding: 2px 8px; border-radius: 4px; font-weight: 700;">v143</span>
+      ShowFlow Super Régie Master • <span class="badge" style="background: rgba(31, 111, 235, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.4); padding: 2px 8px; border-radius: 4px; font-weight: 700;">v144</span>
     </footer>
 
   </div>
 
-  <script src="js/mqtt.min.js?v=143"></script>
+  <script src="js/mqtt.min.js?v=144"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
-  <script src="js/pwa.js?v=143"></script>
-  <script src="js/local-sync.js?v=143"></script>
-  <script src="js/notifications.js?v=143"></script>
-  <script src="js/master.js?v=143"></script>
+  <script src="js/pwa.js?v=144"></script>
+  <script src="js/local-sync.js?v=144"></script>
+  <script src="js/notifications.js?v=144"></script>
+  <script src="js/master.js?v=144"></script>
 </body>
 </html>
 </body>

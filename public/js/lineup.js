@@ -29,9 +29,13 @@ try {
 } catch (e) {}
 
 const client = new StageTimerClient({
-  role: 'viewer',
+  role: 'lineup',
   room: roomId,
 });
+
+if (window.StageTimerNotifications && typeof window.StageTimerNotifications.initWatcher === 'function') {
+  window.StageTimerNotifications.initWatcher(client, 'lineup');
+}
 
 let state = null;
 

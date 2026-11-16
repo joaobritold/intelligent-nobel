@@ -37,6 +37,10 @@ const client = new StageTimerClient({
   room: roomId,
 });
 
+if (window.StageTimerNotifications && typeof window.StageTimerNotifications.initWatcher === 'function') {
+  window.StageTimerNotifications.initWatcher(client, isWatchPage ? 'watch' : 'viewer');
+}
+
 let state = null;
 let clockInterval = null;
 

@@ -773,20 +773,41 @@
     },
 
     _isTelegramLeader(room) {
-      const cleanRoom = String(room || 'PALCO1').toUpperCase().trim();
+      const cleanRoom = String(room || this._syncClient?.cleanRoom || 'PALCO1').toUpperCase().trim();
       const roomKey = `stagetimer_tg_leader_${cleanRoom}`;
       const now = Date.now();
       const myId = this._getMyClientId();
+      const myRole = String(this._role || this._syncClient?.role || '').toLowerCase();
+
+      const rankOf = (r) => {
+        const rl = String(r || '').toLowerCase();
+        if (rl === 'operator') return 1;
+        if (rl === 'controller') return 2;
+        if (rl === 'master') return 3;
+        if (rl === 'regies') return 4;
+        if (rl === 'dc') return 5;
+        if (rl === 'cue-station') return 6;
+        if (rl === 'lineup') return 7;
+        if (rl === 'viewer') return 8;
+        if (rl === 'watch') return 9;
+        return 50;
+      };
 
       try {
         const raw = localStorage.getItem(roomKey);
         if (raw) {
           const leader = JSON.parse(raw);
-          if (leader.id === myId || (now - (leader.ts || 0)) > 4500) {
-            localStorage.setItem(roomKey, JSON.stringify({ id: myId, ts: now, role: this._role }));
-            return true;
+          const isFresh = (now - (leader.ts || 0)) <= 4500;
+          if (isFresh && leader.id !== myId) {
+            const leaderRank = rankOf(leader.role);
+            const myRank = rankOf(myRole);
+            // Um ecrã com maior prioridade (ex: Operador) pode reivindicar a liderança de um ecrã passivo (ex: Lineup)
+            if (leaderRank <= myRank) {
+              return false;
+            }
           }
-          return false;
+          localStorage.setItem(roomKey, JSON.stringify({ id: myId, ts: now, role: this._role }));
+          return true;
         }
         localStorage.setItem(roomKey, JSON.stringify({ id: myId, ts: now, role: this._role }));
         return true;
@@ -796,13 +817,8 @@
     },
 
     _getTimerArbitrationDelayMs(room) {
-      const cleanRoom = String(room || 'PALCO1').toUpperCase().trim();
+      const cleanRoom = String(room || this._syncClient?.cleanRoom || 'PALCO1').toUpperCase().trim();
       const myRole = String(this._role || this._syncClient?.role || '').toLowerCase();
-      // Only control screens dispatch timer alerts to Telegram
-      if (myRole !== 'operator' && myRole !== 'controller' && myRole !== 'master') {
-        return -1; // Disabled for passive screens (regies, viewer, lineup, cue-station, dc)
-      }
-
       const myUuid = String(this._syncClient?.deviceUuid || '').trim();
       const online = (this._syncClient && typeof this._syncClient.getOnlineDevices === 'function')
         ? this._syncClient.getOnlineDevices()
@@ -813,14 +829,41 @@
         if (rl === 'operator') return 1;
         if (rl === 'controller') return 2;
         if (rl === 'master') return 3;
-        return 99;
+        if (rl === 'regies') return 4;
+        if (rl === 'dc') return 5;
+        if (rl === 'cue-station') return 6;
+        if (rl === 'lineup') return 7;
+        if (rl === 'viewer') return 8;
+        if (rl === 'watch') return 9;
+        return 50;
       };
 
-      const candidates = online.filter(d => {
+      // 1. Identificar se algum ecrã de controlo dedicado (Operador, Controlador, Master) está ativo online
+      const isControlPeer = (d) => {
         const dRoom = String(d.room || '').toUpperCase().trim();
         const dRole = String(d.view || d.role || '').toLowerCase();
         if (dRole === 'master') return true;
         return dRoom === cleanRoom && (dRole === 'operator' || dRole === 'controller');
+      };
+
+      const hasActiveControlPeer = online.some(d => {
+        if (!d.deviceUuid || d.deviceUuid === myUuid) return false;
+        return isControlPeer(d);
+      });
+
+      const isMyControlRole = myRole === 'operator' || myRole === 'controller' || myRole === 'master';
+
+      // Se houver ecrãs de controlo ativos online, os ecrãs passivos cedem a vez
+      if (!isMyControlRole && hasActiveControlPeer) {
+        return -1;
+      }
+
+      // 2. Filtrar candidatos da sala atual elegíveis para liderança (incluindo ecrãs passivos em modo Fallback)
+      const candidates = online.filter(d => {
+        const dRoom = String(d.room || '').toUpperCase().trim();
+        const dRole = String(d.view || d.role || '').toLowerCase();
+        if (dRole === 'master') return true;
+        return dRoom === cleanRoom;
       });
 
       if (candidates.length <= 1) {
@@ -839,7 +882,7 @@
         }
       }
 
-      // Primary device fires at 0ms; backup device waits 1500ms and cancels when tg_event_claimed arrives
+      // Dispositivo principal dispara a 0ms; dispositivo de reserva aguarda 1500ms e cancela se tg_event_claimed chegar
       return hasHigherPriorityPeer ? 1500 : 0;
     },
 
@@ -1099,6 +1142,10 @@
     checkStateEvents(state, opts = {}) {
       if (!state) return;
       const isOrigin = Boolean(opts && opts.isOrigin);
+      const myRole = String(this._role || this._syncClient?.role || '').toLowerCase();
+      const isPassiveViewerRole = myRole === 'lineup' || myRole === 'viewer' || myRole === 'watch';
+      // Ecrãs passivos (Lineup/Viewer/Watch) apenas monitorizam ticks de cronómetro (checkTimerTick); nunca disparam alertas de eventos manuais
+      if (isPassiveViewerRole && !isOrigin) return;
       const roomCode = String(state.id || this._syncClient?.cleanRoom || 'PALCO1').toUpperCase().trim();
       const rState = this._getRoomWatchState(roomCode);
       const stageName = state.name || roomCode || 'Palco';
