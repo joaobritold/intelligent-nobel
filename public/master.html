@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>ShowFlow — Painel Master (Super Régie)</title>
-  <link rel="stylesheet" href="css/master.css?v=141">
-  <script src="js/auth.js?v=141"></script>
+  <link rel="stylesheet" href="css/master.css?v=142">
+  <script src="js/auth.js?v=142"></script>
 </head>
 <body>
   <div class="master-container">
@@ -70,7 +70,7 @@
             <h1 class="master-header-title">
               Painel Master
               <span class="badge">Super Régie</span>
-              <span class="badge" style="background: rgba(253, 203, 110, 0.18); color: #fdcb6e; border-color: #fdcb6e; font-family: var(--font-mono); font-weight: 700;">v141</span>
+              <span class="badge" style="background: rgba(253, 203, 110, 0.18); color: #fdcb6e; border-color: #fdcb6e; font-family: var(--font-mono); font-weight: 700;">v142</span>
             </h1>
             <div class="master-header-sub">
               Gestão Central de Ecrãs e Palcos
@@ -84,6 +84,7 @@
             <select id="master-event-select" class="master-stage-select" style="min-width: 170px; font-weight: 700; color: #55efc4; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #00b894; border-radius: 8px; padding: 6px 10px; font-size: 0.85rem;" title="👑 Escolher Palco / Sessão Ativa"></select>
             <button id="master-top-copy-watch-btn" type="button" class="btn btn-sm btn-master-copy-watch" style="background: rgba(0, 255, 136, 0.2); border: 1.5px solid #00ff88; color: #55efc4; font-weight: 700; padding: 6px 10px; border-radius: 8px;" title="Copiar link do Relógio (Apple Watch) para o palco ativo">⌚ Relógio</button>
             <button id="master-notif-btn" type="button" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border: 1px solid rgba(108, 92, 231, 0.5); color: #c4b5fd; font-weight: 700; padding: 6px 10px; border-radius: 8px;" title="Configurar Alertas Telegram e Notificações no Telemóvel">🔔 Alertas</button>
+            <button id="master-org-btn" type="button" class="btn btn-sm" style="background: rgba(253, 203, 110, 0.18); border: 1.5px solid #fdcb6e; color: #fdcb6e; font-weight: 700; padding: 6px 10px; border-radius: 8px;" title="Configurar Organização, Namespace Multi-Tenant e Convites da Equipa">🏢 Organização & RBAC</button>
           </div>
           <div class="st-compact-nav">
             <a href="index.html?portal=1" class="st-nav-home-btn master-nav-btn" title="Ir para o Início / Escolher Evento">🏠 Início</a>
@@ -589,21 +590,81 @@
       </div>
     </div>
 
+  <!-- Modal: Organização & Gestão de Equipa (RBAC) -->
+  <div id="master-org-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal" style="max-width: 560px; width: 100%; background: #1a1a2e; border: 1.5px solid #fdcb6e; border-radius: 16px; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
+        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #fdcb6e; display: flex; align-items: center; gap: 8px;">
+          <span>🏢</span> Organização & Gestão de Equipa (RBAC)
+        </h3>
+        <button id="master-org-close-x" type="button" style="background: none; border: none; font-size: 1.4rem; color: #94a3b8; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px;">
+        <div>
+          <label style="display: block; font-size: 0.75rem; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">Nome da Organização / Empresa de AV</label>
+          <input id="org-name-input" type="text" class="input" placeholder="Ex: Festival FMM Sines / Som & Luz Rental" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff;">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label style="display: block; font-size: 0.75rem; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">CÓDIGO DE ISOLAMENTO (NAMESPACE)</label>
+            <input id="org-code-input" type="text" class="input input-mono" placeholder="Ex: FMM2026" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fdcb6e; font-weight: 700; text-transform: uppercase;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">PLANO DA CONTA</label>
+            <select id="org-plan-select" class="input" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #55efc4; font-weight: 700;">
+              <option value="festival_enterprise">👑 Festival Enterprise (Ilimitado)</option>
+              <option value="pro">⭐ ShowFlow Pro (Multi-Palco)</option>
+              <option value="free">🟢 Free Tier (Palco Único)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background: rgba(253, 203, 110, 0.08); border: 1px solid rgba(253, 203, 110, 0.25); border-radius: 8px; padding: 10px 14px; font-size: 0.75rem; color: #e2e8f0; line-height: 1.4;">
+          💡 <strong>Isolamento Multi-Tenant:</strong> O código de namespace garante que a sua equipa nunca colide com outros festivais no mesmo broker MQTT, mesmo alojado no GitHub Pages.
+        </div>
+
+        <div style="margin-top: 6px;">
+          <label style="display: block; font-size: 0.75rem; color: #94a3b8; font-weight: 700; margin-bottom: 6px;">LINKS RÁPIDOS DE CONVITE COM PAPEL (RBAC):</label>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px;">
+            <button type="button" class="btn btn-sm btn-copy-invite" data-role="operator" style="background: rgba(108, 92, 231, 0.2); border: 1px solid #6c5ce7; color: #c4b5fd; font-size: 0.72rem; padding: 6px 8px; text-align: left;">📱 Link Operador Mobile</button>
+            <button type="button" class="btn btn-sm btn-copy-invite" data-role="controller" style="background: rgba(9, 132, 227, 0.2); border: 1px solid #0984e3; color: #74b9ff; font-size: 0.72rem; padding: 6px 8px; text-align: left;">🎛️ Link Configurador</button>
+            <button type="button" class="btn btn-sm btn-copy-invite" data-role="viewer" style="background: rgba(0, 184, 148, 0.2); border: 1px solid #00b894; color: #55efc4; font-size: 0.72rem; padding: 6px 8px; text-align: left;">📺 Link Ecrã Palco</button>
+            <button type="button" class="btn btn-sm btn-copy-invite" data-role="watch" style="background: rgba(0, 255, 136, 0.2); border: 1px solid #00ff88; color: #55efc4; font-size: 0.72rem; padding: 6px 8px; text-align: left;">⌚ Link Apple Watch</button>
+            <button type="button" class="btn btn-sm btn-copy-invite" data-role="cueSom" style="background: rgba(225, 112, 85, 0.2); border: 1px solid #e17055; color: #fab1a0; font-size: 0.72rem; padding: 6px 8px; text-align: left;">🔊 Posto Som (Cue)</button>
+            <button type="button" class="btn btn-sm btn-copy-invite" data-role="cueLuz" style="background: rgba(253, 203, 110, 0.2); border: 1px solid #fdcb6e; color: #ffeaa7; font-size: 0.72rem; padding: 6px 8px; text-align: left;">💡 Posto Luz (Cue)</button>
+            <button type="button" class="btn btn-sm btn-copy-invite" data-role="regies" style="background: rgba(162, 155, 254, 0.2); border: 1px solid #a29bfe; color: #c4b5fd; font-size: 0.72rem; padding: 6px 8px; text-align: left;">📟 Modo Régies FOH</button>
+            <button type="button" class="btn btn-sm btn-copy-invite" data-role="dc" style="background: rgba(253, 121, 168, 0.2); border: 1px solid #fd79a8; color: #fd79a8; font-size: 0.72rem; padding: 6px 8px; text-align: left;">🎭 Diretora de Cena</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+        <button id="master-org-clear-btn" type="button" class="btn btn-sm" style="background: rgba(235, 87, 87, 0.15); border: 1px solid rgba(235, 87, 87, 0.4); color: #ff7675;">Limpar Namespace</button>
+        <div style="display: flex; gap: 8px;">
+          <button id="master-org-cancel-btn" type="button" class="btn btn-sm">Fechar</button>
+          <button id="master-org-save-btn" type="button" class="btn btn-sm btn-primary" style="background: #fdcb6e; border-color: #fdcb6e; color: #111; font-weight: 800;">Guardar Organização</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
     <!-- Toast Notification -->
     <div id="master-toast" class="master-toast"></div>
 
     <!-- Footer Version Indicator -->
     <footer style="text-align: center; padding: 24px 0 12px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-      ShowFlow Super Régie Master • <span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(253, 203, 110, 0.4); font-weight: 700;">v141</span>
+      ShowFlow Super Régie Master • <span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(253, 203, 110, 0.4); font-weight: 700;">v142</span>
     </footer>
 
   </div>
 
-  <script src="js/mqtt.min.js?v=141"></script>
+  <script src="js/mqtt.min.js?v=142"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
-  <script src="js/pwa.js?v=141"></script>
-  <script src="js/local-sync.js?v=141"></script>
-  <script src="js/notifications.js?v=141"></script>
-  <script src="js/master.js?v=141"></script>
+  <script src="js/pwa.js?v=142"></script>
+  <script src="js/local-sync.js?v=142"></script>
+  <script src="js/notifications.js?v=142"></script>
+  <script src="js/master.js?v=142"></script>
 </body>
 </html>

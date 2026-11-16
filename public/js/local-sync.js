@@ -34,7 +34,20 @@ class UniversalSyncClient {
       sessionStorage.setItem('stagetimer_active_room', this.cleanRoom);
     } catch (e) {}
 
-    const orgNs = (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_org_namespace') : null) || '';
+    let orgNs = (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_org_namespace') : null) || '';
+    if (typeof window !== 'undefined' && window.location) {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const orgParam = urlParams.get('org');
+        if (orgParam) {
+          orgNs = orgParam.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+          if (orgNs) {
+            localStorage.setItem('stagetimer_org_namespace', orgNs);
+          }
+        }
+      } catch (_) {}
+    }
+    this.orgNamespace = orgNs;
     const prefix = orgNs ? `stagetimer_v10/${orgNs}` : 'stagetimer_v10';
     this.mqttTopicPrefix = prefix;
     this.channelName = `stagetimer_v10_${this.cleanRoom}`;
@@ -561,7 +574,7 @@ class UniversalSyncClient {
       const sender = String(cmdObj.sender || '');
       const secret = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('stagetimer_auth_token') : null) ||
                      (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_auth_token') : null) ||
-                     'st_showflow_cmd_sig_v141';
+                     'st_showflow_cmd_sig_v142';
       const raw = `${action}:${target}:${sentAt}:${sender}:${secret.slice(-16)}`;
       let hash = 0x811c9dc5;
       for (let i = 0; i < raw.length; i++) {
@@ -943,7 +956,7 @@ class UniversalSyncClient {
       if (typeof document !== 'undefined' && !this._mqttScriptLoading) {
         this._mqttScriptLoading = true;
         const s = document.createElement('script');
-        s.src = 'js/mqtt.min.js?v=141';
+        s.src = 'js/mqtt.min.js?v=142';
         s.onload = () => {
           this._mqttScriptLoading = false;
           this._initCloudSync();
@@ -1518,74 +1531,223 @@ class UniversalSyncClient {
     }, delayMs);
   }
 
-  async saveCloudSnapshotNow(label = '') {
-    if (!this._state || this._state.isEmptyDefault) return false;
-    const isWriter = this.role === 'controller' || this.role === 'operator' || this.role === 'master' || this.role === 'dc';
-    if (!isWriter) return false;
-
-    try {
-      const endpoint = (typeof window !== 'undefined' && window.location.origin)
-        ? `${window.location.origin}/.netlify/functions/cloud-store`
-        : '/.netlify/functions/cloud-store';
-
-      const payload = {
-        action: 'save_state',
-        room: this.cleanRoom,
-        sender: this.clientId,
-        label: label || `Snapshot ${this.role}`,
-        state: this._sanitizeStateForNetwork(this._state)
-      };
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) return false;
-      const json = await res.json();
-      if (json && json.ok) {
-        this._lastCloudBackupAt = Date.now();
-        this._lastCloudRevision = json.revision;
-        this._emit('cloud-backup-saved', { room: this.cleanRoom, revision: json.revision });
-        return true;
-      }
-      return false;
-    } catch (_) {
-      return false;
-    }
+  _getStaticSnapshotsStorageKey(roomCode = this.cleanRoom) {
+    const clean = String(roomCode || this.cleanRoom || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    return `stagetimer_cloud_snapshots_${clean}`;
   }
 
-  async fetchCloudRevisions(roomCode = this.cleanRoom) {
-    const clean = String(roomCode || this.cleanRoom || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  _getLocalSnapshots(roomCode = this.cleanRoom) {
     try {
-      const endpoint = `/.netlify/functions/cloud-store?action=list_revisions&room=${encodeURIComponent(clean)}`;
-      const res = await fetch(endpoint);
-      if (!res.ok) return [];
-      const json = await res.json();
-      return Array.isArray(json?.revisions) ? json.revisions : [];
+      const key = this._getStaticSnapshotsStorageKey(roomCode);
+      const raw = localStorage.getItem(key);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
     } catch (_) {
       return [];
     }
   }
 
-  async restoreCloudRevision(roomCode = this.cleanRoom, revId) {
-    if (!revId) return false;
-    const clean = String(roomCode || this.cleanRoom || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  _saveLocalSnapshot(roomCode = this.cleanRoom, revSummary, stateData) {
     try {
-      const endpoint = `/.netlify/functions/cloud-store?action=get_state&room=${encodeURIComponent(clean)}&revId=${encodeURIComponent(revId)}`;
-      const res = await fetch(endpoint);
-      if (!res.ok) return false;
-      const json = await res.json();
-      if (json && json.ok && json.state) {
-        this._applyIncomingState(json.state, true);
-        this._commitStateChange(true);
-        return true;
-      }
-      return false;
+      const key = this._getStaticSnapshotsStorageKey(roomCode);
+      let list = this._getLocalSnapshots(roomCode);
+      list.unshift({
+        ...revSummary,
+        state: stateData
+      });
+      if (list.length > 25) list = list.slice(0, 25);
+      localStorage.setItem(key, JSON.stringify(list));
+      return true;
     } catch (_) {
       return false;
     }
+  }
+
+  async saveCloudSnapshotNow(label = '') {
+    if (!this._state || this._state.isEmptyDefault) return false;
+    const isWriter = this.role === 'controller' || this.role === 'operator' || this.role === 'master' || this.role === 'dc';
+    if (!isWriter) return false;
+
+    const now = Date.now();
+    const revId = `rev_${now}_${Math.random().toString(36).substr(2, 6)}`;
+    const sanitized = this._sanitizeStateForNetwork(this._state);
+
+    const revSummary = {
+      revId,
+      savedAt: now,
+      savedTimeStr: new Date(now).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      timerCount: Array.isArray(sanitized.timers) ? sanitized.timers.length : 0,
+      showState: sanitized.theatre?.showState || 'pre',
+      currentDay: sanitized.currentDay || 1,
+      label: label || `Snapshot ${this.role}`,
+      sender: this.clientId
+    };
+
+    // 1. Always store locally in browser (100% functional on GitHub Pages & offline)
+    this._saveLocalSnapshot(this.cleanRoom, revSummary, sanitized);
+    this._lastCloudBackupAt = now;
+    this._lastCloudRevision = revId;
+
+    // 2. Relay to Local Hub if connected in the venue
+    this._sendLocalHub({
+      type: 'save_snapshot',
+      room: this.cleanRoom,
+      revision: revSummary,
+      data: sanitized
+    });
+
+    // 3. Attempt serverless store (silently ignored on GitHub Pages without errors)
+    try {
+      const isGitHubPages = typeof window !== 'undefined' && window.location.hostname.endsWith('github.io');
+      if (!isGitHubPages && typeof fetch === 'function') {
+        const endpoint = (window.location.origin ? `${window.location.origin}` : '') + '/.netlify/functions/cloud-store';
+        fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'save_state',
+            room: this.cleanRoom,
+            sender: this.clientId,
+            label: revSummary.label,
+            state: sanitized
+          })
+        }).catch(() => {});
+      }
+    } catch (_) {}
+
+    this._emit('cloud-backup-saved', { room: this.cleanRoom, revision: revId });
+    return true;
+  }
+
+  async fetchCloudRevisions(roomCode = this.cleanRoom) {
+    const clean = String(roomCode || this.cleanRoom || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    const localRevs = this._getLocalSnapshots(clean).map(item => ({
+      revId: item.revId,
+      savedAt: item.savedAt,
+      savedTimeStr: item.savedTimeStr,
+      timerCount: item.timerCount,
+      showState: item.showState,
+      currentDay: item.currentDay,
+      label: item.label,
+      sender: item.sender,
+      isLocal: true
+    }));
+
+    // If serverless is available, merge remote revisions
+    try {
+      const isGitHubPages = typeof window !== 'undefined' && window.location.hostname.endsWith('github.io');
+      if (!isGitHubPages && typeof fetch === 'function') {
+        const endpoint = `/.netlify/functions/cloud-store?action=list_revisions&room=${encodeURIComponent(clean)}`;
+        const res = await fetch(endpoint).catch(() => null);
+        if (res && res.ok) {
+          const json = await res.json().catch(() => null);
+          if (json && Array.isArray(json.revisions)) {
+            const seen = new Set(localRevs.map(r => r.revId));
+            json.revisions.forEach(r => {
+              if (!seen.has(r.revId)) {
+                localRevs.push(r);
+                seen.add(r.revId);
+              }
+            });
+          }
+        }
+      }
+    } catch (_) {}
+
+    return localRevs.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+  }
+
+  async restoreCloudRevision(roomCode = this.cleanRoom, revId) {
+    if (!revId) return false;
+    const clean = String(roomCode || this.cleanRoom || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+
+    // 1. Check local snapshots store (instant & works on GitHub Pages)
+    const localList = this._getLocalSnapshots(clean);
+    const found = localList.find(item => item.revId === revId);
+    if (found && found.state) {
+      this._applyIncomingState(found.state, true);
+      this._commitStateChange(true);
+      return true;
+    }
+
+    // 2. Fallback to serverless store if not in local browser
+    try {
+      const endpoint = `/.netlify/functions/cloud-store?action=get_state&room=${encodeURIComponent(clean)}&revId=${encodeURIComponent(revId)}`;
+      const res = await fetch(endpoint).catch(() => null);
+      if (res && res.ok) {
+        const json = await res.json().catch(() => null);
+        if (json && json.ok && json.state) {
+          this._applyIncomingState(json.state, true);
+          this._commitStateChange(true);
+          return true;
+        }
+      }
+    } catch (_) {}
+
+    return false;
+  }
+
+  getOrganizationProfile() {
+    try {
+      const code = this.orgNamespace || localStorage.getItem('stagetimer_org_namespace') || '';
+      const name = localStorage.getItem('stagetimer_org_name') || (code ? `Organização ${code}` : 'ShowFlow Global');
+      const plan = localStorage.getItem('stagetimer_org_plan') || 'festival_enterprise';
+      return { code, name, plan };
+    } catch (_) {
+      return { code: '', name: 'ShowFlow Global', plan: 'festival_enterprise' };
+    }
+  }
+
+  setOrganizationProfile(profile) {
+    if (!profile || typeof profile !== 'object') return false;
+    try {
+      const cleanCode = String(profile.code || '').toUpperCase().trim().replace(/[^A-Z0-9_-]/g, '');
+      const cleanName = String(profile.name || '').trim();
+      const plan = String(profile.plan || 'festival_enterprise').toLowerCase().trim();
+
+      if (cleanCode) {
+        localStorage.setItem('stagetimer_org_namespace', cleanCode);
+        this.orgNamespace = cleanCode;
+      } else {
+        localStorage.removeItem('stagetimer_org_namespace');
+        this.orgNamespace = '';
+      }
+
+      if (cleanName) {
+        localStorage.setItem('stagetimer_org_name', cleanName);
+      }
+      localStorage.setItem('stagetimer_org_plan', plan);
+
+      this._emit('org-profile-update', { code: cleanCode, name: cleanName, plan });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  generateTeamInviteLinks(targetRoom = this.cleanRoom) {
+    const room = String(targetRoom || this.cleanRoom || 'PALCO1').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    const org = this.orgNamespace || '';
+    const orgSuffix = org ? `&org=${encodeURIComponent(org)}` : '';
+
+    const base = (typeof window !== 'undefined' && window.location)
+      ? window.location.href.split('?')[0].replace(/\/[^/]*$/, '/')
+      : './';
+
+    return {
+      admin: `${base}master.html?room=${room}${orgSuffix}`,
+      controller: `${base}controller.html?room=${room}${orgSuffix}`,
+      operator: `${base}operator.html?room=${room}${orgSuffix}`,
+      dc: `${base}dc.html?room=${room}${orgSuffix}`,
+      cueSom: `${base}cue-station.html?room=${room}&dept=Som${orgSuffix}`,
+      cueLuz: `${base}cue-station.html?room=${room}&dept=Luz${orgSuffix}`,
+      cueVideo: `${base}cue-station.html?room=${room}&dept=Vídeo${orgSuffix}`,
+      cuePalco: `${base}cue-station.html?room=${room}&dept=Palco${orgSuffix}`,
+      regies: `${base}regies.html?room=${room}&station=foh${orgSuffix}`,
+      viewer: `${base}viewer.html?room=${room}${orgSuffix}`,
+      watch: `${base}watch.html?room=${room}${orgSuffix}`,
+      lineup: `${base}lineup.html?room=${room}${orgSuffix}`
+    };
   }
 
   async _fetchInitialCloudBackupIfEmpty() {

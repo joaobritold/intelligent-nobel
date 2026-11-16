@@ -2687,6 +2687,84 @@
     window.StageTimerNotifications.initWatcher(masterClient, 'master');
   }
 
+  // ─── Organization & RBAC Management Modal ──────────────────────────
+  const $orgModal = document.getElementById('master-org-modal');
+  const $orgBtn = document.getElementById('master-org-btn');
+  const $orgCloseX = document.getElementById('master-org-close-x');
+  const $orgCancelBtn = document.getElementById('master-org-cancel-btn');
+  const $orgSaveBtn = document.getElementById('master-org-save-btn');
+  const $orgClearBtn = document.getElementById('master-org-clear-btn');
+  const $orgNameInput = document.getElementById('org-name-input');
+  const $orgCodeInput = document.getElementById('org-code-input');
+  const $orgPlanSelect = document.getElementById('org-plan-select');
+
+  function openOrgModal() {
+    if (!$orgModal) return;
+    const prof = masterClient.getOrganizationProfile ? masterClient.getOrganizationProfile() : { name: '', code: '', plan: 'festival_enterprise' };
+    if ($orgNameInput) $orgNameInput.value = prof.name || '';
+    if ($orgCodeInput) $orgCodeInput.value = prof.code || '';
+    if ($orgPlanSelect) $orgPlanSelect.value = prof.plan || 'festival_enterprise';
+    $orgModal.style.display = 'flex';
+  }
+
+  function closeOrgModal() {
+    if ($orgModal) $orgModal.style.display = 'none';
+  }
+
+  if ($orgBtn) $orgBtn.addEventListener('click', openOrgModal);
+  if ($orgCloseX) $orgCloseX.addEventListener('click', closeOrgModal);
+  if ($orgCancelBtn) $orgCancelBtn.addEventListener('click', closeOrgModal);
+
+  if ($orgSaveBtn) {
+    $orgSaveBtn.addEventListener('click', () => {
+      const name = $orgNameInput ? $orgNameInput.value.trim() : '';
+      const code = $orgCodeInput ? $orgCodeInput.value.trim().toUpperCase() : '';
+      const plan = $orgPlanSelect ? $orgPlanSelect.value : 'festival_enterprise';
+
+      masterClient.setOrganizationProfile({ name, code, plan });
+      showToast('Configurações da Organização guardadas!', 'success');
+      closeOrgModal();
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    });
+  }
+
+  if ($orgClearBtn) {
+    $orgClearBtn.addEventListener('click', () => {
+      if (!confirm('Deseja repor o namespace para Global (sem isolamento)?')) return;
+      masterClient.setOrganizationProfile({ name: 'ShowFlow Global', code: '', plan: 'festival_enterprise' });
+      showToast('Namespace reposto para Global.', 'info');
+      closeOrgModal();
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    });
+  }
+
+  // Copy RBAC invite links
+  if ($orgModal) {
+    $orgModal.querySelectorAll('.btn-copy-invite').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const role = e.currentTarget.getAttribute('data-role');
+        const activeStage = getActiveMasterStageCode();
+        const links = masterClient.generateTeamInviteLinks ? masterClient.generateTeamInviteLinks(activeStage) : {};
+        const targetUrl = links[role] || window.location.href;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(targetUrl).then(() => {
+            showToast('Link copiado para a área de transferência!', 'success');
+          }).catch(() => {
+            prompt('Copie o link de convite:', targetUrl);
+          });
+        } else {
+          prompt('Copie o link de convite:', targetUrl);
+        }
+      });
+    });
+  }
+
   // Initial Boot
   preloadLocalStagesState();
   masterClient.connect();

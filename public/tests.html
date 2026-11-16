@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>ShowFlow — Suíte de Testes Automatizados (v141)</title>
-  <link rel="stylesheet" href="css/common.css?v=141">
+  <title>ShowFlow — Suíte de Testes Automatizados (v142)</title>
+  <link rel="stylesheet" href="css/common.css?v=142">
   <style>
     body {
       background: #0f172a;
@@ -132,7 +132,7 @@
       <div class="test-title">
         <span>🧪</span>
         <span>ShowFlow — Suíte de Testes Automatizados</span>
-        <span class="badge" style="background: rgba(99, 102, 241, 0.2); color: #c7d2fe; border: 1px solid rgba(99, 102, 241, 0.4);">v141</span>
+        <span class="badge" style="background: rgba(99, 102, 241, 0.2); color: #c7d2fe; border: 1px solid rgba(99, 102, 241, 0.4);">v142</span>
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
         <button id="btn-rerun" class="btn-run" type="button">▶ Executar Novamente</button>
@@ -164,7 +164,7 @@
     </div>
   </div>
 
-  <script src="js/local-sync.js?v=141"></script>
+  <script src="js/local-sync.js?v=142"></script>
   <script>
     (function() {
       const tests = [];
@@ -461,6 +461,20 @@
         assert(typeof client.restoreCloudRevision === 'function', 'restoreCloudRevision deve ser uma funcao');
         const sanitized = client._sanitizeStateForNetwork(client._state);
         assert(sanitized.timers.length === 1 && sanitized.timers[0].title === 'Artista Backup', 'Payload de backup cloud integro');
+      });
+
+      it('T17 - Gestao de Organizacao, Namespace e Links RBAC', 
+         'Valida isolamento multi-tenant de topicos e gerador de convites de equipa', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'master', room: 'PALCO_ORG' });
+        client.setOrganizationProfile({ name: 'Festival FMM 2026', code: 'FMM2026', plan: 'festival_enterprise' });
+        const prof = client.getOrganizationProfile();
+        assert(prof.code === 'FMM2026', 'Codigo de namespace deve ser FMM2026');
+        assert(prof.plan === 'festival_enterprise', 'Plano deve ser festival_enterprise');
+        const links = client.generateTeamInviteLinks('PALCO_ORG');
+        assert(links.operator && links.operator.includes('room=PALCO_ORG'), 'Link de operador deve conter sala');
+        assert(links.operator.includes('org=FMM2026'), 'Link de operador deve conter namespace org');
+        assert(links.cueSom && links.cueSom.includes('dept=Som'), 'Link de Som deve conter dept=Som');
       });
 
       // === EXECUTOR DE TESTES =========================================
