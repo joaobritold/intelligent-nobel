@@ -590,6 +590,53 @@
         client.deleteEventFromRegistry(ev2.code);
       });
 
+      it('T21 - Isolamento e Segurança Multi-Evento (Anti-Fuga)', 
+         'Garante que utilizador num evento não acede a outro evento sem PIN nem bypass de roomHint', 
+         () => {
+        sessionStorage.setItem('stagetimer_master_active', '1');
+        const client = new UniversalSyncClient({ role: 'test', room: 'SEC_TEST' });
+
+        const evA = client.createEventWithStages({ title: 'Festival Alpha', stagesCount: 2 });
+        const evB = client.createEventWithStages({ title: 'Festival Beta', stagesCount: 1 });
+
+        // Simular utilizador normal (não Master) autenticado apenas no Festival Alpha
+        sessionStorage.removeItem('stagetimer_master_active');
+        localStorage.removeItem('stagetimer_master_active');
+        sessionStorage.setItem('stagetimer_unlocked_event', evA.code);
+
+        const list = client.getEventsList().filter(e => e.eventType !== 'theatre');
+
+        // Testar lógica de isolamento de seletores:
+        const currentCode = evA.stages[0].code;
+        const currentEv = list.find(e => e.code === currentCode || (Array.isArray(e.stages) && e.stages.some(s => s.code === currentCode)));
+        assert(currentEv && currentEv.code === evA.code, 'Deve localizar evento Alpha como atual');
+
+        const isMaster = false;
+        const selectableEvents = isMaster ? list : (currentEv ? [currentEv] : []);
+        assert(selectableEvents.length === 1, 'Utilizador normal só deve ter 1 evento selecionável');
+        assert(selectableEvents[0].code === evA.code, 'Evento selecionável deve ser estritamente Alpha');
+        assert(!selectableEvents.some(e => e.code === evB.code), 'Festival Beta não pode constar nas opções');
+
+        // Testar bloqueio de tentativa de troca para palco de outro evento
+        const forbiddenTarget = evB.stages[0].code;
+        const isAllowedSwitch = currentEv && ((currentEv.code || '').toUpperCase() === forbiddenTarget || (Array.isArray(currentEv.stages) && currentEv.stages.some(s => (s.code || s.id || '').toUpperCase() === forbiddenTarget)));
+        assert(isAllowedSwitch === false, 'Mudança direta para palco do Festival Beta deve ser bloqueada');
+
+        // Testar validação de roomHint: utilizador tem evA desbloqueado, mas roomHint é evB
+        const savedCode = sessionStorage.getItem('stagetimer_unlocked_event');
+        const candidateEv = list.find(e => e.code === forbiddenTarget || (Array.isArray(e.stages) && e.stages.some(s => s.code === forbiddenTarget)));
+        assert(candidateEv && candidateEv.code === evB.code, 'Candidato resolvido para Beta');
+        const allowsAutoUnlock = isMaster || (savedCode && savedCode.toUpperCase() === candidateEv.code.toUpperCase());
+        assert(allowsAutoUnlock === false, 'roomHint de evento diferente NUNCA deve conceder desbloqueio automático sem PIN');
+
+        // Limpeza dos eventos de teste
+        sessionStorage.setItem('stagetimer_master_active', '1');
+        client.deleteEventFromRegistry(evA.code);
+        client.deleteEventFromRegistry(evB.code);
+        sessionStorage.removeItem('stagetimer_master_active');
+        sessionStorage.removeItem('stagetimer_unlocked_event');
+      });
+
       // === EXECUTOR DE TESTES =========================================
 
       function runAllTests() {

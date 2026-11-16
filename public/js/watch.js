@@ -59,6 +59,34 @@
   safeSet('localStorage', 'stagetimer_last_room', roomId);
   safeSet('sessionStorage', 'stagetimer_active_room', roomId);
 
+  // Security: Check if current room belongs to an event and user is authorized
+  try {
+    const isMasterUser = (typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
+      safeGet('sessionStorage', 'stagetimer_master_active') === '1' ||
+      safeGet('localStorage', 'stagetimer_master_active') === '1' ||
+      safeGet('sessionStorage', 'stagetimer_master_auth_v12') === 'true' ||
+      safeGet('localStorage', 'stagetimer_master_auth_v12') === 'true';
+
+    if (!isMasterUser) {
+      const rawReg = safeGet('localStorage', 'stagetimer_v63_registry') || safeGet('localStorage', 'stagetimer_v10_events_list') || '[]';
+      const localEvents = JSON.parse(rawReg);
+      if (localEvents && localEvents.length > 0) {
+        const owningEvent = localEvents.find(e => {
+          if ((e.code || '').toUpperCase() === roomId) return true;
+          if (Array.isArray(e.stages) && e.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId)) return true;
+          return false;
+        });
+        if (owningEvent) {
+          const unlockedEv = (safeGet('sessionStorage', 'stagetimer_unlocked_event') || safeGet('localStorage', 'stagetimer_unlocked_event') || '').trim().toUpperCase();
+          if (!unlockedEv || unlockedEv !== (owningEvent.code || '').toUpperCase()) {
+            console.warn('[Watch] Acesso não autorizado ao evento', owningEvent.code, '— redirecionando para o Portal');
+            window.location.replace('index.html?portal=1');
+          }
+        }
+      }
+    }
+  } catch (_) {}
+
   // ─── DOM References (Dual ID support: watch-* and viewer-*) ─────────────
   const $statusDot = document.getElementById('watch-status-dot') || document.getElementById('viewer-connection');
   const $artistName = document.getElementById('watch-artist-name') || document.getElementById('viewer-timer-name');
