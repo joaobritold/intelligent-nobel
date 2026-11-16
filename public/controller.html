@@ -55,9 +55,9 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>ShowFlow — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=2.04">
-  <link rel="stylesheet" href="css/controller.css?v=2.04">
-  <script src="js/st-icons.js?v=2.04"></script>
+  <link rel="stylesheet" href="css/common.css?v=2.05">
+  <link rel="stylesheet" href="css/controller.css?v=2.05">
+  <script src="js/st-icons.js?v=2.05"></script>
 </head>
 <body>
   <div class="app">
@@ -66,9 +66,9 @@
       <div class="header-left">
         <div class="header-brand-row">
           <div class="logo">
-            <img src="icon.svg?v=2.04" alt="ShowFlow Logo" class="logo-icon" width="26" height="26" style="vertical-align: middle; border-radius: 6px; margin-right: 6px;">
+            <img src="icon.svg?v=2.05" alt="ShowFlow Logo" class="logo-icon" width="26" height="26" style="vertical-align: middle; border-radius: 6px; margin-right: 6px;">
             <span>ShowFlow</span>
-            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 4px; opacity: 0.85; background: rgba(31, 111, 235, 0.2); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.4);">v2.04</span>
+            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 4px; opacity: 0.85; background: rgba(31, 111, 235, 0.2); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.4);">v2.05</span>
           </div>
           <div class="room-info" id="ctrl-room-box" style="display: flex; align-items: center; gap: 6px;">
             <svg class="st-icon st-icon-blue" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
@@ -405,10 +405,10 @@
             <div class="modal-label" style="font-size: 0.8rem; margin-bottom: 6px;">Alertas Automáticos a Enviar:</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.82rem; color: #ddd;">
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="notif-tg-alert-5m" checked> <svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Faltam 5 Minutos
+                <input type="checkbox" id="notif-tg-alert-5m" checked> <svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Faltam 20% (Laranja)
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="notif-tg-alert-1m" checked> <svg class="st-icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Falta 1 Minuto
+                <input type="checkbox" id="notif-tg-alert-1m" checked> <svg class="st-icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Faltam 5% (Vermelho)
               </label>
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
                 <input type="checkbox" id="notif-tg-alert-end" checked> <svg class="st-icon" viewBox="0 0 24 24"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon></svg> Fim / Overtime
@@ -476,17 +476,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=2.04"></script>
+  <script src="js/schedule-importer.js?v=2.05"></script>
 
   <!-- Access Control -->
-  <script src="js/auth.js?v=2.04"></script>
+  <script src="js/auth.js?v=2.05"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
-  <script src="js/mqtt.min.js?v=2.04"></script>
+  <script src="js/mqtt.min.js?v=2.05"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=2.04"></script>
-  <script src="js/local-sync.js?v=2.04"></script>
-  <script src="js/notifications.js?v=2.04"></script>
-  <script src="js/controller.js?v=2.04"></script>
-<script src="js/view-mode.js?v=2.04"></script>
+  <script src="js/pwa.js?v=2.05"></script>
+  <script src="js/local-sync.js?v=2.05"></script>
+  <script src="js/notifications.js?v=2.05"></script>
+  <script src="js/controller.js?v=2.05"></script>
+<script src="js/view-mode.js?v=2.05"></script>
 </body>
 </html>

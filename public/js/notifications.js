@@ -1014,6 +1014,8 @@
 
       if (!activeTimer || activeTimer.mode === 'clock') {
         rState.lastTimerId = null;
+        rState.sent20pct = false;
+        rState.sent5pct = false;
         rState.sent5m = false;
         rState.sent1m = false;
         rState.sentEnd = false;
@@ -1022,6 +1024,8 @@
 
       if (activeTimer.id !== rState.lastTimerId) {
         rState.lastTimerId = activeTimer.id;
+        rState.sent20pct = false;
+        rState.sent5pct = false;
         rState.sent5m = false;
         rState.sent1m = false;
         rState.sentEnd = false;
@@ -1064,53 +1068,80 @@
       const nowStr = getNowTimeStr(false);
       const respLine = tgCfg?.senderName ? `\n👤 <b>Responsável:</b> ${escapeHtml(tgCfg.senderName)}` : '';
 
-      // Reset flags if user added time (+1m / +5m) back above threshold
-      if (remainingMs > 305000) rState.sent5m = false;
-      if (remainingMs > 65000) rState.sent1m = false;
-      if (remainingMs > 5000) rState.sentEnd = false;
+      const formatRemaining = (ms) => {
+        if (global.UniversalSyncClient && typeof global.UniversalSyncClient.formatTime === 'function') {
+          return global.UniversalSyncClient.formatTime(ms);
+        }
+        const s = Math.max(0, Math.floor(ms / 1000));
+        const m = Math.floor(s / 60);
+        const sec = s % 60;
+        return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+      };
 
-      // ⏳ 1. Aviso 5 Minutos (<= 300,000ms and > 60,000ms, for timers >= 5m30s)
-      if (durationMs >= 330000 && remainingMs <= 300000 && remainingMs > 60000 && !rState.sent5m) {
+      const warnThresholdMs = Math.round(durationMs * 0.20);
+      const dangerThresholdMs = Math.round(durationMs * 0.05);
+
+      // Reset flags if user added time (+1m / +5m) back above threshold
+      if (remainingMs > warnThresholdMs + 3000) {
+        rState.sent20pct = false;
+        rState.sent5m = false;
+      }
+      if (remainingMs > dangerThresholdMs + 3000) {
+        rState.sent5pct = false;
+        rState.sent1m = false;
+      }
+      if (remainingMs > 5000) {
+        rState.sentEnd = false;
+      }
+
+      // 🟡 1. Aviso 20% do Tempo (Fase Laranja)
+      const canSendWarn = (tgCfg?.alert20pct !== false && tgCfg?.alert5m !== false);
+      if (durationMs >= 10000 && remainingMs <= warnThresholdMs && remainingMs > dangerThresholdMs && !rState.sent20pct && !rState.sent5m) {
+        rState.sent20pct = true;
         rState.sent5m = true;
-        const eventKey = `tg_5m_${activeTimer.id}`;
+        const eventKey = `tg_20pct_${activeTimer.id}`;
         _playChime('warning');
 
-        this.showLocalNotification(`⏳ Faltam 5 Minutos — ${stageName}`, {
-          body: `${timerTitle}: restam 05:00 de atuação no palco.`,
+        const remStr = formatRemaining(remainingMs);
+        this.showLocalNotification(`🟡 Aviso 20% (${remStr}) — ${stageName}`, {
+          body: `${timerTitle}: restam ${remStr} (20% do tempo) de atuação no palco.`,
           tag: eventKey,
           vibrate: [200, 100, 200]
         });
 
-        if (canSendTimerTg && tgCfg.alert5m !== false) {
+        if (canSendTimerTg && canSendWarn) {
           this.sendTelegramMessage(
-            `⏳ <b>AVISO 5 MINUTOS</b> • <code>${safeStage}</code> • ⏰ <b>${nowStr}</b>\n` +
+            `🟡 <b>AVISO 20% (FASE LARANJA)</b> • <code>${safeStage}</code> • ⏰ <b>${nowStr}</b>\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `🎤 <b>Em Palco:</b> ${safeArtist}\n` +
-            `⏱️ <b>Tempo Restante:</b> <code>05:00</code>` + respLine,
+            `⏱️ <b>Tempo Restante:</b> <code>${remStr}</code> (Faltam 20% do tempo)` + respLine,
             tgCfg,
             { eventKey, room: roomCode, priority: 'normal', delayMs: timerDelayMs }
           );
         }
       }
 
-      // ⚠️ 2. Aviso 1 Minuto (<= 60,000ms and > 0ms, for timers >= 1m10s)
-      if (durationMs >= 70000 && remainingMs <= 60000 && remainingMs > 0 && !rState.sent1m) {
+      // 🔴 2. Aviso 5% do Tempo (Fase Vermelha / Reta Final)
+      const canSendDanger = (tgCfg?.alert5pct !== false && tgCfg?.alert1m !== false);
+      if (durationMs >= 10000 && remainingMs <= dangerThresholdMs && remainingMs > 0 && !rState.sent5pct && !rState.sent1m) {
+        rState.sent5pct = true;
         rState.sent1m = true;
-        const eventKey = `tg_1m_${activeTimer.id}`;
+        const eventKey = `tg_5pct_${activeTimer.id}`;
         _playChime('warning');
 
-        this.showLocalNotification(`⚠️ Falta 1 Minuto — ${stageName}`, {
-          body: `${timerTitle}: reta final! Restam 60 segundos.`,
+        const remStr = formatRemaining(remainingMs);
+        this.showLocalNotification(`🔴 Aviso 5% (${remStr}) — ${stageName}`, {
+          body: `${timerTitle}: reta final! Restam apenas ${remStr} (5% do tempo).`,
           tag: eventKey,
           vibrate: [300, 100, 300]
         });
 
-        if (canSendTimerTg && tgCfg.alert1m !== false) {
+        if (canSendTimerTg && canSendDanger) {
           this.sendTelegramMessage(
-            `⚠️ <b>AVISO 1 MINUTO</b> • <code>${safeStage}</code> • ⏰ <b>${nowStr}</b>\n` +
+            `🔴 <b>AVISO 5% (FASE VERMELHA)</b> • <code>${safeStage}</code> • ⏰ <b>${nowStr}</b>\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `🎤 <b>Em Palco:</b> ${safeArtist}\n` +
-            `⏱️ <b>Tempo Restante:</b> <code>01:00</code> (Reta Final)\n` +
+            `⏱️ <b>Tempo Restante:</b> <code>${remStr}</code> (Reta Final • Faltam 5%)\n` +
             `⏭️ <i>Próxima atuação / mudança de palco a postos!</i>` + respLine,
             tgCfg,
             { eventKey, room: roomCode, priority: 'high', delayMs: timerDelayMs }
