@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShowFlow — Resumo Executivo da Auditoria Global 360º</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 12mm 15mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      background: #ffffff;
+      line-height: 1.45;
+      font-size: 9.5pt;
+    }
+    .page {
+      padding: 0;
+      page-break-after: always;
+    }
+    .page:last-child {
+      page-break-after: auto;
+    }
+    .header {
+      border-bottom: 2px solid #0284c7;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .title-area h1 {
+      font-size: 18pt;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+    }
+    .title-area p {
+      font-size: 9pt;
+      color: #64748b;
+      font-weight: 500;
+    }
+    .badge-doc {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 8pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .meta-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 14px;
+      font-size: 8pt;
+    }
+    .meta-item strong {
+      display: block;
+      color: #475569;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+    }
+    .meta-item span {
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .section-title {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #0f172a;
+      border-left: 3.5px solid #0284c7;
+      padding-left: 6px;
+      margin: 12px 0 6px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    p {
+      margin-bottom: 6px;
+      text-align: justify;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+    .card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px;
+      background: #ffffff;
+    }
+    .highlight-box {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+    }
+    .alert-critical {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: #991b1b;
+      margin-bottom: 8px;
+    }
+    .alert-critical strong {
+      display: block;
+      color: #b91c1c;
+      font-size: 8.5pt;
+      margin-bottom: 2px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+      font-size: 8pt;
+    }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 4px 6px;
+      text-align: left;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 700;
+      color: #334155;
+    }
+    .score-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 8pt;
+    }
+    .score-high { background: #dcfce7; color: #15803d; }
+    .score-mid { background: #fef3c7; color: #b45309; }
+    .score-low { background: #fee2e2; color: #b91c1c; }
+
+    .tag-vuln {
+      display: inline-block;
+      font-size: 7pt;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    .tag-crit { background: #ef4444; color: #fff; }
+    .tag-high { background: #f97316; color: #fff; }
+    .tag-med { background: #f59e0b; color: #fff; }
+
+    .footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 6px;
+      margin-top: 12px;
+      font-size: 7.5pt;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PÁGINA 1: VISÃO GERAL, SCORE GLOBAL E VULNERABILIDADES -->
+  <div class="page">
+    <div class="header">
+      <div class="title-area">
+        <h1>SHOWFLOW — RESUMO EXECUTIVO</h1>
+        <p>Auditoria Global 360º • Arquitetura, Segurança, Fiabilidade e Potencial SaaS</p>
+      </div>
+      <div class="badge-doc">Relatório Confidencial</div>
+    </div>
+
+    <div class="meta-bar">
+      <div class="meta-item"><strong>Produto Auditado</strong><span>ShowFlow App (v137)</span></div>
+      <div class="meta-item"><strong>Data da Análise</strong><span>Novembro de 2026</span></div>
+      <div class="meta-item"><strong>Metodologia</strong><span>Auditoria 360º Código Estático</span></div>
+      <div class="meta-item"><strong>Classificação Global</strong><span><strong style="color: #b45309; font-size: 9pt;">5.9 / 10 (Funcional mas Vulnerável)</strong></span></div>
+    </div>
+
+    <div class="section-title">1. Diagnóstico Executivo & Síntese da Situação</div>
+    <p>
+      O <strong>ShowFlow</strong> é uma solução de gestão de espetáculos e alinhamento de palco com uma <strong>proposta de valor operacional extraordinária</strong>, cobrindo num único ecossistema os modos de Palco (Viewer), Operador Mobile, Super Régie (Master), Comunicação FOH/Palco (Régies), Direção de Cena Teatral (Modo Jess com teleprompter e deixas) e Postos Técnicos (Cue Station). A sua amplitude funcional e foco na realidade dos espetáculos ao vivo destacam-se muito positivamente no panorama nacional e internacional.
+    </p>
+    <p>
+      Contudo, a auditoria revelou um <strong>desfasamento crítico entre a ambição funcional e a infraestrutura técnica</strong>: a aplicação corre como um cliente PWA estático no Netlify cuja sincronização em nuvem depende de <strong>brokers MQTT públicos gratuitos da Internet (EMQX e Shiftr.io) sem qualquer palavra-passe ou controlo de acesso</strong>, as credenciais administrativas e Master são validadas por um overlay DOM no browser contornável em dois segundos, não existe base de dados centralizada e, em caso de falha de ligação à Internet no recinto, a sincronização entre dispositivos é totalmente interrompida.
+    </p>
+
+    <div class="grid-2">
+      <div>
+        <div class="section-title">2. Classificação Global por Dimensão (0 a 10)</div>
+        <table>
+          <thead>
+            <tr><th>Dimensão Analisada</th><th>Nota</th><th>Parecer Técnico Resumido</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Funcionalidades</strong></td><td><span class="score-badge score-high">8.5</span></td><td>Excecional diversidade: timers, régies, cues, teleprompter, watch.</td></tr>
+            <tr><td><strong>Potencial Comercial</strong></td><td><span class="score-badge score-high">8.5</span></td><td>Elevado valor SaaS para festivais, produtoras, teatros e eventos corporativos.</td></tr>
+            <tr><td><strong>UX / UI & Design</strong></td><td><span class="score-badge score-high">7.5</span></td><td>Alto contraste, modo escuro de palco bem calibrado, responsivo.</td></tr>
+            <tr><td><strong>Compatibilidade Mobile</strong></td><td><span class="score-badge score-high">7.5</span></td><td>PWA rápida em iOS/Android; Apple Watch limitado pelo WebSheet.</td></tr>
+            <tr><td><strong>Modo Jess & Deixas</strong></td><td><span class="score-badge score-mid">7.0</span></td><td>Excelente conceito de show calling teatral; telemetria funcional.</td></tr>
+            <tr><td><strong>Timers & Alinhamentos</strong></td><td><span class="score-badge score-mid">7.0</span></td><td>Parser inteligente de horários; sincronismo HTTP com jitter de 1s.</td></tr>
+            <tr><td><strong>Super Régie (Master)</strong></td><td><span class="score-badge score-mid">6.5</span></td><td>Visão multi-palco e comandos remotos; vulnerável a spoofing.</td></tr>
+            <tr><td><strong>Desempenho</strong></td><td><span class="score-badge score-mid">6.0</span></td><td>Rápida no arranque, mas dezenas de timers setInterval em paralelo.</td></tr>
+            <tr><td><strong>Sincronização</strong></td><td><span class="score-badge score-mid">5.5</span></td><td>Tripla camada, mas depende da Internet pública para sincronizar em LAN.</td></tr>
+            <tr><td><strong>Manutenção de Código</strong></td><td><span class="score-badge score-low">4.5</span></td><td>Ficheiro local-sync.js com +4.400 linhas monolíticas sem TypeScript.</td></tr>
+            <tr><td><strong>Arquitetura de Sistemas</strong></td><td><span class="score-badge score-low">4.5</span></td><td>Frontend sem backend persistente; dependência estática do Netlify.</td></tr>
+            <tr><td><strong>Fiabilidade Operacional</strong></td><td><span class="score-badge score-low">4.0</span></td><td>Risco de colisão em salas públicas e perda de dados com cache wipe.</td></tr>
+            <tr><td><strong>Escalabilidade SaaS</strong></td><td><span class="score-badge score-low">3.5</span></td><td>Sem multi-tenancy, sem isolamento de bases de dados por organização.</td></tr>
+            <tr><td><strong>Cibersegurança</strong></td><td><span class="score-badge score-low">2.0</span></td><td>Vulnerabilidades críticas: dados e credenciais expostos publicamente.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <div class="section-title">3. Vulnerabilidades Críticas (Risco Show-Stopper)</div>
+
+        <div class="alert-critical">
+          <span class="tag-vuln tag-crit">CRÍTICA</span> <strong>Broker MQTT Público sem Autenticação</strong>
+          O tráfego de controlo corre em <code>broker.emqx.io:8084</code> e <code>shiftr.io</code> públicos. Qualquer pessoa no mundo pode monitorizar todos os alinhamentos ou injetar comandos remotos.
+        </div>
+
+        <div class="alert-critical">
+          <span class="tag-vuln tag-crit">CRÍTICA</span> <strong>Autenticação Bypassed no Frontend</strong>
+          A proteção da Super Régie e do Configurador reside num overlay visual (<code>#st-auth-overlay</code>). Uma linha na consola JavaScript desbloqueia acesso total sem password.
+        </div>
+
+        <div class="alert-critical">
+          <span class="tag-vuln tag-crit">CRÍTICA</span> <strong>Exposição de Token de Bot Telegram</strong>
+          O Bot Token introduzido pelo utilizador é gravado em localStorage e transmitido via MQTT retido num tópico público, permitindo a apropriação do bot por terceiros.
+        </div>
+
+        <div class="alert-critical">
+          <span class="tag-vuln tag-high">ALTA</span> <strong>Inexistência de Modo LAN Offline Real</strong>
+          Se o router do evento perder o acesso à Internet, os tablets, telemóveis e computadores de palco deixam de sincronizar entre si (BroadcastChannel só atua no mesmo browser).
+        </div>
+
+        <div class="highlight-box">
+          <strong style="color: #0369a1; font-size: 8.5pt;">Qualidade dos Testes de Software: 0.0 / 10</strong>
+          <span style="font-size: 7.5pt; color: #475569; display: block; margin-top: 2px;">
+            Não existem testes unitários, testes de integração nem testes E2E no repositório. O risco de regressão em alterações ao <code>local-sync.js</code> é extremamente elevado.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>ShowFlow App • Auditoria Global 360º</span>
+      <span>Página 1 de 2 • Resumo Executivo</span>
+      <span>Classificação Global: 5.9 / 10</span>
+    </div>
+  </div>
+
+  <!-- PÁGINA 2: ROADMAP DE EVOLUÇÃO, RECOMENDAÇÕES E POTENCIAL COMERCIAL -->
+  <div class="page">
+    <div class="header">
+      <div class="title-area">
+        <h1>SHOWFLOW — PLANO DE AÇÃO E ROADMAP</h1>
+        <p>Estratégia de Remediação P0-P3, Arquitetura Futura e Modelo de Negócio</p>
+      </div>
+      <div class="badge-doc">Recomendações Estratégicas</div>
+    </div>
+
+    <div class="section-title">4. Roadmap Prioritário de Transformação Técnica</div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 10%;">Prioridade</th>
+          <th style="width: 25%;">Ação Recomendada</th>
+          <th style="width: 45%;">Problema Resolvido & Benefício Operacional</th>
+          <th style="width: 20%;">Esforço / Risco</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag-vuln tag-crit">P0 - Imediato</span></td>
+          <td><strong>Migração para Broker MQTT Privado & Auth</strong></td>
+          <td>Substituir <code>broker.emqx.io</code> por instância gerida (ex.: EMQX Cloud / HiveMQ / Mosquitto próprio) com TLS, credenciais dinâmicas e ACLs restritas por evento. Elimina espionagem e hijacking de palco.</td>
+          <td>Médio / Crítico se não resolvido</td>
+        </tr>
+        <tr>
+          <td><span class="tag-vuln tag-crit">P0 - Imediato</span></td>
+          <td><strong>Autenticação Real no Backend com JWT</strong></td>
+          <td>Remover hashes do bundle JS cliente. Validar sessões com tokens HTTP-Only criptograficamente assinados nas Netlify Functions e recusar comandos MQTT sem assinatura HMAC.</td>
+          <td>Médio / Alto</td>
+        </tr>
+        <tr>
+          <td><span class="tag-vuln tag-crit">P0 - Imediato</span></td>
+          <td><strong>Segurança do Telegram Gateway</strong></td>
+          <td>Armazenar Bot Tokens em variáveis de ambiente ou backend encriptado. Nunca transmitir tokens no payload MQTT nem armazená-los em localStorage do browser.</td>
+          <td>Baixo / Alto</td>
+        </tr>
+        <tr>
+          <td><span class="tag-vuln tag-high">P1 - Essencial</span></td>
+          <td><strong>Motor Híbrido LAN / Offline (Hub Local)</strong></td>
+          <td>Permitir correr um agente ligeiro Node.js ou binário Go num computador da régie (Mac Mini / PC) fornecendo broker MQTT e WebSocket local via mDNS. A sincronização mantém-se mesmo sem Internet no recinto.</td>
+          <td>Alto / Médio</td>
+        </tr>
+        <tr>
+          <td><span class="tag-vuln tag-high">P1 - Essencial</span></td>
+          <td><strong>Refatoração do <code>local-sync.js</code></strong></td>
+          <td>Modularizar o ficheiro em submódulos ES6 (State, Sync, Transport, Telemetry, Presença). Implementar TypeScript e suíte de testes unitários automatizados com Vitest/Playwright.</td>
+          <td>Alto / Baixo</td>
+        </tr>
+        <tr>
+          <td><span class="tag-vuln tag-med">P2 - Evolução</span></td>
+          <td><strong>Base de Dados na Nuvem (PostgreSQL)</strong></td>
+          <td>Substituir a dependência exclusiva de localStorage por persistência em PostgreSQL/Supabase com sincronização em tempo real e backup contínuo com histórico de revisões.</td>
+          <td>Médio / Baixo</td>
+        </tr>
+        <tr>
+          <td><span class="tag-vuln" style="background: #3b82f6; color: #fff;">P3 - Premium</span></td>
+          <td><strong>SaaS Multi-Tenant & Licenciamento</strong></td>
+          <td>Portal de organizações, gestão de equipas com papéis granulares (RBAC), integração de faturação Stripe, planos Free / Pro / Festival Enterprise.</td>
+          <td>Alto / Baixo</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="section-title">5. Arquitetura Alvo Recomendada (Visão de Produção Profissional)</div>
+    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 8pt;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center;">
+        <div style="background: #e0f2fe; border: 1px solid #7dd3fc; border-radius: 6px; padding: 8px;">
+          <strong style="color: #0369a1; display: block; margin-bottom: 4px;">1. CLIENTES (UI / PWA)</strong>
+          <span>Palco, Operador, Master, Régies, DC, Postos Técnicos, Watch.<br>Ecrãs desacoplados consumindo Store reativa unificada.</span>
+        </div>
+        <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; padding: 8px;">
+          <strong style="color: #92400e; display: block; margin-bottom: 4px;">2. CAMADA HÍBRIDA DE SYNC</strong>
+          <span><strong>Na Nuvem:</strong> Broker MQTT Privado com ACLs + TLS.<br><strong>No Local:</strong> Hub LAN autónomo (WebSockets/mDNS) com failover transparente.</span>
+        </div>
+        <div style="background: #dcfce7; border: 1px solid #86efac; border-radius: 6px; padding: 8px;">
+          <strong style="color: #166534; display: block; margin-bottom: 4px;">3. BACKEND & PERSISTÊNCIA</strong>
+          <span>API REST / Edge Functions com autenticação JWT/OAuth2.<br>Base de dados PostgreSQL multi-tenant e backups automáticos.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="section-title">6. Potencial Comercial e Modelo de Negócio SaaS</div>
+        <p>
+          O ShowFlow reúne atributos para se posicionar como o <strong>"sistema operativo do palco"</strong> para produtoras de eventos, festivais de música, teatros e auditórios corporativos.
+        </p>
+        <ul style="padding-left: 16px; font-size: 8pt; color: #334155; line-height: 1.5;">
+          <li><strong>Diferenciação Clara:</strong> Ao contrário dos concorrentes que apenas fazem contagens decrescentes (Stagetimer.io), o ShowFlow integra deixas técnicas (Cues), alinhamento multi-dia, intercom textual de régies e teleprompter.</li>
+          <li><strong>Planos Propostos:</strong>
+            <ul style="padding-left: 14px; margin-top: 2px;">
+              <li><em>Free / Starter:</em> 1 palco, timers ilimitados, modo local.</li>
+              <li><em>Pro (29€/mês ou 19€/evento):</em> Multi-palco, Telegram, Super Régie, backup cloud.</li>
+              <li><em>Festival & Teatro (79€/mês ou 49€/evento):</em> Modo Jess, Cues ilimitadas, relatórios pós-show, suporte para hub local offline LAN.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="section-title">7. Parecer da Equipa de Especialistas</div>
+        <div class="highlight-box">
+          <strong style="color: #0369a1; font-size: 8.5pt;">Veredito da Auditoria</strong>
+          <p style="font-size: 8pt; margin-top: 4px; color: #1e293b;">
+            "O ShowFlow tem uma alma funcional brilhante, concebida por quem conhece verdadeiramente as dores e a dinâmica de um espetáculo ao vivo. As funcionalidades são práticas, completas e orientadas ao utilizador sob stress.
+            <br><br>
+            Para dar o salto de uma excelente ferramenta interna para um produto comercial de prestígio e fiabilidade de topo, a prioridade absoluta nos próximos 30 dias tem de ser a <strong>remediação da segurança (P0)</strong> e a introdução de um <strong>motor de sincronização local LAN resiliente a quebras de Internet (P1)</strong>."
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>ShowFlow App • Auditoria Global 360º</span>
+      <span>Página 2 de 2 • Resumo Executivo</span>
+      <span>Classificação Global: 5.9 / 10</span>
+    </div>
+  </div>
+
+</body>
+</html>

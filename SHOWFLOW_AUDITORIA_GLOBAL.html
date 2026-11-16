@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShowFlow — Relatório Integral da Auditoria Global 360º</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --primary-light: #e0f2fe;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      --warning: #d97706;
+      --warning-bg: #fffbeb;
+      --success: #16a34a;
+      --success-bg: #f0fdf4;
+      --sidebar-width: 290px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--slate-800);
+      background: #ffffff;
+      line-height: 1.6;
+      font-size: 15px;
+      scroll-behavior: smooth;
+    }
+
+    /* Layout Geral */
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar de Navegação */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--slate-900);
+      color: #f8fafc;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      overflow-y: auto;
+      padding: 24px 16px;
+      z-index: 1000;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.15);
+    }
+
+    .sidebar-header {
+      padding-bottom: 18px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--slate-700);
+    }
+
+    .sidebar-header h2 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar-header p {
+      font-size: 0.8rem;
+      color: var(--slate-400);
+      margin-top: 4px;
+    }
+
+    .sidebar-nav {
+      list-style: none;
+    }
+
+    .sidebar-nav li {
+      margin-bottom: 4px;
+    }
+
+    .sidebar-nav a {
+      display: block;
+      padding: 7px 12px;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.85rem;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+      font-weight: 500;
+    }
+
+    .sidebar-nav a:hover {
+      color: #ffffff;
+      background: rgba(255,255,255,0.08);
+      transform: translateX(3px);
+    }
+
+    .sidebar-nav a.active {
+      color: #ffffff;
+      background: var(--primary);
+      font-weight: 600;
+    }
+
+    .sidebar-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 1px 6px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.15);
+      margin-left: 6px;
+    }
+
+    /* Conteúdo Principal */
+    .content {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      padding: 40px 60px 80px 60px;
+      max-width: 1280px;
+    }
+
+    /* Capa e Cabeçalho */
+    .report-hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      padding: 48px;
+      border-radius: 16px;
+      margin-bottom: 40px;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .report-hero::after {
+      content: "";
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(2, 132, 199, 0.3) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .hero-badge-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .hero-badge {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-badge.highlight {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: #38bdf8;
+    }
+
+    .report-hero h1 {
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+
+    .report-hero p.subtitle {
+      font-size: 1.15rem;
+      color: #94a3b8;
+      max-width: 800px;
+      line-height: 1.5;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 40px;
+    }
+
+    .meta-box span.label {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--slate-500);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .meta-box strong.value {
+      font-size: 1rem;
+      color: var(--slate-900);
+      font-weight: 700;
+    }
+
+    /* Secções do Relatório */
+    .section-block {
+      margin-bottom: 56px;
+      scroll-margin-top: 30px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 2px solid var(--slate-200);
+      padding-bottom: 12px;
+      margin-bottom: 24px;
+    }
+
+    .section-number {
+      background: var(--primary);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 0.95rem;
+      padding: 6px 14px;
+      border-radius: 8px;
+    }
+
+    .section-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      letter-spacing: -0.5px;
+    }
+
+    h3.sub-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--slate-800);
+      margin: 28px 0 14px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    p {
+      color: var(--slate-700);
+      margin-bottom: 16px;
+      line-height: 1.65;
+    }
+
+    /* Cards e Caixas de Destaque */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .info-card {
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .info-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px -2px rgba(0,0,0,0.08);
+    }
+
+    .info-card.success { border-top: 4px solid var(--success); }
+    .info-card.warning { border-top: 4px solid var(--warning); }
+    .info-card.danger { border-top: 4px solid var(--danger); }
+    .info-card.primary { border-top: 4px solid var(--primary); }
+
+    .info-card h4 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 8px;
+    }
+
+    .alert-box {
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 20px 0;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .alert-box.critical {
+      background: var(--danger-bg);
+      border: 1px solid #fecaca;
+      border-left: 5px solid var(--danger);
+      color: #991b1b;
+    }
+
+    .alert-box.warning {
+      background: var(--warning-bg);
+      border: 1px solid #fef3c7;
+      border-left: 5px solid var(--warning);
+      color: #92400e;
+    }
+
+    .alert-box.info {
+      background: var(--primary-light);
+      border: 1px solid #bae6fd;
+      border-left: 5px solid var(--primary);
+      color: #0369a1;
+    }
+
+    .alert-box strong {
+      font-weight: 700;
+    }
+
+    /* Tabelas */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin: 20px 0;
+      border-radius: 8px;
+      border: 1px solid var(--slate-200);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.88rem;
+    }
+
+    table.data-table th {
+      background: var(--slate-100);
+      color: var(--slate-700);
+      font-weight: 700;
+      padding: 12px 14px;
+      border-bottom: 2px solid var(--slate-200);
+      white-space: nowrap;
+    }
+
+    table.data-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--slate-200);
+      color: var(--slate-700);
+      vertical-align: top;
+    }
+
+    table.data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    table.data-table tr:hover td {
+      background: var(--slate-50);
+    }
+
+    /* Badges de Estado e Severidade */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-critical { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .badge-high { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
+    .badge-medium { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .badge-low { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-info { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+    .badge-complete { background: #dcfce7; color: #15803d; }
+    .badge-partial { background: #fef3c7; color: #b45309; }
+    .badge-missing { background: #fee2e2; color: #b91c1c; }
+
+    .score-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-weight: 800;
+      font-size: 0.85rem;
+    }
+
+    .score-circle.good { background: #dcfce7; color: #15803d; }
+    .score-circle.mid { background: #fef3c7; color: #b45309; }
+    .score-circle.bad { background: #fee2e2; color: #b91c1c; }
+
+    /* Diagramas SVG */
+    .svg-diagram-container {
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      text-align: center;
+      overflow-x: auto;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .diagram-caption {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: var(--slate-500);
+      font-style: italic;
+    }
+
+    /* Gráficos Radar e Barras */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin: 24px 0;
+    }
+
+    @media (max-width: 960px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Código e Snippets */
+    code {
+      background: var(--slate-100);
+      color: #be185d;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    /* Impressão / PDF */
+    @media print {
+      .sidebar { display: none; }
+      .content { margin-left: 0; padding: 0; max-width: 100%; }
+      .section-block { page-break-inside: avoid; }
+      .app-container { display: block; }
+      body { font-size: 11pt; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- SIDEBAR DE NAVEGAÇÃO RÁPIDA -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>🎭 ShowFlow <span class="sidebar-badge">v137</span></h2>
+      <p>Auditoria Global 360º de Produção</p>
+    </div>
+    <ul class="sidebar-nav">
+      <li><a href="#sec-resumo">0. Resumo Executivo</a></li>
+      <li><a href="#sec-1">1. Análise Geral & Arquitetura</a></li>
+      <li><a href="#sec-2">2. Inventário de Funcionalidades</a></li>
+      <li><a href="#sec-3">3. Auditoria de Cibersegurança</a></li>
+      <li><a href="#sec-4">4. Arquitetura & Tecnologia</a></li>
+      <li><a href="#sec-5">5. Sincronização & Tempo Real</a></li>
+      <li><a href="#sec-6">6. Timers & Alinhamentos</a></li>
+      <li><a href="#sec-7">7. Auditoria da Super Régie</a></li>
+      <li><a href="#sec-8">8. Modo Jess & Deixas Teatrais</a></li>
+      <li><a href="#sec-9">9. UX/UI & Experiência de Uso</a></li>
+      <li><a href="#sec-10">10. Compatibilidade de Dispositivos</a></li>
+      <li><a href="#sec-11">11. Desempenho & Fiabilidade</a></li>
+      <li><a href="#sec-12">12. Testes & Qualidade de Software</a></li>
+      <li><a href="#sec-13">13. Backups & Recuperação</a></li>
+      <li><a href="#sec-14">14. Potencial Comercial (SaaS)</a></li>
+      <li><a href="#sec-15">15. Comparação de Mercado</a></li>
+      <li><a href="#sec-16">16. Classificação Global & Radar</a></li>
+      <li><a href="#sec-17">17. Plano de Ação (Roadmap P0-P3)</a></li>
+      <li><a href="#sec-18">18. Conclusão da Auditoria</a></li>
+    </ul>
+  </aside>
+
+  <!-- CONTEÚDO PRINCIPAL DO RELATÓRIO -->
+  <main class="content">
+
+    <!-- HERO / CAPA -->
+    <section class="report-hero" id="sec-resumo">
+      <div class="hero-badge-row">
+        <span class="hero-badge highlight">AUDITORIA 360º COMPLETA</span>
+        <span class="hero-badge">VERSÃO ANALISADA: v137</span>
+        <span class="hero-badge">ESTADO: SEM ALTERAÇÕES (DIAGNÓSTICO)</span>
+      </div>
+      <h1>SHOWFLOW APP</h1>
+      <p class="subtitle">
+        Auditoria Técnica Independente, Arquitetura de Sistemas, Cibersegurança, Fiabilidade de Palco e Potencial de Escalabilidade SaaS
+      </p>
+    </section>
+
+    <!-- METADADOS DA AUDITORIA -->
+    <div class="meta-grid">
+      <div class="meta-box">
+        <span class="label">Objeto da Auditoria</span>
+        <strong class="value">ShowFlow (StageTimer PFP)</strong>
+      </div>
+      <div class="meta-box">
+        <span class="label">Equipa de Peritos</span>
+        <strong class="value">Arquitetura, Sec, UX, Live Ops</strong>
+      </div>
+      <div class="meta-box">
+        <span class="label">Regra Fundamental</span>
+        <strong class="value">Zero Modificações (Read-Only)</strong>
+      </div>
+      <div class="meta-box">
+        <span class="label">Classificação Global</span>
+        <strong class="value" style="color: var(--warning);">5.9 / 10 (Funcional mas Vulnerável)</strong>
+      </div>
+    </div>
+
+    <!-- 0. RESUMO EXECUTIVO -->
+    <section class="section-block">
+      <div class="section-header">
+        <span class="section-number">0</span>
+        <h2 class="section-title">Resumo Executivo da Auditoria</h2>
+      </div>
+      <p>
+        O <strong>ShowFlow</strong> é uma aplicação concebida para a coordenação em tempo real de espetáculos, eventos corporativos, festivais e produções teatrais. O ecossistema abrange 10 ecrãs especializados: <em>Portal Hub, Configurador (Controller), Operador Mobile, Palco Fullscreen (Viewer), Backstage Lineup, Comunicação FOH/Palco (Régies), Super Régie Master, Direção de Cena (Modo Jess), Postos Técnicos (Cue Station) e Apple Watch</em>.
+      </p>
+
+      <div class="card-grid">
+        <div class="info-card success">
+          <h4>🌟 Pontos Fortes Notáveis</h4>
+          <ul>
+            <li><strong>Riqueza Funcional Rara:</strong> Integra timers de contagem, intercom textual de régies, deixas cénicas (cues), teleprompter de guião e vista de pulso num único produto.</li>
+            <li><strong>Sensibilidade à Produção Real:</strong> Compreende conceitos críticos como Soundcheck, Changeover, Curfew, Overtime negativo em vermelho e atrasos acumulados.</li>
+            <li><strong>Excelente Design de Palco:</strong> Modos escuros de altíssimo contraste (Viewer/Watch) visíveis à distância sob holofotes ou penumbra técnica.</li>
+          </ul>
+        </div>
+
+        <div class="info-card danger">
+          <h4>🚨 Vulnerabilidades & Fragilidades Críticas</h4>
+          <ul>
+            <li><strong>Cibersegurança em Risco Severo:</strong> Sincronização via brokers MQTT públicos (<code>broker.emqx.io</code>) sem autenticação. Qualquer pessoa pode espiar ou sabotar o alinhamento.</li>
+            <li><strong>Autenticação Bypassed no Cliente:</strong> O bloqueio de ecrãs protegidos é um simples elemento DOM no browser contornável na consola. Hashes e salts expostos no código.</li>
+            <li><strong>Inexistência de Modo LAN Offline:</strong> Se a ligação à Internet falhar no recinto, a sincronização entre dispositivos é 100% interrompida.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. ANÁLISE GERAL DO PROJETO -->
+    <section class="section-block" id="sec-1">
+      <div class="section-header">
+        <span class="section-number">1</span>
+        <h2 class="section-title">Análise Geral do Projeto e Arquitetura Atual</h2>
+      </div>
+
+      <p>
+        A aplicação corre em produção no <strong>Netlify</strong> como um Single-Page Application / Progressive Web App (PWA) puramente estático, apoiado por duas Netlify Functions (<code>auth.js</code> e <code>send-push.js</code>). Existe um servidor Node.js (<code>server.js</code>) no repositório, mas <strong>este não é executado em produção</strong>, servindo apenas para testes locais de desenvolvimento.
+      </p>
+
+      <h3 class="sub-title">1.1. Tecnologias, Bibliotecas e Serviços Externos</h3>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr><th>Camada</th><th>Tecnologia / Biblioteca</th><th>Origem / Hospedagem</th><th>Observações Técnicas</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Frontend Core</strong></td><td>HTML5, CSS3 Nativo, Vanilla JavaScript ES6</td><td>Pasta <code>public/</code></td><td>Zero frameworks (sem React/Vue/Angular). Manipulação direta do DOM.</td></tr>
+            <tr><td><strong>Transporte Nuvem</strong></td><td>MQTT over WSS (MQTT.js v5)</td><td><code>broker.emqx.io:8084</code> & <code>shiftr.io:443</code></td><td><span class="badge badge-critical">Crítico</span> Brokers abertos e gratuitos sem credenciais privadas.</td></tr>
+            <tr><td><strong>Transporte Local</strong></td><td>BroadcastChannel API</td><td>Browser Local</td><td>Comunicação instantânea apenas entre separadores do mesmo navegador.</td></tr>
+            <tr><td><strong>Persistência</strong></td><td>localStorage & sessionStorage</td><td>Browser Local</td><td>Inexistência de base de dados cloud persistente em produção.</td></tr>
+            <tr><td><strong>Offline Cache</strong></td><td>Service Worker (Cache API)</td><td><code>public/sw.js</code> (v137)</td><td>Estratégia Network-First para assets estáticos locais.</td></tr>
+            <tr><td><strong>Sinalização Vídeo</strong></td><td>WebRTC (RTCPeerConnection)</td><td>P2P via MQTT Signals</td><td>Transmissão experimental de câmara OBS da Super Régie para o Lineup.</td></tr>
+            <tr><td><strong>Notificações</strong></td><td>Telegram Bot API & Web Audio API</td><td>Netlify Function Relay</td><td>Sintetizador Web Audio com osciladores senoidais para chimes na régie.</td></tr>
+            <tr><td><strong>Parsers de Ficheiro</strong></td><td>PDF.js, SheetJS (XLSX), Mammoth</td><td>CDN Cloudflare</td><td>Carregados externamente; indisponíveis em offline caso não estejam em cache.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-title">1.2. Diagrama Visual da Arquitetura Atual</h3>
+      <div class="svg-diagram-container">
+        <svg viewBox="0 0 950 420" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <!-- Background -->
+          <rect width="950" height="420" fill="#f8fafc" rx="12"/>
+
+          <!-- Clients Group -->
+          <rect x="30" y="30" width="260" height="360" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" rx="8"/>
+          <text x="160" y="60" text-anchor="middle" font-weight="800" fill="#0f172a" font-size="14">DISPOSITIVOS & ECRÃS (CLIENTS)</text>
+
+          <rect x="50" y="80" width="220" height="34" fill="#0284c7" rx="6"/>
+          <text x="160" y="102" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="12">📺 Palco Fullscreen (Viewer)</text>
+
+          <rect x="50" y="125" width="220" height="34" fill="#1e293b" rx="6"/>
+          <text x="160" y="147" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="12">🎛️ Super Régie (Master)</text>
+
+          <rect x="50" y="170" width="220" height="34" fill="#0d9488" rx="6"/>
+          <text x="160" y="192" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="12">📱 Operador Mobile & Controller</text>
+
+          <rect x="50" y="215" width="220" height="34" fill="#d97706" rx="6"/>
+          <text x="160" y="237" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="12">🎭 Modo Jess (Direção de Cena)</text>
+
+          <rect x="50" y="260" width="220" height="34" fill="#4f46e5" rx="6"/>
+          <text x="160" y="282" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="12">📟 Régies (FOH / Palco / Técnico)</text>
+
+          <rect x="50" y="305" width="220" height="34" fill="#475569" rx="6"/>
+          <text x="160" y="327" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="12">🎧 Postos Técnicos (Cue Station)</text>
+
+          <rect x="50" y="350" width="220" height="30" fill="#000000" rx="6"/>
+          <text x="160" y="370" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="11">⌚ Apple Watch (WebSheet)</text>
+
+          <!-- Arrows from Clients to Cloud -->
+          <path d="M 290 142 L 400 142" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrow)"/>
+          <path d="M 290 237 L 400 237" stroke="#0284c7" stroke-width="2.5"/>
+
+          <!-- Public Broker Box -->
+          <rect x="400" y="70" width="260" height="140" fill="#fee2e2" stroke="#ef4444" stroke-width="2.5" rx="10"/>
+          <text x="530" y="100" text-anchor="middle" font-weight="800" fill="#b91c1c" font-size="13">BROKERS MQTT PÚBLICOS (INTERNET)</text>
+          <text x="530" y="125" text-anchor="middle" fill="#991b1b" font-size="11">wss://broker.emqx.io:8084/mqtt</text>
+          <text x="530" y="145" text-anchor="middle" fill="#991b1b" font-size="11">wss://public.cloud.shiftr.io:443</text>
+          <rect x="420" y="160" width="220" height="36" fill="#b91c1c" rx="6"/>
+          <text x="530" y="183" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="11">⚠️ SEM PASSWORD • ABERTO AO MUNDO</text>
+
+          <!-- Netlify Edge Functions -->
+          <rect x="400" y="240" width="260" height="150" fill="#f0f9ff" stroke="#0284c7" stroke-width="2" rx="10"/>
+          <text x="530" y="270" text-anchor="middle" font-weight="800" fill="#0369a1" font-size="13">NETLIFY SERVERLESS FUNCTIONS</text>
+          <rect x="420" y="285" width="220" height="38" fill="#ffffff" stroke="#bae6fd" rx="6"/>
+          <text x="530" y="308" text-anchor="middle" fill="#0369a1" font-size="11">auth.js (Validação de Senhas)</text>
+          <rect x="420" y="335" width="220" height="38" fill="#ffffff" stroke="#bae6fd" rx="6"/>
+          <text x="530" y="358" text-anchor="middle" fill="#0369a1" font-size="11">send-push.js (Telegram Relay)</text>
+
+          <!-- External Services Group -->
+          <rect x="730" y="100" width="190" height="230" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" rx="8"/>
+          <text x="825" y="130" text-anchor="middle" font-weight="800" fill="#0f172a" font-size="13">SERVIÇOS EXTERNOS</text>
+
+          <rect x="745" y="150" width="160" height="40" fill="#0088cc" rx="6"/>
+          <text x="825" y="175" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="11">✈️ Telegram Bot API</text>
+
+          <rect x="745" y="205" width="160" height="40" fill="#f59e0b" rx="6"/>
+          <text x="825" y="230" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="11">📦 Cloudflare CDNs</text>
+
+          <rect x="745" y="260" width="160" height="40" fill="#64748b" rx="6"/>
+          <text x="825" y="285" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="11">🛑 Zero Base de Dados</text>
+
+          <!-- Arrow to external -->
+          <path d="M 660 354 L 745 175" stroke="#0088cc" stroke-width="2" marker-end="url(#arrow)"/>
+        </svg>
+        <p class="diagram-caption">Figura 1.1: Diagrama da arquitetura atual do ShowFlow, destacando o fluxo de sincronização desprotegido em brokers públicos.</p>
+      </div>
+
+      <h3 class="sub-title">1.3. Análise de Complexidade, Código Duplicado e Ficheiros Obsoletos</h3>
+      <ul>
+        <li><strong>Monolito <code>local-sync.js</code> (+4.400 linhas):</strong> Este ficheiro agrega responsabilidades díspares: gestão do broker MQTT, bridging de portas (8084 para 443), presença global de dispositivos, migração de epochs de limpeza (v1 a v63), persistência em localStorage, telemetria pós-show, e sinalização SDP para WebRTC. Essa hipertrofia dificulta a manutenção e introduz elevado risco de regressão.</li>
+        <li><strong>Dualidade Morta <code>server.js</code> vs Netlify:</strong> O ficheiro <code>server.js</code> implementa um servidor Express com WebSocket nativo e gestão de salas em memória, mas está completamente desacoplado do deploy real no Netlify, gerando falsa sensação de segurança ou expectativa de backend.</li>
+        <li><strong>Ficheiros Desnecessários no Repositório:</strong> Presença de <code>deploy.zip</code> (2.1 MB) comitados diretamente no histórico Git, <code>common-legacy.css</code> (12 KB obsoleto) e <code>google2b9f9a1d9ba4ad07.html</code> na raiz e em <code>public/</code>.</li>
+      </ul>
+    </section>
+
+    <!-- 2. INVENTÁRIO COMPLETO DAS FUNCIONALIDADES -->
+    <section class="section-block" id="sec-2">
+      <div class="section-header">
+        <span class="section-number">2</span>
+        <h2 class="section-title">Inventário Completo das 32 Funcionalidades</h2>
+      </div>
+
+      <p>
+        Abaixo apresenta-se a auditoria exaustiva a todas as funcionalidades do ecossistema ShowFlow, avaliadas por inspeção direta de código e testes lógicos de execução.
+      </p>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Módulo / Funcionalidade</th>
+              <th>O que Faz</th>
+              <th>Estado</th>
+              <th>Qualidade (0-10)</th>
+              <th>Problemas Encontrados</th>
+              <th>Risco</th>
+              <th>Melhorias Recomendadas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. Portal Principal (Index)</strong></td>
+              <td>Hub de entrada, seleção de evento/palco, navegação para os 9 modos operacionais.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.5</span></td>
+              <td>Scripts inline extensos para limpeza de epochs de cache.</td>
+              <td><span class="badge badge-low">Baixo</span></td>
+              <td>Externalizar scripts inline e unificar rotas dinâmicas.</td>
+            </tr>
+            <tr>
+              <td><strong>2. Configurador (Controller)</strong></td>
+              <td>Gestão completa de alinhamento, timers, dias, mensagens e importador de horários.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.0</span></td>
+              <td>Interface com elevada densidade de opções; sem validação de conflitos de edição simultânea.</td>
+              <td><span class="badge badge-medium">Médio</span></td>
+              <td>Adicionar bloqueio de concorrência quando outro utilizador edita o mesmo palco.</td>
+            </tr>
+            <tr>
+              <td><strong>3. Operador Mobile</strong></td>
+              <td>Controlo tátil rápido: Play, Pause, Reset, On Air, +1m/-1m e mensagens pré-definidas.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">9.0</span></td>
+              <td>Se a ligação MQTT falhar, o botão não avisa que o palco não recebeu o comando.</td>
+              <td><span class="badge badge-high">Alto</span></td>
+              <td>Adicionar confirmação de entrega ACK visual bidirecional com feedback tátil.</td>
+            </tr>
+            <tr>
+              <td><strong>4. Ecrã de Palco (Viewer)</strong></td>
+              <td>Contagem regressiva gigante, cores adaptativas (verde, amarelo, vermelho), mensagens de alerta.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">9.5</span></td>
+              <td>A sincronização de relógio via cabeçalho HTTP Date tem jitter intrínseco de até 1s.</td>
+              <td><span class="badge badge-low">Baixo</span></td>
+              <td>Implementar sincronização NTP/PTP precisa no cliente via WebSockets.</td>
+            </tr>
+            <tr>
+              <td><strong>5. Backstage (Lineup)</strong></td>
+              <td>Vista do alinhamento do dia, status de cada atuação e previsão de início/fim.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.5</span></td>
+              <td>Cálculo de fim depende do relógio do cliente que fez o último update.</td>
+              <td><span class="badge badge-medium">Médio</span></td>
+              <td>Padronizar cálculo de tempo cumulativo com âncora determinística.</td>
+            </tr>
+            <tr>
+              <td><strong>6. Super Régie (Master)</strong></td>
+              <td>Multi-palco simultâneo, presença de dispositivos online e redirecionamento remoto.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle mid">6.5</span></td>
+              <td>Comandos remotos enviados via tópico broadcast MQTT público sem assinatura.</td>
+              <td><span class="badge badge-critical">Crítico</span></td>
+              <td>Assinar digitalmente comandos remotos com token HMAC da Super Régie.</td>
+            </tr>
+            <tr>
+              <td><strong>7. Modo Jess (Direção de Cena)</strong></td>
+              <td>Disparo de deixas STANDBY e GO, guião teleprompter com auto-scroll e checklists.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle mid">7.5</span></td>
+              <td>Atraso de disparo em rede móvel pode desfasar deixas críticas de som/efeitos.</td>
+              <td><span class="badge badge-high">Alto</span></td>
+              <td>Operação offline local em rede fechada (LAN) com failover automático.</td>
+            </tr>
+            <tr>
+              <td><strong>8. Posto de Som</strong></td>
+              <td>Receção de deixas de áudio com alerta sonoro dedicado e botão de feedback.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.0</span></td>
+              <td>Botão de fechar aviso urgente apenas esconde localmente sem reportar à DC.</td>
+              <td><span class="badge badge-medium">Médio</span></td>
+              <td>Enviar evento de leitura imediato para a telemetria do Modo Jess.</td>
+            </tr>
+            <tr>
+              <td><strong>9. Posto de Luz</strong></td>
+              <td>Ecrã de deixas de iluminação com códigos de cor e confirmação técnica.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.0</span></td>
+              <td>Depende da correta filtragem de departamento no cliente.</td>
+              <td><span class="badge badge-low">Baixo</span></td>
+              <td>Permitir subscrição em múltiplos departamentos simultâneos.</td>
+            </tr>
+            <tr>
+              <td><strong>10. Posto de Vídeo</strong></td>
+              <td>Deixas para operadores de LED wall, projeção e conteúdos visuais.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.0</span></td>
+              <td>Sem integração com protocolos profissionais de vídeo (NDI / OSC / MIDI).</td>
+              <td><span class="badge badge-medium">Médio</span></td>
+              <td>Adicionar saída de sinal OSC / MIDI para acionamento direto de Resolume/Q-Lab.</td>
+            </tr>
+            <tr>
+              <td><strong>11. Maquinaria</strong></td>
+              <td>Deixas para varas motorizadas, cenografia móvel e efeitos mecânicos.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle mid">7.0</span></td>
+              <td>Para segurança humana de maquinaria em palco, o broker público é inaceitável.</td>
+              <td><span class="badge badge-critical">Crítico</span></td>
+              <td>Exigir rede física isolada e ACK obrigatório com protocolo industrial.</td>
+            </tr>
+            <tr>
+              <td><strong>12. Coxias</strong></td>
+              <td>Avisos para contrarregras e movimentação de elenco nos bastidores.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.0</span></td>
+              <td>Ecrãs em standby podem suspender o JavaScript em telemóveis de contrarregra.</td>
+              <td><span class="badge badge-high">Alto</span></td>
+              <td>Integrar Wake Lock API persistente para evitar bloqueio de ecrã nas coxias.</td>
+            </tr>
+            <tr>
+              <td><strong>13. FOH (Front of House)</strong></td>
+              <td>Comunicação e avisos de régie para o técnico de som de sala.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.0</span></td>
+              <td>Avisos de chamada podem repetir o toque se houver instabilidade no MQTT.</td>
+              <td><span class="badge badge-low">Baixo</span></td>
+              <td>Deduplicação de áudio no cliente por ID de mensagem.</td>
+            </tr>
+            <tr>
+              <td><strong>14. Régie de Palco</strong></td>
+              <td>Intercomunicador textual com FOH e Técnico com confirmação de leitura ACK.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.5</span></td>
+              <td>Não suporta canal de voz bidirecional (apenas texto/chimes).</td>
+              <td><span class="badge badge-low">Baixo</span></td>
+              <td>Adicionar canal de áudio WebRTC / Walkie-Talkie Push-to-Talk.</td>
+            </tr>
+            <tr>
+              <td><strong>15. Técnico Mobile</strong></td>
+              <td>Acesso individual do técnico com nome personalizado para ACK individual.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.5</span></td>
+              <td>O nome do técnico é gravado apenas em localStorage do dispositivo.</td>
+              <td><span class="badge badge-low">Baixo</span></td>
+              <td>Sincronizar perfis técnicos com a lista de presenças da Super Régie.</td>
+            </tr>
+            <tr>
+              <td><strong>16. Timers Principais</strong></td>
+              <td>Contagem decrescente, crescente e relógio local.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">9.0</span></td>
+              <td>Pausa de timer sincroniza timestamp local em vez de monotonic epoch.</td>
+              <td><span class="badge badge-low">Baixo</span></td>
+              <td>Utilizar timestamps absolutos de paragem calculados pelo servidor.</td>
+            </tr>
+            <tr>
+              <td><strong>17. Cronómetros Adicionais</strong></td>
+              <td>Medição de overtime em vermelho quando ultrapassa a duração prevista.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">9.5</span></td>
+              <td>Nenhum erro grave verificado; comportamento visual exemplar.</td>
+              <td><span class="badge badge-low">Baixo</span></td>
+              <td>Manter implementação atual e adicionar som de aviso aos 5 minutos de overtime.</td>
+            </tr>
+            <tr>
+              <td><strong>18. Alinhamentos Multi-Dia</strong></td>
+              <td>Suporte para múltiplos dias por palco (Dia 1, Dia 2, + Dia).</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle mid">7.5</span></td>
+              <td>A troca de dia pode gerar desfasamento de timers se dois utilizadores mudarem em simultâneo.</td>
+              <td><span class="badge badge-medium">Médio</span></td>
+              <td>Isolar o dia ativo do palco na cloud independentemente do dia visualizado.</td>
+            </tr>
+            <tr>
+              <td><strong>19. Gestão de Artistas</strong></td>
+              <td>Criação, reordenação, edição de duração, notas confidenciais de rider.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.5</span></td>
+              <td>Notas confidenciais de rider são transmitidas sem encriptação no MQTT público.</td>
+              <td><span class="badge badge-critical">Crítico</span></td>
+              <td>Encriptar payload de notas com AES-GCM antes de transmitir.</td>
+            </tr>
+            <tr>
+              <td><strong>20. Mensagens de Palco</strong></td>
+              <td>Envio de mensagens do operador/régie para o ecrã de palco (Normal e Urgente).</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">9.0</span></td>
+              <td>Qualquer pessoa conectada ao tópico da sala pode injetar mensagens no ecrã de palco.</td>
+              <td><span class="badge badge-critical">Crítico</span></td>
+              <td>Restringir envio de mensagens de palco exclusivamente a utilizadores autenticados.</td>
+            </tr>
+            <tr>
+              <td><strong>21. Notificações Sonoras (Web Audio)</strong></td>
+              <td>Sintetizador de toques senoidais e harmónicos sem depender de ficheiros MP3.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">9.0</span></td>
+              <td>Políticas de autoplay em browsers mobile podem bloquear som se não houver interação prévia.</td>
+              <td><span class="badge badge-medium">Médio</span></td>
+              <td>Solicitar toque no ecrã para destravar o AudioContext no primeiro carregamento.</td>
+            </tr>
+            <tr>
+              <td><strong>22. Comunicação Intercom Régies</strong></td>
+              <td>Chat técnico rápido com estado de prontidão (Ready / Standby).</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.0</span></td>
+              <td>Histórico de mensagens é limitado e descartado em limpezas de cache.</td>
+              <td><span class="badge badge-medium">Médio</span></td>
+              <td>Persistir histórico de comunicação técnica em base de dados cloud.</td>
+            </tr>
+            <tr>
+              <td><strong>23. Modo Apple Watch</strong></td>
+              <td>Página ultra-otimizada (<code>watch.html</code>) para consulta do timer no pulso.</td>
+              <td><span class="badge badge-partial">Parcial</span></td>
+              <td><span class="score-circle mid">6.0</span></td>
+              <td>Corre via WebSheet no watchOS; suspende execução quando o pulso baixa. Não é app nativa.</td>
+              <td><span class="badge badge-high">Alto</span></td>
+              <td>Criar app nativa em Swift/watchOS com suporte para Complicações e Always-On.</td>
+            </tr>
+            <tr>
+              <td><strong>24. Integração Telegram</strong></td>
+              <td>Disparo de alertas e relatórios para canais e grupos de produção no Telegram.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle mid">6.5</span></td>
+              <td>O Bot Token do utilizador fica exposto no broker público e no localStorage.</td>
+              <td><span class="badge badge-critical">Crítico</span></td>
+              <td>Gerir tokens exclusivamente em variáveis de ambiente ou backend seguro.</td>
+            </tr>
+            <tr>
+              <td><strong>25. Vídeo Streaming WebRTC</strong></td>
+              <td>Emissão de câmara de palco / OBS Virtual Camera via WebRTC da Master para Lineup.</td>
+              <td><span class="badge badge-partial">Parcial</span></td>
+              <td><span class="score-circle mid">5.0</span></td>
+              <td>Inexistência de servidores STUN/TURN próprios. Falha em redes com NAT estrito/firewall.</td>
+              <td><span class="badge badge-high">Alto</span></td>
+              <td>Integrar servidores TURN geridos (ex.: Twilio / Cloudflare Calls / Xirsys).</td>
+            </tr>
+            <tr>
+              <td><strong>26. Sincronização entre Ecrãs</strong></td>
+              <td>Tripla camada: MQTT WSS, BroadcastChannel local e localStorage.</td>
+              <td><span class="badge badge-partial">Parcial</span></td>
+              <td><span class="score-circle mid">5.5</span></td>
+              <td>Não funciona em LAN se a Internet falhar. Conflitos de último a gravar (LWW).</td>
+              <td><span class="badge badge-critical">Crítico</span></td>
+              <td>Desenvolver modo Hub Local (mDNS + WebSocket local) para funcionamento offline real.</td>
+            </tr>
+            <tr>
+              <td><strong>27. Gestão de Eventos</strong></td>
+              <td>Criação, eliminação e seleção de eventos e festivais.</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle mid">7.0</span></td>
+              <td>Eliminação baseada em tombstones (<code>stagetimer_v63_deleted</code>) que podem reaparecer.</td>
+              <td><span class="badge badge-medium">Médio</span></td>
+              <td>Soft delete e hard delete em base de dados relacional.</td>
+            </tr>
+            <tr>
+              <td><strong>28. Gestão de Palcos</strong></td>
+              <td>Multi-palco sob o mesmo evento (ex.: Palco Principal, Palco Secundário).</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.0</span></td>
+              <td>Salas com nomes genéricos como "PALCO1" colidem com outros utilizadores no broker público.</td>
+              <td><span class="badge badge-critical">Crítico</span></td>
+              <td>Prefixar tópicos MQTT com UUID único do evento ou organização (tenant).</td>
+            </tr>
+            <tr>
+              <td><strong>29. Gestão de Utilizadores & RBAC</strong></td>
+              <td>Controlo de acessos para Master, Operador, Régie e Visualizador.</td>
+              <td><span class="badge badge-missing">Inexistente</span></td>
+              <td><span class="score-circle bad">2.0</span></td>
+              <td>Não há contas de utilizador, logins individuais ou permissões reais no servidor.</td>
+              <td><span class="badge badge-critical">Crítico</span></td>
+              <td>Implementar sistema real de identidade (Auth0, Supabase Auth ou Cognito).</td>
+            </tr>
+            <tr>
+              <td><strong>30. Histórico de Alterações</strong></td>
+              <td>Registo de ações de palco e eventos anteriores.</td>
+              <td><span class="badge badge-missing">Inexistente</span></td>
+              <td><span class="score-circle bad">3.0</span></td>
+              <td>Apenas histórico efêmero de mensagens de régie em memória.</td>
+              <td><span class="badge badge-medium">Médio</span></td>
+              <td>Implementar audit trail e event-sourcing para rastrear quem alterou o quê.</td>
+            </tr>
+            <tr>
+              <td><strong>31. Exportações (PDF/Excel)</strong></td>
+              <td>Exportação de alinhamentos e relatórios em texto / modal.</td>
+              <td><span class="badge badge-partial">Parcial</span></td>
+              <td><span class="score-circle mid">6.5</span></td>
+              <td>Exportação limitada a download de ficheiros TXT simples e cópia para clipboard.</td>
+              <td><span class="badge badge-low">Baixo</span></td>
+              <td>Adicionar exportação formatada para PDF com grelha horária e Excel (.xlsx).</td>
+            </tr>
+            <tr>
+              <td><strong>32. Relatórios Pós-Show</strong></td>
+              <td>Telemetria de teatro (latência de deixas STANDBY/GO, hora real vs prevista).</td>
+              <td><span class="badge badge-complete">Completo</span></td>
+              <td><span class="score-circle good">8.0</span></td>
+              <td>Dados guardados no estado do palco; se o estado for reiniciado, perde-se o relatório.</td>
+              <td><span class="badge badge-high">Alto</span></td>
+              <td>Gravação automática de relatórios de espetáculo na nuvem ou exportação para email.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3. AUDITORIA DE CIBERSEGURANÇA -->
+    <section class="section-block" id="sec-3">
+      <div class="section-header">
+        <span class="section-number">3</span>
+        <h2 class="section-title">Auditoria de Cibersegurança & Vulnerabilidades</h2>
+      </div>
+
+      <div class="alert-box critical">
+        <strong>⚠️ AVISO DE SEGURANÇA CRÍTICO:</strong> A postura atual de cibersegurança do ShowFlow é <strong>inadequada para produções comerciais e eventos públicos</strong>. A dependência de canais de comunicação mundiais desprotegidos e de validação puramente cosmética no cliente expõe qualquer produção a sabotagem e divulgação indevida de dados confidenciais.
+      </div>
+
+      <h3 class="sub-title">3.1. Tabela de Vulnerabilidades Identificadas</h3>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Vulnerabilidade</th>
+              <th>Gravidade</th>
+              <th>Ficheiro & Linhas</th>
+              <th>Impacto no Espetáculo</th>
+              <th>Reprodução Segura</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>SEC-01</strong></td>
+              <td><strong>Broker MQTT Público sem Autenticação</strong></td>
+              <td><span class="badge badge-critical">CRÍTICA</span></td>
+              <td><code>public/js/local-sync.js</code><br>L881-898</td>
+              <td>Qualquer pessoa com acesso à Internet pode subscrever os tópicos <code>stagetimer_v10/#</code>, ver o alinhamento, notas privadas, e publicar comandos de paragem dos timers em pleno concerto.</td>
+              <td>Ligar um cliente MQTT a <code>wss://broker.emqx.io:8084/mqtt</code> e subscrever <code>stagetimer_v10/+/state</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>SEC-02</strong></td>
+              <td><strong>Bypass Completo da Autenticação da Super Régie</strong></td>
+              <td><span class="badge badge-critical">CRÍTICA</span></td>
+              <td><code>public/js/auth.js</code><br>L62-73, L260-275</td>
+              <td>A proteção das páginas <code>master.html</code> e <code>controller.html</code> reside apenas num overlay DOM. Qualquer utilizador contorna a senha em 2 segundos sem precisar de credenciais.</td>
+              <td>Na consola de qualquer browser em <code>master.html</code>, executar: <code>localStorage.setItem('stagetimer_master_active', '1'); location.reload();</code></td>
+            </tr>
+            <tr>
+              <td><strong>SEC-03</strong></td>
+              <td><strong>Hashes Criptográficos e Salt Estático Expostos no Bundle JS</strong></td>
+              <td><span class="badge badge-critical">CRÍTICA</span></td>
+              <td><code>public/js/auth.js</code><br>L8-25</td>
+              <td>O salt <code>st_pfp_v1_salt_9f8e7d6c</code> e as digests SHA-256 das palavras-passe Master e Operador estão hardcoded no ficheiro de scripts cliente. Como as senhas padrão são curtas (PINs numéricos), são reversíveis em segundos via força bruta offline.</td>
+              <td>Inspecionar o código de <code>auth.js</code> nas fontes da aba Network/Sources do browser.</td>
+            </tr>
+            <tr>
+              <td><strong>SEC-04</strong></td>
+              <td><strong>Exposição do Bot Token do Telegram no Broker e LocalStorage</strong></td>
+              <td><span class="badge badge-critical">CRÍTICA</span></td>
+              <td><code>public/js/notifications.js</code><br>L234-285, L585<br><code>local-sync.js</code> L44, L1114</td>
+              <td>O Token de Bot do Telegram inserido pelo operador é transmitido em claro no tópico MQTT <code>stagetimer_v10/&lt;ROOM&gt;/telegram</code> e gravado em localStorage. Um atacante obtém controlo total sobre o bot e as mensagens dos grupos da produção.</td>
+              <td>Subscrever o tópico MQTT de telegram no broker e ler a chave <code>botToken</code> no payload JSON.</td>
+            </tr>
+            <tr>
+              <td><strong>SEC-05</strong></td>
+              <td><strong>Execução Remota de Comandos Destrutivos sem Assinatura</strong></td>
+              <td><span class="badge badge-critical">CRÍTICA</span></td>
+              <td><code>public/js/local-sync.js</code><br>L1084-1094<br><code>master.js</code> L780, L823</td>
+              <td>O cliente aceita comandos remotos como <code>delete_device</code>, <code>navigate</code> e <code>reload</code> no tópico público <code>stagetimer_v10/_cmd_all</code> sem exigir token assinado, permitindo expulsar técnicos ou reiniciar ecrãs em loop.</td>
+              <td>Publicar <code>{"action":"reload"}</code> no tópico <code>stagetimer_v10/_cmd_all</code> do broker EMQX.</td>
+            </tr>
+            <tr>
+              <td><strong>SEC-06</strong></td>
+              <td><strong>Colisão de Salas Globais sem Isolamento por Organização</strong></td>
+              <td><span class="badge badge-high">ALTA</span></td>
+              <td><code>public/js/local-sync.js</code><br>L28-36, L42</td>
+              <td>Se duas produtoras em locais diferentes do mundo usarem o nome <code>PALCO1</code> ou <code>FESTIVAL</code>, os dados e timers colidem em tempo real, sobrescrevendo-se mutuamente.</td>
+              <td>Criar dois separadores em computadores e redes diferentes acedendo a <code>?room=PALCO1</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>SEC-07</strong></td>
+              <td><strong>Ausência de Rate Limiting na Netlify Function de Autenticação</strong></td>
+              <td><span class="badge badge-high">ALTA</span></td>
+              <td><code>netlify/functions/auth.js</code><br>L22-100</td>
+              <td>O endpoint <code>/api/auth/verify</code> não limita o número de tentativas de palavra-passe por minuto, permitindo ataques de dicionário automáticos sem bloqueio de IP.</td>
+              <td>Executar um script de teste enviando 500 pedidos POST por segundo para o endpoint.</td>
+            </tr>
+            <tr>
+              <td><strong>SEC-08</strong></td>
+              <td><strong>CORS Excessivamente Aberto no Gateway de Notificações</strong></td>
+              <td><span class="badge badge-medium">MÉDIA</span></td>
+              <td><code>netlify/functions/send-push.js</code><br>L75-80</td>
+              <td>O cabeçalho <code>Access-Control-Allow-Origin: *</code> permite que qualquer website externo execute chamadas de disparo de notificações através do relay do ShowFlow.</td>
+              <td>Fazer uma requisição <code>fetch</code> a partir de uma origem externa (ex.: <code>localhost:8080</code>).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-title">3.2. Proposta de Arquitetura de Cibersegurança Futura (Zero Trust)</h3>
+      <p>
+        Para garantir a integridade absoluta num evento profissional, a arquitetura de segurança deve evoluir de forma drástica:
+      </p>
+      <div class="card-grid">
+        <div class="info-card primary">
+          <h4>1. Broker MQTT Privado com Autenticação Mínima</h4>
+          <p>Implementar instância gerida (EMQX Enterprise / Mosquitto próprio / HiveMQ) com porta TLS obrigatória. Cada sala/evento recebe um par de credenciais temporárias (username/password) geradas pelo backend com validade limitada à duração do espetáculo.</p>
+        </div>
+        <div class="info-card primary">
+          <h4>2. ACLs Estritas por Tópico e Função</h4>
+          <p>O ecrã de Palco (Viewer) apenas tem permissão de leitura (SUB) no tópico de estado. Apenas a Super Régie autenticada tem permissão de escrita (PUB) em tópicos de comando.</p>
+        </div>
+        <div class="info-card primary">
+          <h4>3. Assinatura Criptográfica de Comandos (HMAC-SHA256)</h4>
+          <p>Nenhum comando remoto (ex.: mudar modo ou reiniciar ecrã) deve ser executado pelo cliente sem trazer no payload uma assinatura criptográfica gerada pelo servidor e um timestamp com tolerância máxima de 5 segundos contra ataques de replay.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. AUDITORIA DE ARQUITETURA E TECNOLOGIA -->
+    <section class="section-block" id="sec-4">
+      <div class="section-header">
+        <span class="section-number">4</span>
+        <h2 class="section-title">Auditoria de Arquitetura, Escalabilidade e Robustez</h2>
+      </div>
+
+      <p>
+        A arquitetura atual pode ser descrita como <strong>Serverless Fat-Client / Local-First Descentralizado</strong>. Toda a lógica de computação e validação de estado ocorre no browser do cliente.
+      </p>
+
+      <h3 class="sub-title">4.1. Avaliação de Capacidade Teórica</h3>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr><th>Cenário Operacional</th><th>Viabilidade Atual</th><th>Gargalo Crítico</th><th>Risco Operacional</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1 Palco com 3 Dispositivos</strong></td>
+              <td><span class="badge badge-complete">Excelente</span></td>
+              <td>Nenhum significativo em boa ligação Internet.</td>
+              <td><span class="badge badge-low">Baixo</span></td>
+            </tr>
+            <tr>
+              <td><strong>1 Festival com 5 Palcos e 30 Dispositivos</strong></td>
+              <td><span class="badge badge-partial">Moderada</span></td>
+              <td>Tráfego cruzado no broker público e volume de mensagens de presença.</td>
+              <td><span class="badge badge-high">Alto</span></td>
+            </tr>
+            <tr>
+              <td><strong>Dezenas de Dispositivos e Régies Concorrentes</strong></td>
+              <td><span class="badge badge-missing">Crítica</span></td>
+              <td>Conflitos Last-Write-Wins (LWW) em atualizações de estado simultâneas.</td>
+              <td><span class="badge badge-critical">Crítico</span></td>
+            </tr>
+            <tr>
+              <td><strong>Operação Prolongada de 3 a 5 Dias</strong></td>
+              <td><span class="badge badge-partial">Moderada</span></td>
+              <td>Acúmulo de histórico em memória e eventual limpeza de localStorage pelo browser mobile.</td>
+              <td><span class="badge badge-high">Alto</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 5. SINCRONIZAÇÃO E FUNCIONAMENTO EM TEMPO REAL -->
+    <section class="section-block" id="sec-5">
+      <div class="section-header">
+        <span class="section-number">5</span>
+        <h2 class="section-title">Sincronização em Tempo Real e Análise de Falha de Rede</h2>
+      </div>
+
+      <p>
+        O ShowFlow implementa uma engenhosa tripla camada de sincronização: <strong>MQTT WSS na Nuvem</strong>, <strong>BroadcastChannel no Navegador Local</strong> e <strong>Persistência em localStorage</strong>. No entanto, existe um equívoco operacional importante relativamente ao conceito de "modo offline".
+      </p>
+
+      <div class="alert-box critical">
+        <strong>O QUE ACONTECE QUANDO A INTERNET CAI NO RECINTO:</strong><br>
+        1. O <code>BroadcastChannel</code> funciona <strong>apenas entre separadores do mesmo navegador na mesma máquina</strong>. Ele não transmite pacotes pela rede Wi-Fi nem pelo cabo de rede.<br>
+        2. Como em produção no Netlify não há servidor Node.js a correr na rede local, <strong>se o router perder o acesso WAN à Internet, a Super Régie, o Operador no tablet, a Diretora de Cena e o Palco ficam totalmente isolados</strong> entre si!<br>
+        3. Cada dispositivo continuará a correr o seu relógio local isoladamente, mas qualquer alteração de alinhamento, mensagem de prompter ou ordem de disparo (GO) não chegará aos outros membros da equipa.
+      </div>
+
+      <h3 class="sub-title">5.1. Matriz de Funcionamento Online / Offline</h3>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr><th>Condição de Conectividade</th><th>Mesmo PC (Multi-Tab)</th><th>Dispositivos Diferentes na mesma LAN</th><th>Dispositivos Remotos (4G/5G)</th><th>Gravação de Alterações</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Internet 100% Funcional</strong></td>
+              <td><span class="badge badge-complete">Instantâneo (&lt;5ms)</span></td>
+              <td><span class="badge badge-complete">Sincronizado (40-120ms)</span></td>
+              <td><span class="badge badge-complete">Sincronizado (50-200ms)</span></td>
+              <td>Nuvem e localStorage</td>
+            </tr>
+            <tr>
+              <td><strong>Internet Interrompida (LAN Ativa)</strong></td>
+              <td><span class="badge badge-complete">Funcional via Broadcast</span></td>
+              <td><span class="badge badge-critical">TOTALMENTE BLOQUEADO</span></td>
+              <td><span class="badge badge-critical">TOTALMENTE BLOQUEADO</span></td>
+              <td>Apenas localStorage local</td>
+            </tr>
+            <tr>
+              <td><strong>Dispositivo Isolado (Sem Rede)</strong></td>
+              <td><span class="badge badge-partial">Apenas aba ativa</span></td>
+              <td><span class="badge badge-missing">Sem sincronismo</span></td>
+              <td><span class="badge badge-missing">Sem sincronismo</span></td>
+              <td>localStorage isolado</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 6. AUDITORIA DOS TIMERS E ALINHAMENTOS -->
+    <section class="section-block" id="sec-6">
+      <div class="section-header">
+        <span class="section-number">6</span>
+        <h2 class="section-title">Auditoria dos Timers e Alinhamentos</h2>
+      </div>
+
+      <p>
+        O motor de temporizadores baseia-se na computação diferencial entre o timestamp de início (<code>startedAt</code> / <code>serverStartedAt</code>) e a hora atual sincronizada (<code>getTrueTime()</code>). Esta abordagem evita os desvios clássicos de timers incrementais que dependem de <code>setInterval</code> não suspenso.
+      </p>
+
+      <div class="card-grid">
+        <div class="info-card success">
+          <h4>✅ Comportamentos Validados com Sucesso</h4>
+          <ul>
+            <li><strong>Overtime em Vermelho Negativo:</strong> Quando o tempo atinge <code>00:00</code>, o cronómetro passa de imediato a contar em sentido crescente com sinal de menos (ex.: <code>-02:15</code>) e fundo intermitente em vermelho.</li>
+            <li><strong>Recuperação Pós-Reload:</strong> O recarregamento forçado da página (F5) não afeta a contagem de um timer em curso, pois o tempo decorrido é recalculado matematicamente.</li>
+            <li><strong>Gestão de Soundchecks e Changeovers:</strong> O importador <code>schedule-importer.js</code> isola com precisão passagens de som da tarde sem corromper a atuação principal da noite.</li>
+          </ul>
+        </div>
+
+        <div class="info-card warning">
+          <h4>⚠️ Limitações Identificadas</h4>
+          <ul>
+            <li><strong>Sincronização de Relógio com Jitter de 1s:</strong> O método <code>syncServerTime()</code> efetua uma requisição HEAD e lê o cabeçalho HTTP <code>Date</code>, cuja granularidade é apenas em segundos inteiros.</li>
+            <li><strong>Atrasos Cumulativos não Automatizados:</strong> Se um artista atrasar 15 minutos, o alinhamento não propaga automaticamente o recálculo dos horários seguintes sem edição manual no Configurador.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. AUDITORIA DA SUPER RÉGIE -->
+    <section class="section-block" id="sec-7">
+      <div class="section-header">
+        <span class="section-number">7</span>
+        <h2 class="section-title">Auditoria da Super Régie (Master)</h2>
+      </div>
+
+      <p>
+        A Super Régie foi desenhada como o centro nevrálgico de controlo multi-palco, permitindo visualizar múltiplos palcos em simultâneo (Multiview), monitorizar os dispositivos conectados e disparar comandos remotos direcionados por UUID.
+      </p>
+
+      <h3 class="sub-title">7.1. Esboço Conceptual do Dashboard Ideal de Super Régie</h3>
+      <div class="svg-diagram-container">
+        <svg viewBox="0 0 950 380" width="100%" height="280" xmlns="http://www.w3.org/2000/svg">
+          <rect width="950" height="380" fill="#0f172a" rx="10"/>
+
+          <!-- Topbar -->
+          <rect x="0" y="0" width="950" height="48" fill="#1e293b"/>
+          <text x="24" y="30" fill="#38bdf8" font-weight="800" font-size="16">SHOWFLOW SUPER RÉGIE MASTER</text>
+          <text x="320" y="30" fill="#94a3b8" font-size="12">FESTIVAL DE VERÃO 2026 • DIA 2</text>
+          <rect x="740" y="10" width="90" height="28" fill="#16a34a" rx="4"/>
+          <text x="785" y="28" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="11">● 18 DISP. ONLINE</text>
+          <rect x="840" y="10" width="90" height="28" fill="#0284c7" rx="4"/>
+          <text x="885" y="28" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="11">🕒 21:42:18</text>
+
+          <!-- Stage 1 Card -->
+          <rect x="20" y="65" width="285" height="295" fill="#1e293b" stroke="#334155" rx="8"/>
+          <rect x="20" y="65" width="285" height="36" fill="#0284c7" rx="8 8 0 0"/>
+          <text x="35" y="88" fill="#ffffff" font-weight="700" font-size="13">PALCO PRINCIPAL</text>
+          <text x="285" y="88" text-anchor="end" fill="#ffffff" font-weight="800" font-size="11">ON AIR</text>
+          <text x="162" y="145" text-anchor="middle" fill="#ffffff" font-weight="800" font-size="42">24:18</text>
+          <text x="162" y="172" text-anchor="middle" fill="#94a3b8" font-size="12">Banda Cabeça de Cartaz</text>
+          <rect x="35" y="190" width="255" height="8" fill="#334155" rx="4"/>
+          <rect x="35" y="190" width="180" height="8" fill="#22c55e" rx="4"/>
+          <text x="35" y="225" fill="#cbd5e1" font-size="11">Próximo: DJ Set (00:00)</text>
+          <text x="35" y="245" fill="#e2e8f0" font-size="11">FOH: Pronto | Régie: OK</text>
+          <rect x="35" y="275" width="255" height="32" fill="#334155" rx="4"/>
+          <text x="162" y="295" text-anchor="middle" fill="#ffffff" font-size="11">📺 Enviar Mensagem Rápida</text>
+
+          <!-- Stage 2 Card -->
+          <rect x="325" y="65" width="285" height="295" fill="#1e293b" stroke="#334155" rx="8"/>
+          <rect x="325" y="65" width="285" height="36" fill="#d97706" rx="8 8 0 0"/>
+          <text x="340" y="88" fill="#ffffff" font-weight="700" font-size="13">PALCO SECUNDÁRIO</text>
+          <text x="590" y="88" text-anchor="end" fill="#ffffff" font-weight="800" font-size="11">CHANGEOVER</text>
+          <text x="467" y="145" text-anchor="middle" fill="#fbbf24" font-weight="800" font-size="42">08:42</text>
+          <text x="467" y="172" text-anchor="middle" fill="#94a3b8" font-size="12">Preparação de Palco</text>
+          <rect x="340" y="190" width="255" height="8" fill="#334155" rx="4"/>
+          <rect x="340" y="190" width="70" height="8" fill="#f59e0b" rx="4"/>
+          <text x="340" y="225" fill="#cbd5e1" font-size="11">Próximo: Artista Indie (22:00)</text>
+          <text x="340" y="245" fill="#fca5a5" font-size="11">⚠️ Falta confirmação FOH</text>
+          <rect x="340" y="275" width="255" height="32" fill="#334155" rx="4"/>
+          <text x="467" y="295" text-anchor="middle" fill="#ffffff" font-size="11">🔔 Chamar Operador Palco</text>
+
+          <!-- Right Sidebar: Emergency & Telemetry -->
+          <rect x="630" y="65" width="300" height="295" fill="#1e293b" stroke="#334155" rx="8"/>
+          <rect x="630" y="65" width="300" height="36" fill="#475569" rx="8 8 0 0"/>
+          <text x="645" y="88" fill="#ffffff" font-weight="700" font-size="13">DISPOSITIVOS & COMANDOS</text>
+          <rect x="645" y="115" width="270" height="30" fill="#dc2626" rx="4"/>
+          <text x="780" y="135" text-anchor="middle" fill="#ffffff" font-weight="800" font-size="11">🚨 ALERTA GLOBAL (EVACUAÇÃO/PAUSA)</text>
+
+          <rect x="645" y="155" width="270" height="85" fill="#0f172a" rx="6"/>
+          <text x="655" y="175" fill="#38bdf8" font-size="11">● iPad Régie FOH (Palco 1) — Ativo</text>
+          <text x="655" y="195" fill="#22c55e" font-size="11">● Monitor Palco (Palco 1) — Ativo</text>
+          <text x="655" y="215" fill="#94a3b8" font-size="11">● iPhone DC (Palco 2) — Ativo há 2s</text>
+          <text x="655" y="235" fill="#f87171" font-size="11">○ Ecrã Coxias (Palco 2) — Offline há 35s</text>
+
+          <rect x="645" y="255" width="270" height="32" fill="#0284c7" rx="4"/>
+          <text x="780" y="275" text-anchor="middle" fill="#ffffff" font-weight="700" font-size="11">🔄 Sincronizar Todos os Ecrãs</text>
+
+          <rect x="645" y="295" width="270" height="32" fill="#334155" rx="4"/>
+          <text x="780" y="315" text-anchor="middle" fill="#ffffff" font-size="11">📊 Exportar Relatório Parcial</text>
+        </svg>
+        <p class="diagram-caption">Figura 7.1: Esboço conceptual proposto para a Super Régie de produção de nível profissional.</p>
+      </div>
+    </section>
+
+    <!-- 8. AUDITORIA DO MODO JESS E DAS DEIXAS -->
+    <section class="section-block" id="sec-8">
+      <div class="section-header">
+        <span class="section-number">8</span>
+        <h2 class="section-title">Auditoria do Modo Jess e das Deixas Teatrais</h2>
+      </div>
+
+      <p>
+        O <strong>Modo Jess</strong> (<code>dc.html</code> e <code>dc.js</code>) representa uma inovação notável no contexto de aplicações web para artes performativas, emulando o trabalho de uma Diretora de Cena / Stage Manager com disparo sequencial de deixas (<code>STANDBY</code> e <code>GO</code>), guião sincronizado com teleprompter e telemetria de latência de resposta.
+      </p>
+
+      <div class="card-grid">
+        <div class="info-card primary">
+          <h4>Ciclo de Vida de uma Deixa</h4>
+          <p>
+            <code>pending</code> ➔ <code>standby</code> (alerta amarelo suave e chime senoidal) ➔ <code>fired</code> / <code>go</code> (alerta verde com chime duplo) ➔ feedback técnico (Som, Luz, Vídeo) registado no log de telemetria com timestamp exato.
+          </p>
+        </div>
+        <div class="info-card warning">
+          <h4>Fragilidades Identificadas para Teatro Profissional</h4>
+          <ul>
+            <li><strong>Auto-Standby Agressivo:</strong> A função <code>triggerGoAction()</code> coloca automaticamente a próxima deixa em Standby 1,5 segundos após o GO. Em espetáculos com ritmo variável, isto pode antecipar deixas indevidamente.</li>
+            <li><strong>Sem Integração com Hardware de Show Control:</strong> Não comunica nativamente com mesas GrandMA, ETC EOS ou QLab via MIDI Show Control (MSC) ou OSC.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. AUDITORIA UX/UI E EXPERIÊNCIA DE UTILIZAÇÃO -->
+    <section class="section-block" id="sec-9">
+      <div class="section-header">
+        <span class="section-number">9</span>
+        <h2 class="section-title">Auditoria UX/UI e Experiência em Contexto Real</h2>
+      </div>
+
+      <p>
+        A interface foi claramente desenhada por quem compreende as limitações de luz e o stress de um espetáculo ao vivo. As opções cromáticas de alto contraste funcionam muito bem em condições difíceis.
+      </p>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr><th>Ecrã / Interface</th><th>Ambiente de Uso</th><th>Pontos Fortes UX/UI</th><th>Problemas & Oportunidades</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Palco (Viewer)</strong></td>
+              <td>Distância (5 a 25 metros), holofotes de palco, penumbra.</td>
+              <td>Dígitos gigantescos, contraste máximo, barra de progresso inferior discreta.</td>
+              <td>Top bar oculta automaticamente ao fim de 5 segundos; comportamento irrepreensível.</td>
+            </tr>
+            <tr>
+              <td><strong>Operador Mobile</strong></td>
+              <td>Na mão, régie com pouca luz, operadores com luvas ou dedos suados.</td>
+              <td>Botões táteis de 60px+, prevenção de scroll horizontal, toque imediato.</td>
+              <td>Falta confirmação de feedback tátil (Haptic Vibration) mais pronunciada em comandos de paragem.</td>
+            </tr>
+            <tr>
+              <td><strong>Modo Jess</strong></td>
+              <td>Secretária da DC na régie de palco ou coxia, tablet ou laptop.</td>
+              <td>Auto-scroll de guião ajustável (12 a 36px), botões gigantes STANDBY e GO.</td>
+              <td>Em ecrãs de telemóvel menores que 400px de largura, a quantidade de abas fica comprimida.</td>
+            </tr>
+            <tr>
+              <td><strong>Super Régie</strong></td>
+              <td>Monitores grandes de régie geral (FOH ou camião de exteriores).</td>
+              <td>Grelha flexível com pré-visualização de todos os palcos em simultâneo.</td>
+              <td>Ausência de atalhos de teclado rápidos (ex.: teclas de função F1-F12 para comandos).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 10. COMPATIBILIDADE E DISPOSITIVOS -->
+    <section class="section-block" id="sec-10">
+      <div class="section-header">
+        <span class="section-number">10</span>
+        <h2 class="section-title">Compatibilidade e Análise por Dispositivo</h2>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr><th>Plataforma</th><th>Comportamento Verificado</th><th>Limitações Específicas Encontradas</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Apple Watch (watchOS)</strong></td>
+              <td><span class="badge badge-partial">Parcial</span></td>
+              <td>Ao correr através do WebSheet do relógio, a sessão suspende quando o utilizador baixa o braço. A bateria esgota-se depressa se o ecrã ficar forçado a estar sempre ligado.</td>
+            </tr>
+            <tr>
+              <td><strong>iPhone / iPad (iOS Safari)</strong></td>
+              <td><span class="badge badge-complete">Excelente</span></td>
+              <td>As salvaguardas de CSS (<code>font-size: 16px</code> em inputs, <code>viewport-fit=cover</code>, safe areas) previnem auto-zoom indesejado. PWA instala sem falhas.</td>
+            </tr>
+            <tr>
+              <td><strong>Android (Chrome / Samsung)</strong></td>
+              <td><span class="badge badge-complete">Excelente</span></td>
+              <td>Suporte completo a Web Audio, vibração tátil e Service Worker offline.</td>
+            </tr>
+            <tr>
+              <td><strong>Windows / macOS (Desktop)</strong></td>
+              <td><span class="badge badge-complete">Excelente</span></td>
+              <td>Fluidez máxima em ecrãs auxiliares de régie em Fullscreen (F11).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 11. DESEMPENHO E FIABILIDADE -->
+    <section class="section-block" id="sec-11">
+      <div class="section-header">
+        <span class="section-number">11</span>
+        <h2 class="section-title">Desempenho, Fugas de Memória e Fiabilidade</h2>
+      </div>
+
+      <p>
+        A decisão de não utilizar frameworks pesados (React/Angular) confere à aplicação um tempo de carregamento inicial quase instantâneo (&lt; 200ms em rede local).
+      </p>
+
+      <div class="card-grid">
+        <div class="info-card warning">
+          <h4>Proliferação de Intervalos (<code>setInterval</code>)</h4>
+          <p>
+            Foram identificadas mais de <strong>20 chamadas ativas de <code>setInterval</code></strong> em simultâneo nos diferentes scripts (relógio de palco, tick do motor de sincronização a cada 200ms, limpeza de dispositivos a cada 4s, polling de mensagens Telegram). Em telemóveis antigos ou quando a aba corre em segundo plano, isto gera consumo de bateria e pode ser throttled pelo sistema operativo.
+          </p>
+        </div>
+        <div class="info-card primary">
+          <h4>Eficiência de Atualização do DOM</h4>
+          <p>
+            O código evita renderizações destrutivas com <code>innerHTML</code> global na Super Régie, adotando mutações direcionadas com <code>dataset</code> e seletores específicos, o que minimiza o tempo de CPU e elimina o "flicker" visual.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. TESTES E QUALIDADE DO SOFTWARE -->
+    <section class="section-block" id="sec-12">
+      <div class="section-header">
+        <span class="section-number">12</span>
+        <h2 class="section-title">Testes e Fiabilidade de Software</h2>
+      </div>
+
+      <div class="alert-box critical">
+        <strong>CONSTATAÇÃO OBJETIVA: ZERO TESTES AUTOMATIZADOS NO REPOSITÓRIO.</strong><br>
+        Não foi encontrado qualquer ficheiro de teste unitário (<code>*.test.js</code>), de integração ou end-to-end (Playwright/Cypress). O <code>package.json</code> lista apenas dependências de runtime (<code>express</code> e <code>ws</code>).
+      </div>
+
+      <h3 class="sub-title">12.1. Plano de Validação e Testes Recomendado</h3>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr><th>Nível de Teste</th><th>Ferramenta Recomendada</th><th>Objetivo Específico</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Testes Unitários</strong></td><td>Vitest</td><td>Validação isolada de <code>ScheduleImporter</code>, cálculo de durações com rollover de meia-noite e formatação de horas.</td></tr>
+            <tr><td><strong>Testes de Sincronização</strong></td><td>Node.js Mock MQTT</td><td>Simulação de concorrência com 20 clientes a enviar updates em simultâneo e verificação de convergência de estado.</td></tr>
+            <tr><td><strong>Testes End-to-End (E2E)</strong></td><td>Playwright</td><td>Abertura simultânea de 1 janela Controller e 2 janelas Viewer, disparo de timer e garantia de sincronização de segundos.</td></tr>
+            <tr><td><strong>Chaos Network Testing</strong></td><td>Toxiproxy / Chrome DevTools</td><td>Corte abrupto de Internet e teste de continuidade operacional dos timers em execução.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 13. BACKUPS E RECUPERAÇÃO -->
+    <section class="section-block" id="sec-13">
+      <div class="section-header">
+        <span class="section-number">13</span>
+        <h2 class="section-title">Backups, Persistência e Continuidade de Negócio</h2>
+      </div>
+
+      <p>
+        Atualmente, os alinhamentos e horários residem quase exclusivamente no <strong>localStorage do browser do utilizador</strong>. Se um operador limpar os dados do navegador ou sofrer uma quebra de hardware no computador da régie, <strong>todo o alinhamento do festival corre risco de perda irreversível</strong> caso outro computador não tenha o estado aberto.
+      </p>
+      <p>
+        <strong>Recomendação Crítica:</strong> Implementar persistência cloud em base de dados relacional (ex.: Supabase / PostgreSQL) com snapshots automáticos a cada 5 minutos e histórico versionado com capacidade de "Desfazer" (Undo).
+      </p>
+    </section>
+
+    <!-- 14. POTENCIAL COMERCIAL E MODELO SAAS -->
+    <section class="section-block" id="sec-14">
+      <div class="section-header">
+        <span class="section-number">14</span>
+        <h2 class="section-title">Potencial Comercial e Estratégia SaaS</h2>
+      </div>
+
+      <p>
+        O ShowFlow possui características únicas para se afirmar como líder de mercado em ferramentas para festivais e espetáculos ao vivo em Portugal, Espanha e mercados internacionais.
+      </p>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr><th>Nível de Plano</th><th>Público-Alvo</th><th>Preço Proposto</th><th>Funcionalidades Incluídas</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Starter (Gratuito)</strong></td>
+              <td>Pequenas apresentações, palestras, escolas de música.</td>
+              <td>0 €</td>
+              <td>1 Palco, timers de contagem ilimitados, sem multi-palco, modo local.</td>
+            </tr>
+            <tr>
+              <td><strong>Pro (Mensal ou Evento)</strong></td>
+              <td>Produtoras de eventos corporativos, auditórios, digressões.</td>
+              <td>29 € / mês ou 19 € / evento</td>
+              <td>Multi-palco, Super Régie, integração Telegram, backup na nuvem.</td>
+            </tr>
+            <tr>
+              <td><strong>Festival & Teatro</strong></td>
+              <td>Festivais de música de média/grande dimensão, teatros municipais.</td>
+              <td>79 € / mês ou 49 € / evento</td>
+              <td>Modo Jess ilimitado, Postos Técnicos (Som/Luz/Vídeo), hub local offline LAN, relatórios de telemetria.</td>
+            </tr>
+            <tr>
+              <td><strong>Enterprise Custom</strong></td>
+              <td>Grandes promotores e operadores de salas de espetáculo.</td>
+              <td>Sob Consulta (Anual)</td>
+              <td>Instância dedicada, suporte on-site, SLA 99.9%, hardware dedicado plug-and-play.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 15. COMPARAÇÃO COM REQUISITOS DO MERCADO -->
+    <section class="section-block" id="sec-15">
+      <div class="section-header">
+        <span class="section-number">15</span>
+        <h2 class="section-title">Comparação com Ferramentas do Setor</h2>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr><th>Funcionalidade / Requisito</th><th>ShowFlow (Atual)</th><th>Stagetimer.io</th><th>Shoflo / Cue-to-Cue</th><th>QLab / ETC EOS</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Temporizadores de Palco</strong></td><td><span class="badge badge-complete">Sim (Excelente)</span></td><td><span class="badge badge-complete">Sim (Referência)</span></td><td><span class="badge badge-partial">Parcial</span></td><td><span class="badge badge-partial">Apenas Cues</span></td></tr>
+            <tr><td><strong>Direção de Cena (Show Calling Cues)</strong></td><td><span class="badge badge-complete">Sim (Modo Jess)</span></td><td><span class="badge badge-missing">Não</span></td><td><span class="badge badge-complete">Sim (Foco Principal)</span></td><td><span class="badge badge-complete">Sim (Automação)</span></td></tr>
+            <tr><td><strong>Intercomunicador Textual Régie</strong></td><td><span class="badge badge-complete">Sim (FOH/Palco/Tech)</span></td><td><span class="badge badge-missing">Não</span></td><td><span class="badge badge-partial">Apenas comentários</span></td><td><span class="badge badge-missing">Não</span></td></tr>
+            <tr><td><strong>Importação Inteligente de Horários</strong></td><td><span class="badge badge-complete">Sim (PDF/Excel/Word)</span></td><td><span class="badge badge-partial">Apenas CSV</span></td><td><span class="badge badge-complete">Sim</span></td><td><span class="badge badge-missing">Não</span></td></tr>
+            <tr><td><strong>Segurança & Autenticação Real</strong></td><td><span class="badge badge-critical">Crítica (Bypassed)</span></td><td><span class="badge badge-complete">Forte (JWT/RBAC)</span></td><td><span class="badge badge-complete">Forte (Enterprise)</span></td><td><span class="badge badge-complete">Forte (Rede Local)</span></td></tr>
+            <tr><td><strong>Operação Offline Local Nativa</strong></td><td><span class="badge badge-missing">Não (Depende de WAN)</span></td><td><span class="badge badge-missing">Não (SaaS Cloud)</span></td><td><span class="badge badge-missing">Não (SaaS Cloud)</span></td><td><span class="badge badge-complete">Sim (100% Local)</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 16. CLASSIFICAÇÃO GLOBAL, RADAR E BARRAS -->
+    <section class="section-block" id="sec-16">
+      <div class="section-header">
+        <span class="section-number">16</span>
+        <h2 class="section-title">Classificação Global, Gráficos de Radar e Barras</h2>
+      </div>
+
+      <div class="charts-grid">
+
+        <!-- GRÁFICO DE RADAR SVG -->
+        <div class="svg-diagram-container">
+          <h4 style="margin-bottom: 12px; color: var(--slate-900);">Gráfico de Radar: 14 Dimensões Auditadas</h4>
+          <svg viewBox="0 0 500 460" width="100%" height="340" xmlns="http://www.w3.org/2000/svg">
+            <!-- Polígonos de Nível (2, 4, 6, 8, 10) -->
+            <polygon points="250,50 345,75 410,145 430,240 400,335 320,400 250,420 180,400 100,335 70,240 90,145 155,75" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+            <polygon points="250,90 326,110 378,166 394,240 370,316 306,368 250,384 194,368 130,316 106,240 122,166 174,110" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+            <polygon points="250,130 307,145 346,187 358,240 340,297 292,336 250,348 208,336 160,297 142,240 154,187 193,145" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+            <polygon points="250,170 288,180 214,208 322,240 310,278 278,304 250,312 222,304 190,278 178,240 186,208 212,180" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+
+            <!-- Eixos -->
+            <line x1="250" y1="240" x2="250" y2="50" stroke="#cbd5e1" stroke-width="1"/>
+            <line x1="250" y1="240" x2="345" y2="75" stroke="#cbd5e1" stroke-width="1"/>
+            <line x1="250" y1="240" x2="410" y2="145" stroke="#cbd5e1" stroke-width="1"/>
+            <line x1="250" y1="240" x2="430" y2="240" stroke="#cbd5e1" stroke-width="1"/>
+            <line x1="250" y1="240" x2="400" y2="335" stroke="#cbd5e1" stroke-width="1"/>
+            <line x1="250" y1="240" x2="320" y2="400" stroke="#cbd5e1" stroke-width="1"/>
+            <line x1="250" y1="240" x2="250" y2="420" stroke="#cbd5e1" stroke-width="1"/>
+            <line x1="250" y1="240" x2="180" y2="400" stroke="#cbd5e1" stroke-width="1"/>
+            <line x1="250" y1="240" x2="100" y2="335" stroke="#cbd5e1" stroke-width="1"/>
+            <line x1="250" y1="240" x2="70" y2="240" stroke="#cbd5e1" stroke-width="1"/>
+            <line x1="250" y1="240" x2="90" y2="145" stroke="#cbd5e1" stroke-width="1"/>
+            <line x1="250" y1="240" x2="155" y2="75" stroke="#cbd5e1" stroke-width="1"/>
+
+            <!-- Área de Score Real do ShowFlow -->
+            <!-- Funcionalidades: 8.5 | Comercial: 8.5 | UX/UI: 7.5 | Compat: 7.5 | Jess: 7.0 | Timers: 7.0 | Master: 6.5 | Desemp: 6.0 | Sync: 5.5 | Manut: 4.5 | Arq: 4.5 | Fiab: 4.0 | Escal: 3.5 | Sec: 2.0 -->
+            <polygon points="
+              250,78
+              331,100
+              370,169
+              385,240
+              355,307
+              299,352
+              250,357
+              201,352
+              151,304
+              151,240
+              166,183
+              212,140
+            " fill="rgba(2, 132, 199, 0.35)" stroke="#0284c7" stroke-width="2.5"/>
+
+            <!-- Labels do Radar -->
+            <text x="250" y="38" text-anchor="middle" font-size="10" font-weight="700" fill="#0f172a">Funcionalidades (8.5)</text>
+            <text x="360" y="70" text-anchor="start" font-size="10" font-weight="700" fill="#0f172a">Comercial (8.5)</text>
+            <text x="425" y="145" text-anchor="start" font-size="10" font-weight="700" fill="#0f172a">UX / UI (7.5)</text>
+            <text x="440" y="245" text-anchor="start" font-size="10" font-weight="700" fill="#0f172a">Compatibilidade (7.5)</text>
+            <text x="410" y="350" text-anchor="start" font-size="10" font-weight="700" fill="#0f172a">Modo Jess (7.0)</text>
+            <text x="325" y="418" text-anchor="middle" font-size="10" font-weight="700" fill="#0f172a">Timers (7.0)</text>
+            <text x="250" y="440" text-anchor="middle" font-size="10" font-weight="700" fill="#0f172a">Super Régie (6.5)</text>
+            <text x="170" y="418" text-anchor="middle" font-size="10" font-weight="700" fill="#0f172a">Desempenho (6.0)</text>
+            <text x="80" y="350" text-anchor="end" font-size="10" font-weight="700" fill="#0f172a">Sincronização (5.5)</text>
+            <text x="55" y="245" text-anchor="end" font-size="10" font-weight="700" fill="#0f172a">Manutenção (4.5)</text>
+            <text x="75" y="145" text-anchor="end" font-size="10" font-weight="700" fill="#0f172a">Arquitetura (4.5)</text>
+            <text x="145" y="70" text-anchor="end" font-size="10" font-weight="700" fill="#dc2626">Segurança (2.0)</text>
+          </svg>
+          <p class="diagram-caption">Figura 16.1: Gráfico de radar demonstrando o desequilíbrio entre potencial funcional (topo) e alicerces de segurança/arquitetura (base).</p>
+        </div>
+
+        <!-- GRÁFICO DE BARRAS SVG -->
+        <div class="svg-diagram-container">
+          <h4 style="margin-bottom: 12px; color: var(--slate-900);">Gráfico de Barras: Avaliação Comparativa</h4>
+          <svg viewBox="0 0 500 460" width="100%" height="340" xmlns="http://www.w3.org/2000/svg">
+            <g font-size="10" font-weight="600" fill="#334155">
+              <text x="135" y="30" text-anchor="end">Funcionalidades</text>
+              <rect x="145" y="18" width="297" height="16" fill="#16a34a" rx="3"/>
+              <text x="450" y="31" font-weight="700" fill="#16a34a">8.5</text>
+
+              <text x="135" y="60" text-anchor="end">Potencial Comercial</text>
+              <rect x="145" y="48" width="297" height="16" fill="#16a34a" rx="3"/>
+              <text x="450" y="61" font-weight="700" fill="#16a34a">8.5</text>
+
+              <text x="135" y="90" text-anchor="end">UX / UI Palco</text>
+              <rect x="145" y="78" width="262" height="16" fill="#0284c7" rx="3"/>
+              <text x="415" y="91" font-weight="700" fill="#0284c7">7.5</text>
+
+              <text x="135" y="120" text-anchor="end">Compatibilidade</text>
+              <rect x="145" y="108" width="262" height="16" fill="#0284c7" rx="3"/>
+              <text x="415" y="121" font-weight="700" fill="#0284c7">7.5</text>
+
+              <text x="135" y="150" text-anchor="end">Modo Jess (Cues)</text>
+              <rect x="145" y="138" width="245" height="16" fill="#0284c7" rx="3"/>
+              <text x="398" y="151" font-weight="700" fill="#0284c7">7.0</text>
+
+              <text x="135" y="180" text-anchor="end">Timers & Parsing</text>
+              <rect x="145" y="168" width="245" height="16" fill="#0284c7" rx="3"/>
+              <text x="398" y="181" font-weight="700" fill="#0284c7">7.0</text>
+
+              <text x="135" y="210" text-anchor="end">Super Régie</text>
+              <rect x="145" y="198" width="227" height="16" fill="#f59e0b" rx="3"/>
+              <text x="380" y="211" font-weight="700" fill="#f59e0b">6.5</text>
+
+              <text x="135" y="240" text-anchor="end">Desempenho</text>
+              <rect x="145" y="228" width="210" height="16" fill="#f59e0b" rx="3"/>
+              <text x="363" y="241" font-weight="700" fill="#f59e0b">6.0</text>
+
+              <text x="135" y="270" text-anchor="end">Sincronização</text>
+              <rect x="145" y="258" width="192" height="16" fill="#f59e0b" rx="3"/>
+              <text x="345" y="271" font-weight="700" fill="#f59e0b">5.5</text>
+
+              <text x="135" y="300" text-anchor="end">Arquitetura</text>
+              <rect x="145" y="288" width="157" height="16" fill="#ea580c" rx="3"/>
+              <text x="310" y="301" font-weight="700" fill="#ea580c">4.5</text>
+
+              <text x="135" y="330" text-anchor="end">Manutenção Código</text>
+              <rect x="145" y="318" width="157" height="16" fill="#ea580c" rx="3"/>
+              <text x="310" y="331" font-weight="700" fill="#ea580c">4.5</text>
+
+              <text x="135" y="360" text-anchor="end">Fiabilidade Operacional</text>
+              <rect x="145" y="348" width="140" height="16" fill="#ea580c" rx="3"/>
+              <text x="293" y="361" font-weight="700" fill="#ea580c">4.0</text>
+
+              <text x="135" y="390" text-anchor="end">Escalabilidade</text>
+              <rect x="145" y="378" width="122" height="16" fill="#dc2626" rx="3"/>
+              <text x="275" y="391" font-weight="700" fill="#dc2626">3.5</text>
+
+              <text x="135" y="420" text-anchor="end" font-weight="700" fill="#dc2626">Cibersegurança</text>
+              <rect x="145" y="408" width="70" height="16" fill="#dc2626" rx="3"/>
+              <text x="223" y="421" font-weight="700" fill="#dc2626">2.0</text>
+            </g>
+          </svg>
+          <p class="diagram-caption">Figura 16.2: Classificação decrescente por pontuação nas 14 dimensões auditadas.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 17. PLANO DE MELHORIAS (ROADMAP P0 A P3) -->
+    <section class="section-block" id="sec-17">
+      <div class="section-header">
+        <span class="section-number">17</span>
+        <h2 class="section-title">Plano de Melhorias Prioritárias (Roadmap P0-P3)</h2>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Prioridade</th>
+              <th>Problema Diagnosticado</th>
+              <th>Solução Recomendada</th>
+              <th>Benefício Operacional</th>
+              <th>Complexidade</th>
+              <th>Critério de Conclusão (DoD)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-critical">P0</span></td>
+              <td>Comunicação MQTT em brokers públicos abertos (EMQX e Shiftr).</td>
+              <td>Substituir por broker privado dedicado (EMQX Cloud / Mosquitto próprio) com TLS obrigatório e credenciais efémeras por evento.</td>
+              <td>Elimina 100% da possibilidade de escuta e sabotagem de espetáculos por terceiros.</td>
+              <td>Média</td>
+              <td>Nenhum tráfego enviado para <code>broker.emqx.io</code>; conexão rejeitada sem credenciais válidas.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-critical">P0</span></td>
+              <td>Autenticação da Super Régie e Master contornável no frontend.</td>
+              <td>Remover hashes do bundle JS. Autenticação estrita no backend gerando tokens JWT HttpOnly com validação em cada chamada.</td>
+              <td>Garante que apenas operadores com PIN autorizado acedem ao controlo do festival.</td>
+              <td>Média</td>
+              <td>Impossível desbloquear a Super Régie via consola ou edição de localStorage.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-critical">P0</span></td>
+              <td>Exposição de Bot Token do Telegram no MQTT público.</td>
+              <td>Remover envio do token no payload MQTT. Guardar tokens em backend encriptado ou variáveis seguras.</td>
+              <td>Protege os bots e grupos de comunicação da equipa de produção.</td>
+              <td>Baixa</td>
+              <td>Nenhum token visível no tráfego de rede ou no localStorage do utilizador.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-high">P1</span></td>
+              <td>Falta de sincronização offline quando a Internet cai no recinto.</td>
+              <td>Desenvolver modo "Hub Local" (mini-servidor Node ou binário Go plug-and-play na régie) com mDNS e WebSocket LAN.</td>
+              <td>O espetáculo nunca perde a sincronização, mesmo com corte total de fibra/4G exterior.</td>
+              <td>Alta</td>
+              <td>Desligar o cabo WAN do router e constatar que todos os ecrãs continuam sincronizados em tempo real.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-high">P1</span></td>
+              <td>Monolito de 4.400 linhas em <code>local-sync.js</code> sem testes.</td>
+              <td>Refatorar o motor em módulos ES6 com TypeScript e suite de testes automatizados com Vitest e Playwright.</td>
+              <td>Estabilidade do código, facilidade de manutenção e zero regressões em novas versões.</td>
+              <td>Alta</td>
+              <td>100% dos testes a passar em CI/CD antes de qualquer novo deploy.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-medium">P2</span></td>
+              <td>Ausência de base de dados e backups na nuvem.</td>
+              <td>Integrar persistência centralizada com Supabase/PostgreSQL e snapshots automáticos a cada 5 minutos.</td>
+              <td>Recuperação instantânea caso o computador da régie sofra uma avaria.</td>
+              <td>Média</td>
+              <td>Abrir novo dispositivo noutro browser e restaurar todo o alinhamento com 1 clique.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-medium">P2</span></td>
+              <td>Atrasos de espetáculo não propagados automaticamente.</td>
+              <td>Implementar recálculo automático de horários em cadeia quando um artista excede o tempo limite.</td>
+              <td>Visão exata do final real do festival para cumprir licenças e horários de recolha de transportes.</td>
+              <td>Média</td>
+              <td>Indicação precisa do horário de fim em tempo real no dashboard da Super Régie.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-low">P3</span></td>
+              <td>Monetização, Organizações e Modelo SaaS Multi-Tenant.</td>
+              <td>Desenvolver portal de subscrições Stripe, gestão de equipas com papéis RBAC e planos Free/Pro/Enterprise.</td>
+              <td>Transformação do ShowFlow num produto SaaS comercial escalável com receitas recorrentes.</td>
+              <td>Alta</td>
+              <td>Utilizador cria conta, subscreve plano e gere palcos com isolamento total de dados.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 18. CONCLUSÃO DA AUDITORIA -->
+    <section class="section-block" id="sec-18">
+      <div class="section-header">
+        <span class="section-number">18</span>
+        <h2 class="section-title">Conclusão e Parecer da Equipa de Especialistas</h2>
+      </div>
+
+      <div class="card-grid">
+        <div class="info-card success">
+          <h4>Veredito Global</h4>
+          <p>
+            O <strong>ShowFlow é um diamante funcional em bruto</strong>. Possui uma das combinações mais inteligentes e práticas de ferramentas para espetáculo já desenvolvidas no mercado independente, com uma usabilidade afinada à pressão real do palco.
+          </p>
+        </div>
+        <div class="info-card warning">
+          <h4>Imperativo Técnico Imediato</h4>
+          <p>
+            Para que o projeto possa ser comercializado com credibilidade ou utilizado em produções de grande escala com tranquilidade, <strong>a resolução das vulnerabilidades P0 (segurança MQTT e autenticação) é um passo inegociável</strong> que deve anteceder qualquer esforço de expansão comercial.
+          </p>
+        </div>
+      </div>
+
+      <div style="margin-top: 32px; padding: 20px; background: var(--slate-100); border-radius: 8px; font-size: 0.85rem; color: var(--slate-600); text-align: center;">
+        Relatório emitido pela Equipa Multidisciplinar de Auditoria 360º • Versão Analisada: v137 • Todos os direitos reservados ShowFlow
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>
