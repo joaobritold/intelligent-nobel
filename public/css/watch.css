@@ -45,7 +45,8 @@ html, body.watch-body {
 }
 
 /* Cronómetro Gigante no Centro */
-.watch-viewer .viewer-timer {
+.watch-viewer .viewer-timer,
+.watch-viewer .watch-timer {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", monospace;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
@@ -59,36 +60,43 @@ html, body.watch-body {
   margin: auto 0;
 }
 
-.watch-viewer .viewer-timer.is-long {
+.watch-viewer .viewer-timer.is-long,
+.watch-viewer .watch-timer.is-long {
   font-size: clamp(2.2rem, 19vw, 3.6rem);
   letter-spacing: -1px;
 }
 
 /* Cores Oficiais do Palco */
-.watch-viewer .viewer-timer.safe {
+.watch-viewer .viewer-timer.safe,
+.watch-viewer .watch-timer.safe {
   color: #00b894;
   text-shadow: 0 0 25px rgba(0, 184, 148, 0.45);
 }
 
-.watch-viewer .viewer-timer.warn {
+.watch-viewer .viewer-timer.warn,
+.watch-viewer .watch-timer.warn {
   color: #fa8231;
   text-shadow: 0 0 25px rgba(250, 130, 49, 0.45);
 }
 
-.watch-viewer .viewer-timer.paused {
+.watch-viewer .viewer-timer.paused,
+.watch-viewer .watch-timer.paused {
   color: #74b9ff;
   text-shadow: 0 0 20px rgba(116, 185, 255, 0.45);
 }
 
 /* Tempo Negativo / Overtime / Fim: Vermelho Vivo Pulsante */
 .watch-viewer .viewer-timer.danger,
-.watch-viewer .viewer-timer.finished {
+.watch-viewer .viewer-timer.finished,
+.watch-viewer .watch-timer.danger,
+.watch-viewer .watch-timer.finished {
   color: #ff4757;
   text-shadow: 0 0 30px rgba(255, 71, 87, 0.75);
   animation: watch-viewer-pulse 1s ease-in-out infinite alternate;
 }
 
-.watch-viewer .viewer-timer.clock {
+.watch-viewer .viewer-timer.clock,
+.watch-viewer .watch-timer.clock {
   color: #ffffff;
   letter-spacing: -1px;
 }
@@ -196,18 +204,24 @@ html, body.watch-body {
   z-index: 5;
 }
 
-.watch-viewer .viewer-progress-bar {
+.watch-viewer .viewer-progress-bar,
+.watch-viewer .watch-progress-bar {
   height: 100%;
   background: #00b894;
   transition: width 0.3s linear, background-color 0.3s ease;
 }
 
-.watch-viewer .viewer-progress-bar.warn {
+.watch-viewer .viewer-progress-bar.warn,
+.watch-viewer .watch-progress-bar.warn {
   background: #fa8231;
 }
 
 .watch-viewer .viewer-progress-bar.danger,
-.watch-viewer .viewer-progress-bar.finished {
+.watch-viewer .viewer-progress-bar.finished,
+.watch-viewer .viewer-progress-bar.overtime,
+.watch-viewer .watch-progress-bar.danger,
+.watch-viewer .watch-progress-bar.finished,
+.watch-viewer .watch-progress-bar.overtime {
   background: #ff4757;
   box-shadow: 0 0 6px rgba(255, 71, 87, 0.8);
 }

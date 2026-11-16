@@ -602,7 +602,7 @@ class UniversalSyncClient {
       const sender = String(cmdObj.sender || '');
       const secret = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('stagetimer_auth_token') : null) ||
                      (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_auth_token') : null) ||
-                     'st_showflow_cmd_sig_v2.03';
+                     'st_showflow_cmd_sig_v2.04';
       const raw = `${action}:${target}:${sentAt}:${sender}:${secret.slice(-16)}`;
       let hash = 0x811c9dc5;
       for (let i = 0; i < raw.length; i++) {
@@ -959,18 +959,36 @@ class UniversalSyncClient {
 
     if (msg.action === 'request_room_state' && msg.room) {
       const reqRoom = String(msg.room).toUpperCase().trim();
+      const prefix = this.mqttTopicPrefix || 'stagetimer_v10';
       if (reqRoom === this.cleanRoom) {
         if (this.role !== 'watch' && this._state && Array.isArray(this._state.timers) && this._state.timers.length > 0) {
           this._commitStateChange(true);
         }
       } else if ((this.role === 'master' || this.role === 'controller' || this.role === 'regies') && this.mqttClient && this.mqttClient.connected) {
         try {
-          const rawSaved = localStorage.getItem(`stagetimer_v10_state_${reqRoom}`);
+          const rawSaved = safeStorageGet('localStorage', `stagetimer_v10_state_${reqRoom}`);
           if (rawSaved) {
             const parsed = JSON.parse(rawSaved);
             if (parsed && Array.isArray(parsed.timers) && parsed.timers.length > 0) {
-              const payload = JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: parsed });
-              this.mqttClient.publish(`stagetimer_v10/${reqRoom}/state`, payload, { qos: 0, retain: true });
+              const payload = JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: this._sanitizeStateForNetwork(parsed) });
+              this.mqttClient.publish(`${prefix}/${reqRoom}/state`, payload, { qos: 0, retain: true });
+            }
+          }
+          // Also check for sub-stages of reqRoom (e.g. GALA-P1, GALA-PALCO1)
+          if (typeof localStorage !== 'undefined') {
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k && k.startsWith(`stagetimer_v10_state_${reqRoom}-`)) {
+                const subRoom = k.replace('stagetimer_v10_state_', '').toUpperCase().trim();
+                const subRaw = localStorage.getItem(k);
+                if (subRaw) {
+                  const subParsed = JSON.parse(subRaw);
+                  if (subParsed && Array.isArray(subParsed.timers) && subParsed.timers.length > 0) {
+                    const subPayload = JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: this._sanitizeStateForNetwork(subParsed) });
+                    this.mqttClient.publish(`${prefix}/${subRoom}/state`, subPayload, { qos: 0, retain: true });
+                  }
+                }
+              }
             }
           }
         } catch (e) {}
@@ -984,7 +1002,7 @@ class UniversalSyncClient {
       if (typeof document !== 'undefined' && !this._mqttScriptLoading) {
         this._mqttScriptLoading = true;
         const s = document.createElement('script');
-        s.src = 'js/mqtt.min.js?v=2.03';
+        s.src = 'js/mqtt.min.js?v=2.04';
         s.onload = () => {
           this._mqttScriptLoading = false;
           this._initCloudSync();
@@ -1027,28 +1045,39 @@ class UniversalSyncClient {
     }
 
     if (!primaryClient) {
-      primaryClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
-        clientId: this.clientId,
-        clean: true,
-        connectTimeout: 5000,
-        reconnectPeriod: 2000
-      });
+      try {
+        primaryClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+          clientId: this.clientId,
+          clean: true,
+          connectTimeout: 5000,
+          reconnectPeriod: 2000
+        });
+      } catch (_) {}
     }
 
-    // Dual-Broker Port 443 WSS Relay (Apple Watch / watchOS WebSheet & Firewall-Safe Port 443)
+    // Standard Port 443 WSS Relay (Eclipse IoT - 100% firewall & Apple Watch Bluetooth WebSheet safe)
     let port443Client = null;
     try {
-      port443Client = mqtt.connect('wss://public.cloud.shiftr.io:443', {
-        clientId: `${this.clientId}_w`,
-        username: 'public',
-        password: 'public',
+      port443Client = mqtt.connect('wss://mqtt.eclipseprojects.io:443/mqtt', {
+        clientId: `${this.clientId}_443`,
         clean: true,
-        connectTimeout: 5000,
+        connectTimeout: 6000,
         reconnectPeriod: 2500
       });
     } catch (_) {}
 
-    const allClients = [primaryClient, port443Client].filter(Boolean);
+    // Backup WSS Broker (HiveMQ Public Sandbox)
+    let backupClient = null;
+    try {
+      backupClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
+        clientId: `${this.clientId}_hmq`,
+        clean: true,
+        connectTimeout: 6000,
+        reconnectPeriod: 3000
+      });
+    } catch (_) {}
+
+    const allClients = [primaryClient, port443Client, backupClient].filter(Boolean);
     this._mqttClients = allClients;
     this._bridgedMsgCache = new Map();
 
@@ -1344,18 +1373,23 @@ class UniversalSyncClient {
       });
     };
 
-    attachClientHandlers(primaryClient, false);
-    attachClientHandlers(port443Client, true);
+    allClients.forEach((cInst, idx) => {
+      attachClientHandlers(cInst, idx > 0);
+    });
 
     setInterval(() => this._announcePresence(), 5000);
     setInterval(() => this._cleanupGlobalDevices(), 4000);
+    let _masterPeriodicCycle = 0;
     setInterval(() => {
       const isControllerRole = this.role === 'controller' || this.role === 'operator' || this.role === 'master' || this.role === 'regies' || this.role === 'dc';
       if (isControllerRole && this._state?.timers?.some(t => t.state === 'running')) {
         this._commitStateChange(true);
       }
       if (this.role === 'master' && this.mqttClient && this.mqttClient.connected) {
+        _masterPeriodicCycle++;
+        const shouldBroadcastAll = (_masterPeriodicCycle % 3 === 0);
         try {
+          const prefix = this.mqttTopicPrefix || 'stagetimer_v10';
           Object.keys(localStorage).forEach(k => {
             if (!k.startsWith('stagetimer_v10_state_')) return;
             const rCode = k.replace('stagetimer_v10_state_', '').toUpperCase().trim();
@@ -1363,9 +1397,12 @@ class UniversalSyncClient {
             const raw = localStorage.getItem(k);
             if (!raw) return;
             const parsed = JSON.parse(raw);
-            if (parsed && Array.isArray(parsed.timers) && parsed.timers.some(t => t.state === 'running')) {
-              const payload = JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: parsed });
-              this.mqttClient.publish(`stagetimer_v10/${rCode}/state`, payload, { qos: 0, retain: true });
+            if (parsed && Array.isArray(parsed.timers) && parsed.timers.length > 0 && !parsed.isEmptyDefault) {
+              const isRunning = parsed.timers.some(t => t.state === 'running');
+              if (isRunning || shouldBroadcastAll) {
+                const payload = JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: this._sanitizeStateForNetwork(parsed) });
+                this.mqttClient.publish(`${prefix}/${rCode}/state`, payload, { qos: 0, retain: true });
+              }
             }
           });
         } catch (_) {}

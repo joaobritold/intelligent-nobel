@@ -103,7 +103,7 @@
   if ($artistName) $artistName.textContent = roomId;
   if ($timer) {
     $timer.textContent = '00:00';
-    $timer.className = 'watch-timer safe';
+    $timer.className = 'viewer-timer watch-timer safe';
   }
   if ($clockTime && typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.getTrueTimeString === 'function') {
     $clockTime.textContent = StageTimerClient.getTrueTimeString();
@@ -121,6 +121,7 @@
   function adoptRoomAndState(targetRoom, incomingData) {
     const cleanTarget = String(targetRoom || '').toUpperCase().trim();
     if (!cleanTarget) return;
+    if ($statusDot) $statusDot.classList.remove('disconnected');
     if (cleanTarget !== roomId) {
       roomId = cleanTarget;
       client.room = cleanTarget;
@@ -148,22 +149,31 @@
     if (incomingData && Array.isArray(incomingData.timers)) {
       client._applyIncomingState(incomingData, true);
     }
+    render();
   }
 
   client.on('connected', () => {
-    if ($statusDot && client.mqttClient && client.mqttClient.connected) {
-      $statusDot.classList.remove('disconnected');
-    }
+    if ($statusDot) $statusDot.classList.remove('disconnected');
+    try {
+      client.sendDeviceCommand('ALL', { action: 'request_room_state', room: roomId });
+      client.sendDeviceCommand('ALL', { action: 'request_registry' });
+    } catch (_) {}
     render();
   });
 
   client.on('p2p-ready', () => {
     if ($statusDot) $statusDot.classList.remove('disconnected');
+    try {
+      client.sendDeviceCommand('ALL', { action: 'request_room_state', room: roomId });
+      client.sendDeviceCommand('ALL', { action: 'request_registry' });
+    } catch (_) {}
     render();
   });
 
   client.on('disconnected', () => {
-    if ($statusDot) $statusDot.classList.add('disconnected');
+    if ($statusDot && (!client.mqttClient || !client.mqttClient.connected)) {
+      $statusDot.classList.add('disconnected');
+    }
   });
 
   client.on('room-state', (data) => {
@@ -171,9 +181,7 @@
     if (state?.id && state.id !== roomId) {
       roomId = state.id;
     }
-    if ($statusDot && client.mqttClient && client.mqttClient.connected) {
-      $statusDot.classList.remove('disconnected');
-    }
+    if ($statusDot) $statusDot.classList.remove('disconnected');
     handleMessageAlert();
     render();
   });
@@ -181,6 +189,7 @@
   // Multi-room state listening: if sub-stage (e.g. RC-VIANA-26-P1) has a running timer, adopt it automatically
   client.on('multi-room-state', ({ room, data }) => {
     if (!room || !data || !Array.isArray(data.timers)) return;
+    if ($statusDot) $statusDot.classList.remove('disconnected');
     const incomingRoom = String(room).toUpperCase().trim();
     const cleanCurrent = roomId.replace(/[^A-Z0-9]/g, '');
     const cleanIncoming = incomingRoom.replace(/[^A-Z0-9]/g, '');
@@ -194,22 +203,22 @@
       roomId.startsWith(incomingRoom + '-') ||
       (cleanCurrent.length >= 4 && cleanIncoming.startsWith(cleanCurrent));
 
-    const currentHasTimers = Boolean(state && Array.isArray(state.timers) && state.timers.length > 0);
+    const currentHasTimers = Boolean(state && Array.isArray(state.timers) && state.timers.length > 0 && !state.isEmptyDefault);
     const currentIsRunning = Boolean(state && StageTimerClient.getActiveTimer(state)?.state === 'running');
-    const incomingHasTimers = data.timers.length > 0;
+    const incomingHasTimers = data.timers.length > 0 && !data.isEmptyDefault;
     const incomingIsRunning = Boolean(
       StageTimerClient.getActiveTimer(data)?.state === 'running' ||
       data.timers.some(t => t.state === 'running')
     );
 
     if (isSubStage) {
-      if ((!currentIsRunning && incomingIsRunning) || (!currentHasTimers && incomingHasTimers)) {
+      if ((!currentIsRunning && incomingIsRunning) || (!currentHasTimers && incomingHasTimers) || incomingIsRunning) {
         adoptRoomAndState(incomingRoom, data);
       }
       return;
     }
 
-    if (!currentHasTimers && incomingIsRunning) {
+    if (!currentHasTimers && incomingHasTimers) {
       adoptRoomAndState(incomingRoom, data);
     }
   });
@@ -372,19 +381,19 @@
         if ($artistName) $artistName.textContent = pendingTimer.name || 'Próximo';
         if ($timer) {
           $timer.textContent = formatTime(pendingTimer.duration || 0);
-          $timer.className = 'watch-timer paused';
+          $timer.className = 'viewer-timer watch-timer paused';
         }
       } else if (timersList.length > 0 && timersList.every(t => t.state === 'finished')) {
         if ($artistName) $artistName.textContent = 'Fim do Espetáculo';
         if ($timer) {
           $timer.textContent = '00:00';
-          $timer.className = 'watch-timer danger';
+          $timer.className = 'viewer-timer watch-timer danger';
         }
       } else {
         if ($artistName) $artistName.textContent = state?.name || roomId;
         if ($timer) {
           $timer.textContent = '00:00';
-          $timer.className = 'watch-timer clock';
+          $timer.className = 'viewer-timer watch-timer clock';
         }
       }
 
@@ -414,7 +423,7 @@
 
     if ($timer) {
       $timer.textContent = displayVal;
-      $timer.className = `watch-timer ${color}${isLong ? ' has-hours' : ''}`;
+      $timer.className = `viewer-timer watch-timer ${color}${isLong ? ' is-long has-hours' : ''}`;
     }
 
     // 4. PRÓXIMO ARTISTA (Canto Inferior Direito)
@@ -436,11 +445,11 @@
         const pct = Math.min(100, (elapsed / activeTimer.duration) * 100);
         $progressBar.style.width = `${pct}%`;
         if (pct >= 100) {
-          $progressBar.className = 'watch-progress-bar overtime';
+          $progressBar.className = 'viewer-progress-bar watch-progress-bar overtime';
         } else if (pct > 80) {
-          $progressBar.className = 'watch-progress-bar warn';
+          $progressBar.className = 'viewer-progress-bar watch-progress-bar warn';
         } else {
-          $progressBar.className = 'watch-progress-bar';
+          $progressBar.className = 'viewer-progress-bar watch-progress-bar';
         }
       } else {
         $progressBar.style.width = '0%';

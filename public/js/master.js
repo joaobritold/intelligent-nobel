@@ -70,7 +70,7 @@
 
   function getWatchFullUrl(roomCode) {
     const clean = (roomCode || 'PALCO1').toUpperCase().trim();
-    return new URL(`watch.html?room=${encodeURIComponent(clean)}&v=2.03`, window.location.href).href;
+    return new URL(`watch.html?room=${encodeURIComponent(clean)}&v=2.04`, window.location.href).href;
   }
 
   function openWatchModal(roomCode, stageTitle, url) {
@@ -171,7 +171,17 @@
     $topCopyWatchBtn.addEventListener('click', () => {
       const $sel = document.getElementById('master-event-select');
       const activeCode = $sel?.value || sessionStorage.getItem('stagetimer_active_room') || localStorage.getItem('stagetimer_device_room') || 'PALCO1';
-      copyWatchLink(activeCode, activeCode, $topCopyWatchBtn);
+      let targetCode = activeCode;
+      let stageTitle = activeCode;
+      try {
+        const events = masterClient.getEventsList();
+        const matchedEv = events.find(e => (e.code || '').toUpperCase() === activeCode.toUpperCase());
+        if (matchedEv && Array.isArray(matchedEv.stages) && matchedEv.stages.length > 0) {
+          targetCode = matchedEv.stages[0].code || activeCode;
+          stageTitle = matchedEv.stages[0].name || matchedEv.title || activeCode;
+        }
+      } catch (_) {}
+      copyWatchLink(targetCode, stageTitle, $topCopyWatchBtn);
     });
   }
 
