@@ -229,7 +229,6 @@ function updateLineupNavLinks(code) {
     { id: 'ln-nav-controller', page: 'controller.html' },
     { id: 'ln-nav-operator', page: 'operator.html' },
     { id: 'ln-nav-viewer', page: 'viewer.html' },
-    { id: 'ln-nav-watch', page: 'watch.html' },
     { id: 'ln-nav-lineup', page: 'lineup.html' },
     { id: 'ln-nav-regies', page: 'regies.html' },
     { id: 'ln-nav-master', page: 'master.html' }

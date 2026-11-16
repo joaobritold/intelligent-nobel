@@ -367,8 +367,6 @@ function updateNavLinks() {
   if ($navController) $navController.href = `controller.html?room=${code}`;
   if ($navOperator) $navOperator.href = `operator.html?room=${code}`;
   if ($navViewer) $navViewer.href = `viewer.html?room=${code}`;
-  const $navWatch = document.getElementById('nav-watch');
-  if ($navWatch) $navWatch.href = `watch.html?room=${code}`;
   const $navLineup = document.getElementById('nav-lineup');
   if ($navLineup) $navLineup.href = `lineup.html?room=${code}`;
   const $navRegies = document.getElementById('nav-regies');

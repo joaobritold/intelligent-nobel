@@ -55,9 +55,9 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>ShowFlow — Painel Master (Super Régie)</title>
-  <link rel="stylesheet" href="css/master.css?v=2.01">
-  <script src="js/st-icons.js?v=2.01"></script>
-  <script src="js/auth.js?v=2.01"></script>
+  <link rel="stylesheet" href="css/master.css?v=2.02">
+  <script src="js/st-icons.js?v=2.02"></script>
+  <script src="js/auth.js?v=2.02"></script>
 </head>
 <body>
   <div class="master-container">
@@ -71,7 +71,7 @@
             <h1 class="master-header-title">
               <span class="master-title-text">Painel Master</span>
               <span class="badge">Super Régie</span>
-              <span class="badge" style="background: rgba(31, 111, 235, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.4); font-family: var(--font-mono); font-weight: 700;">v2.01</span>
+              <span class="badge" style="background: rgba(31, 111, 235, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.4); font-family: var(--font-mono); font-weight: 700;">v2.02</span>
             </h1>
             <div class="master-header-sub">
               Gestão Central de Ecrãs e Palcos
@@ -86,7 +86,7 @@
               <select id="master-event-select" class="master-stage-select" title="Escolher Palco / Sessão Ativa"></select>
             </div>
             <div class="master-header-quick-btns">
-              <button id="master-top-copy-watch-btn" type="button" class="btn btn-sm btn-master-copy-watch" title="Copiar link do Relógio (Apple Watch) para o palco ativo"><svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16.51 17.35l-.85 4.65H8.34l-.85-4.65"></path><path d="M7.49 6.65l.85-4.65h7.32l.85 4.65"></path></svg> <span>Relógio</span></button>
+              <button id="master-top-copy-watch-btn" type="button" class="btn btn-sm btn-master-copy-watch" title="Copiar link do Relógio (Apple Watch) para o palco ativo"><svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16.51 17.35l-.85 4.65H8.34l-.85-4.65"></path><path d="M7.49 6.65l.85-4.65h7.32l.85 4.65"></path></svg> <span>Copiar Link Watch</span></button>
               <button id="master-notif-btn" type="button" class="btn btn-sm" title="Configurar Alertas Telegram e Notificações no Telemóvel"><svg class="st-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg> <span>Alertas</span></button>
               <button id="master-org-btn" type="button" class="btn btn-sm" title="Configurar Organização, Namespace Multi-Tenant e Convites da Equipa"><svg class="st-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> <span>Organização</span></button>
             </div>
@@ -105,7 +105,6 @@
                   <a href="operator.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg> Modo Operador</a>
                   <div class="st-nav-group-label" data-suite="concert">Palco & Equipa</div>
                   <a href="viewer.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg> Modo Palco</a>
-                  <a href="watch.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16.51 17.35l-.85 4.65H8.34l-.85-4.65"></path><path d="M7.49 6.65l.85-4.65h7.32l.85 4.65"></path></svg> Modo Apple Watch</a>
                   <a href="lineup.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg> Modo Lista</a>
                   <a href="regies.html" class="st-nav-item master-nav-btn" data-suite="concert"><svg class="st-icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg> Modo Régies</a>
                   <div class="st-nav-group-label" data-suite="theatre" style="display: none;">Teatro & Artes Cénicas</div>
@@ -670,17 +669,17 @@
 
     <!-- Footer Version Indicator -->
     <footer style="text-align: center; padding: 24px 0 12px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-      ShowFlow Super Régie Master • <span class="badge" style="background: rgba(31, 111, 235, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.4); padding: 2px 8px; border-radius: 4px; font-weight: 700;">v2.01</span>
+      ShowFlow Super Régie Master • <span class="badge" style="background: rgba(31, 111, 235, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.4); padding: 2px 8px; border-radius: 4px; font-weight: 700;">v2.02</span>
     </footer>
 
   </div>
 
-  <script src="js/mqtt.min.js?v=2.01"></script>
+  <script src="js/mqtt.min.js?v=2.02"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
-  <script src="js/pwa.js?v=2.01"></script>
-  <script src="js/view-mode.js?v=2.01"></script>
-  <script src="js/local-sync.js?v=2.01"></script>
-  <script src="js/notifications.js?v=2.01"></script>
-  <script src="js/master.js?v=2.01"></script>
+  <script src="js/pwa.js?v=2.02"></script>
+  <script src="js/view-mode.js?v=2.02"></script>
+  <script src="js/local-sync.js?v=2.02"></script>
+  <script src="js/notifications.js?v=2.02"></script>
+  <script src="js/master.js?v=2.02"></script>
 </body>
 </html>

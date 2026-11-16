@@ -70,7 +70,7 @@
 
   function getWatchFullUrl(roomCode) {
     const clean = (roomCode || 'PALCO1').toUpperCase().trim();
-    return new URL(`watch.html?room=${encodeURIComponent(clean)}&v=2.01`, window.location.href).href;
+    return new URL(`watch.html?room=${encodeURIComponent(clean)}&v=2.02`, window.location.href).href;
   }
 
   function openWatchModal(roomCode, stageTitle, url) {
@@ -500,9 +500,6 @@
               </button>
               <button type="button" class="device-btn ${viewInfo.key === 'controller' ? 'is-current-view' : ''}" data-cmd="controller" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Configurador">
                 <svg class="st-icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg> Configurador ${viewInfo.key === 'controller' ? '<span class="btn-active-check">Ativo</span>' : ''}
-              </button>
-              <button type="button" class="device-btn ${viewInfo.key === 'watch' ? 'is-current-view' : ''}" data-cmd="watch" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Apple Watch">
-                <svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16.51 17.35l-.85 4.65H8.34l-.85-4.65"></path><path d="M7.49 6.65l.85-4.65h7.32l.85 4.65"></path></svg> Watch ${viewInfo.key === 'watch' ? '<span class="btn-active-check">Ativo</span>' : ''}
               </button>
               <button type="button" class="device-btn btn-warning-action" data-cmd="reload" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Recarregar página no dispositivo">
                 <svg class="st-icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Recarregar Ecrã Remoto
