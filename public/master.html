@@ -55,9 +55,9 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>ShowFlow — Painel Master (Super Régie)</title>
-  <link rel="stylesheet" href="css/master.css?v=144">
-  <script src="js/st-icons.js?v=144"></script>
-  <script src="js/auth.js?v=144"></script>
+  <link rel="stylesheet" href="css/master.css?v=145">
+  <script src="js/st-icons.js?v=145"></script>
+  <script src="js/auth.js?v=145"></script>
 </head>
 <body>
   <div class="master-container">
@@ -71,7 +71,7 @@
             <h1 class="master-header-title">
               <span class="master-title-text">Painel Master</span>
               <span class="badge">Super Régie</span>
-              <span class="badge" style="background: rgba(31, 111, 235, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.4); font-family: var(--font-mono); font-weight: 700;">v144</span>
+              <span class="badge" style="background: rgba(31, 111, 235, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.4); font-family: var(--font-mono); font-weight: 700;">v145</span>
             </h1>
             <div class="master-header-sub">
               Gestão Central de Ecrãs e Palcos
@@ -530,7 +530,7 @@
             </div>
           </div>
 
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border);">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); flex-wrap: wrap;">
             <button id="master-tg-btn-test" type="button" class="btn btn-sm" style="font-weight: 600;">
               <svg class="st-icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> Testar Envio Telegram
             </button>
@@ -538,7 +538,7 @@
           </div>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <div class="master-modal-actions" style="display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;">
           <button id="master-notif-close-btn" type="button" class="btn">Fechar</button>
           <button id="master-notif-save-btn" type="button" class="btn btn-primary"><svg class="st-icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Guardar Configurações</button>
         </div>
@@ -547,7 +547,7 @@
 
     <!-- Master Apple Watch Link & QR Modal -->
     <div id="master-watch-modal" style="display: none; position: fixed; inset: 0; background: rgba(5, 7, 15, 0.88); backdrop-filter: blur(8px); z-index: 10002; align-items: center; justify-content: center; padding: 16px;">
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; max-width: 520px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.8); position: relative;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; max-width: 520px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.8); position: relative; max-height: 90dvh; overflow-y: auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; gap: 10px;">
             <svg class="st-icon text-accent" style="width: 28px; height: 28px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16.51 17.35l-.85 4.65H8.34l-.85-4.65"></path><path d="M7.49 6.65l.85-4.65h7.32l.85 4.65"></path></svg>
@@ -561,26 +561,26 @@
           <button id="master-watch-modal-close" type="button" class="btn btn-sm" style="color: #fff; width: 32px; height: 32px; padding: 0; border-radius: 50%; font-size: 0.9rem;" title="Fechar">X</button>
         </div>
 
-        <div style="background: rgba(46, 160, 67, 0.15); border: 1px solid rgba(46, 160, 67, 0.4); border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <div style="background: rgba(46, 160, 67, 0.15); border: 1px solid rgba(46, 160, 67, 0.4); border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
           <span style="font-size: 0.82rem; color: var(--green); font-weight: 600;">Link copiado para a área de transferência!</span>
           <span class="badge" style="background: rgba(46, 160, 67, 0.2); color: var(--green); border: 1px solid var(--green); font-size: 0.7rem; font-weight: 700;">PRONTO</span>
         </div>
 
         <div style="margin-bottom: 16px;">
           <label style="display: block; font-size: 0.76rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.05em;">Link Direto do Relógio:</label>
-          <div style="display: flex; gap: 6px;">
-            <input id="master-watch-modal-url" type="text" readonly class="input" style="flex: 1; font-family: var(--font-mono); font-size: 0.82rem; background: #000; border: 1px solid var(--border); color: #fff; padding: 8px 12px; border-radius: 6px;" />
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <input id="master-watch-modal-url" type="text" readonly class="input" style="flex: 1; min-width: 180px; font-family: var(--font-mono); font-size: 0.82rem; background: #000; border: 1px solid var(--border); color: #fff; padding: 8px 12px; border-radius: 6px;" />
             <button id="master-watch-modal-copy-btn" type="button" class="btn btn-primary" style="font-weight: 600; white-space: nowrap;">
               <svg class="st-icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copiar
             </button>
           </div>
         </div>
 
-        <div style="display: flex; gap: 16px; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-bottom: 18px;">
-          <div style="background: #fff; padding: 6px; border-radius: 6px; flex-shrink: 0; line-height: 0;">
+        <div class="master-watch-qr-row" style="display: flex; gap: 16px; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-bottom: 18px; flex-wrap: wrap;">
+          <div style="background: #fff; padding: 6px; border-radius: 6px; flex-shrink: 0; line-height: 0; margin: 0 auto;">
             <img id="master-watch-modal-qr" src="" alt="QR Code" style="width: 100px; height: 100px; display: block;" />
           </div>
-          <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;">
+          <div style="flex: 1; min-width: 200px; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;">
             <strong style="color: #fff; display: block; margin-bottom: 4px;">Como abrir no Apple Watch:</strong>
             1. Envie o link por <strong>iMessage</strong> ou <strong>WhatsApp</strong> para si próprio.<br>
             2. Abra a mensagem no relógio e toque no link.<br>
@@ -588,7 +588,7 @@
           </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
           <a id="master-watch-modal-open-link" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="font-weight: 600;">
             <svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Testar no Browser ↗
           </a>
@@ -601,7 +601,7 @@
 
   <!-- Modal: Organização & Gestão de Equipa (RBAC) -->
   <div id="master-org-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
-    <div class="modal" style="max-width: 560px; width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+    <div class="modal" style="max-width: 560px; width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); max-height: 90dvh; overflow-y: auto;">
       <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px;">
         <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
           <svg class="st-icon text-accent" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Organização & Gestão de Equipa (RBAC)
@@ -615,7 +615,7 @@
           <input id="org-name-input" type="text" class="input" placeholder="Ex: Festival FMM Sines / Som & Luz Rental" style="width: 100%; padding: 8px 12px; font-size: 0.85rem;">
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="master-org-fields-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
           <div>
             <label style="display: block; font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px;">CÓDIGO DE ISOLAMENTO (NAMESPACE)</label>
             <input id="org-code-input" type="text" class="input input-mono" placeholder="Ex: FMM2026" style="width: 100%; padding: 8px 12px; font-size: 0.85rem; color: #79c0ff; font-weight: 700; text-transform: uppercase;">
@@ -636,7 +636,7 @@
 
         <div style="margin-top: 6px;">
           <label style="display: block; font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-bottom: 6px;">LINKS RÁPIDOS DE CONVITE COM PAPEL (RBAC):</label>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 6px;">
             <button type="button" class="btn btn-sm btn-copy-invite" data-role="operator" style="font-size: 0.72rem; padding: 6px 8px; text-align: left;"><svg class="st-icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg> Link Operador Mobile</button>
             <button type="button" class="btn btn-sm btn-copy-invite" data-role="controller" style="font-size: 0.72rem; padding: 6px 8px; text-align: left;"><svg class="st-icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg> Link Configurador</button>
             <button type="button" class="btn btn-sm btn-copy-invite" data-role="viewer" style="font-size: 0.72rem; padding: 6px 8px; text-align: left;"><svg class="st-icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg> Link Ecrã Palco</button>
@@ -649,9 +649,9 @@
         </div>
       </div>
 
-      <div style="border-top: 1px solid var(--border); padding-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+      <div class="master-modal-actions" style="border-top: 1px solid var(--border); padding-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
         <button id="master-org-clear-btn" type="button" class="btn btn-sm btn-danger">Limpar Namespace</button>
-        <div style="display: flex; gap: 8px;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button id="master-org-cancel-btn" type="button" class="btn btn-sm">Fechar</button>
           <button id="master-org-save-btn" type="button" class="btn btn-sm btn-primary" style="font-weight: 600;">Guardar Organização</button>
         </div>
@@ -664,18 +664,17 @@
 
     <!-- Footer Version Indicator -->
     <footer style="text-align: center; padding: 24px 0 12px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-      ShowFlow Super Régie Master • <span class="badge" style="background: rgba(31, 111, 235, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.4); padding: 2px 8px; border-radius: 4px; font-weight: 700;">v144</span>
+      ShowFlow Super Régie Master • <span class="badge" style="background: rgba(31, 111, 235, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.4); padding: 2px 8px; border-radius: 4px; font-weight: 700;">v145</span>
     </footer>
 
   </div>
 
-  <script src="js/mqtt.min.js?v=144"></script>
+  <script src="js/mqtt.min.js?v=145"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
-  <script src="js/pwa.js?v=144"></script>
-  <script src="js/local-sync.js?v=144"></script>
-  <script src="js/notifications.js?v=144"></script>
-  <script src="js/master.js?v=144"></script>
-</body>
-</html>
+  <script src="js/pwa.js?v=145"></script>
+  <script src="js/view-mode.js?v=145"></script>
+  <script src="js/local-sync.js?v=145"></script>
+  <script src="js/notifications.js?v=145"></script>
+  <script src="js/master.js?v=145"></script>
 </body>
 </html>

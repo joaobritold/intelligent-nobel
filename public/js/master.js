@@ -70,7 +70,7 @@
 
   function getWatchFullUrl(roomCode) {
     const clean = (roomCode || 'PALCO1').toUpperCase().trim();
-    return new URL(`watch.html?room=${encodeURIComponent(clean)}&v=137`, window.location.href).href;
+    return new URL(`watch.html?room=${encodeURIComponent(clean)}&v=145`, window.location.href).href;
   }
 
   function openWatchModal(roomCode, stageTitle, url) {
@@ -190,15 +190,15 @@
     if (!$kpiCloud) return;
     const status = masterClient.getSyncStatus ? masterClient.getSyncStatus() : 'offline';
     if (status === 'hybrid') {
-      $kpiCloud.textContent = 'Híbrido (Nuvem + LAN)';
+      $kpiCloud.textContent = 'Híbrido (Cloud+LAN)';
       $kpiCloud.style.color = 'var(--green)';
       $kpiCloud.title = 'Sincronização redundante: Cloud MQTT + LAN Hub Local';
     } else if (status === 'local_hub') {
-      $kpiCloud.textContent = 'LAN Local (Offline Hub)';
+      $kpiCloud.textContent = 'LAN Local (Hub)';
       $kpiCloud.style.color = 'var(--yellow)';
       $kpiCloud.title = 'Sincronização em rede local LAN sem dependência de Internet externa';
     } else if (status === 'cloud') {
-      $kpiCloud.textContent = 'Nuvem (Cloud WSS)';
+      $kpiCloud.textContent = 'Nuvem (Cloud)';
       $kpiCloud.style.color = 'var(--accent)';
       $kpiCloud.title = 'Sincronização via Cloud MQTT (WAN)';
     } else {
@@ -936,24 +936,18 @@
       return `
         <div class="event-manage-card" data-stage-code="${escapeHtml(ev.code)}">
           <div class="event-manage-top">
-            <div>
-              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <div class="event-manage-title" style="margin-bottom: 0;">${isTheatre ? ico('theater') : ico('calendar')} ${escapeHtml(ev.title || ev.code)}</div>
-                <button type="button" class="btn btn-sm" data-rename-event="${escapeHtml(ev.code)}" data-current-name="${escapeHtml(ev.title || ev.code)}" style="padding: 2px 8px; font-size: 0.72rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe; font-weight: 600;" title="Renomear este Evento">
-                  ${ico('edit')} Renomear Evento
-                </button>
+            <div class="event-manage-info">
+              <div class="event-manage-title-row">
+                <div class="event-manage-title">${isTheatre ? ico('theater') : ico('calendar')} ${escapeHtml(ev.title || ev.code)}</div>
+                <span class="event-manage-code">${escapeHtml(ev.code)}</span>
               </div>
-              <div class="event-manage-stats" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
-                ${isTheatre ? `<span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border: 1px solid #fdcb6e; font-weight: 700; font-size: 0.75rem;">${ico('theater')} Teatro</span>` : `<span class="badge" style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700; font-size: 0.75rem;">${ico('calendar')} Concerto</span>`}
-                <span>•</span>
-                <span>${ev.stagesCount || 1} palco(s)</span>
-                <span>•</span>
-                <span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 800; font-family: var(--font-mono); padding: 2px 8px; border-radius: 6px; border: 1px solid #fdcb6e; font-size: 0.78rem;">${ico('key')} PIN: ${escapeHtml(ev.pin || '----')}</span>
-                <span>•</span>
-                <span>${count} artista(s) programado(s) • Dia ${day}</span>
+              <div class="event-manage-stats">
+                ${isTheatre ? `<span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border: 1px solid #fdcb6e; font-weight: 700; font-size: 0.72rem;">${ico('theater')} Teatro</span>` : `<span class="badge" style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700; font-size: 0.72rem;">${ico('calendar')} Concerto</span>`}
+                <span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 800; font-family: var(--font-mono); padding: 2px 8px; border-radius: 6px; border: 1px solid #fdcb6e; font-size: 0.74rem;">${ico('key')} PIN: ${escapeHtml(ev.pin || '----')}</span>
+                <span class="event-stat-pill">${ev.stagesCount || 1} palco(s)</span>
+                <span class="event-stat-pill">${count} artista(s) • Dia ${day}</span>
               </div>
             </div>
-            <span class="event-manage-code">${escapeHtml(ev.code)}</span>
           </div>
 
           <div class="event-manage-btns">
@@ -982,7 +976,7 @@
               </a>
             `}
             <button type="button" class="btn btn-sm btn-master-copy-watch" data-room="${encodeURIComponent(primaryTargetRoom)}" data-title="${escapeHtml(ev.title || ev.code)}" title="Copiar link do Relógio (Apple Watch) para este evento">
-              ${ico('watch')} Copiar Link Relógio
+              ${ico('watch')} Link Relógio
             </button>
             <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(primaryTargetRoom)}" data-title="${escapeHtml(ev.title || ev.code)}" style="background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
               ${ico('video')} Vídeo
@@ -1001,40 +995,50 @@
             </button>
           </div>
           ${Array.isArray(ev.stages) && ev.stages.length > 0 ? `
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); align-items: center;">
-              <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Palcos deste evento:</span>
-              ${ev.stages.map(st => `
-                <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; flex-wrap: wrap;">
-                  <strong style="font-size: 0.78rem; color: #55efc4;">${isTheatre ? ico('theater') : ico('calendar')} ${escapeHtml(st.name || st.code)}</strong>
-                  <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">(${escapeHtml(st.code)})</span>
-                  <button type="button" class="btn btn-sm" data-rename-stage="${escapeHtml(st.code)}" data-parent-event="${escapeHtml(ev.code)}" data-current-name="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe; font-weight: 600;" title="Renomear este palco">
-                    ${ico('edit')} Renomear Palco
-                  </button>
-                  ${isTheatre ? `
-                    <a href="dc.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem; background: rgba(253, 203, 110, 0.2); border-color: #fdcb6e; color: #ffeaa7;" title="Abrir Modo Jess">${ico('book')}</a>
-                    <a href="cue-station.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem; background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4;" title="Abrir Posto Cues">${ico('traffic')}</a>
-                  ` : `
-                    <a href="controller.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Configurador">${ico('sliders')}</a>
-                    <a href="operator.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Operador">${ico('smartphone')}</a>
-                    <a href="viewer.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Palco">${ico('tv')}</a>
-                    <a href="lineup.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Lista">${ico('list')}</a>
-                  `}
-                  <button type="button" class="btn btn-sm btn-master-copy-watch" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem;" title="Copiar link do Relógio para o palco ${escapeHtml(st.name || st.code)}">
-                    ${ico('watch')} Relógio
-                  </button>
-                  <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
-                    ${ico('video')}
-                  </button>
-                  <button type="button" class="btn btn-sm btn-master-stage-notif" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; background: rgba(9, 132, 227, 0.25); border-color: #0984e3; color: #74b9ff; font-weight: 700;" title="Configurar Alertas e Telegram deste Palco">
-                    ${ico('bell')}
-                  </button>
-                  ${ev.stages.length > 1 ? `
-                    <button type="button" class="btn btn-sm btn-danger" data-delete-substage="${escapeHtml(st.code)}" data-parent-event="${escapeHtml(ev.code)}" data-stage-name="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; margin-left: 2px;" title="Eliminar este palco do evento">
-                      &times;
-                    </button>
-                  ` : ''}
-                </div>
-              `).join('')}
+            <div class="event-substages-section">
+              <div class="event-substages-label">Palcos deste evento:</div>
+              <div class="event-substages-list">
+                ${ev.stages.map(st => `
+                  <div class="event-substage-item">
+                    <div class="event-substage-header">
+                      <div class="event-substage-name-wrap">
+                        <strong class="event-substage-name">${isTheatre ? ico('theater') : ico('calendar')} ${escapeHtml(st.name || st.code)}</strong>
+                        <span class="event-substage-code">(${escapeHtml(st.code)})</span>
+                      </div>
+                      <div class="event-substage-meta-btns">
+                        <button type="button" class="btn btn-sm event-substage-btn" data-rename-stage="${escapeHtml(st.code)}" data-parent-event="${escapeHtml(ev.code)}" data-current-name="${escapeHtml(st.name || st.code)}" style="background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe;" title="Renomear este palco">
+                          ${ico('edit')} Nome
+                        </button>
+                        ${ev.stages.length > 1 ? `
+                          <button type="button" class="btn btn-sm btn-danger event-substage-btn" data-delete-substage="${escapeHtml(st.code)}" data-parent-event="${escapeHtml(ev.code)}" data-stage-name="${escapeHtml(st.name || st.code)}" title="Eliminar este palco do evento">
+                            ${ico('trash')}
+                          </button>
+                        ` : ''}
+                      </div>
+                    </div>
+                    <div class="event-substage-actions">
+                      ${isTheatre ? `
+                        <a href="dc.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm event-substage-btn" style="background: rgba(253, 203, 110, 0.2); border-color: #fdcb6e; color: #ffeaa7;" title="Abrir Modo Jess">${ico('book')} Jess</a>
+                        <a href="cue-station.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm event-substage-btn" style="background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4;" title="Abrir Posto Cues">${ico('traffic')} Cues</a>
+                      ` : `
+                        <a href="controller.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm event-substage-btn" title="Abrir Configurador">${ico('sliders')} Config</a>
+                        <a href="operator.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm event-substage-btn" title="Abrir Operador">${ico('smartphone')} Operador</a>
+                        <a href="viewer.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm event-substage-btn" title="Abrir Palco">${ico('tv')} Palco</a>
+                        <a href="lineup.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm event-substage-btn" title="Abrir Lista">${ico('list')} Lista</a>
+                      `}
+                      <button type="button" class="btn btn-sm btn-master-copy-watch event-substage-btn" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" title="Copiar link do Relógio para o palco ${escapeHtml(st.name || st.code)}">
+                        ${ico('watch')} Relógio
+                      </button>
+                      <button type="button" class="btn btn-sm btn-master-stage-video event-substage-btn" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" style="background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd;" title="Configurar Vídeo / Stream deste Palco">
+                        ${ico('video')} Vídeo
+                      </button>
+                      <button type="button" class="btn btn-sm btn-master-stage-notif event-substage-btn" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" style="background: rgba(9, 132, 227, 0.25); border-color: #0984e3; color: #74b9ff;" title="Configurar Alertas e Telegram deste Palco">
+                        ${ico('bell')} Alertas
+                      </button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
             </div>
           ` : ''}
         </div>
@@ -1492,20 +1496,20 @@
           </div>
 
           <div class="multiview-footer">
-            <div>
+            <div class="multiview-end-wrap">
               Fim: <span class="multiview-end-badge">${eventEndTime}</span>
             </div>
-            <div style="display: flex; gap: 6px; align-items: center;">
-              <button type="button" class="btn btn-sm btn-master-copy-watch" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" style="padding: 4px 8px; font-size: 0.75rem;" title="Copiar link do Relógio para este palco">
+            <div class="multiview-actions">
+              <button type="button" class="btn btn-sm btn-master-copy-watch" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" title="Copiar link do Relógio para este palco">
                 ${ico('watch')} Relógio
               </button>
-              <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
+              <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" style="background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
                 ${ico('video')} Vídeo
               </button>
-              <button type="button" class="btn btn-sm btn-master-stage-notif" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(9, 132, 227, 0.25); border-color: #0984e3; color: #74b9ff; font-weight: 700;" title="Configurar Alertas e Telegram deste Palco">
-                ${ico('bell')}
+              <button type="button" class="btn btn-sm btn-master-stage-notif" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" style="background: rgba(9, 132, 227, 0.25); border-color: #0984e3; color: #74b9ff; font-weight: 700;" title="Configurar Alertas e Telegram deste Palco">
+                ${ico('bell')} Alertas
               </button>
-              <a href="controller.html?room=${encodeURIComponent(stageCode)}" class="btn btn-sm btn-primary" style="padding: 4px 10px; font-size: 0.75rem;">
+              <a href="controller.html?room=${encodeURIComponent(stageCode)}" class="btn btn-sm btn-primary">
                 ${ico('sliders')} Abrir
               </a>
             </div>
@@ -1595,6 +1599,13 @@
     'section-multiview': document.getElementById('section-multiview')
   };
 
+  function isMobileLayout() {
+    const mode = document.documentElement.getAttribute('data-view-mode');
+    if (mode === 'phone') return true;
+    if (mode === 'pc') return false;
+    return window.innerWidth <= 768;
+  }
+
   function switchMobileTab(targetId, shouldScroll = false) {
     if (!targetId) return;
 
@@ -1603,7 +1614,7 @@
       item.classList.toggle('active', isTarget);
     });
 
-    if (window.innerWidth <= 768) {
+    if (isMobileLayout()) {
       Object.entries(masterSections).forEach(([id, el]) => {
         if (!el) return;
         if (id === targetId) {
@@ -1644,15 +1655,8 @@
     });
   });
 
-  let lastScreenWidth = window.innerWidth;
-  window.addEventListener('resize', () => {
-    // CRITICAL: On mobile phones, scrolling down collapses the address bar,
-    // which fires a window resize event (height change only).
-    // NEVER switch tabs or scroll if width has not changed!
-    if (window.innerWidth === lastScreenWidth) return;
-    lastScreenWidth = window.innerWidth;
-
-    if (window.innerWidth > 768) {
+  function syncLayoutSections() {
+    if (!isMobileLayout()) {
       Object.values(masterSections).forEach(el => {
         if (el) el.style.display = '';
       });
@@ -1660,9 +1664,26 @@
       const activeBtn = document.querySelector('.master-tab-item.active') || $tabItems[0];
       if (activeBtn) switchMobileTab(activeBtn.dataset.target, false);
     }
+  }
+
+  let lastScreenWidth = window.innerWidth;
+  window.addEventListener('resize', () => {
+    // CRITICAL: On mobile phones, scrolling down collapses the address bar,
+    // which fires a window resize event (height change only).
+    // NEVER switch tabs or scroll if width has not changed!
+    if (window.innerWidth === lastScreenWidth) return;
+    lastScreenWidth = window.innerWidth;
+    syncLayoutSections();
   });
 
-  if (window.innerWidth <= 768) {
+  if (typeof MutationObserver !== 'undefined') {
+    const vmObserver = new MutationObserver(() => {
+      syncLayoutSections();
+    });
+    vmObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-view-mode'] });
+  }
+
+  if (isMobileLayout()) {
     switchMobileTab('section-devices', false);
   }
 
@@ -1679,10 +1700,10 @@
     $theatreReportsTitle.innerHTML = `${ico('file-text')} Relatórios: ${escapeHtml(title || room)}`;
     $theatreReportsSub.textContent = `Sala ${room} • Histórico gravado no evento`;
 
-    let state = multiRoomsMap.get(room);
+    let state = stagesStateMap.get(room);
     if (!state) {
       try {
-        const raw = localStorage.getItem(`stagetimer_state_${room}`);
+        const raw = localStorage.getItem(`stagetimer_v10_state_${room}`) || localStorage.getItem(`stagetimer_state_${room}`);
         if (raw) state = JSON.parse(raw);
       } catch (_) {}
     }
@@ -2479,7 +2500,7 @@
         } else {
           const code = String(ev.code || '').toUpperCase().trim();
           allStages.push(code);
-          optionsHtml += `<option value="${escapeHtml(code)}">${evIcon} ${escapeHtml(evTitle)} (${escapeHtml(code)})</option>`;
+          optionsHtml += `<option value="${escapeHtml(code)}">${escapeHtml(evTitle)} (${escapeHtml(code)})</option>`;
         }
       });
     }
@@ -2752,7 +2773,7 @@
     $orgModal.querySelectorAll('.btn-copy-invite').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const role = e.currentTarget.getAttribute('data-role');
-        const activeStage = getActiveMasterStageCode();
+        const activeStage = ($masterEventSelect?.value || sessionStorage.getItem('stagetimer_active_room') || localStorage.getItem('stagetimer_device_room') || 'PALCO1').toUpperCase();
         const links = masterClient.generateTeamInviteLinks ? masterClient.generateTeamInviteLinks(activeStage) : {};
         const targetUrl = links[role] || window.location.href;
 
