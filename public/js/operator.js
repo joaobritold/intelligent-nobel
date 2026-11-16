@@ -72,11 +72,14 @@ function renderOpStageBadge(force = false) {
   if ($opStageBadge) {
     let name = currentCode;
     if (currentEvent) {
-      if (Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
-        const st = currentEvent.stages.find(s => (s.code || s.id || '').toUpperCase() === currentCode);
-        name = `${currentEvent.title || currentEvent.code} • ${st?.name || currentCode}`;
+      const evTitle = currentEvent.title || currentEvent.code;
+      const matchedSt = Array.isArray(currentEvent.stages) ? currentEvent.stages.find(s => (s.code || s.id || '').toUpperCase() === currentCode) : null;
+      const stName = (matchedSt?.name || '').trim();
+      const hasDistinctStage = stName && stName.toLowerCase() !== evTitle.toLowerCase();
+      if ((Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) || hasDistinctStage) {
+        name = `${evTitle} • ${stName || currentCode}`;
       } else {
-        name = currentEvent.title || currentEvent.code;
+        name = evTitle;
       }
     }
     if ($opStageBadge.textContent !== name) {
@@ -155,7 +158,10 @@ function renderOpStageBadge(force = false) {
           } else {
             const stCode = (stages[0].code || ev.code).toUpperCase();
             const isSel = stCode === currentCode;
-            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)}</option>`;
+            const stName = (stages[0].name || '').trim();
+            const hasDistinctStage = stName && stName.toLowerCase() !== evTitle.toLowerCase();
+            const optLabel = hasDistinctStage ? `${evTitle} • ${stName}` : evTitle;
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(optLabel)}</option>`;
           }
         });
 

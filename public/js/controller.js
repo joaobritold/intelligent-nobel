@@ -183,18 +183,20 @@ function renderEventSelector(force = false) {
   let name = currentCode;
   let currentEvent = null;
   for (const ev of list) {
-    if (ev.code === currentCode) {
-      name = ev.title || ev.code;
-      currentEvent = ev;
-      break;
-    }
+    let matchedStage = null;
     if (Array.isArray(ev.stages)) {
-      const st = ev.stages.find(s => (s.code || s.id || '').toUpperCase() === currentCode);
-      if (st) {
-        name = `${ev.title || ev.code} • ${st.name || st.code}`;
-        currentEvent = ev;
-        break;
+      matchedStage = ev.stages.find(s => (s.code || s.id || '').toUpperCase() === currentCode);
+    }
+    if (ev.code === currentCode || matchedStage) {
+      currentEvent = ev;
+      const evTitle = ev.title || ev.code;
+      const stName = matchedStage ? (matchedStage.name || matchedStage.code) : (state?.name || currentCode);
+      if (stName && stName.toLowerCase() !== evTitle.toLowerCase()) {
+        name = `${evTitle} • ${stName}`;
+      } else {
+        name = evTitle;
       }
+      break;
     }
   }
 
@@ -238,7 +240,10 @@ function renderEventSelector(force = false) {
           } else {
             const stCode = (stages[0].code || ev.code).toUpperCase();
             const isSel = stCode === currentCode;
-            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)}</option>`;
+            const stName = (stages[0].name || '').trim();
+            const hasDistinctStage = stName && stName.toLowerCase() !== evTitle.toLowerCase();
+            const optLabel = hasDistinctStage ? `${evTitle} • ${stName}` : evTitle;
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(optLabel)}</option>`;
           }
         });
 
@@ -305,13 +310,21 @@ function renderEventSelector(force = false) {
     $ctrlEventsManageList.innerHTML = list.map(ev => {
       const targetStageCode = (Array.isArray(ev.stages) && ev.stages.length > 0) ? (ev.stages[0].code || ev.code) : ev.code;
       const isAct = ev.code === currentCode || (Array.isArray(ev.stages) && ev.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode));
+      const firstStageName = (ev.stages && ev.stages[0]?.name || '').trim();
+      const evTitle = (ev.title || ev.code || '').trim();
+      const stageDetail = (ev.stages && ev.stages.length > 1)
+        ? `${ev.stages.length} Palcos`
+        : (firstStageName && firstStageName.toLowerCase() !== evTitle.toLowerCase() ? `Palco: ${firstStageName}` : '');
+
       return `
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 6px; background: var(--bg-card); border: 1px solid ${isAct ? 'var(--green)' : 'var(--border)'}; font-size: 0.8rem;">
-          <div>
-            <strong>${escapeHtml(ev.title || ev.code)}</strong>
-            <span style="color: var(--text-secondary); font-family: var(--font-mono); margin-left: 6px; font-size: 0.72rem;">(${escapeHtml(ev.code)})</span>
+          <div style="min-width: 0;">
+            <div style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(evTitle)} <span style="color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.72rem;">(${escapeHtml(ev.code)})</span></div>
+            ${stageDetail ? `<div style="font-size: 0.72rem; color: #79c0ff; margin-top: 2px;">${escapeHtml(stageDetail)}</div>` : ''}
           </div>
-          <div style="display: flex; gap: 6px;">
+          <div style="display: flex; gap: 4px; flex-shrink: 0;">
+            <button type="button" class="btn btn-sm" data-rename-ev="${escapeHtml(ev.code)}" data-current-title="${escapeHtml(evTitle)}" style="padding: 3px 7px; font-size: 0.72rem;" title="Renomear Evento">✏️ Evento</button>
+            <button type="button" class="btn btn-sm" data-rename-st="${escapeHtml(targetStageCode)}" data-parent-ev="${escapeHtml(ev.code)}" data-current-name="${escapeHtml(firstStageName || evTitle)}" style="padding: 3px 7px; font-size: 0.72rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe;" title="Renomear Palco">✏️ Palco</button>
             <button type="button" class="btn btn-sm ${isAct ? 'btn-primary' : ''}" data-open-ev="${escapeHtml(targetStageCode)}" data-event-root="${escapeHtml(ev.code)}" style="padding: 3px 8px; font-size: 0.72rem;">${isAct ? 'Ativo' : 'Abrir'}</button>
             ${list.length > 1 ? `<button type="button" class="btn btn-sm btn-danger" data-del-ev="${escapeHtml(ev.code)}" style="padding: 3px 8px; font-size: 0.72rem;" title="Apagar este evento"><svg class="st-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>` : ''}
           </div>
@@ -427,6 +440,29 @@ if ($newEventConfirm) {
 
 if ($ctrlEventsManageList) {
   $ctrlEventsManageList.addEventListener('click', (e) => {
+    const renameEvBtn = e.target.closest('[data-rename-ev]');
+    if (renameEvBtn) {
+      const evCode = renameEvBtn.dataset.renameEv;
+      const currentTitle = renameEvBtn.dataset.currentTitle || evCode;
+      const newTitle = prompt('Novo nome para o Evento:', currentTitle);
+      if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
+        client.renameEvent(evCode, newTitle.trim());
+        renderEventSelector(true);
+      }
+      return;
+    }
+    const renameStBtn = e.target.closest('[data-rename-st]');
+    if (renameStBtn) {
+      const stCode = renameStBtn.dataset.renameSt;
+      const parentEv = renameStBtn.dataset.parentEv;
+      const currentName = renameStBtn.dataset.currentName || stCode;
+      const newName = prompt('Novo nome para este Palco:', currentName);
+      if (newName && newName.trim() && newName.trim() !== currentName) {
+        client.renameStage(parentEv, stCode, newName.trim());
+        renderEventSelector(true);
+      }
+      return;
+    }
     const openBtn = e.target.closest('[data-open-ev]');
     if (openBtn) {
       const code = openBtn.dataset.openEv.toUpperCase();

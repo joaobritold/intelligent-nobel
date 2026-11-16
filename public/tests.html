@@ -532,6 +532,64 @@
         assert(identity.from === 'Pedro Brito (Diretor de Palco)', 'Identidade de emissor do operador deve refletir senderName');
       });
 
+      it('T20 - Independencia entre Nome do Evento e Nome do Palco (Default & Customizacao)',
+         'Garante que evento e palco tem por defeito o mesmo nome, mas mudancas de palco sao preservadas sem colisao',
+         () => {
+        // Garantir autorização Master para o teste criar eventos
+        sessionStorage.setItem('stagetimer_master_active', '1');
+        const client = new UniversalSyncClient({ role: 'master', room: 'PALCO_TEST_NAMES' });
+
+        // 1. Criar evento sem especificar nome de palco (deve herdar por defeito)
+        const ev1 = client.createEventWithStages({
+          title: 'Festival de Verao 2026',
+          stagesCount: 1,
+          eventType: 'concert'
+        });
+        assert(ev1.title === 'Festival de Verao 2026', 'Titulo do evento deve ser Festival de Verao 2026');
+        assert(ev1.stages[0].name === 'Festival de Verao 2026', 'Palco deve herdar por defeito o nome do evento');
+
+        // 2. Renomear o palco para um nome especifico
+        client.renameStage(ev1.code, ev1.stages[0].code, 'Palco Sunset');
+        const evAfterStageRename = client.getEventsList().find(e => e.code === ev1.code);
+        assert(evAfterStageRename.title === 'Festival de Verao 2026', 'Titulo do evento deve permanecer intacto apos renomear palco');
+        assert(evAfterStageRename.stages[0].name === 'Palco Sunset', 'Nome do palco deve ser Palco Sunset');
+
+        // 3. Simular execucao do sincronizador _updateEventRegistry no palco
+        const stageClient = new UniversalSyncClient({ role: 'controller', room: ev1.stages[0].code });
+        stageClient._state = {
+          id: ev1.stages[0].code,
+          name: 'Palco Sunset',
+          timers: [{ id: 't1', title: 'Artista 1', duration: 180, elapsed: 0, state: 'idle' }],
+          currentDay: 1,
+          days: { '1': [{ id: 't1', title: 'Artista 1', duration: 180, elapsed: 0, state: 'idle' }] }
+        };
+        stageClient._updateEventRegistry(false);
+
+        const evAfterSync = client.getEventsList().find(e => e.code === ev1.code);
+        assert(evAfterSync.title === 'Festival de Verao 2026', '_updateEventRegistry NAO deve sobrepor o titulo do evento pelo nome do palco');
+        assert(evAfterSync.stages[0].name === 'Palco Sunset', 'Nome do palco deve permanecer Palco Sunset');
+
+        // 4. Renomear o Evento para outro nome: deve MANTER o nome customizado do palco ('Palco Sunset')
+        client.renameEvent(ev1.code, 'Super Festival 2026');
+        const evAfterEventRename = client.getEventsList().find(e => e.code === ev1.code);
+        assert(evAfterEventRename.title === 'Super Festival 2026', 'Novo titulo do evento deve ser Super Festival 2026');
+        assert(evAfterEventRename.stages[0].name === 'Palco Sunset', 'Alteracao customizada do palco DEVE ser mantida intacta');
+
+        // 5. Criar evento com nome de palco customizado logo na criacao
+        const ev2 = client.createEventWithStages({
+          title: 'Gala Anual',
+          stagesCount: 1,
+          eventType: 'theatre',
+          stageName: 'Auditorio Nobre'
+        });
+        assert(ev2.title === 'Gala Anual', 'Titulo do evento Gala Anual');
+        assert(ev2.stages[0].name === 'Auditorio Nobre', 'Palco deve ter o nome customizado Auditorio Nobre fornecido na criacao');
+
+        // Limpeza dos eventos de teste
+        client.deleteEventFromRegistry(ev1.code);
+        client.deleteEventFromRegistry(ev2.code);
+      });
+
       // === EXECUTOR DE TESTES =========================================
 
       function runAllTests() {

@@ -424,6 +424,11 @@
           <input id="create-modal-title" class="input" placeholder="ex: Festival de Verão 2026, Peça Hamlet, Gala..." style="width: 100%; font-size: 0.95rem;" autocomplete="off">
         </div>
 
+        <div style="margin-bottom: 14px; text-align: left;">
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">Nome do Palco Inicial <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;">(opcional — por defeito igual ao evento):</span></label>
+          <input id="create-modal-stage-name" class="input" placeholder="Deixe em branco para usar o nome do evento (ou ex: Palco 1, Palco Sunset...)" style="width: 100%; font-size: 0.9rem;" autocomplete="off">
+        </div>
+
         <div style="margin-bottom: 16px; text-align: left;">
           <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">Número de Palcos no Evento:</label>
           <div style="display: flex; align-items: center; gap: 10px;">
@@ -731,6 +736,7 @@
     const $createTypeConcertBtn = document.getElementById('create-type-concert-btn');
     const $createTypeTheatreBtn = document.getElementById('create-type-theatre-btn');
     const $createTitle = document.getElementById('create-modal-title');
+    const $createStageName = document.getElementById('create-modal-stage-name');
     const $createStagesCount = document.getElementById('create-modal-stages-count');
     const $createStagesMinus = document.getElementById('create-modal-stages-minus');
     const $createStagesPlus = document.getElementById('create-modal-stages-plus');
@@ -914,7 +920,13 @@
       $portalEventsList.innerHTML = allEvents.map(ev => {
         const isTheatre = ev.eventType === 'theatre';
         const count = ev.stagesCount || (ev.stages ? ev.stages.length : 1);
-        const stageLabel = count > 1 ? `${count} palcos` : '1 palco';
+        const firstStageName = (ev.stages && ev.stages[0]?.name || '').trim();
+        const evTitle = (ev.title || ev.code || '').trim();
+        const hasCustomStage = firstStageName && firstStageName.toLowerCase() !== evTitle.toLowerCase();
+        let stageLabel = count > 1 ? `${count} palcos` : '1 palco';
+        if (count === 1 && hasCustomStage) {
+          stageLabel = `1 palco (${firstStageName})`;
+        }
         const typeBadge = isTheatre
           ? `<span style="background: rgba(56, 139, 253, 0.15); color: #79c0ff; font-weight: 700; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(56, 139, 253, 0.3);">Teatro</span>`
           : `<span style="background: rgba(46, 160, 67, 0.15); color: #3fb950; font-weight: 700; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(46, 160, 67, 0.3);">Concerto</span>`;
@@ -1021,8 +1033,11 @@
 
       const activeStage = stages.find(s => s.code === selectedRoom) || stages[0];
       if ($hubCurrentStageBadge) {
-        if (stages.length > 1) {
-          $hubCurrentStageBadge.textContent = activeStage.name || activeStage.code;
+        const evTitle = (unlockedEv.title || unlockedEv.code || '').trim();
+        const stageName = (activeStage.name || activeStage.code || '').trim();
+        const hasDistinctName = stageName && stageName.toLowerCase() !== evTitle.toLowerCase();
+        if (stages.length > 1 || hasDistinctName) {
+          $hubCurrentStageBadge.textContent = stages.length > 1 ? stageName : `Palco: ${stageName}`;
           $hubCurrentStageBadge.style.display = 'inline-block';
         } else {
           $hubCurrentStageBadge.style.display = 'none';
@@ -1510,6 +1525,7 @@
         if (!isMasterActive) return;
         setCreateType('concert');
         if ($createTitle) $createTitle.value = '';
+        if ($createStageName) $createStageName.value = '';
         if ($createStagesCount) $createStagesCount.value = '1';
         if ($createGeneratedPin) $createGeneratedPin.textContent = hubClient.generateUniquePin();
         if ($createModal) $createModal.style.display = 'flex';
@@ -1563,11 +1579,13 @@
           return;
         }
         const stagesCount = parseInt($createStagesCount ? $createStagesCount.value : '1', 10) || 1;
+        const stageName = ($createStageName ? $createStageName.value : '').trim();
         try {
           const newEvent = hubClient.createEventWithStages({
             title,
             stagesCount,
-            eventType: selectedCreateType
+            eventType: selectedCreateType,
+            stageName
           });
           forcedPortalMode = false;
           if ($createModal) $createModal.style.display = 'none';

@@ -2917,10 +2917,19 @@ class UniversalSyncClient {
     }
 
     let updatedStages = existing.stages || [];
+    let stageNameChanged = false;
     if (Array.isArray(updatedStages) && updatedStages.length > 0) {
       updatedStages = updatedStages.map(st => {
         if (st.code === this.cleanRoom || st.id === this.cleanRoom) {
-          return { ...st, timersCount: count };
+          const currentStageName = (this._state.name || '').trim();
+          if (currentStageName && currentStageName !== st.name) {
+            stageNameChanged = true;
+          }
+          return {
+            ...st,
+            name: currentStageName || st.name,
+            timersCount: count
+          };
         }
         return st;
       });
@@ -2930,18 +2939,17 @@ class UniversalSyncClient {
       ? updatedStages.reduce((sum, s) => sum + (s.timersCount || 0), 0)
       : count;
 
-    const titleChanged = this._state.name && existing.title !== this._state.name;
     const countChanged = existing.timersCount !== totalCount;
     const dayChanged = (this._state.currentDay || 1) !== (existing.currentDay || 1);
 
     // If nothing structural changed, do NOT touch or re-publish registry to avoid event swapping feedback loops
-    if (!titleChanged && !countChanged && !dayChanged) {
+    if (!stageNameChanged && !countChanged && !dayChanged) {
       return;
     }
 
     const entry = this._normalizeRegistryItem({
       ...existing,
-      title: titleChanged ? this._state.name : existing.title,
+      title: existing.title, // Event title is independent and preserved; stage name lives in stages[].name
       timersCount: totalCount,
       artistCount: totalCount,
       stages: updatedStages,
@@ -3048,7 +3056,7 @@ class UniversalSyncClient {
     return pin || String(Math.floor(1000 + Math.random() * 9000));
   }
 
-  createEventWithStages({ title, stagesCount = 1, eventType = 'concert' }) {
+  createEventWithStages({ title, stagesCount = 1, eventType = 'concert', stageName = '' }) {
     const isMasterAuthorized =
       (typeof window !== 'undefined' && typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
       sessionStorage.getItem('stagetimer_master_active') === '1' ||
@@ -3076,15 +3084,22 @@ class UniversalSyncClient {
     const pin = this.generateUniquePin(baseCode);
     const count = Math.max(1, Math.min(20, parseInt(stagesCount, 10) || 1));
     const stages = [];
+    const customFirstStageName = (stageName || '').trim();
 
     for (let i = 1; i <= count; i++) {
       const stageCode = count === 1 ? baseCode : `${baseCode}-P${i}`;
-      const stageName = count === 1 ? (cleanTitle || 'Palco Principal') : `Palco ${i}`;
+      let sName = '';
+      if (i === 1) {
+        // By default, the stage receives the same name as the event, unless customized
+        sName = customFirstStageName || (count === 1 ? (cleanTitle || 'Palco Principal') : 'Palco 1');
+      } else {
+        sName = `Palco ${i}`;
+      }
       this._unmarkDeletedEvent(stageCode);
 
       const stageState = {
         id: stageCode,
-        name: stageName,
+        name: sName,
         currentDay: 1,
         days: { '1': [] },
         timers: [],
@@ -3115,7 +3130,7 @@ class UniversalSyncClient {
       stages.push({
         id: stageCode,
         code: stageCode,
-        name: stageName,
+        name: sName,
         timersCount: 0
       });
     }
@@ -3184,58 +3199,53 @@ class UniversalSyncClient {
     const list = this.getEventsList();
     const item = list.find(e => e.code === cleanCode);
     if (item) {
+      const oldTitle = (item.title || '').trim();
       item.title = cleanTitle;
       item.updatedAt = Date.now();
 
-      // If the event has only 1 stage and it was sharing the event title, align it too
+      // Rule: By default, a single stage shares the event title; but if the user changed the stage name, KEEP the change!
+      let shouldUpdateStageState = false;
+      let stageCodeToUpdate = cleanCode;
+
       if (Array.isArray(item.stages) && item.stages.length === 1) {
-        item.stages[0].name = cleanTitle;
-        const stCode = (item.stages[0].code || item.stages[0].id || cleanCode).toUpperCase().trim();
-        if (stCode && stCode !== cleanCode) {
-          try {
-            const stKey = `stagetimer_v10_state_${stCode}`;
-            const stRaw = localStorage.getItem(stKey);
-            if (stRaw) {
-              const stParsed = JSON.parse(stRaw);
-              stParsed.name = cleanTitle;
-              stParsed.updatedAt = Date.now();
-              localStorage.setItem(stKey, JSON.stringify(stParsed));
-              if (this.mqttClient && this.mqttClient.connected) {
-                this.mqttClient.publish(
-                  `stagetimer_v10/${stCode}/state`,
-                  JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: stParsed }),
-                  { qos: 0, retain: true }
-                );
-              }
-            }
-          } catch (_) {}
+        const currentStage = item.stages[0];
+        const currentStageName = (currentStage.name || '').trim();
+        const wasDefault = !currentStageName || currentStageName === oldTitle || currentStageName === cleanCode || currentStageName === 'Palco Principal';
+
+        if (wasDefault) {
+          currentStage.name = cleanTitle;
+          shouldUpdateStageState = true;
+          stageCodeToUpdate = (currentStage.code || currentStage.id || cleanCode).toUpperCase().trim();
         }
+        // If !wasDefault, the user explicitly customized the stage name: preserve it!
       }
 
       this._saveEventsList(list, true, true);
 
-      // Also update local state & MQTT for that event
-      try {
-        const key = `stagetimer_v10_state_${cleanCode}`;
-        const raw = localStorage.getItem(key);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          parsed.name = cleanTitle;
-          parsed.updatedAt = Date.now();
-          localStorage.setItem(key, JSON.stringify(parsed));
-          if (this.mqttClient && this.mqttClient.connected) {
-            this.mqttClient.publish(
-              `stagetimer_v10/${cleanCode}/state`,
-              JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: parsed }),
-              { qos: 0, retain: true }
-            );
+      // Only update stage's own state if it was using the default name
+      if (shouldUpdateStageState) {
+        try {
+          const stKey = `stagetimer_v10_state_${stageCodeToUpdate}`;
+          const stRaw = localStorage.getItem(stKey);
+          if (stRaw) {
+            const stParsed = JSON.parse(stRaw);
+            stParsed.name = cleanTitle;
+            stParsed.updatedAt = Date.now();
+            localStorage.setItem(stKey, JSON.stringify(stParsed));
+            if (this.mqttClient && this.mqttClient.connected) {
+              this.mqttClient.publish(
+                `stagetimer_v10/${stageCodeToUpdate}/state`,
+                JSON.stringify({ sender: this.clientId, sentAt: Date.now(), data: stParsed }),
+                { qos: 0, retain: true }
+              );
+            }
           }
-        }
-      } catch (_) {}
+        } catch (_) {}
 
-      if (this.cleanRoom === cleanCode && this._state) {
-        this._state.name = cleanTitle;
-        this._commitStateChange(true);
+        if (this.cleanRoom === stageCodeToUpdate && this._state) {
+          this._state.name = cleanTitle;
+          this._commitStateChange(true);
+        }
       }
     }
   }

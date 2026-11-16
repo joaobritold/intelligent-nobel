@@ -70,7 +70,7 @@
 
   function getWatchFullUrl(roomCode) {
     const clean = (roomCode || 'PALCO1').toUpperCase().trim();
-    return new URL(`watch.html?room=${encodeURIComponent(clean)}&v=145`, window.location.href).href;
+    return new URL(`watch.html?room=${encodeURIComponent(clean)}&v=146`, window.location.href).href;
   }
 
   function openWatchModal(roomCode, stageTitle, url) {
@@ -1377,10 +1377,13 @@
     events.forEach(ev => {
       const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: ev.title || ev.code }];
       stages.forEach(st => {
+        const stName = (st.name || '').trim();
+        const evTitle = (ev.title || ev.code || '').trim();
+        const hasDistinctStage = stName && stName.toLowerCase() !== evTitle.toLowerCase();
         allStages.push({
           parentEvent: ev,
           code: (st.code || st.id || ev.code).toUpperCase(),
-          name: stages.length > 1 ? `${ev.title || ev.code} • ${st.name || st.code}` : (ev.title || st.name || ev.code)
+          name: (stages.length > 1 || hasDistinctStage) ? `${evTitle} • ${stName || st.code}` : evTitle
         });
       });
     });

@@ -2833,11 +2833,14 @@ function updateStageUI() {
       return false;
     });
     if (currentEvent) {
-      if (Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) {
-        const st = currentEvent.stages.find(s => (s.code || s.id || '').toUpperCase() === currentCode);
-        name = `${currentEvent.title || currentEvent.code} • ${st?.name || currentCode}`;
+      const evTitle = currentEvent.title || currentEvent.code;
+      const matchedSt = Array.isArray(currentEvent.stages) ? currentEvent.stages.find(s => (s.code || s.id || '').toUpperCase() === currentCode) : null;
+      const stName = (matchedSt?.name || '').trim();
+      const hasDistinctStage = stName && stName.toLowerCase() !== evTitle.toLowerCase();
+      if ((Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) || hasDistinctStage) {
+        name = `${evTitle} • ${stName || currentCode}`;
       } else {
-        name = currentEvent.title || currentEvent.code;
+        name = evTitle;
       }
     }
     $stageBadge.textContent = name;
