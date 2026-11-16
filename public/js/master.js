@@ -186,18 +186,42 @@
 
   // ─── Cloud & Peer Status ───────────────────────────────────────────
 
-  masterClient.on('connected', () => {
-    if ($kpiCloud) {
-      $kpiCloud.textContent = '🟢 Online (WSS)';
+  function updateMasterSyncStatus() {
+    if (!$kpiCloud) return;
+    const status = masterClient.getSyncStatus ? masterClient.getSyncStatus() : 'offline';
+    if (status === 'hybrid') {
+      $kpiCloud.textContent = '🛡️ Híbrido (Nuvem + LAN)';
       $kpiCloud.style.color = '#55efc4';
+      $kpiCloud.title = 'Sincronização redundante: Cloud MQTT + LAN Hub Local';
+    } else if (status === 'local_hub') {
+      $kpiCloud.textContent = '⚡ LAN Local (Offline Hub)';
+      $kpiCloud.style.color = '#f1c40f';
+      $kpiCloud.title = 'Sincronização em rede local LAN sem dependência de Internet externa';
+    } else if (status === 'cloud') {
+      $kpiCloud.textContent = '🌐 Nuvem (Cloud WSS)';
+      $kpiCloud.style.color = '#74b9ff';
+      $kpiCloud.title = 'Sincronização via Cloud MQTT (WAN)';
+    } else {
+      $kpiCloud.textContent = '🔴 Offline';
+      $kpiCloud.style.color = '#ff7675';
+      $kpiCloud.title = 'Desligado da rede';
     }
+  }
+
+  masterClient.on('connected', () => {
+    updateMasterSyncStatus();
   });
 
   masterClient.on('disconnected', () => {
-    if ($kpiCloud) {
-      $kpiCloud.textContent = '🔴 Offline';
-      $kpiCloud.style.color = '#ff7675';
-    }
+    updateMasterSyncStatus();
+  });
+
+  masterClient.on('local-hub-connected', () => {
+    updateMasterSyncStatus();
+  });
+
+  masterClient.on('local-hub-disconnected', () => {
+    updateMasterSyncStatus();
   });
 
   // ─── Section 1: Dispositivos Online & Controlo Remoto ──────────────

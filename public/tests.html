@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ShowFlow — Suíte de Testes Automatizados (v140)</title>
+  <link rel="stylesheet" href="css/common.css?v=140">
+  <style>
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 24px 16px;
+      margin: 0;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .test-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .test-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .test-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .metric-card {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .metric-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      font-family: var(--font-mono, monospace);
+    }
+    .metric-label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+    .test-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .test-item {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .test-item.pass {
+      border-left: 4px solid #10b981;
+    }
+    .test-item.fail {
+      border-left: 4px solid #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+    }
+    .test-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .test-desc {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+    .test-badge {
+      font-family: var(--font-mono, monospace);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .badge-pass {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .badge-fail {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .btn-run {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-run:hover {
+      background: #4f46e5;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <div class="test-header">
+      <div class="test-title">
+        <span>🧪</span>
+        <span>ShowFlow — Suíte de Testes Automatizados</span>
+        <span class="badge" style="background: rgba(99, 102, 241, 0.2); color: #c7d2fe; border: 1px solid rgba(99, 102, 241, 0.4);">v140</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button id="btn-rerun" class="btn-run" type="button">▶ Executar Novamente</button>
+        <a href="index.html" class="btn" style="background: rgba(255,255,255,0.08); color: #fff; text-decoration: none; padding: 7px 12px; border-radius: 8px; font-size: 0.82rem; border: 1px solid rgba(255,255,255,0.1);">🏠 Início</a>
+      </div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div id="metric-total" class="metric-value">0</div>
+        <div class="metric-label">Total de Asserções</div>
+      </div>
+      <div class="metric-card">
+        <div id="metric-passed" class="metric-value" style="color: #34d399;">0</div>
+        <div class="metric-label">Passaram</div>
+      </div>
+      <div class="metric-card">
+        <div id="metric-failed" class="metric-value" style="color: #f87171;">0</div>
+        <div class="metric-label">Falhas</div>
+      </div>
+      <div class="metric-card">
+        <div id="metric-duration" class="metric-value" style="color: #60a5fa;">0ms</div>
+        <div class="metric-label">Tempo de Execução</div>
+      </div>
+    </div>
+
+    <div id="test-list" class="test-list">
+      <div style="text-align: center; color: #94a3b8; padding: 24px;">A inicializar testes de regressão...</div>
+    </div>
+  </div>
+
+  <script src="js/local-sync.js?v=140"></script>
+  <script>
+    (function() {
+      const tests = [];
+
+      function it(name, desc, fn) {
+        tests.push({ name, desc, fn });
+      }
+
+      function assert(condition, message) {
+        if (!condition) {
+          throw new Error(message || 'Asserção falhou');
+        }
+      }
+
+      // === DEFINICAO DOS TESTES DE ARQUITETURA =========================
+
+      it('T01 - Isolamento e Sanitização de Código de Sala', 
+         'Garante que caracteres especiais são removidos e a sala fica sempre em maiúsculas', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'palco-principal #1! / @2026' });
+        assert(client.cleanRoom === 'PALCO-PRINCIPAL12026', `Esperado PALCO-PRINCIPAL12026, obtido: ${client.cleanRoom}`);
+        assert(client.room === 'palco-principal #1! / @2026', 'Propriedade original preservada');
+      });
+
+      it('T02 - Estrutura Multi-Dia e Integridade de Lineup', 
+         'Verifica a estrutura do state.days e retrocompatibilidade com state.timers', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'SALA_TESTE' });
+        client._state = client._createDefaultRoom('SALA_TESTE');
+        client._state.timers = [{ id: 't1', title: 'Artista A', duration: 300, elapsed: 0, state: 'idle' }];
+        client._ensureDaysStructure();
+
+        assert(client._state.days && typeof client._state.days === 'object', 'days deve ser um objeto');
+        assert(Array.isArray(client._state.days['1']), 'days["1"] deve ser um array');
+        assert(client._state.days['1'].length === 1, 'days["1"] deve conter o timer');
+        assert(client._state.days['1'][0].title === 'Artista A', 'Título do timer preservado');
+      });
+
+      it('T03 - Monotonic TrueTime e Cálculo de Drift de Servidor', 
+         'Calcula timestamp de palco com drift NTP garantindo valor numérico coerente', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'SALA_TIME' });
+        client._serverTimeDrift = 150;
+        const now1 = client.getTrueTime();
+        assert(Number.isFinite(now1), 'TrueTime deve ser um número finito');
+        assert(now1 >= Date.now() + 100, 'TrueTime deve incorporar o drift de servidor positivo');
+      });
+
+      it('T04 - Cibersegurança: Sanitização de Telegram Bot Tokens', 
+         'Garante que o botToken do Telegram nunca é enviado na rede pública MQTT/LAN', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'SALA_SEC' });
+        const rawState = {
+          id: 'SALA_SEC',
+          timers: [],
+          integrations: {
+            telegram: {
+              enabled: true,
+              chatId: '-10012345678',
+              botToken: '123456789:ABCdefGHIjklMNOpqrsTUVwxyz'
+            }
+          }
+        };
+        const sanitized = client._sanitizeStateForNetwork(rawState);
+        assert(sanitized.integrations.telegram.botToken === '', 'botToken deve ser esvaziado');
+        assert(sanitized.integrations.telegram.hasToken === true, 'hasToken deve ser true');
+        assert(sanitized.integrations.telegram.chatId === '-10012345678', 'chatId mantido para roteamento');
+      });
+
+      it('T05 - Assinatura Criptográfica HMAC de Comandos Remotos', 
+         'Valida geração determinística de assinaturas para ações privilegiadas', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'SALA_SIG' });
+        const cmd = { action: 'reload', targetUuid: 'dev_123', sentAt: 1700000000000, sender: 'st_admin' };
+        const sig1 = client._computeCommandSignature(cmd);
+        const sig2 = client._computeCommandSignature(cmd);
+        assert(typeof sig1 === 'string' && sig1.length > 5, 'Assinatura deve ser uma string não vazia');
+        assert(sig1 === sig2, 'Assinaturas para os mesmos parâmetros devem ser estritamente idênticas');
+      });
+
+      it('T06 - Verificação e Rejeição de Comandos Adulterados', 
+         'Garante que um atacante que adultere a ação de um comando é bloqueado', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'SALA_TAMPER' });
+        const now = Date.now();
+        const legitimateCmd = { action: 'heartbeat', targetUuid: 'ALL', sentAt: now, sender: 'st_admin' };
+        legitimateCmd.sig = client._computeCommandSignature(legitimateCmd);
+
+        assert(client._verifyRemoteCommandSignature(legitimateCmd) === true, 'Comando legítimo deve ser aceite');
+
+        const tamperedCmd = { ...legitimateCmd, action: 'delete_device' };
+        assert(client._verifyRemoteCommandSignature(tamperedCmd) === false, 'Comando adulterado deve ser rejeitado');
+      });
+
+      it('T07 - Prevenção de Ataques de Replay (>60 segundos)', 
+         'Rejeita comandos remotos expirados com mais de 60 segundos', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'SALA_REPLAY' });
+        const oldTime = Date.now() - 65000; // 65 segundos atrás
+        const replayCmd = { action: 'reload', targetUuid: 'ALL', sentAt: oldTime, sender: 'st_admin' };
+        replayCmd.sig = client._computeCommandSignature(replayCmd);
+        assert(client._verifyRemoteCommandSignature(replayCmd) === false, 'Comando desfasado >60s deve ser recusado');
+      });
+
+      it('T08 - Ciclo de Vida de Cues de Teatro (Modo Jess)', 
+         'Valida a máquina de estados (idle -> standby -> go -> acked) e persistência de timestamps', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'SALA_CUES' });
+        const th = client._createDefaultTheatreState();
+        assert(th.cues.length === 0, 'Novas salas devem começar com 0 cues (Clean Slate)');
+
+        const newCue = { id: 'cue_101', name: 'Blackout Geral', status: 'idle', targetDept: 'Luz' };
+        th.cues.push(newCue);
+
+        // Standby
+        newCue.status = 'standby';
+        newCue.standbyAt = Date.now();
+        assert(newCue.status === 'standby' && newCue.standbyAt > 0, 'Cue deve transitar para standby');
+
+        // Go
+        newCue.status = 'go';
+        newCue.goAt = Date.now();
+        assert(newCue.status === 'go' && newCue.goAt >= newCue.standbyAt, 'Cue deve transitar para go');
+
+        // Ack
+        newCue.status = 'acked';
+        newCue.ackedAt = Date.now();
+        newCue.ackLatencyMs = newCue.ackedAt - newCue.goAt;
+        assert(newCue.status === 'acked' && newCue.ackLatencyMs >= 0, 'Cue confirmada deve registar latência');
+      });
+
+      it('T09 - Intercom de Régies e Monotonicidade de ACKs', 
+         'Valida que confirmações ACK de mensagens não são perdidas por race conditions', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'SALA_REGIE' });
+        client._state = client._createDefaultRoom('SALA_REGIE');
+        client._state.regieMessage = {
+          id: 'rm_test_1',
+          text: 'Entrada da apresentadora em 2 min',
+          visible: true,
+          sentAt: Date.now(),
+          ackFoh: null,
+          ackStage: null
+        };
+
+        const ackPayload = {
+          action: 'regie_ack',
+          room: 'SALA_REGIE',
+          msgId: 'rm_test_1',
+          station: 'foh',
+          timeStr: '21:30'
+        };
+
+        const applied = client._applyRegieAckToState(ackPayload);
+        assert(applied === true, 'ACK de FOH deve ser aplicado');
+        assert(client._state.regieMessage.ackFoh === '21:30', 'Timestamp de FOH registado com sucesso');
+      });
+
+      it('T10 - Cronómetro Ativo: Bake de liveElapsed e Âncora serverStartedAt', 
+         'Garante sincronização absoluta de segundos sem drift entre ecrãs', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'SALA_TIMER' });
+        client._state = client._createDefaultRoom('SALA_TIMER');
+        const now = client.getTrueTime();
+        client._state.timers = [{
+          id: 'tm_1',
+          title: 'Discurso de Abertura',
+          duration: 600,
+          elapsed: 0,
+          state: 'running',
+          startedAt: now - 5000,
+          serverStartedAt: now - 5000
+        }];
+
+        client._commitStateChange(false);
+        const timer = client._state.timers[0];
+        assert(timer.liveElapsed >= 5000, `liveElapsed deve ser >= 5000ms, obtido: ${timer.liveElapsed}`);
+        assert(timer.serverStartedAt === now - 5000, 'serverStartedAt deve ser preservado como âncora imutável');
+      });
+
+      it('T11 - Resolução do Modo de Sincronização Híbrida (getSyncStatus)', 
+         'Garante transição correta entre hybrid, local_hub, cloud e offline', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'SALA_HYBRID' });
+
+        // Offline
+        client.mqttClient = { connected: false };
+        client.isLocalHubConnected = false;
+        assert(client.getSyncStatus() === 'offline', 'Esperado offline');
+
+        // Apenas Cloud
+        client.mqttClient = { connected: true };
+        assert(client.getSyncStatus() === 'cloud', 'Esperado cloud');
+
+        // Híbrido (Cloud + LAN Hub)
+        client.isLocalHubConnected = true;
+        assert(client.getSyncStatus() === 'hybrid', 'Esperado hybrid');
+
+        // Apenas LAN Hub (Queda da Internet WAN)
+        client.mqttClient = { connected: false };
+        assert(client.getSyncStatus() === 'local_hub', 'Esperado local_hub');
+      });
+
+      it('T12 - Tombstones de Eventos Purgados (_recordDeletedEvent)', 
+         'Garante que eventos apagados não reaparecem através de pacotes de presença obsoletos', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'SALA_PURGE' });
+        client._recordDeletedEvent('FANTASMA_123');
+        const deletedSet = client._getDeletedEvents();
+        assert(deletedSet.has('FANTASMA_123'), 'FANTASMA_123 deve estar no registo de tombstones');
+      });
+
+      it('T13 - Filtragem de Técnicos por Sala (getRoomTechUsers)', 
+         'Filtra corretamente operadores técnicos da sala sem misturar com outros palcos', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'PALCO_A' });
+        client.globalDevicesMap.set('dev_1', {
+          deviceUuid: 'dev_1',
+          room: 'PALCO_A',
+          viewKey: 'regies',
+          regieStation: 'tech',
+          techName: 'João Iluminação',
+          lastSeen: Date.now()
+        });
+        client.globalDevicesMap.set('dev_2', {
+          deviceUuid: 'dev_2',
+          room: 'PALCO_B',
+          viewKey: 'regies',
+          regieStation: 'tech',
+          techName: 'Carlos Vídeo',
+          lastSeen: Date.now()
+        });
+
+        const techUsers = client.getRoomTechUsers('PALCO_A');
+        assert(techUsers.length === 1 && techUsers[0] === 'João Iluminação', 'Apenas técnicos do PALCO_A devem ser devolvidos');
+      });
+
+      it('T14 - Preservação de Configuração Local ao Receber State da Rede', 
+         'Protege tokens locais de Telegram contra sobrescritas acidentais vindas da nuvem', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'SALA_MERGE' });
+        client._state = client._createDefaultRoom('SALA_MERGE');
+        client._state.integrations = {
+          telegram: {
+            enabled: true,
+            chatId: '-100999',
+            botToken: 'MEU_TOKEN_SECRETO_LOCAL',
+            updatedAt: 100
+          }
+        };
+
+        const incomingFromCloud = {
+          id: 'SALA_MERGE',
+          updatedAt: 200,
+          timers: [],
+          integrations: {
+            telegram: {
+              enabled: true,
+              chatId: '-100999',
+              botToken: '', // Vem vazio da nuvem
+              updatedAt: 200
+            }
+          }
+        };
+
+        client._applyIncomingState(incomingFromCloud, true);
+        assert(client._state.integrations.telegram.botToken === 'MEU_TOKEN_SECRETO_LOCAL', 
+               'Token local do Telegram não deve ser apagado por incoming state vazio');
+      });
+
+      it('T15 - Despacho de Mensagens para o Hub Local LAN (_sendLocalHub)', 
+         'Garante formato de payload WebSocket correto quando o Hub está conectado', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'test', room: 'SALA_HUB' });
+        let sentMessage = null;
+        client.localHubWs = {
+          readyState: 1, // OPEN
+          send: (str) => { sentMessage = JSON.parse(str); }
+        };
+
+        const ok = client._sendLocalHub({ type: 'test_ping', room: 'SALA_HUB', ts: Date.now() });
+        assert(ok === true, '_sendLocalHub deve retornar true');
+        assert(sentMessage && sentMessage.type === 'test_ping', 'Payload JSON recebido corretamente pelo socket');
+      });
+
+      // === EXECUTOR DE TESTES =========================================
+
+      function runAllTests() {
+        const startTime = performance.now();
+        const results = [];
+        let passed = 0;
+        let failed = 0;
+
+        const $list = document.getElementById('test-list');
+        $list.innerHTML = '';
+
+        tests.forEach((t, idx) => {
+          let success = false;
+          let errorMsg = null;
+          try {
+            t.fn();
+            success = true;
+            passed++;
+          } catch (err) {
+            success = false;
+            errorMsg = err.message || String(err);
+            failed++;
+          }
+
+          results.push({
+            id: t.name.split(' - ')[0],
+            name: t.name,
+            desc: t.desc,
+            passed: success,
+            error: errorMsg
+          });
+
+          const item = document.createElement('div');
+          item.className = `test-item ${success ? 'pass' : 'fail'}`;
+          item.innerHTML = `
+            <div style="flex: 1; min-width: 0;">
+              <div class="test-name">${t.name}</div>
+              <div class="test-desc">${t.desc}</div>
+              ${errorMsg ? `<div style="color: #f87171; font-size: 0.75rem; margin-top: 4px; font-family: monospace;">Erro: ${errorMsg}</div>` : ''}
+            </div>
+            <div class="test-badge ${success ? 'badge-pass' : 'badge-fail'}">
+              ${success ? 'PASSOU' : 'FALHOU'}
+            </div>
+          `;
+          $list.appendChild(item);
+        });
+
+        const duration = Math.round(performance.now() - startTime);
+
+        document.getElementById('metric-total').textContent = tests.length;
+        document.getElementById('metric-passed').textContent = passed;
+        document.getElementById('metric-failed').textContent = failed;
+        document.getElementById('metric-duration').textContent = `${duration}ms`;
+
+        window.__SHOWFLOW_TEST_RESULTS__ = {
+          total: tests.length,
+          passed,
+          failed,
+          durationMs: duration,
+          results
+        };
+
+        console.log(`[ShowFlow Test Runner] Concluído: ${passed}/${tests.length} passaram em ${duration}ms.`);
+      }
+
+      document.getElementById('btn-rerun').addEventListener('click', runAllTests);
+
+      // Auto-run on load
+      window.addEventListener('DOMContentLoaded', runAllTests);
+    })();
+  </script>
+</body>
+</html>

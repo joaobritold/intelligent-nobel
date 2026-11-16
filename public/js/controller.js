@@ -491,17 +491,48 @@ if ($viewerBgColor) {
   });
 }
 
+function updateConnectionBadge(count) {
+  if (!$connectionBadge) return;
+  const status = client.getSyncStatus ? client.getSyncStatus() : 'offline';
+  const screenCount = count || client.connectedPeersCount || 1;
+  const countStr = `(${screenCount} ecrã${screenCount === 1 ? '' : 's'})`;
+
+  if (status === 'hybrid') {
+    $connectionBadge.className = 'connection-badge connected';
+    $connectionBadge.innerHTML = `<span class="connection-dot" style="background:#55efc4; box-shadow:0 0 8px #55efc4;"></span> 🛡️ Híbrido ${countStr}`;
+    $connectionBadge.title = 'Modo de Alta Disponibilidade: Cloud MQTT + LAN Hub Local ativos em simultâneo.';
+  } else if (status === 'local_hub') {
+    $connectionBadge.className = 'connection-badge connected';
+    $connectionBadge.innerHTML = `<span class="connection-dot" style="background:#f1c40f; box-shadow:0 0 8px #f1c40f;"></span> ⚡ LAN Local ${countStr}`;
+    $connectionBadge.title = 'Sincronização em rede local LAN ativa (resiliente a falhas de Internet externa).';
+  } else if (status === 'cloud') {
+    $connectionBadge.className = 'connection-badge connected';
+    $connectionBadge.innerHTML = `<span class="connection-dot" style="background:#0984e3; box-shadow:0 0 8px #0984e3;"></span> 🌐 Nuvem ${countStr}`;
+    $connectionBadge.title = 'Sincronização via Cloud MQTT (Internet WAN).';
+  } else {
+    $connectionBadge.className = 'connection-badge disconnected';
+    $connectionBadge.innerHTML = `<span class="connection-dot" style="background:#ff7675;"></span> 🔴 Desligado`;
+    $connectionBadge.title = 'Desligado da rede.';
+  }
+}
+
 // ─── Connect ───────────────────────────────────────────────────────
 
 client.on('connected', () => {
-  $connectionBadge.className = 'connection-badge connected';
-  $connectionBadge.innerHTML = '<span class="connection-dot"></span> Connected';
+  updateConnectionBadge();
   renderEventSelector();
 });
 
 client.on('disconnected', () => {
-  $connectionBadge.className = 'connection-badge disconnected';
-  $connectionBadge.innerHTML = '<span class="connection-dot"></span> Disconnected';
+  updateConnectionBadge();
+});
+
+client.on('local-hub-connected', () => {
+  updateConnectionBadge();
+});
+
+client.on('local-hub-disconnected', () => {
+  updateConnectionBadge();
 });
 
 client.on('p2p-ready', (data) => {
@@ -511,8 +542,7 @@ client.on('p2p-ready', (data) => {
 });
 
 client.on('p2p-peers-update', (data) => {
-  $connectionBadge.className = 'connection-badge connected';
-  $connectionBadge.innerHTML = `<span class="connection-dot"></span> Online (${data.count} screen${data.count === 1 ? '' : 's'})`;
+  updateConnectionBadge(data.count);
   if ($p2pPeerCount) {
     $p2pPeerCount.textContent = data.count;
   }

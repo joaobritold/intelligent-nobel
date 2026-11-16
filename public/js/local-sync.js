@@ -558,7 +558,7 @@ class UniversalSyncClient {
       const sender = String(cmdObj.sender || '');
       const secret = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('stagetimer_auth_token') : null) ||
                      (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_auth_token') : null) ||
-                     'st_showflow_cmd_sig_v139';
+                     'st_showflow_cmd_sig_v140';
       const raw = `${action}:${target}:${sentAt}:${sender}:${secret.slice(-16)}`;
       let hash = 0x811c9dc5;
       for (let i = 0; i < raw.length; i++) {
@@ -940,7 +940,7 @@ class UniversalSyncClient {
       if (typeof document !== 'undefined' && !this._mqttScriptLoading) {
         this._mqttScriptLoading = true;
         const s = document.createElement('script');
-        s.src = 'js/mqtt.min.js?v=139';
+        s.src = 'js/mqtt.min.js?v=140';
         s.onload = () => {
           this._mqttScriptLoading = false;
           this._initCloudSync();

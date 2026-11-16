@@ -2868,6 +2868,44 @@ client.on('tick', () => {
   render();
 });
 
+function updateDcSyncBadge() {
+  const badge = document.getElementById('dc-sync-status-badge');
+  const text = document.getElementById('dc-sync-status-text');
+  if (!badge || !text) return;
+  const status = (typeof client !== 'undefined' && client && client.getSyncStatus) ? client.getSyncStatus() : 'offline';
+  if (status === 'hybrid') {
+    badge.style.borderColor = 'rgba(85, 239, 196, 0.4)';
+    badge.style.background = 'rgba(85, 239, 196, 0.15)';
+    badge.style.color = '#55efc4';
+    text.textContent = '🛡️ Híbrido (Cloud + LAN)';
+    badge.title = 'Sincronização redundante de palco: Cloud MQTT e LAN Hub Local ativos';
+  } else if (status === 'local_hub') {
+    badge.style.borderColor = 'rgba(241, 196, 15, 0.4)';
+    badge.style.background = 'rgba(241, 196, 15, 0.15)';
+    badge.style.color = '#f1c40f';
+    text.textContent = '⚡ LAN Local (Offline)';
+    badge.title = 'Sincronização em rede local (sem dependência de Internet)';
+  } else if (status === 'cloud') {
+    badge.style.borderColor = 'rgba(9, 132, 227, 0.4)';
+    badge.style.background = 'rgba(9, 132, 227, 0.15)';
+    badge.style.color = '#74b9ff';
+    text.textContent = '🌐 Nuvem (WSS)';
+    badge.title = 'Sincronização via Cloud MQTT (WAN)';
+  } else {
+    badge.style.borderColor = 'rgba(255, 118, 117, 0.4)';
+    badge.style.background = 'rgba(255, 118, 117, 0.15)';
+    badge.style.color = '#ff7675';
+    text.textContent = '🔴 Desligado';
+    badge.title = 'Desligado da rede';
+  }
+}
+
+client.on('connected', updateDcSyncBadge);
+client.on('disconnected', updateDcSyncBadge);
+client.on('local-hub-connected', updateDcSyncBadge);
+client.on('local-hub-disconnected', updateDcSyncBadge);
+client.on('p2p-peers-update', updateDcSyncBadge);
+
 client.connect();
 
 if (window.StageTimerNotifications && client) {
