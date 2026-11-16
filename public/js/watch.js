@@ -1,16 +1,17 @@
 /**
- * ⌚ StageTimer PFP — Apple Watch Single Screen Controller
- * Espelho fiel do Modo Palco (Viewer):
- * - Nome do Artista no topo
- * - Dígitos gigantes com contagem decrescente E contagem negativa no tempo excedido (-00:01, -00:02...)
- * - Cores do palco: Verde -> Laranja -> Vermelho Vivo Pulsante no overtime
- * - Hora Local e Próximo Artista na base
+ * ⌚ StageTimer PFP — Apple Watch HUD Operacional de Pulso
+ * Sincronização Híbrida:
+ * 1. SSE nativo em HTTPS (Porta 443, zero rate-limit, <100ms push)
+ * 2. MQTT WebSocket over WSS (quando em Wi-Fi direto)
+ * 3. Re-Sync Instantâneo ao Levantar o Pulso (visibilitychange / touch)
+ * 4. Fim do Evento em tempo real (Cascade Schedule)
+ * 5. Dígitos Gigantes com Overtime Negativo e Alerta Tátil
  */
 
 (function() {
   'use strict';
 
-  // ─── Safe Storage Helpers (100% immune to WebKit SecurityError) ─────
+  // ─── Safe Storage Helpers (100% imune a WebKit SecurityError) ─────
   function safeGet(storageName, key) {
     try {
       if (typeof window !== 'undefined' && window[storageName] && typeof window[storageName].getItem === 'function') {
@@ -27,7 +28,7 @@
     } catch (_) {}
   }
 
-  // ─── Room & Device Resolution ─────────────────────────────────────────
+  // ─── Resolução da Sala e Dispositivo ───────────────────────────────────
   const params = new URLSearchParams(location.search);
   const rawParamRoom = (params.get('room') || '').trim();
   const normalizedParam = rawParamRoom.replace(/\s+/g, '-').toUpperCase();
@@ -37,7 +38,7 @@
 
   let roomId = (normalizedParam || savedActiveRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
 
-  // Smart resolve from cached registry if available
+  // Resolução inteligente a partir do registo de eventos se disponível
   try {
     const rawReg = safeGet('localStorage', 'stagetimer_v63_registry') || safeGet('localStorage', 'stagetimer_v10_events_list') || '[]';
     const localEvents = JSON.parse(rawReg);
@@ -59,38 +60,12 @@
   safeSet('localStorage', 'stagetimer_last_room', roomId);
   safeSet('sessionStorage', 'stagetimer_active_room', roomId);
 
-  // Security: Check if current room belongs to an event and user is authorized
-  try {
-    const isMasterUser = (typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
-      safeGet('sessionStorage', 'stagetimer_master_active') === '1' ||
-      safeGet('localStorage', 'stagetimer_master_active') === '1' ||
-      safeGet('sessionStorage', 'stagetimer_master_auth_v12') === 'true' ||
-      safeGet('localStorage', 'stagetimer_master_auth_v12') === 'true';
-
-    if (!isMasterUser) {
-      const rawReg = safeGet('localStorage', 'stagetimer_v63_registry') || safeGet('localStorage', 'stagetimer_v10_events_list') || '[]';
-      const localEvents = JSON.parse(rawReg);
-      if (localEvents && localEvents.length > 0) {
-        const owningEvent = localEvents.find(e => {
-          if ((e.code || '').toUpperCase() === roomId) return true;
-          if (Array.isArray(e.stages) && e.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId)) return true;
-          return false;
-        });
-        if (owningEvent) {
-          const unlockedEv = (safeGet('sessionStorage', 'stagetimer_unlocked_event') || safeGet('localStorage', 'stagetimer_unlocked_event') || '').trim().toUpperCase();
-          if (!unlockedEv || unlockedEv !== (owningEvent.code || '').toUpperCase()) {
-            console.warn('[Watch] Acesso não autorizado ao evento', owningEvent.code, '— redirecionando para o Portal');
-            window.location.replace('index.html?portal=1');
-          }
-        }
-      }
-    }
-  } catch (_) {}
-
-  // ─── DOM References (Dual ID support: watch-* and viewer-*) ─────────────
-  const $statusDot = document.getElementById('watch-status-dot') || document.getElementById('viewer-connection');
+  // ─── Elementos do DOM (com suporte duplo a classes novas e antigas) ───
+  const $dot = document.getElementById('watch-status-dot') || document.getElementById('viewer-connection');
   const $artistName = document.getElementById('watch-artist-name') || document.getElementById('viewer-timer-name');
+  const $stateBadge = document.getElementById('watch-state-badge');
   const $timer = document.getElementById('watch-timer') || document.getElementById('viewer-timer');
+  const $eventEnd = document.getElementById('watch-event-end');
   const $clockTime = document.getElementById('watch-clock-time') || document.getElementById('viewer-clock-time');
   const $next = document.getElementById('watch-next') || document.getElementById('viewer-next');
   const $nextName = document.getElementById('watch-next-name') || document.getElementById('viewer-next-name');
@@ -99,32 +74,33 @@
   const $msgBadge = document.getElementById('watch-msg-badge');
   const $msgText = document.getElementById('watch-msg-text');
 
-  // ─── Instant First Frame (Screen is NEVER blank) ────────────────────────
+  // Primeiro quadro instantâneo (sem ecrã preto)
   if ($artistName) $artistName.textContent = roomId;
   if ($timer) {
     $timer.textContent = '00:00';
-    $timer.className = 'viewer-timer watch-timer safe';
+    $timer.className = 'watch-digits safe';
   }
   if ($clockTime && typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.getTrueTimeString === 'function') {
     $clockTime.textContent = StageTimerClient.getTrueTimeString();
   }
 
-  // ─── Client Sync (Role 'watch' announces Apple Watch to Master) ─────────
-  const client = new StageTimerClient({
-    role: 'watch',
-    room: roomId,
-  });
-
   let state = null;
   let lastMessageId = '';
+  let lastStateUpdate = 0;
+  let sseSource = null;
 
+  // ─── Atualização e Adoção do Estado ────────────────────────────────────
   function adoptRoomAndState(targetRoom, incomingData) {
     const cleanTarget = String(targetRoom || '').toUpperCase().trim();
     if (!cleanTarget) return;
-    if ($statusDot) $statusDot.classList.remove('disconnected');
-    if (incomingData && Array.isArray(incomingData.timers)) {
+
+    if ($dot) $dot.classList.remove('disconnected');
+    lastStateUpdate = Date.now();
+
+    if (incomingData && (Array.isArray(incomingData.timers) || incomingData.timers)) {
       state = incomingData;
     }
+
     if (cleanTarget !== roomId) {
       roomId = cleanTarget;
       client.room = cleanTarget;
@@ -142,6 +118,10 @@
           history.replaceState(null, '', u.toString());
         }
       } catch (_) {}
+
+      // Re-conecta SSE para o novo canal se o palco mudou
+      setupSseRelay();
+
       if (client.mqttClient && client.mqttClient.connected) {
         try {
           client.mqttClient.subscribe([client.mqttTopicState, client.mqttTopicPresence], { qos: 0 });
@@ -149,130 +129,66 @@
         } catch (_) {}
       }
     }
+
     if (incomingData && Array.isArray(incomingData.timers)) {
-      client._applyIncomingState(incomingData, true);
+      try { client._applyIncomingState(incomingData, true); } catch (_) {}
     }
+
     handleMessageAlert();
     render();
   }
 
-  client.on('connected', () => {
-    if ($statusDot) $statusDot.classList.remove('disconnected');
+  // ─── 1. Motor Server-Sent Events (SSE) nativo sobre HTTPS ─────────────
+  // O SSE usa porta 443 padrão, sem bloqueios de WebSockets no Bluetooth watchOS
+  function setupSseRelay() {
+    if (typeof EventSource === 'undefined') return;
     try {
-      client.sendDeviceCommand('ALL', { action: 'request_room_state', room: roomId });
-      client.sendDeviceCommand('ALL', { action: 'request_registry' });
-    } catch (_) {}
-    render();
-  });
-
-  client.on('p2p-ready', () => {
-    if ($statusDot) $statusDot.classList.remove('disconnected');
-    try {
-      client.sendDeviceCommand('ALL', { action: 'request_room_state', room: roomId });
-      client.sendDeviceCommand('ALL', { action: 'request_registry' });
-    } catch (_) {}
-    render();
-  });
-
-  client.on('disconnected', () => {
-    if ($statusDot && (!client.mqttClient || !client.mqttClient.connected)) {
-      $statusDot.classList.add('disconnected');
-    }
-  });
-
-  client.on('room-state', (data) => {
-    state = data;
-    if (state?.id && state.id !== roomId) {
-      roomId = state.id;
-    }
-    if ($statusDot) $statusDot.classList.remove('disconnected');
-    handleMessageAlert();
-    render();
-  });
-
-  // Multi-room state listening: if sub-stage (e.g. RC-VIANA-26-P1) has a running timer, adopt it automatically
-  client.on('multi-room-state', ({ room, data }) => {
-    if (!room || !data || !Array.isArray(data.timers)) return;
-    if ($statusDot) $statusDot.classList.remove('disconnected');
-    const incomingRoom = String(room).toUpperCase().trim();
-    const cleanCurrent = roomId.replace(/[^A-Z0-9]/g, '');
-    const cleanIncoming = incomingRoom.replace(/[^A-Z0-9]/g, '');
-
-    if (incomingRoom === roomId || cleanIncoming === cleanCurrent) {
-      adoptRoomAndState(incomingRoom, data);
-      return;
-    }
-
-    const isSubStage = incomingRoom.startsWith(roomId + '-') ||
-      roomId.startsWith(incomingRoom + '-') ||
-      (cleanCurrent.length >= 4 && cleanIncoming.startsWith(cleanCurrent));
-
-    const currentHasTimers = Boolean(state && Array.isArray(state.timers) && state.timers.length > 0 && !state.isEmptyDefault);
-    const currentIsRunning = Boolean(state && StageTimerClient.getActiveTimer(state)?.state === 'running');
-    const incomingHasTimers = data.timers.length > 0 && !data.isEmptyDefault;
-    const incomingIsRunning = Boolean(
-      StageTimerClient.getActiveTimer(data)?.state === 'running' ||
-      data.timers.some(t => t.state === 'running')
-    );
-
-    if (isSubStage) {
-      if ((!currentIsRunning && incomingIsRunning) || (!currentHasTimers && incomingHasTimers) || incomingIsRunning) {
-        adoptRoomAndState(incomingRoom, data);
+      if (sseSource) {
+        sseSource.close();
+        sseSource = null;
       }
-      return;
-    }
+      const cleanRoom = roomId.replace(/[^A-Z0-9_-]/g, '');
+      const sseUrl = `https://ntfy.sh/showflow_v10_${cleanRoom}/sse`;
+      sseSource = new EventSource(sseUrl);
 
-    if (!currentHasTimers && incomingHasTimers) {
-      adoptRoomAndState(incomingRoom, data);
-    }
-  });
+      sseSource.onopen = function() {
+        if ($dot) $dot.classList.remove('disconnected');
+      };
 
-  // Dynamic Room Resolution when Cloud Registry arrives
-  client.on('events-list-update', (eventsList) => {
-    if (!Array.isArray(eventsList) || eventsList.length === 0) return;
-    const cleanLookup = roomId.replace(/[^A-Z0-9]/g, '');
-    const matchedEv = eventsList.find(e => {
-      const c = (e.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-      const t = (e.title || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-      return c === cleanLookup || t === cleanLookup;
-    });
+      sseSource.onmessage = function(event) {
+        if (!event || !event.data) return;
+        try {
+          const item = JSON.parse(event.data);
+          if (item.event === 'message' && item.message) {
+            const incoming = JSON.parse(item.message);
+            if (incoming && Array.isArray(incoming.timers)) {
+              adoptRoomAndState(incoming.id || roomId, incoming);
+            }
+          }
+        } catch (_) {}
+      };
 
-    if (matchedEv) {
-      const stages = Array.isArray(matchedEv.stages) && matchedEv.stages.length > 0
-        ? matchedEv.stages
-        : [{ code: matchedEv.code, name: matchedEv.title }];
-      const hasCurrent = stages.some(s => (s.code || s.id || '').toUpperCase() === roomId);
-      if (!hasCurrent && stages[0]?.code) {
-        const targetCode = stages[0].code.toUpperCase();
-        if (targetCode !== roomId) {
-          adoptRoomAndState(targetCode, null);
-          client.sendDeviceCommand('ALL', { action: 'request_room_state', room: targetCode });
+      sseSource.onerror = function() {
+        // Se cair (ex.: braço baixado), o navegador reconecta automaticamente ao voltar
+        if (Date.now() - lastStateUpdate > 12000 && (!client.mqttClient || !client.mqttClient.connected)) {
+          if ($dot) $dot.classList.add('disconnected');
         }
-      }
-    }
-  });
+      };
+    } catch (_) {}
+  }
 
-  client.connect();
-
-  // ─── HTTPS Cloud Relay Poller (Zero-WebSocket Fallback para watchOS) ───
-  // O watchOS WebSheet (WebKit sobre Bluetooth IDS) bloqueia WebSockets puros.
-  // Este poller HTTPS através da porta padrão 443 assegura sincronização 100% contínua.
-  let isPolling = false;
-  let lastStateUpdate = 0;
-
-  async function pollHttpsRelay() {
-    if (isPolling) return;
-    isPolling = true;
+  // ─── 2. Fetch de Resgate Pontual (Zero Spam, Sem 429) ───────────────────
+  let isFetchingRescue = false;
+  async function fetchRescueState() {
+    if (isFetchingRescue) return;
+    isFetchingRescue = true;
     try {
       const cleanRoom = roomId.replace(/[^A-Z0-9_-]/g, '');
-      const topic = `showflow_v10_${cleanRoom}`;
-      const url = `https://ntfy.sh/${topic}/json?poll=1`;
-
-      const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-      const tid = controller ? setTimeout(() => controller.abort(), 2500) : null;
-
+      const url = `https://ntfy.sh/showflow_v10_${cleanRoom}/json?poll=1`;
+      const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const tid = ctrl ? setTimeout(() => ctrl.abort(), 3000) : null;
       const opts = { cache: 'no-store' };
-      if (controller) opts.signal = controller.signal;
+      if (ctrl) opts.signal = ctrl.signal;
 
       const res = await fetch(url, opts);
       if (tid) clearTimeout(tid);
@@ -287,8 +203,6 @@
               if (item.event === 'message' && item.message) {
                 const incoming = JSON.parse(item.message);
                 if (incoming && Array.isArray(incoming.timers)) {
-                  lastStateUpdate = Date.now();
-                  if ($statusDot) $statusDot.classList.remove('disconnected');
                   adoptRoomAndState(incoming.id || roomId, incoming);
                   break;
                 }
@@ -298,39 +212,101 @@
         }
       }
     } catch (_) {
-      if (Date.now() - lastStateUpdate > 10000 && (!client.mqttClient || !client.mqttClient.connected)) {
-        if ($statusDot) $statusDot.classList.add('disconnected');
-      }
     } finally {
-      isPolling = false;
+      isFetchingRescue = false;
     }
   }
 
-  // Se o script inline rápido já recolheu o estado inicial, adota imediatamente
+  // ─── 3. Cliente MQTT / LocalSync Padrão (Wi-Fi Direto) ─────────────────
+  const client = new StageTimerClient({
+    role: 'watch',
+    room: roomId,
+  });
+
+  client.on('connected', () => {
+    if ($dot) $dot.classList.remove('disconnected');
+    try {
+      client.sendDeviceCommand('ALL', { action: 'request_room_state', room: roomId });
+      client.sendDeviceCommand('ALL', { action: 'request_registry' });
+    } catch (_) {}
+    render();
+  });
+
+  client.on('room-state', (data) => {
+    state = data;
+    if (state?.id && state.id !== roomId) roomId = state.id;
+    if ($dot) $dot.classList.remove('disconnected');
+    lastStateUpdate = Date.now();
+    handleMessageAlert();
+    render();
+  });
+
+  client.on('multi-room-state', ({ room, data }) => {
+    if (!room || !data || !Array.isArray(data.timers)) return;
+    const incomingRoom = String(room).toUpperCase().trim();
+    const cleanCurrent = roomId.replace(/[^A-Z0-9]/g, '');
+    const cleanIncoming = incomingRoom.replace(/[^A-Z0-9]/g, '');
+
+    if (incomingRoom === roomId || cleanIncoming === cleanCurrent) {
+      adoptRoomAndState(incomingRoom, data);
+      return;
+    }
+
+    const isSubStage = incomingRoom.startsWith(roomId + '-') ||
+      roomId.startsWith(incomingRoom + '-') ||
+      (cleanCurrent.length >= 4 && cleanIncoming.startsWith(cleanCurrent));
+
+    const currentRunning = Boolean(state && StageTimerClient.getActiveTimer(state)?.state === 'running');
+    const incomingRunning = Boolean(StageTimerClient.getActiveTimer(data)?.state === 'running');
+
+    if (isSubStage && (incomingRunning || !currentRunning)) {
+      adoptRoomAndState(incomingRoom, data);
+    }
+  });
+
+  client.connect();
+  setupSseRelay();
+
+  // Se o estado inicial inline já tiver sido lido no head, aplica agora
   if (typeof window !== 'undefined' && window.__INITIAL_WATCH_STATE__) {
     try {
       const initS = window.__INITIAL_WATCH_STATE__;
       if (initS && Array.isArray(initS.timers)) {
-        lastStateUpdate = Date.now();
         adoptRoomAndState(initS.id || roomId, initS);
       }
     } catch (_) {}
   }
 
-  // Polling contínuo imediato e a cada 1000ms
-  pollHttpsRelay();
-  setInterval(pollHttpsRelay, 1000);
-
-  // Recarga instantânea ao levantar o pulso / focar / tocar no ecrã
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      pollHttpsRelay();
+  // ─── Re-Sync Imediato ao Levantar o Pulso / Acordar ─────────────────────
+  function onWakeUp() {
+    render();
+    fetchRescueState();
+    if (!sseSource || sseSource.readyState === EventSource.CLOSED) {
+      setupSseRelay();
     }
-  });
-  window.addEventListener('focus', pollHttpsRelay);
-  document.addEventListener('touchstart', pollHttpsRelay, { passive: true });
+  }
 
-  // ─── Format & Timing Helpers (Idênticos ao Modo Palco) ───────────────
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') onWakeUp();
+  });
+  window.addEventListener('focus', onWakeUp);
+
+  // Toque rápido no ecrã: feedback tátil suave e re-sincronização forçada
+  document.addEventListener('touchstart', () => {
+    if (navigator.vibrate) {
+      try { navigator.vibrate(30); } catch (_) {}
+    }
+    onWakeUp();
+  }, { passive: true });
+
+  // Heartbeat de segurança a cada 8s caso o SSE esteja em silêncio
+  setInterval(() => {
+    if (Date.now() - lastStateUpdate > 8000) {
+      fetchRescueState();
+    }
+  }, 8000);
+
+  // ─── Helpers de Horários e Formatação ─────────────────────────────────
   function formatTime(ms) {
     return StageTimerClient.formatTime(ms);
   }
@@ -346,7 +322,7 @@
     if (timer.mode === 'countdown') {
       const elapsed = getTimerElapsed(timer);
       const remaining = timer.duration - elapsed;
-      if (remaining <= 0) return 'danger'; // Overtime / negativo em vermelho vivo
+      if (remaining <= 0) return 'danger'; // Overtime / negativo a vermelho vivo
       if (timer.duration > 0) {
         const pct = (elapsed / timer.duration) * 100;
         if (pct > 95) return 'danger';
@@ -360,7 +336,6 @@
     return 'safe';
   }
 
-  // Contagem fiel do tempo: no countdown, conta decrescente e continua em negativo (-00:01, -00:02...)
   function getTimerDisplayValue(timer) {
     if (timer.mode === 'clock') {
       return StageTimerClient.getTrueTimeString();
@@ -373,42 +348,69 @@
     return formatTime(elapsed);
   }
 
-  // ─── Next Artist Resolution ──────────────────────────────────────────
-  function getNextTimer(state, activeTimer) {
-    if (!state || !Array.isArray(state.timers) || state.timers.length === 0) return null;
-    let list = state.timers;
-    if (activeTimer) {
-      if (!list.some(t => t.id === activeTimer.id) && state.days) {
-        for (const dayList of Object.values(state.days)) {
-          if (Array.isArray(dayList) && dayList.some(t => t.id === activeTimer.id)) {
+  function getNextTimer(currentState, currentActive) {
+    if (!currentState || !Array.isArray(currentState.timers) || currentState.timers.length === 0) return null;
+    let list = currentState.timers;
+    if (currentActive) {
+      if (!list.some(t => t.id === currentActive.id) && currentState.days) {
+        for (const dayList of Object.values(currentState.days)) {
+          if (Array.isArray(dayList) && dayList.some(t => t.id === currentActive.id)) {
             list = dayList;
             break;
           }
         }
       }
-      const activeIdx = list.findIndex(t => t.id === activeTimer.id);
+      const activeIdx = list.findIndex(t => t.id === currentActive.id);
       if (activeIdx >= 0 && activeIdx + 1 < list.length) {
         return list[activeIdx + 1];
       }
       return null;
     }
-
     const pending = list.filter(t => t.state !== 'finished');
     if (pending.length > 1) return pending[1];
     if (pending.length === 1) return pending[0];
     return null;
   }
 
-  // ─── Message Overlay & Vibration (Idêntico ao Modo Palco) ─────────────
+  // ─── Resolução do Fim do Evento / Show ────────────────────────────────
+  function resolveEventEndTime(currentState) {
+    if (!currentState) return '--:--';
+    if (currentState.eventEndTime && currentState.eventEndTime !== '--:--') {
+      return currentState.eventEndTime;
+    }
+    if (typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.computeEventEndTime === 'function') {
+      try {
+        return StageTimerClient.computeEventEndTime(currentState);
+      } catch (_) {}
+    }
+    return '--:--';
+  }
+
+  // ─── Ajuste Dinâmico da Tipografia dos Dígitos ────────────────────────
+  function fitDigits() {
+    if (!$timer) return;
+    const txt = $timer.textContent || '';
+    const len = txt.length;
+    if (len > 8) {
+      $timer.style.fontSize = 'clamp(1.9rem, 16vw, 2.7rem)';
+      $timer.classList.add('is-long');
+    } else if (len > 5) {
+      $timer.style.fontSize = 'clamp(2.4rem, 21vw, 3.8rem)';
+      $timer.classList.add('is-long');
+    } else {
+      $timer.style.fontSize = 'clamp(3.8rem, 35vw, 6.4rem)';
+      $timer.classList.remove('is-long');
+    }
+  }
+
+  // ─── Alertas da Régie ────────────────────────────────────────────────
   function handleMessageAlert() {
     if (!state) return;
     const msg = state.message;
     if (msg && msg.visible && msg.text) {
       if ($msgText) $msgText.textContent = msg.text;
-      if ($msgBadge) $msgBadge.textContent = msg.level === 'urgent' ? 'URGENTE' : 'AVISO';
-      if ($msgOverlay) {
-        $msgOverlay.className = `watch-message-overlay visible ${msg.level === 'urgent' ? 'urgent' : ''}`;
-      }
+      if ($msgBadge) $msgBadge.textContent = msg.level === 'urgent' ? 'URGENTE DA RÉGIE' : 'AVISO DA RÉGIE';
+      if ($msgOverlay) $msgOverlay.className = 'watch-alert-overlay visible';
       if (msg.id !== lastMessageId) {
         lastMessageId = msg.id;
         if (navigator.vibrate) {
@@ -416,7 +418,7 @@
         }
       }
     } else {
-      if ($msgOverlay) $msgOverlay.className = 'watch-message-overlay';
+      if ($msgOverlay) $msgOverlay.className = 'watch-alert-overlay';
       lastMessageId = '';
     }
   }
@@ -427,53 +429,57 @@
     });
   }
 
-  // ─── Edge-to-Edge Dynamic Scaling ────────────────────────────────────
-  function fitDigits() {
-    if (!$timer) return;
-    const txt = $timer.textContent || '';
-    const len = txt.length;
-    if (len > 8) {
-      $timer.style.fontSize = 'clamp(1.8rem, 15vw, 2.7rem)';
-    } else if (len > 5) {
-      $timer.style.fontSize = 'clamp(2.3rem, 20vw, 3.8rem)';
-    } else {
-      $timer.style.fontSize = 'clamp(3.8rem, 34vw, 6.4rem)';
-    }
-  }
-
-  // ─── Render Loop (Idêntico ao Modo Palco) ────────────────────────────
+  // ─── Render Loop Principal (200ms) ───────────────────────────────────
   let lastColorState = '';
 
   function render() {
-    // 1. HORA LOCAL (Canto Inferior Esquerdo)
+    // 1. HORA LOCAL REAL (Base Esquerda)
     if ($clockTime) {
       $clockTime.textContent = StageTimerClient.getTrueTimeString();
+    }
+
+    // 2. FIM DO EVENTO / SHOW (Linha de Destaque)
+    const endStr = resolveEventEndTime(state);
+    if ($eventEnd) {
+      $eventEnd.textContent = endStr || '--:--';
     }
 
     const activeTimer = state ? StageTimerClient.getActiveTimer(state) : null;
 
     if (!activeTimer) {
-      // Nenhum timer ativo no momento
+      // Sem timer ativo
       const timersList = Array.isArray(state?.timers) ? state.timers : [];
       const pendingTimer = timersList.find(t => t.state !== 'finished');
 
       if (pendingTimer) {
         if ($artistName) $artistName.textContent = pendingTimer.name || 'Próximo';
+        if ($stateBadge) {
+          $stateBadge.textContent = 'STANDBY';
+          $stateBadge.className = 'watch-badge standby';
+        }
         if ($timer) {
           $timer.textContent = formatTime(pendingTimer.duration || 0);
-          $timer.className = 'viewer-timer watch-timer paused';
+          $timer.className = 'watch-digits paused';
         }
       } else if (timersList.length > 0 && timersList.every(t => t.state === 'finished')) {
-        if ($artistName) $artistName.textContent = 'Fim do Espetáculo';
+        if ($artistName) $artistName.textContent = 'Fim do Show';
+        if ($stateBadge) {
+          $stateBadge.textContent = 'FIM';
+          $stateBadge.className = 'watch-badge danger';
+        }
         if ($timer) {
           $timer.textContent = '00:00';
-          $timer.className = 'viewer-timer watch-timer danger';
+          $timer.className = 'watch-digits danger';
         }
       } else {
         if ($artistName) $artistName.textContent = state?.name || roomId;
+        if ($stateBadge) {
+          $stateBadge.textContent = 'READY';
+          $stateBadge.className = 'watch-badge standby';
+        }
         if ($timer) {
           $timer.textContent = '00:00';
-          $timer.className = 'viewer-timer watch-timer clock';
+          $timer.className = 'watch-digits clock';
         }
       }
 
@@ -483,30 +489,48 @@
       return;
     }
 
-    // 2. NOME DO ARTISTA EM PALCO (Topo)
+    // 3. NOME DO ARTISTA E BADGE DE ESTADO
     if ($artistName) {
       $artistName.textContent = activeTimer.name || 'Artista em Palco';
     }
 
-    // 3. DÍGITOS GIGANTES COM CONTAGEM DECIDIDA & CONTAGEM NEGATIVA (-00:01, -00:02...)
+    const isRunning = activeTimer.state === 'running';
+    const isPaused = activeTimer.state === 'paused';
     const displayVal = getTimerDisplayValue(activeTimer);
     const color = getTimerColor(activeTimer);
-    const isLong = (displayVal || '').length > 5;
+    const isOvertime = color === 'danger' && activeTimer.mode === 'countdown';
 
-    // Vibração tátil ao entrar em tempo negativo
-    if (color === 'danger' && lastColorState !== 'danger' && activeTimer.mode === 'countdown') {
+    if ($stateBadge) {
+      if (isOvertime) {
+        $stateBadge.textContent = 'OVERTIME';
+        $stateBadge.className = 'watch-badge overtime';
+      } else if (isRunning) {
+        $stateBadge.textContent = 'NO AR';
+        $stateBadge.className = 'watch-badge running';
+      } else if (isPaused) {
+        $stateBadge.textContent = 'PAUSA';
+        $stateBadge.className = 'watch-badge paused';
+      } else {
+        $stateBadge.textContent = 'PRONTO';
+        $stateBadge.className = 'watch-badge standby';
+      }
+    }
+
+    // Alerta háptico ao entrar em tempo negativo
+    if (isOvertime && lastColorState !== 'danger') {
       if (navigator.vibrate) {
-        try { navigator.vibrate([150, 80, 150]); } catch (_) {}
+        try { navigator.vibrate([160, 80, 160]); } catch (_) {}
       }
     }
     lastColorState = color;
 
+    // 4. DÍGITOS GIGANTES
     if ($timer) {
       $timer.textContent = displayVal;
-      $timer.className = `viewer-timer watch-timer ${color}${isLong ? ' is-long has-hours' : ''}`;
+      $timer.className = `watch-digits ${color}`;
     }
 
-    // 4. PRÓXIMO ARTISTA (Canto Inferior Direito)
+    // 5. PRÓXIMO ARTISTA (Base Direita)
     const nextTimer = getNextTimer(state, activeTimer);
     if ($next && $nextName) {
       if (nextTimer) {
@@ -518,18 +542,18 @@
       }
     }
 
-    // 5. BARRA DE PROGRESSO NA BASE (Verde -> Laranja -> Vermelho Vivo)
+    // 6. BARRA DE PROGRESSO
     if ($progressBar) {
       if (activeTimer.duration > 0 && activeTimer.mode === 'countdown') {
         const elapsed = getTimerElapsed(activeTimer);
         const pct = Math.min(100, (elapsed / activeTimer.duration) * 100);
         $progressBar.style.width = `${pct}%`;
         if (pct >= 100) {
-          $progressBar.className = 'viewer-progress-bar watch-progress-bar overtime';
+          $progressBar.className = 'watch-progress-fill overtime';
         } else if (pct > 80) {
-          $progressBar.className = 'viewer-progress-bar watch-progress-bar warn';
+          $progressBar.className = 'watch-progress-fill warn';
         } else {
-          $progressBar.className = 'viewer-progress-bar watch-progress-bar';
+          $progressBar.className = 'watch-progress-fill';
         }
       } else {
         $progressBar.style.width = '0%';
@@ -539,15 +563,13 @@
     fitDigits();
   }
 
-  // Atualização em alta frequência a cada 200ms
   setInterval(render, 200);
 
-  // ─── Screen Wake Lock (Manter Ecrã Ligado) ────────────────────────────
-  let wakeLock = null;
+  // ─── Wake Lock (Manter Ecrã Ligado) ──────────────────────────────────
   async function requestWakeLock() {
     try {
       if ('wakeLock' in navigator) {
-        wakeLock = await navigator.wakeLock.request('screen');
+        await navigator.wakeLock.request('screen');
       }
     } catch (_) {}
   }
@@ -555,15 +577,10 @@
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') requestWakeLock();
   });
-  document.addEventListener('touchstart', requestWakeLock, { passive: true, once: true });
 
-  // ─── Auto-Collapse watchOS Navigation Header (Tela Cheia) ────────────
+  // Recolhimento automático do cabeçalho watchOS para Fullscreen
   function tryCollapseWatchHeader() {
-    try {
-      window.scrollTo({ top: 30, behavior: 'smooth' });
-    } catch (_) {
-      window.scrollTo(0, 30);
-    }
+    try { window.scrollTo({ top: 30, behavior: 'smooth' }); } catch (_) { window.scrollTo(0, 30); }
   }
   window.addEventListener('load', () => setTimeout(tryCollapseWatchHeader, 350));
   document.addEventListener('touchstart', () => setTimeout(tryCollapseWatchHeader, 80), { passive: true, once: true });

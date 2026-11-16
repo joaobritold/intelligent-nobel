@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>ShowFlow — Suíte de Testes Automatizados (v2.05)</title>
-  <link rel="stylesheet" href="css/common.css?v=2.05">
+  <title>ShowFlow — Suíte de Testes Automatizados (v2.06)</title>
+  <link rel="stylesheet" href="css/common.css?v=2.06">
   <style>
     body {
       background: #0f172a;
@@ -132,7 +132,7 @@
       <div class="test-title">
         <svg class="st-icon" viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#388bfd;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         <span>ShowFlow — Suíte de Testes Automatizados</span>
-        <span class="badge" style="background: rgba(56, 139, 253, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.3);">v2.05</span>
+        <span class="badge" style="background: rgba(56, 139, 253, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.3);">v2.06</span>
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
         <button id="btn-rerun" class="btn-run" type="button">Executar Novamente</button>
@@ -164,8 +164,8 @@
     </div>
   </div>
 
-  <script src="js/local-sync.js?v=2.05"></script>
-  <script src="js/notifications.js?v=2.05"></script>
+  <script src="js/local-sync.js?v=2.06"></script>
+  <script src="js/notifications.js?v=2.06"></script>
   <script>
     (function() {
       const tests = [];
@@ -635,6 +635,51 @@
         client.deleteEventFromRegistry(evB.code);
         sessionStorage.removeItem('stagetimer_master_active');
         sessionStorage.removeItem('stagetimer_unlocked_event');
+      });
+
+      it('T22 - Erradicação de Eventos Fantasmas (Tombstones com Timestamp, Cascata e Merge Seguro)', 
+         'Valida eliminação em cascata de sub-palcos, persistência de tombstones com timestamp e rejeição de ressuscitação stale', 
+         () => {
+        sessionStorage.setItem('stagetimer_master_active', '1');
+        const client = new UniversalSyncClient({ role: 'test', room: 'GHOST_TEST' });
+
+        // 1. Criar evento com múltiplos palcos
+        const ev = client.createEventWithStages({ title: 'Festival Fantasma Teste', stagesCount: 2 });
+        const parentCode = ev.code;
+        const stage1Code = ev.stages[0].code;
+        const stage2Code = ev.stages[1].code;
+
+        assert(client.getEventsList().some(e => e.code === parentCode), 'Evento criado deve constar na lista');
+
+        // 2. Apagar o evento
+        client.deleteEventFromRegistry(parentCode);
+
+        // 3. Verificar que tanto o evento pai como os sub-palcos entraram em tombstones com timestamp
+        const delMap = client._getDeletedEventsMap();
+        assert(delMap.has(parentCode), 'Código pai deve estar no mapa de apagados');
+        assert(delMap.has(stage1Code), 'Palco 1 deve estar no mapa de apagados em cascata');
+        assert(delMap.has(stage2Code), 'Palco 2 deve estar no mapa de apagados em cascata');
+        assert(typeof delMap.get(parentCode) === 'number' && delMap.get(parentCode) > 0, 'Tombstone deve ter timestamp numérico');
+
+        // 4. Simular tentativa de ressuscitação por cliente stale com timestamp anterior à eliminação
+        const staleTimestamp = delMap.get(parentCode) - 1000;
+        const staleIncoming = [{
+          code: parentCode,
+          title: 'Festival Fantasma Teste',
+          stagesCount: 2,
+          stages: [{ code: stage1Code }, { code: stage2Code }],
+          createdAt: staleTimestamp,
+          updatedAt: staleTimestamp
+        }];
+
+        client._mergeIncomingRegistry(staleIncoming, false);
+        assert(!client.getEventsList().some(e => e.code === parentCode), 'Evento stale jamais deve ser ressuscitado após ser apagado');
+
+        // 5. Testar forceCloudRegistrySync
+        client.forceCloudRegistrySync();
+        assert(!client.getEventsList().some(e => e.code === parentCode), 'Lista permanece limpa após forceCloudRegistrySync');
+
+        sessionStorage.removeItem('stagetimer_master_active');
       });
 
       // === EXECUTOR DE TESTES =========================================

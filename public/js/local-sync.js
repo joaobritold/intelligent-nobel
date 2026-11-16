@@ -184,33 +184,54 @@ class UniversalSyncClient {
     this._serverTimeDrift = 0;
   }
 
-  // ─── Deleted Events Tombstones ──────────────────────────────────────
+  // ─── Deleted Events Tombstones (CRDT with Timestamps) ───────────────
 
-  _getDeletedEvents() {
+  _getDeletedEventsMap() {
     try {
       const raw = localStorage.getItem(this.deletedStorageKey);
-      const arr = raw ? JSON.parse(raw) : [];
-      return new Set(Array.isArray(arr) ? arr.map(c => String(c).toUpperCase()) : []);
+      if (!raw) return new Map();
+      const parsed = JSON.parse(raw);
+      const map = new Map();
+      if (Array.isArray(parsed)) {
+        // Backward-compatibility: legacy array of string codes
+        parsed.forEach(c => {
+          if (c) map.set(String(c).toUpperCase().trim(), 1000000000000);
+        });
+      } else if (parsed && typeof parsed === 'object') {
+        Object.entries(parsed).forEach(([c, ts]) => {
+          if (c) map.set(String(c).toUpperCase().trim(), Number(ts) || 1000000000000);
+        });
+      }
+      return map;
     } catch (e) {
-      return new Set();
+      return new Map();
     }
   }
 
-  _recordDeletedEvent(code) {
+  _getDeletedEvents() {
+    return new Set(this._getDeletedEventsMap().keys());
+  }
+
+  _recordDeletedEvent(code, deletedAt = Date.now()) {
     if (!code) return;
-    const set = this._getDeletedEvents();
-    set.add(code.toUpperCase());
+    const cleanCode = String(code).toUpperCase().trim();
+    if (!cleanCode) return;
+    const map = this._getDeletedEventsMap();
+    const existing = map.get(cleanCode) || 0;
+    map.set(cleanCode, Math.max(existing, Number(deletedAt) || Date.now()));
     try {
-      localStorage.setItem(this.deletedStorageKey, JSON.stringify(Array.from(set)));
+      localStorage.setItem(this.deletedStorageKey, JSON.stringify(Object.fromEntries(map)));
     } catch (e) {}
   }
 
   _unmarkDeletedEvent(code) {
     if (!code) return;
-    const set = this._getDeletedEvents();
-    set.delete(code.toUpperCase());
+    const cleanCode = String(code).toUpperCase().trim();
+    if (!cleanCode) return;
+    const map = this._getDeletedEventsMap();
+    map.delete(cleanCode);
     try {
-      localStorage.setItem(this.deletedStorageKey, JSON.stringify(Array.from(set)));
+      localStorage.setItem(this.deletedStorageKey, JSON.stringify(Object.fromEntries(map)));
     } catch (e) {}
   }
 
@@ -602,7 +623,7 @@ class UniversalSyncClient {
       const sender = String(cmdObj.sender || '');
       const secret = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('stagetimer_auth_token') : null) ||
                      (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_auth_token') : null) ||
-                     'st_showflow_cmd_sig_v2.05';
+                     'st_showflow_cmd_sig_v2.06';
       const raw = `${action}:${target}:${sentAt}:${sender}:${secret.slice(-16)}`;
       let hash = 0x811c9dc5;
       for (let i = 0; i < raw.length; i++) {
@@ -878,17 +899,20 @@ class UniversalSyncClient {
 
     if (msg.action === 'purge_event' && msg.code) {
       const purgeCode = String(msg.code).toUpperCase().trim();
-      this._recordDeletedEvent(purgeCode);
+      const now = Date.now();
+      this._recordDeletedEvent(purgeCode, now);
       try { 
         localStorage.removeItem(`stagetimer_v10_state_${purgeCode}`);
         localStorage.removeItem(`stagetimer_v8_state_${purgeCode}`);
         localStorage.removeItem(`stagetimer_live_state_${purgeCode}`);
+        localStorage.removeItem(`stagetimer_created_${purgeCode}`);
       } catch (e) {}
       const updatedList = this.getEventsList().filter(e => e.code !== purgeCode);
       this._saveEventsList(updatedList, false);
       if (this.cleanRoom === purgeCode) {
+        const fallback = (updatedList && updatedList.length > 0 && updatedList[0].code) ? updatedList[0].code : 'PALCO1';
         const u = new URL(location.href);
-        u.searchParams.set('room', 'PALCO1');
+        u.searchParams.set('room', fallback);
         window.location.replace(u.toString());
         return;
       }
@@ -897,14 +921,19 @@ class UniversalSyncClient {
     }
 
     if (msg.action === 'purge_all_ghosts' && Array.isArray(msg.activeCodes)) {
-      const activeSet = new Set(msg.activeCodes.map(c => String(c).toUpperCase()));
+      const activeSet = new Set(msg.activeCodes.map(c => String(c).toUpperCase().trim()));
+      const now = Date.now();
       try {
         Object.keys(localStorage).forEach(key => {
           if (key.startsWith('stagetimer_v10_state_') || key.startsWith('stagetimer_v8_state_') || key.startsWith('stagetimer_live_state_')) {
-            const c = key.replace('stagetimer_v10_state_', '').replace('stagetimer_v8_state_', '').replace('stagetimer_live_state_', '').toUpperCase();
-            if (c && !activeSet.has(c) && c !== 'PALCO1') {
+            const c = key
+              .replace('stagetimer_v10_state_', '')
+              .replace('stagetimer_v8_state_', '')
+              .replace('stagetimer_live_state_', '')
+              .toUpperCase().trim();
+            if (c && !activeSet.has(c)) {
               localStorage.removeItem(key);
-              this._recordDeletedEvent(c);
+              this._recordDeletedEvent(c, now);
             }
           }
         });
@@ -912,7 +941,8 @@ class UniversalSyncClient {
       const isSpecialScreen = this.cleanRoom === 'PORTAL' || this.cleanRoom === 'MASTER' || this.role === 'master' || this.cleanRoom.startsWith('_');
       if (!isSpecialScreen && !activeSet.has(this.cleanRoom)) {
         const u = new URL(location.href);
-        u.searchParams.set('room', 'PALCO1');
+        const fallbackRoom = (msg.activeCodes && msg.activeCodes.length > 0) ? msg.activeCodes[0] : 'PALCO1';
+        u.searchParams.set('room', fallbackRoom);
         window.location.replace(u.toString());
         return;
       }
@@ -1002,7 +1032,7 @@ class UniversalSyncClient {
       if (typeof document !== 'undefined' && !this._mqttScriptLoading) {
         this._mqttScriptLoading = true;
         const s = document.createElement('script');
-        s.src = 'js/mqtt.min.js?v=2.05';
+        s.src = 'js/mqtt.min.js?v=2.06';
         s.onload = () => {
           this._mqttScriptLoading = false;
           this._initCloudSync();
@@ -1212,6 +1242,21 @@ class UniversalSyncClient {
           const payloadStr = payload.toString();
           this._emit('mqtt-raw-message', { topic, payload: payloadStr });
 
+          // Handle empty retained payloads (official MQTT RFC mechanism to clear retained topics from broker)
+          if (!payloadStr || payloadStr.trim() === '') {
+            if (topic === this.mqttTopicState) {
+              this._recordDeletedEvent(this.cleanRoom);
+            } else if (topic.startsWith('stagetimer_v10/') && topic.endsWith('/state')) {
+              const parts = topic.split('/');
+              const roomCode = parts[1];
+              if (roomCode && roomCode !== '_events_list') {
+                this._recordDeletedEvent(roomCode);
+                this._emit('multi-room-deleted', { room: roomCode });
+              }
+            }
+            return;
+          }
+
           let msg = null;
           try { msg = JSON.parse(payloadStr); } catch (_) {}
           if (!msg) return;
@@ -1324,7 +1369,7 @@ class UniversalSyncClient {
           } else if (topic === this.mqttTopicRegistry) {
             if (msg && msg.sender === this.clientId) return; // Prevent echo feedback loops
             if (msg && Array.isArray(msg.events)) {
-              this._mergeIncomingRegistry(msg.events, Boolean(msg.forceReplace), msg.deleted || []);
+              this._mergeIncomingRegistry(msg.events, Boolean(msg.forceReplace), msg.deleted || [], msg.deletedMap || null);
             }
           } else if (topic === this.mqttTopicPresence) {
             if (msg.clientId) {
@@ -2794,13 +2839,21 @@ class UniversalSyncClient {
 
   getEventsList() {
     try {
-      const deletedSet = this._getDeletedEvents();
+      const deletedMap = this._getDeletedEventsMap();
       const raw = localStorage.getItem(this.registryStorageKey);
       let list = raw ? JSON.parse(raw) : [];
       if (!Array.isArray(list)) list = [];
       list = list
         .map(e => this._normalizeRegistryItem(e))
-        .filter(e => e && !deletedSet.has(e.code));
+        .filter(e => {
+          if (!e || !e.code) return false;
+          if (deletedMap.has(e.code)) {
+            const delAt = deletedMap.get(e.code) || 0;
+            const updAt = Number(e.updatedAt) || Number(e.createdAt) || 0;
+            if (updAt <= delAt) return false;
+          }
+          return true;
+        });
 
       // Sort STRICTLY by creation order descending (newest event first).
       // We NEVER compare updatedAt because timers running continuously mutate updatedAt!
@@ -2817,10 +2870,19 @@ class UniversalSyncClient {
   }
 
   _saveEventsList(list, publish = true, forceReplace = false) {
-    const deletedSet = this._getDeletedEvents();
+    const deletedMap = this._getDeletedEventsMap();
+    const deletedSet = new Set(deletedMap.keys());
     const normalized = (list || [])
       .map(e => this._normalizeRegistryItem(e))
-      .filter(e => e && !deletedSet.has(e.code));
+      .filter(e => {
+        if (!e || !e.code) return false;
+        if (deletedMap.has(e.code)) {
+          const delAt = deletedMap.get(e.code) || 0;
+          const updAt = Number(e.updatedAt) || Number(e.createdAt) || 0;
+          if (updAt <= delAt) return false;
+        }
+        return true;
+      });
 
     // Sort strictly before saving to localStorage and publishing
     normalized.sort((a, b) => {
@@ -2839,7 +2901,8 @@ class UniversalSyncClient {
           sender: this.clientId,
           forceReplace,
           events: normalized,
-          deleted: Array.from(deletedSet)
+          deleted: Array.from(deletedSet),
+          deletedMap: Object.fromEntries(deletedMap)
         });
         this.mqttClient.publish(this.mqttTopicRegistry, payload, { qos: 0, retain: true });
       } catch (e) {}
@@ -2847,10 +2910,25 @@ class UniversalSyncClient {
     this._emit('events-list-update', normalized);
   }
 
-  _mergeIncomingRegistry(incomingList, forceReplace = false, incomingDeleted = []) {
+  _mergeIncomingRegistry(incomingList, forceReplace = false, incomingDeleted = [], incomingDeletedMap = null) {
     if (!Array.isArray(incomingList)) return;
 
     // Ingest and record remote tombstones on this device
+    if (incomingDeletedMap && typeof incomingDeletedMap === 'object') {
+      Object.entries(incomingDeletedMap).forEach(([delCode, delTime]) => {
+        if (delCode) {
+          const cleanDel = String(delCode).toUpperCase().trim();
+          this._recordDeletedEvent(cleanDel, Number(delTime) || Date.now());
+          try {
+            localStorage.removeItem(`stagetimer_v10_state_${cleanDel}`);
+            localStorage.removeItem(`stagetimer_v8_state_${cleanDel}`);
+            localStorage.removeItem(`stagetimer_live_state_${cleanDel}`);
+            localStorage.removeItem(`stagetimer_created_${cleanDel}`);
+          } catch (_) {}
+        }
+      });
+    }
+
     if (Array.isArray(incomingDeleted) && incomingDeleted.length > 0) {
       incomingDeleted.forEach(delCode => {
         if (delCode && typeof delCode === 'string') {
@@ -2860,15 +2938,25 @@ class UniversalSyncClient {
             localStorage.removeItem(`stagetimer_v10_state_${cleanDel}`);
             localStorage.removeItem(`stagetimer_v8_state_${cleanDel}`);
             localStorage.removeItem(`stagetimer_live_state_${cleanDel}`);
+            localStorage.removeItem(`stagetimer_created_${cleanDel}`);
           } catch (_) {}
         }
       });
     }
 
-    const deletedSet = this._getDeletedEvents();
+    const deletedMap = this._getDeletedEventsMap();
+
+    const isItemDeleted = (code, updatedAt, createdAt) => {
+      if (!code) return true;
+      const c = String(code).toUpperCase().trim();
+      if (!deletedMap.has(c)) return false;
+      const delAt = deletedMap.get(c) || 0;
+      const updAt = Number(updatedAt) || Number(createdAt) || 0;
+      return updAt <= delAt;
+    };
 
     const validIncoming = incomingList
-      .filter(item => item && !deletedSet.has((item.code || item.id || '').toUpperCase()))
+      .filter(item => item && !isItemDeleted(item.code || item.id, item.updatedAt, item.createdAt))
       .map(rawItem => this._normalizeRegistryItem(rawItem))
       .filter(Boolean);
 
@@ -2909,12 +2997,21 @@ class UniversalSyncClient {
       return;
     }
 
-    // Incremental merge (forceReplace === false): Never discard local events
+    // Incremental merge (forceReplace === false): Never resurrect deleted events!
     const currentList = this.getEventsList();
     const map = new Map();
     currentList.forEach(e => {
-      if (e && e.code && !deletedSet.has(e.code)) {
-        map.set(e.code, e);
+      if (e && e.code) {
+        if (!isItemDeleted(e.code, e.updatedAt, e.createdAt)) {
+          map.set(e.code, e);
+        } else {
+          try {
+            localStorage.removeItem(`stagetimer_v10_state_${e.code}`);
+            localStorage.removeItem(`stagetimer_v8_state_${e.code}`);
+            localStorage.removeItem(`stagetimer_live_state_${e.code}`);
+            localStorage.removeItem(`stagetimer_created_${e.code}`);
+          } catch (_) {}
+        }
       }
     });
 
@@ -3385,22 +3482,29 @@ class UniversalSyncClient {
       throw new Error('Não é possível apagar o único palco deste evento.');
     }
 
-    this._recordDeletedEvent(cleanStageCode);
+    const now = Date.now();
+    this._recordDeletedEvent(cleanStageCode, now);
     ev.stages = ev.stages.filter(s => (s.code || s.id || '').toUpperCase() !== cleanStageCode);
     ev.stagesCount = ev.stages.length;
-    ev.updatedAt = Date.now();
+    ev.updatedAt = now;
 
     try {
       localStorage.removeItem(`stagetimer_v10_state_${cleanStageCode}`);
+      localStorage.removeItem(`stagetimer_v8_state_${cleanStageCode}`);
+      localStorage.removeItem(`stagetimer_live_state_${cleanStageCode}`);
+      localStorage.removeItem(`stagetimer_created_${cleanStageCode}`);
     } catch (_) {}
+
+    this.sendDeviceCommand('ALL', { action: 'purge_event', code: cleanStageCode });
 
     if (this.mqttClient && this.mqttClient.connected) {
       try {
         this.mqttClient.publish(
           `stagetimer_v10/${cleanStageCode}/state`,
-          JSON.stringify({ deleted: true, sender: this.clientId, sentAt: Date.now(), data: null }),
-          { qos: 0, retain: true }
+          JSON.stringify({ deleted: true, sender: this.clientId, sentAt: now, data: null }),
+          { qos: 0, retain: false }
         );
+        this.mqttClient.publish(`stagetimer_v10/${cleanStageCode}/state`, '', { qos: 0, retain: true });
       } catch (_) {}
     }
 
@@ -3478,42 +3582,103 @@ class UniversalSyncClient {
   deleteEventFromRegistry(codeToDelete) {
     if (!codeToDelete) return this.getEventsList();
     const cleanCode = codeToDelete.toUpperCase().trim();
-    this._recordDeletedEvent(cleanCode);
+    const now = Date.now();
 
-    let list = this.getEventsList().filter(e => e.code !== cleanCode);
-    try {
-      localStorage.removeItem(`stagetimer_v10_state_${cleanCode}`);
-      localStorage.removeItem(`stagetimer_v8_state_${cleanCode}`);
-      localStorage.removeItem(`stagetimer_live_state_${cleanCode}`);
-      if (localStorage.getItem('stagetimer_device_room') === cleanCode) {
-        localStorage.removeItem('stagetimer_device_room');
+    const list = this.getEventsList();
+    const targetEvent = list.find(e => e.code === cleanCode || (e.stages && e.stages.some(st => (st.code || st.id || '').toUpperCase() === cleanCode)));
+
+    const codesToPurge = new Set();
+    codesToPurge.add(cleanCode);
+
+    if (targetEvent) {
+      codesToPurge.add((targetEvent.code || targetEvent.id).toUpperCase().trim());
+      if (Array.isArray(targetEvent.stages)) {
+        targetEvent.stages.forEach(st => {
+          const sc = (st.code || st.id || '').toUpperCase().trim();
+          if (sc) codesToPurge.add(sc);
+        });
       }
-      if (localStorage.getItem('stagetimer_last_room') === cleanCode) {
-        localStorage.removeItem('stagetimer_last_room');
-      }
-    } catch (e) {}
-
-    // Broadcast purge command so every connected screen purges this event immediately
-    this.sendDeviceCommand('ALL', { action: 'purge_event', code: cleanCode });
-
-    // Clear retained state on MQTT for that deleted room
-    if (this.mqttClient && this.mqttClient.connected) {
-      try {
-        this.mqttClient.publish(
-          `stagetimer_v10/${cleanCode}/state`,
-          JSON.stringify({ deleted: true, sender: this.clientId, sentAt: Date.now(), data: null }),
-          { qos: 0, retain: true }
-        );
-      } catch (e) {}
     }
 
-    this._saveEventsList(list, true, true);
-    return list;
+    codesToPurge.forEach(c => {
+      this._recordDeletedEvent(c, now);
+      try {
+        localStorage.removeItem(`stagetimer_v10_state_${c}`);
+        localStorage.removeItem(`stagetimer_v8_state_${c}`);
+        localStorage.removeItem(`stagetimer_live_state_${c}`);
+        localStorage.removeItem(`stagetimer_created_${c}`);
+        if (localStorage.getItem('stagetimer_device_room') === c) {
+          localStorage.removeItem('stagetimer_device_room');
+        }
+        if (localStorage.getItem('stagetimer_last_room') === c) {
+          localStorage.removeItem('stagetimer_last_room');
+        }
+      } catch (e) {}
+
+      // Broadcast purge command so every connected screen purges this event immediately
+      this.sendDeviceCommand('ALL', { action: 'purge_event', code: c });
+
+      // Clear retained state on MQTT for that deleted room
+      if (this.mqttClient && this.mqttClient.connected) {
+        try {
+          this.mqttClient.publish(
+            `stagetimer_v10/${c}/state`,
+            JSON.stringify({ deleted: true, sender: this.clientId, sentAt: now, data: null }),
+            { qos: 0, retain: false }
+          );
+          // Official MQTT empty retained payload to clear broker memory
+          this.mqttClient.publish(`stagetimer_v10/${c}/state`, '', { qos: 0, retain: true });
+        } catch (e) {}
+      }
+    });
+
+    const remainingList = list.filter(e => !codesToPurge.has(e.code));
+    this._saveEventsList(remainingList, true, true);
+    return remainingList;
   }
 
   forceCloudRegistrySync() {
     const list = this.getEventsList();
-    const activeCodes = list.map(e => e.code);
+    const activeCodes = [];
+    list.forEach(e => {
+      activeCodes.push(e.code);
+      if (Array.isArray(e.stages)) {
+        e.stages.forEach(st => {
+          const sc = (st.code || st.id || '').toUpperCase().trim();
+          if (sc) activeCodes.push(sc);
+        });
+      }
+    });
+
+    const activeSet = new Set(activeCodes.map(c => c.toUpperCase()));
+    const now = Date.now();
+
+    // Scan all local rooms that are NOT in activeCodes and purge them
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (
+          key.startsWith('stagetimer_v10_state_') ||
+          key.startsWith('stagetimer_v8_state_') ||
+          key.startsWith('stagetimer_live_state_')
+        ) {
+          const rCode = key
+            .replace('stagetimer_v10_state_', '')
+            .replace('stagetimer_v8_state_', '')
+            .replace('stagetimer_live_state_', '')
+            .toUpperCase().trim();
+          if (rCode && !activeSet.has(rCode)) {
+            this._recordDeletedEvent(rCode, now);
+            localStorage.removeItem(key);
+            if (this.mqttClient && this.mqttClient.connected) {
+              try {
+                this.mqttClient.publish(`stagetimer_v10/${rCode}/state`, '', { qos: 0, retain: true });
+              } catch (_) {}
+            }
+          }
+        }
+      });
+    } catch (_) {}
+
     this.sendDeviceCommand('ALL', { action: 'purge_all_ghosts', activeCodes });
     this._saveEventsList(list, true, true);
     return list;
@@ -3521,15 +3686,23 @@ class UniversalSyncClient {
 
   clearAllEvents() {
     const list = this.getEventsList();
+    const now = Date.now();
     list.forEach(e => {
-      this._recordDeletedEvent(e.code);
+      this._recordDeletedEvent(e.code, now);
+      if (Array.isArray(e.stages)) {
+        e.stages.forEach(st => {
+          const sc = (st.code || st.id || '').toUpperCase().trim();
+          if (sc) this._recordDeletedEvent(sc, now);
+        });
+      }
       if (this.mqttClient && this.mqttClient.connected) {
         try {
           this.mqttClient.publish(
             `stagetimer_v10/${e.code}/state`,
-            JSON.stringify({ deleted: true, sender: this.clientId, sentAt: Date.now(), data: null }),
-            { qos: 0, retain: true }
+            JSON.stringify({ deleted: true, sender: this.clientId, sentAt: now, data: null }),
+            { qos: 0, retain: false }
           );
+          this.mqttClient.publish(`stagetimer_v10/${e.code}/state`, '', { qos: 0, retain: true });
         } catch (err) {}
       }
     });
@@ -3886,10 +4059,14 @@ class UniversalSyncClient {
 
     try {
       const sanitized = this._sanitizeStateForNetwork(rawState);
+      const computedEventEnd = (typeof UniversalSyncClient !== 'undefined' && typeof UniversalSyncClient.computeEventEndTime === 'function')
+        ? UniversalSyncClient.computeEventEndTime(sanitized)
+        : '--:--';
       const payload = JSON.stringify({
         id: cleanR,
         name: sanitized.name || cleanR,
         activeTimerId: sanitized.activeTimerId,
+        eventEndTime: computedEventEnd,
         timers: (sanitized.timers || []).map(t => ({
           id: t.id,
           name: t.name,

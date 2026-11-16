@@ -1,327 +1,361 @@
-/* ⌚ ShowFlow — Modo Palco no Apple Watch (Estilos Diretos de Palco) */
+/* ⌚ ShowFlow — Apple Watch HUD de Pulso Operacional (OLED High Contrast) */
+:root {
+  --watch-bg: #000000;
+  --watch-text: #ffffff;
+  --watch-green: #00e676;
+  --watch-yellow: #ffd54f;
+  --watch-orange: #ff9100;
+  --watch-red: #ff1744;
+  --watch-blue: #00b0ff;
+  --watch-gray: #9e9e9e;
+  --watch-subtle: rgba(255, 255, 255, 0.14);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 html, body.watch-body {
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #000000 !important;
-  color: #ffffff;
+  background-color: var(--watch-bg) !important;
+  color: var(--watch-text);
   overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-.viewer.watch-viewer {
+/* Layout Principal em Flex Vertical com Safe-Areas */
+.watch-layout {
   width: 100vw;
   height: 100vh;
   height: 100dvh;
-  padding: max(2px, env(safe-area-inset-top, 2px)) max(4px, env(safe-area-inset-right, 4px)) max(2px, env(safe-area-inset-bottom, 2px)) max(4px, env(safe-area-inset-left, 4px));
-  box-sizing: border-box;
+  max-width: 100vw;
+  max-height: 100dvh;
+  padding: max(4px, env(safe-area-inset-top, 4px)) max(6px, env(safe-area-inset-right, 6px)) max(4px, env(safe-area-inset-bottom, 4px)) max(6px, env(safe-area-inset-left, 6px));
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
   position: relative;
-  background-color: #000000 !important;
+  background-color: var(--watch-bg) !important;
 }
 
-/* Nome do Artista em Palco no Topo */
-.watch-viewer .viewer-timer-name {
-  font-size: clamp(0.78rem, 5vw, 1.1rem);
-  font-weight: 800;
-  color: #ffffff;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  text-align: center;
-  margin: 0;
-  padding: 2px 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 96vw;
-  line-height: 1.2;
+/* 1. BARRA SUPERIOR: Dot + Artista + Badge */
+.watch-top-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 2px 2px 0 2px;
   flex-shrink: 0;
 }
 
-/* Cronómetro Gigante no Centro */
-.watch-viewer .viewer-timer,
-.watch-viewer .watch-timer {
+.watch-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--watch-green);
+  box-shadow: 0 0 6px var(--watch-green);
+  flex-shrink: 0;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.watch-dot.disconnected {
+  background-color: var(--watch-red);
+  box-shadow: 0 0 6px var(--watch-red);
+}
+
+.watch-title {
+  flex: 1;
+  font-size: clamp(0.78rem, 5.2vw, 1.05rem);
+  font-weight: 800;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+  line-height: 1.15;
+}
+
+.watch-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 2px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.watch-badge.running {
+  background: rgba(0, 230, 118, 0.2);
+  color: var(--watch-green);
+  border: 1px solid rgba(0, 230, 118, 0.4);
+}
+
+.watch-badge.paused {
+  background: rgba(0, 176, 255, 0.2);
+  color: var(--watch-blue);
+  border: 1px solid rgba(0, 176, 255, 0.4);
+}
+
+.watch-badge.danger,
+.watch-badge.overtime {
+  background: rgba(255, 23, 68, 0.25);
+  color: var(--watch-red);
+  border: 1px solid rgba(255, 23, 68, 0.5);
+  animation: watch-badge-blink 1s infinite alternate;
+}
+
+.watch-badge.standby {
+  background: rgba(255, 255, 255, 0.12);
+  color: #cccccc;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@keyframes watch-badge-blink {
+  from { opacity: 1; }
+  to { opacity: 0.5; }
+}
+
+/* 2. CENTRO: DÍGITOS GIGANTES DO CRONÓMETRO */
+.watch-timer-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 1px 0;
+}
+
+.watch-digits {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", monospace;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
   font-weight: 900;
   letter-spacing: -2px;
-  line-height: 0.92;
+  line-height: 0.9;
   text-align: center;
   white-space: nowrap;
-  font-size: clamp(3.6rem, 33vw, 6.2rem);
-  color: #00b894;
-  margin: auto 0;
+  font-size: clamp(3.6rem, 34vw, 6.2rem);
+  color: var(--watch-green);
+  text-shadow: 0 0 20px rgba(0, 230, 118, 0.35);
+  transition: color 0.2s ease;
 }
 
-.watch-viewer .viewer-timer.is-long,
-.watch-viewer .watch-timer.is-long {
-  font-size: clamp(2.2rem, 19vw, 3.6rem);
-  letter-spacing: -1px;
+.watch-digits.safe {
+  color: var(--watch-green);
+  text-shadow: 0 0 24px rgba(0, 230, 118, 0.4);
 }
 
-/* Cores Oficiais do Palco */
-.watch-viewer .viewer-timer.safe,
-.watch-viewer .watch-timer.safe {
-  color: #00b894;
-  text-shadow: 0 0 25px rgba(0, 184, 148, 0.45);
+.watch-digits.warn {
+  color: var(--watch-orange);
+  text-shadow: 0 0 24px rgba(255, 145, 0, 0.45);
 }
 
-.watch-viewer .viewer-timer.warn,
-.watch-viewer .watch-timer.warn {
-  color: #fa8231;
-  text-shadow: 0 0 25px rgba(250, 130, 49, 0.45);
+.watch-digits.paused {
+  color: var(--watch-blue);
+  text-shadow: 0 0 20px rgba(0, 176, 255, 0.4);
 }
 
-.watch-viewer .viewer-timer.paused,
-.watch-viewer .watch-timer.paused {
-  color: #74b9ff;
-  text-shadow: 0 0 20px rgba(116, 185, 255, 0.45);
+.watch-digits.danger,
+.watch-digits.overtime {
+  color: var(--watch-red);
+  text-shadow: 0 0 30px rgba(255, 23, 68, 0.7);
+  animation: watch-pulse 1s ease-in-out infinite alternate;
 }
 
-/* Tempo Negativo / Overtime / Fim: Vermelho Vivo Pulsante */
-.watch-viewer .viewer-timer.danger,
-.watch-viewer .viewer-timer.finished,
-.watch-viewer .watch-timer.danger,
-.watch-viewer .watch-timer.finished {
-  color: #ff4757;
-  text-shadow: 0 0 30px rgba(255, 71, 87, 0.75);
-  animation: watch-viewer-pulse 1s ease-in-out infinite alternate;
-}
-
-.watch-viewer .viewer-timer.clock,
-.watch-viewer .watch-timer.clock {
+.watch-digits.clock {
   color: #ffffff;
   letter-spacing: -1px;
+  text-shadow: none;
 }
 
-@keyframes watch-viewer-pulse {
+.watch-digits.is-long {
+  font-size: clamp(2.1rem, 18vw, 3.4rem);
+  letter-spacing: -1px;
+}
+
+@keyframes watch-pulse {
   0% {
     opacity: 1;
     transform: scale(1);
-    text-shadow: 0 0 32px rgba(255, 71, 87, 0.9);
+    text-shadow: 0 0 32px rgba(255, 23, 68, 0.85);
   }
   100% {
-    opacity: 0.6;
+    opacity: 0.65;
     transform: scale(0.98);
-    text-shadow: 0 0 10px rgba(255, 71, 87, 0.3);
+    text-shadow: 0 0 10px rgba(255, 23, 68, 0.25);
   }
 }
 
-/* Base: Hora Local à esquerda, NEXT à direita */
-.watch-viewer .viewer-local-clock {
-  position: absolute;
-  top: auto !important;
-  bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
-  left: calc(6px + env(safe-area-inset-left, 0px)) !important;
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
+/* 3. LINHA OPERACIONAL: FIM DO EVENTO / SHOW */
+.watch-end-box {
+  width: 96%;
   display: flex;
-  flex-direction: row !important;
   align-items: center;
-  gap: 3px;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 0.72rem;
-  color: #a4b0be;
-  font-weight: 700;
-  z-index: 10;
-}
-
-.watch-viewer .viewer-clock-label {
-  display: none !important;
-}
-
-.watch-viewer #viewer-clock-time {
-  font-size: 0.72rem !important;
-  line-height: 1 !important;
-  letter-spacing: 0 !important;
-}
-
-.watch-viewer .viewer-notes {
-  font-size: 0.65rem !important;
-  padding: 2px 6px !important;
-  margin-top: 2px !important;
-  max-width: 92vw !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.watch-viewer .viewer-next {
-  position: absolute;
-  top: auto !important;
-  bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
-  right: calc(6px + env(safe-area-inset-right, 0px)) !important;
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  display: flex;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 3px !important;
-  font-size: 0.72rem !important;
-  font-weight: 700;
-  color: #ffffff;
-  max-width: 55vw;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  z-index: 10;
-}
-
-.watch-viewer .viewer-next-label {
-  font-size: 0.58rem !important;
-  color: #a29bfe;
-  font-weight: 800;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 213, 79, 0.12);
+  border: 1px solid rgba(255, 213, 79, 0.35);
+  border-radius: 6px;
+  padding: 2px 6px;
+  margin: 1px 0 2px 0;
   flex-shrink: 0;
 }
 
-.watch-viewer #viewer-next-name,
-.watch-viewer .viewer-next-name {
-  font-size: 0.72rem !important;
-  max-width: 44vw !important;
+.watch-end-tag {
+  font-size: clamp(0.6rem, 3.8vw, 0.74rem);
+  font-weight: 800;
+  color: var(--watch-yellow);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.watch-end-time {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(0.85rem, 5.5vw, 1.15rem);
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+/* 4. BARRA INFERIOR: HORA REAL + PRÓXIMO ARTISTA */
+.watch-bottom-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 0 2px 3px 2px;
+  flex-shrink: 0;
+}
+
+.watch-info-pill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  padding: 2px 5px;
+  font-size: clamp(0.65rem, 4vw, 0.82rem);
+  font-weight: 700;
+  color: #e0e0e0;
+  max-width: 50%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.15;
 }
 
-/* Barra de Progresso no Fundo */
-.watch-viewer .viewer-progress {
+.watch-clock-pill {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", monospace;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.watch-next-pill {
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.watch-pill-icon {
+  font-size: 0.75rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.watch-pill-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 5. BARRA DE PROGRESSO FINA NA BASE */
+.watch-progress-track {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 3px;
-  background: rgba(255, 255, 255, 0.12);
-  z-index: 5;
+  background: rgba(255, 255, 255, 0.15);
+  z-index: 10;
 }
 
-.watch-viewer .viewer-progress-bar,
-.watch-viewer .watch-progress-bar {
+.watch-progress-fill {
   height: 100%;
-  background: #00b894;
-  transition: width 0.3s linear, background-color 0.3s ease;
+  width: 0%;
+  background: var(--watch-green);
+  transition: width 0.25s linear, background-color 0.3s ease;
 }
 
-.watch-viewer .viewer-progress-bar.warn,
-.watch-viewer .watch-progress-bar.warn {
-  background: #fa8231;
+.watch-progress-fill.warn {
+  background: var(--watch-orange);
 }
 
-.watch-viewer .viewer-progress-bar.danger,
-.watch-viewer .viewer-progress-bar.finished,
-.watch-viewer .viewer-progress-bar.overtime,
-.watch-viewer .watch-progress-bar.danger,
-.watch-viewer .watch-progress-bar.finished,
-.watch-viewer .watch-progress-bar.overtime {
-  background: #ff4757;
-  box-shadow: 0 0 6px rgba(255, 71, 87, 0.8);
+.watch-progress-fill.danger,
+.watch-progress-fill.overtime {
+  background: var(--watch-red);
+  box-shadow: 0 0 6px var(--watch-red);
 }
 
-/* Ponto de Ligação Discreto no Canto Superior Esquerdo */
-.watch-viewer .viewer-connection {
-  position: absolute;
-  top: max(4px, env(safe-area-inset-top, 4px));
-  left: max(4px, env(safe-area-inset-left, 4px));
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: #00b894;
-  box-shadow: 0 0 6px rgba(0, 184, 148, 0.8);
-  z-index: 20;
-}
-
-.watch-viewer .viewer-connection.disconnected {
-  background-color: #ff4757;
-  box-shadow: 0 0 6px rgba(255, 71, 87, 0.8);
-}
-
-/* Standby / Empty State */
-.watch-viewer .viewer-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin: auto 0;
-}
-
-.watch-viewer .viewer-empty-icon {
-  font-size: 2rem;
-  margin-bottom: 4px;
-}
-
-.watch-viewer .viewer-empty-text {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.6);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* Prompter Message Overlay */
-.watch-viewer .viewer-message,
-.watch-message-overlay {
+/* 6. OVERLAY DE ALERTA URGENTE DA RÉGIE */
+.watch-alert-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(255, 71, 87, 0.96);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 23, 68, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: #ffffff;
   display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 12px;
-  font-size: clamp(1.1rem, 7vw, 1.6rem);
-  font-weight: 900;
+  padding: 10px;
   text-align: center;
 }
 
-.watch-viewer .viewer-message.visible,
-.watch-message-overlay.visible {
+.watch-alert-overlay.visible {
   display: flex;
 }
 
-.watch-msg-badge {
+.watch-alert-badge {
   font-size: 0.65rem;
-  font-weight: 800;
+  font-weight: 900;
   background: #000000;
-  color: #ff4757;
+  color: var(--watch-red);
   padding: 3px 8px;
   border-radius: 4px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
-.watch-msg-text {
-  font-size: clamp(1rem, 7vw, 1.4rem);
-  font-weight: 800;
-  color: #ffffff;
-  line-height: 1.25;
+.watch-alert-text {
+  font-size: clamp(1.1rem, 7.5vw, 1.7rem);
+  font-weight: 900;
+  line-height: 1.15;
+  word-break: break-word;
 }
 
-@media (min-width: 650px) {
-  .viewer.watch-viewer {
-    max-width: 320px;
-    max-height: 390px;
-    margin: auto;
-    border: 3px solid #333;
-    border-radius: 46px;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), 0 0 0 10px #1a1a1a;
-  }
-  body.watch-body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #0b0d17 !important;
-  }
-}
+/* Classes de retrocompatibilidade com selectors antigos do viewer */
+.viewer-timer-name { composes: watch-title; }
+.viewer-timer { composes: watch-digits; }
+.viewer-connection { composes: watch-dot; }
+.viewer-local-clock { composes: watch-info-pill; }
+.viewer-next { composes: watch-info-pill; }
+.viewer-progress { composes: watch-progress-track; }
+.viewer-progress-bar { composes: watch-progress-fill; }
+.watch-message-overlay { composes: watch-alert-overlay; }
