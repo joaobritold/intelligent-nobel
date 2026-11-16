@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>ShowFlow — Suíte de Testes Automatizados (v140)</title>
-  <link rel="stylesheet" href="css/common.css?v=140">
+  <title>ShowFlow — Suíte de Testes Automatizados (v141)</title>
+  <link rel="stylesheet" href="css/common.css?v=141">
   <style>
     body {
       background: #0f172a;
@@ -132,7 +132,7 @@
       <div class="test-title">
         <span>🧪</span>
         <span>ShowFlow — Suíte de Testes Automatizados</span>
-        <span class="badge" style="background: rgba(99, 102, 241, 0.2); color: #c7d2fe; border: 1px solid rgba(99, 102, 241, 0.4);">v140</span>
+        <span class="badge" style="background: rgba(99, 102, 241, 0.2); color: #c7d2fe; border: 1px solid rgba(99, 102, 241, 0.4);">v141</span>
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
         <button id="btn-rerun" class="btn-run" type="button">▶ Executar Novamente</button>
@@ -164,7 +164,7 @@
     </div>
   </div>
 
-  <script src="js/local-sync.js?v=140"></script>
+  <script src="js/local-sync.js?v=141"></script>
   <script>
     (function() {
       const tests = [];
@@ -448,6 +448,19 @@
         const ok = client._sendLocalHub({ type: 'test_ping', room: 'SALA_HUB', ts: Date.now() });
         assert(ok === true, '_sendLocalHub deve retornar true');
         assert(sentMessage && sentMessage.type === 'test_ping', 'Payload JSON recebido corretamente pelo socket');
+      });
+
+      it('T16 - Persistencia e Serializacao Cloud Store Serverless', 
+         'Garante formato de payload para endpoints serverless e debounced backup', 
+         () => {
+        const client = new UniversalSyncClient({ role: 'controller', room: 'SALA_CLOUD' });
+        client._state = client._createDefaultRoom('SALA_CLOUD');
+        client._state.timers = [{ id: 't_cloud', title: 'Artista Backup', duration: 1200, elapsed: 0, state: 'idle' }];
+        assert(typeof client.saveCloudSnapshotNow === 'function', 'saveCloudSnapshotNow deve ser uma funcao');
+        assert(typeof client.fetchCloudRevisions === 'function', 'fetchCloudRevisions deve ser uma funcao');
+        assert(typeof client.restoreCloudRevision === 'function', 'restoreCloudRevision deve ser uma funcao');
+        const sanitized = client._sanitizeStateForNetwork(client._state);
+        assert(sanitized.timers.length === 1 && sanitized.timers[0].title === 'Artista Backup', 'Payload de backup cloud integro');
       });
 
       // === EXECUTOR DE TESTES =========================================

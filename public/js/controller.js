@@ -2009,6 +2009,91 @@ if ($ctrlPrevReset) {
     });
   }
 
+  // ─── Cloud Backups Modal ───────────────────────────────────────────
+  const $cloudModal = document.getElementById('cloud-backups-modal');
+  const $openCloudBtn = document.getElementById('open-cloud-backups-btn');
+  const $closeCloudBtn = document.getElementById('cloud-backups-close-btn');
+  const $closeCloudX = document.getElementById('cloud-backups-close-x');
+  const $createBackupBtn = document.getElementById('btn-create-cloud-backup');
+  const $refreshBackupBtn = document.getElementById('btn-refresh-cloud-backups');
+  const $cloudBackupsList = document.getElementById('cloud-backups-list');
+
+  async function loadCloudRevisionsUI() {
+    if (!$cloudBackupsList || !client) return;
+    $cloudBackupsList.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">A carregar revisões da nuvem...</div>';
+    const revs = await client.fetchCloudRevisions(client.cleanRoom);
+    if (!Array.isArray(revs) || revs.length === 0) {
+      $cloudBackupsList.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 24px; font-size: 0.82rem;">Nenhum backup em nuvem ainda.<br>Clique em "Criar Backup Agora" para guardar uma revisão.</div>';
+      return;
+    }
+    $cloudBackupsList.innerHTML = '';
+    revs.forEach((r, idx) => {
+      const item = document.createElement('div');
+      item.style.cssText = 'background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.8rem;';
+      const timeStr = r.savedTimeStr || new Date(r.savedAt).toLocaleTimeString('pt-PT');
+      const dateStr = new Date(r.savedAt).toLocaleDateString('pt-PT');
+      item.innerHTML = `
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-weight: 700; color: #c7d2fe;">${idx === 0 ? '⭐ Mais Recente: ' : ''}${dateStr} às ${timeStr}</div>
+          <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 2px;">
+            ${r.timerCount || 0} artistas • Dia ${r.currentDay || 1} • Estado: ${r.showState || 'pre'}
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-restore-rev" data-revid="${r.revId}" style="background: rgba(85, 239, 196, 0.2); border: 1px solid rgba(85, 239, 196, 0.5); color: #55efc4; font-weight: 700; font-size: 0.74rem;">Restaurar</button>
+      `;
+      $cloudBackupsList.appendChild(item);
+    });
+
+    $cloudBackupsList.querySelectorAll('.btn-restore-rev').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const revId = e.currentTarget.getAttribute('data-revid');
+        if (!confirm('Deseja restaurar esta revisão da nuvem? O alinhamento atual será substituído pelo backup.')) return;
+        e.currentTarget.disabled = true;
+        e.currentTarget.textContent = 'A restaurar...';
+        const ok = await client.restoreCloudRevision(client.cleanRoom, revId);
+        if (ok) {
+          if (typeof showToast === 'function') showToast('Revisão restaurada com sucesso!', 'success');
+          if ($cloudModal) $cloudModal.style.display = 'none';
+        } else {
+          alert('Erro ao restaurar revisão da nuvem.');
+          e.currentTarget.disabled = false;
+          e.currentTarget.textContent = 'Restaurar';
+        }
+      });
+    });
+  }
+
+  if ($openCloudBtn && $cloudModal) {
+    $openCloudBtn.addEventListener('click', () => {
+      $cloudModal.style.display = 'flex';
+      loadCloudRevisionsUI();
+    });
+  }
+  if ($closeCloudBtn && $cloudModal) {
+    $closeCloudBtn.addEventListener('click', () => { $cloudModal.style.display = 'none'; });
+  }
+  if ($closeCloudX && $cloudModal) {
+    $closeCloudX.addEventListener('click', () => { $cloudModal.style.display = 'none'; });
+  }
+  if ($refreshBackupBtn) {
+    $refreshBackupBtn.addEventListener('click', loadCloudRevisionsUI);
+  }
+  if ($createBackupBtn) {
+    $createBackupBtn.addEventListener('click', async () => {
+      $createBackupBtn.disabled = true;
+      $createBackupBtn.textContent = 'A guardar...';
+      const ok = await client.saveCloudSnapshotNow('Manual Controller');
+      $createBackupBtn.disabled = false;
+      $createBackupBtn.textContent = '💾 Criar Backup Agora';
+      if (ok) {
+        if (typeof showToast === 'function') showToast('Backup criado com sucesso na nuvem!', 'success');
+        loadCloudRevisionsUI();
+      } else {
+        if (typeof showToast === 'function') showToast('Erro ao criar backup na nuvem.', 'danger');
+      }
+    });
+  }
+
   // Initialize event watcher for automatic milestones
   if (window.StageTimerNotifications && client) {
     window.StageTimerNotifications.initWatcher(client, 'controller');

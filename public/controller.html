@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>ShowFlow — Controlador</title>
-  <link rel="stylesheet" href="css/common.css?v=140">
-  <link rel="stylesheet" href="css/controller.css?v=140">
+  <link rel="stylesheet" href="css/common.css?v=141">
+  <link rel="stylesheet" href="css/controller.css?v=141">
 </head>
 <body>
   <div class="app">
@@ -65,9 +65,9 @@
       <div class="header-left">
         <div class="header-brand-row">
           <div class="logo">
-            <img src="icon.svg?v=140" alt="ShowFlow Logo" class="logo-icon" width="26" height="26" style="vertical-align: middle; border-radius: 6px; margin-right: 6px;">
+            <img src="icon.svg?v=141" alt="ShowFlow Logo" class="logo-icon" width="26" height="26" style="vertical-align: middle; border-radius: 6px; margin-right: 6px;">
             <span>ShowFlow</span>
-            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 4px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v140</span>
+            <span class="badge" style="font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700; margin-left: 4px; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v141</span>
           </div>
           <div class="room-info" id="ctrl-room-box" style="display: flex; align-items: center; gap: 6px;">
             <span>🎪</span>
@@ -138,6 +138,7 @@
             </div>
             <div class="panel-header-btn-group util-group">
               <button id="open-import-btn" class="btn btn-sm btn-import-outline">📂 Importar</button>
+              <button id="open-cloud-backups-btn" type="button" class="btn btn-sm" style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.45); color: #c7d2fe; font-weight: 700;" title="Ver e restaurar revisões de backup na nuvem">☁️ Backups</button>
               <button id="open-notif-btn" type="button" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.2); border: 1px solid rgba(108, 92, 231, 0.5); color: #c4b5fd; font-weight: 700;" title="Configurar Alertas Telegram e Notificações no Telemóvel">🔔 Alertas</button>
               <button id="clear-event-btn" class="btn btn-sm btn-danger" title="Apagar todos os artistas do dia atual">🧹 Limpar</button>
             </div>
@@ -437,6 +438,31 @@
     </div>
   </div>
 
+  <!-- Modal: Cloud Revisions & Backups -->
+  <div id="cloud-backups-modal" class="modal-overlay" style="display: none;">
+    <div class="modal" style="max-width: 500px; width: 90%; background: #1a1a2e; border: 1.5px solid var(--accent); border-radius: 16px; padding: 0; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+      <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: space-between;">
+        <h3 class="modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #fff;">☁️ Histórico de Revisões na Nuvem</h3>
+        <button id="cloud-backups-close-x" type="button" class="btn btn-sm" style="background: none; border: none; font-size: 1.3rem; color: #94a3b8; cursor: pointer; padding: 0 4px;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px;">
+        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.4;">
+          Revisões automáticas guardadas na Cloud Serverless. Permite recuperar o alinhamento ou espetáculo a qualquer momento.
+        </div>
+        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+          <button id="btn-create-cloud-backup" type="button" class="btn btn-sm btn-primary" style="flex: 1; font-weight: 700;">💾 Criar Backup Agora</button>
+          <button id="btn-refresh-cloud-backups" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); color: #fff; font-weight: 600;">🔄 Atualizar</button>
+        </div>
+        <div id="cloud-backups-list" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+          <div style="text-align: center; color: var(--text-muted); padding: 20px;">A carregar revisões da nuvem...</div>
+        </div>
+      </div>
+      <div class="modal-actions" style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: flex-end;">
+        <button id="cloud-backups-close-btn" type="button" class="btn">Fechar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="toast"></div>
 
@@ -444,17 +470,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=140"></script>
+  <script src="js/schedule-importer.js?v=141"></script>
 
   <!-- Access Control -->
-  <script src="js/auth.js?v=140"></script>
+  <script src="js/auth.js?v=141"></script>
   <!-- Cloud MQTT over WSS for reliable multi-network sync -->
-  <script src="js/mqtt.min.js?v=140"></script>
+  <script src="js/mqtt.min.js?v=141"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=140"></script>
-  <script src="js/local-sync.js?v=140"></script>
-  <script src="js/notifications.js?v=140"></script>
-  <script src="js/controller.js?v=140"></script>
-<script src="js/view-mode.js?v=140"></script>
+  <script src="js/pwa.js?v=141"></script>
+  <script src="js/local-sync.js?v=141"></script>
+  <script src="js/notifications.js?v=141"></script>
+  <script src="js/controller.js?v=141"></script>
+<script src="js/view-mode.js?v=141"></script>
 </body>
 </html>

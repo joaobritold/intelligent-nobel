@@ -530,6 +530,9 @@ class UniversalSyncClient {
 
     // 6. Connect to Local Hub (Offline LAN WebSocket)
     this._initLocalHubSync();
+
+    // 7. Recover cold state from Cloud Store if local storage was cleared
+    this._fetchInitialCloudBackupIfEmpty();
   }
 
   _sanitizeStateForNetwork(state) {
@@ -558,7 +561,7 @@ class UniversalSyncClient {
       const sender = String(cmdObj.sender || '');
       const secret = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('stagetimer_auth_token') : null) ||
                      (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_auth_token') : null) ||
-                     'st_showflow_cmd_sig_v140';
+                     'st_showflow_cmd_sig_v141';
       const raw = `${action}:${target}:${sentAt}:${sender}:${secret.slice(-16)}`;
       let hash = 0x811c9dc5;
       for (let i = 0; i < raw.length; i++) {
@@ -940,7 +943,7 @@ class UniversalSyncClient {
       if (typeof document !== 'undefined' && !this._mqttScriptLoading) {
         this._mqttScriptLoading = true;
         const s = document.createElement('script');
-        s.src = 'js/mqtt.min.js?v=140';
+        s.src = 'js/mqtt.min.js?v=141';
         s.onload = () => {
           this._mqttScriptLoading = false;
           this._initCloudSync();
@@ -1506,6 +1509,102 @@ class UniversalSyncClient {
     if (isHub) return 'local_hub';
     if (isCloud) return 'cloud';
     return 'offline';
+  }
+
+  _scheduleCloudBackup(delayMs = 8000) {
+    if (this._cloudBackupTimer) clearTimeout(this._cloudBackupTimer);
+    this._cloudBackupTimer = setTimeout(() => {
+      this.saveCloudSnapshotNow();
+    }, delayMs);
+  }
+
+  async saveCloudSnapshotNow(label = '') {
+    if (!this._state || this._state.isEmptyDefault) return false;
+    const isWriter = this.role === 'controller' || this.role === 'operator' || this.role === 'master' || this.role === 'dc';
+    if (!isWriter) return false;
+
+    try {
+      const endpoint = (typeof window !== 'undefined' && window.location.origin)
+        ? `${window.location.origin}/.netlify/functions/cloud-store`
+        : '/.netlify/functions/cloud-store';
+
+      const payload = {
+        action: 'save_state',
+        room: this.cleanRoom,
+        sender: this.clientId,
+        label: label || `Snapshot ${this.role}`,
+        state: this._sanitizeStateForNetwork(this._state)
+      };
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) return false;
+      const json = await res.json();
+      if (json && json.ok) {
+        this._lastCloudBackupAt = Date.now();
+        this._lastCloudRevision = json.revision;
+        this._emit('cloud-backup-saved', { room: this.cleanRoom, revision: json.revision });
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async fetchCloudRevisions(roomCode = this.cleanRoom) {
+    const clean = String(roomCode || this.cleanRoom || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    try {
+      const endpoint = `/.netlify/functions/cloud-store?action=list_revisions&room=${encodeURIComponent(clean)}`;
+      const res = await fetch(endpoint);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return Array.isArray(json?.revisions) ? json.revisions : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  async restoreCloudRevision(roomCode = this.cleanRoom, revId) {
+    if (!revId) return false;
+    const clean = String(roomCode || this.cleanRoom || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    try {
+      const endpoint = `/.netlify/functions/cloud-store?action=get_state&room=${encodeURIComponent(clean)}&revId=${encodeURIComponent(revId)}`;
+      const res = await fetch(endpoint);
+      if (!res.ok) return false;
+      const json = await res.json();
+      if (json && json.ok && json.state) {
+        this._applyIncomingState(json.state, true);
+        this._commitStateChange(true);
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async _fetchInitialCloudBackupIfEmpty() {
+    if (this._state && Array.isArray(this._state.timers) && this._state.timers.length > 0 && !this._state.isEmptyDefault) {
+      return;
+    }
+    try {
+      const endpoint = `/.netlify/functions/cloud-store?action=get_state&room=${encodeURIComponent(this.cleanRoom)}`;
+      const res = await fetch(endpoint);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json && json.ok && json.state && Array.isArray(json.state.timers) && json.state.timers.length > 0) {
+        if (!this._state || this._state.isEmptyDefault) {
+          console.log('[ShowFlow Cloud] Estado recuperado com sucesso da Cloud Store:', this.cleanRoom);
+          this._applyIncomingState(json.state, true);
+          this._emit('room-state', this._state);
+        }
+      }
+    } catch (_) {}
   }
 
   _cleanupGlobalDevices() {
@@ -3536,6 +3635,9 @@ class UniversalSyncClient {
       sender: this.clientId,
       sentAt: trueNow
     });
+
+    // 4. Debounced Cloud Store Backup (Serverless Persistence)
+    this._scheduleCloudBackup();
 
     this._emit('room-state', this._state);
   }
