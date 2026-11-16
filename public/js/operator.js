@@ -114,7 +114,7 @@ function renderOpStageBadge(force = false) {
             : st.name;
           return `
             <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code)}">
-              🎪 ${escapeHtml(label)}
+              <span class="st-icon">${window.ST_ICONS?.stage || ''}</span> ${escapeHtml(label)}
             </button>
           `;
         }).join('');
@@ -145,23 +145,23 @@ function renderOpStageBadge(force = false) {
           const evTitle = ev.title || ev.code;
           const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
           if (stages.length > 1) {
-            optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+            optionsHtml += `<optgroup label="${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
             stages.forEach(st => {
               const stCode = (st.code || st.id || '').toUpperCase();
               const isSel = stCode === currentCode;
-              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
+              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
             });
             optionsHtml += `</optgroup>`;
           } else {
             const stCode = (stages[0].code || ev.code).toUpperCase();
             const isSel = stCode === currentCode;
-            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)}</option>`;
           }
         });
 
         // Add utility actions into select
-        optionsHtml += `<optgroup label="⚡ Ações">`;
-        optionsHtml += `<option value="__GO_PORTAL__">🏠 Escolher Outro Evento (Início)...</option>`;
+        optionsHtml += `<optgroup label="Ações">`;
+        optionsHtml += `<option value="__GO_PORTAL__">Início (Hub de Eventos)...</option>`;
         optionsHtml += `</optgroup>`;
 
         $opEventSelect.innerHTML = optionsHtml;
@@ -505,41 +505,41 @@ function renderOpRegieSection() {
 
   if ($opRegieCallStatus) {
     if (rc.fohCallingStage && rc.stageCallingFoh) {
-      $opRegieCallStatus.textContent = '🚨 Ambas as Régies a Chamar!';
-      $opRegieCallStatus.style.color = '#ff7675';
+      $opRegieCallStatus.textContent = 'Ambas as Régies a Chamar!';
+      $opRegieCallStatus.style.color = 'var(--red)';
     } else if (rc.fohCallingStage) {
-      $opRegieCallStatus.textContent = '🚨 FOH a Chamar Palco!';
-      $opRegieCallStatus.style.color = '#ff7675';
+      $opRegieCallStatus.textContent = 'FOH a Chamar Palco!';
+      $opRegieCallStatus.style.color = 'var(--red)';
     } else if (rc.stageCallingFoh) {
-      $opRegieCallStatus.textContent = '🚨 Palco a Chamar FOH!';
-      $opRegieCallStatus.style.color = '#ff7675';
+      $opRegieCallStatus.textContent = 'Palco a Chamar FOH!';
+      $opRegieCallStatus.style.color = 'var(--red)';
     } else {
-      $opRegieCallStatus.textContent = '✅ Repouso';
-      $opRegieCallStatus.style.color = '#55efc4';
+      $opRegieCallStatus.textContent = 'Repouso';
+      $opRegieCallStatus.style.color = 'var(--green)';
     }
   }
 
   if ($opCallStageBtn) {
     if (rc.fohCallingStage) {
-      $opCallStageBtn.style.background = '#d63031';
+      $opCallStageBtn.style.background = 'var(--red)';
       $opCallStageBtn.style.color = '#fff';
-      $opCallStageBtn.textContent = '🚨 Palco a Tocar!';
+      $opCallStageBtn.textContent = 'Palco a Tocar!';
     } else {
-      $opCallStageBtn.style.background = 'rgba(225, 112, 85, 0.2)';
-      $opCallStageBtn.style.color = '#ff7675';
-      $opCallStageBtn.textContent = '🚨 Chamar Palco';
+      $opCallStageBtn.style.background = 'rgba(215, 58, 73, 0.15)';
+      $opCallStageBtn.style.color = 'var(--red)';
+      $opCallStageBtn.textContent = 'Chamar Palco';
     }
   }
 
   if ($opCallFohBtn) {
     if (rc.stageCallingFoh) {
-      $opCallFohBtn.style.background = '#d63031';
+      $opCallFohBtn.style.background = 'var(--red)';
       $opCallFohBtn.style.color = '#fff';
-      $opCallFohBtn.textContent = '🚨 FOH a Tocar!';
+      $opCallFohBtn.textContent = 'FOH a Tocar!';
     } else {
-      $opCallFohBtn.style.background = 'rgba(225, 112, 85, 0.2)';
-      $opCallFohBtn.style.color = '#ff7675';
-      $opCallFohBtn.textContent = '🚨 Chamar FOH';
+      $opCallFohBtn.style.background = 'rgba(215, 58, 73, 0.15)';
+      $opCallFohBtn.style.color = 'var(--red)';
+      $opCallFohBtn.textContent = 'Chamar FOH';
     }
   }
 
@@ -547,7 +547,7 @@ function renderOpRegieSection() {
   if ($opRegieTechOnline) {
     if (onlineTechs.length > 0) {
       $opRegieTechOnline.style.display = 'inline-flex';
-      $opRegieTechOnline.textContent = `🔧 Técnicos (${onlineTechs.length}): ${onlineTechs.join(', ')}`;
+      $opRegieTechOnline.textContent = `Técnicos (${onlineTechs.length}): ${onlineTechs.join(', ')}`;
     } else {
       $opRegieTechOnline.style.display = 'none';
       $opRegieTechOnline.textContent = '';
@@ -563,15 +563,15 @@ function renderOpRegieSection() {
       }
       if ($opReceiptFoh) {
         const fohRead = Boolean(rm.ackFoh);
-        $opReceiptFoh.textContent = fohRead ? `🎚️ FOH: ✓ Lido (${rm.ackFoh})` : '🎚️ FOH: ⏳ Pendente';
-        $opReceiptFoh.style.background = fohRead ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255, 255, 255, 0.08)';
-        $opReceiptFoh.style.color = fohRead ? '#55efc4' : '#cbd5e1';
+        $opReceiptFoh.textContent = fohRead ? `FOH: Lido (${rm.ackFoh})` : 'FOH: Pendente';
+        $opReceiptFoh.style.background = fohRead ? 'rgba(46, 160, 67, 0.15)' : 'var(--bg-card)';
+        $opReceiptFoh.style.color = fohRead ? 'var(--green)' : '#cbd5e1';
       }
       if ($opReceiptStage) {
         const stageRead = Boolean(rm.ackStage);
-        $opReceiptStage.textContent = stageRead ? `🎛️ Palco: ✓ Lido (${rm.ackStage})` : '🎛️ Palco: ⏳ Pendente';
-        $opReceiptStage.style.background = stageRead ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255, 255, 255, 0.08)';
-        $opReceiptStage.style.color = stageRead ? '#55efc4' : '#cbd5e1';
+        $opReceiptStage.textContent = stageRead ? `Palco: Lido (${rm.ackStage})` : 'Palco: Pendente';
+        $opReceiptStage.style.background = stageRead ? 'rgba(46, 160, 67, 0.15)' : 'var(--bg-card)';
+        $opReceiptStage.style.color = stageRead ? 'var(--green)' : '#cbd5e1';
       }
 
       const ackTechUsers = (rm.ackTechUsers && typeof rm.ackTechUsers === 'object') ? rm.ackTechUsers : {};
@@ -590,9 +590,9 @@ function renderOpRegieSection() {
         $opReceiptTechList.style.display = 'contents';
         $opReceiptTechList.innerHTML = techEntries.map(t => {
           const isRead = Boolean(t.ackTime);
-          const bg = isRead ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255, 255, 255, 0.08)';
-          const col = isRead ? '#55efc4' : '#cbd5e1';
-          return `<span style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; background: ${bg}; color: ${col};">🔧 ${escapeHtml(t.name)}: ${isRead ? `✓ Lido (${escapeHtml(t.ackTime)})` : '⏳ Pendente'}</span>`;
+          const bg = isRead ? 'rgba(46, 160, 67, 0.15)' : 'var(--bg-card)';
+          const col = isRead ? 'var(--green)' : '#cbd5e1';
+          return `<span style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; font-weight: 600; background: ${bg}; border: 1px solid var(--border); color: ${col};">${escapeHtml(t.name)}: ${isRead ? `Lido (${escapeHtml(t.ackTime)})` : 'Pendente'}</span>`;
         }).join('');
       } else {
         if ($opReceiptTechList) {
@@ -602,9 +602,9 @@ function renderOpRegieSection() {
         if ($opReceiptTech) {
           $opReceiptTech.style.display = 'inline-block';
           const techRead = Boolean(rm.ackTech);
-          $opReceiptTech.textContent = techRead ? `🔧 Técnico: ✓ Lido (${rm.ackTech})` : '🔧 Técnico: ⏳ Pendente';
-          $opReceiptTech.style.background = techRead ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255, 255, 255, 0.08)';
-          $opReceiptTech.style.color = techRead ? '#55efc4' : '#cbd5e1';
+          $opReceiptTech.textContent = techRead ? `Técnico: Lido (${rm.ackTech})` : 'Técnico: Pendente';
+          $opReceiptTech.style.background = techRead ? 'rgba(46, 160, 67, 0.15)' : 'var(--bg-card)';
+          $opReceiptTech.style.color = techRead ? 'var(--green)' : '#cbd5e1';
         }
       }
     } else {
@@ -653,7 +653,7 @@ function render() {
     const color = getTimerColor(active);
 
     $hero.className = `op-hero ${isRunning ? 'running' : ''}`;
-    $heroBadge.textContent = isRunning ? '● NO AR (A CORRER)' : (isFinished ? '⚠️ TEMPO ESGOTADO' : 'EM ESPERA');
+    $heroBadge.textContent = isRunning ? '● NO AR (A CORRER)' : (isFinished ? 'TEMPO ESGOTADO' : 'EM ESPERA');
     $heroName.textContent = active.name;
     $heroTime.textContent = getTimerDisplayValue(active);
     $heroTime.className = `op-hero-time ${color}`;
@@ -663,15 +663,15 @@ function render() {
       const activeSlot = cascade?.slots?.find(s => s.id === active.id);
       if (activeSlot && activeSlot.planned && activeSlot.planned.hasValue) {
         const delayStr = activeSlot.isDelayed ? ` (${activeSlot.delayStr} atraso)` : (activeSlot.isEarly ? ` (${activeSlot.delayStr} adiantado)` : '');
-        $heroEndTime.innerHTML = `📅 Previsto: <strong>${escapeHtml(activeSlot.planned.slotRange)}</strong> • ⏱️ Real: <strong style="color:#55efc4;">${escapeHtml(activeSlot.real.slotRange)}</strong><span style="color:#fdcb6e; font-weight:800; margin-left:4px;">${escapeHtml(delayStr)}</span>`;
+        $heroEndTime.innerHTML = `Previsto: <strong>${escapeHtml(activeSlot.planned.slotRange)}</strong> • Real: <strong style="color:var(--green);">${escapeHtml(activeSlot.real.slotRange)}</strong><span style="color:var(--yellow); font-weight:700; margin-left:4px;">${escapeHtml(delayStr)}</span>`;
       } else {
         const endStr = getEstimatedEndTime(active);
-        $heroEndTime.textContent = endStr ? `🏁 Término Real: ${endStr}` : '';
+        $heroEndTime.textContent = endStr ? `Término Real: ${endStr}` : '';
       }
     }
 
     if ($heroNotes) {
-      $heroNotes.textContent = active.notes ? `📝 ${active.notes}` : '';
+      $heroNotes.textContent = active.notes ? active.notes : '';
     }
 
     if ($heroNext) {
@@ -701,10 +701,10 @@ function render() {
 
     // Update giant Play/Pause button
     if (isRunning) {
-      $btnToggle.innerHTML = '⏸ PAUSAR';
+      $btnToggle.innerHTML = '<svg class="st-icon" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> PAUSAR';
       $btnToggle.classList.add('is-running');
     } else {
-      $btnToggle.innerHTML = '▶ INICIAR';
+      $btnToggle.innerHTML = '<svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> INICIAR';
       $btnToggle.classList.remove('is-running');
     }
   }
@@ -712,22 +712,22 @@ function render() {
   // Message status & toggle visibility
   const isMsgVisible = !!(state.message?.visible && state.message?.text);
   if (isMsgVisible) {
-    const label = state.message.level === 'urgent' ? '🔴 URGENTE' : '💬 INFO';
+    const label = state.message.level === 'urgent' ? 'URGENTE' : 'INFO';
     $msgStatus.textContent = `${label}: "${state.message.text}"`;
     if ($msgToggle) {
-      $msgToggle.innerHTML = '🙈 Ocultar';
-      $msgToggle.style.background = '#d63031';
-      $msgToggle.style.borderColor = '#d63031';
+      $msgToggle.innerHTML = '<svg class="st-icon" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg> Ocultar';
+      $msgToggle.style.background = 'var(--red)';
+      $msgToggle.style.borderColor = 'var(--red)';
       $msgToggle.style.color = '#fff';
       $msgToggle.title = 'A mensagem está visível no palco. Toque para ocultar.';
     }
   } else {
     $msgStatus.textContent = '';
     if ($msgToggle) {
-      $msgToggle.innerHTML = '👁️ Mostrar';
-      $msgToggle.style.background = 'rgba(0, 184, 148, 0.2)';
-      $msgToggle.style.borderColor = '#00b894';
-      $msgToggle.style.color = '#55efc4';
+      $msgToggle.innerHTML = '<svg class="st-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> Mostrar';
+      $msgToggle.style.background = 'rgba(46, 160, 67, 0.15)';
+      $msgToggle.style.borderColor = 'rgba(46, 160, 67, 0.4)';
+      $msgToggle.style.color = 'var(--green)';
       $msgToggle.title = 'A mensagem está oculta. Toque para mostrar no palco.';
     }
   }
@@ -759,26 +759,26 @@ function render() {
             <div style="display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0;"><span style="color:var(--text-muted); margin-right:2px; cursor: grab;">⠿</span><input class="input op-queue-name-input" data-name-id="${t.id}" value="${escapeHtml(t.name)}" style="font-weight: 800; font-size: 0.98rem; color: #fff; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 2px 4px; flex: 1; min-width: 0;" placeholder="Nome do Artista..."></div>
             <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
               <button type="button" class="op-btn-fire ${isAct ? 'is-active' : ''}" data-fire-id="${t.id}" title="Disparar direto: coloca no ar e arranca imediatamente o contador">
-                ${isAct && isRunning ? '● NO AR' : (isAct ? '▶ ARRANCA' : '🚀 DISPARAR')}
+                ${isAct && isRunning ? '● NO AR' : (isAct ? 'ARRANCA' : '<svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> DISPARAR')}
               </button>
               <button type="button" class="op-move-btn" data-move-up="${t.id}" title="Subir" ${idx === 0 ? 'disabled style="opacity:0.35"' : ''}>↑</button>
               <button type="button" class="op-move-btn" data-move-down="${t.id}" title="Descer" ${idx === state.timers.length - 1 ? 'disabled style="opacity:0.35"' : ''}>↓</button>
-              <button type="button" class="op-queue-del" data-del-id="${t.id}" title="Apagar">🗑️</button>
+              <button type="button" class="op-queue-del" data-del-id="${t.id}" title="Apagar"><svg class="st-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
             </div>
           </div>
           <div class="op-queue-meta" style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
-            ${plannedStr ? `<span style="color:#cbd5e1; font-weight:700;">📋 Prev: <strong>${escapeHtml(plannedStr)}</strong></span>` : ''}
-            ${realStr ? `<span style="color:#a29bfe; font-weight:700;">⏱️ Real: <strong>${escapeHtml(realStr)}</strong> ${delayBadge}</span>` : ''}
-            <span>⏱ ${formatTime(t.duration)}</span>
-            ${endTimeStr ? `<span class="op-end-time" data-end-id="${t.id}" style="color:#55efc4; font-weight:700;">🏁 Fim Real: ${endTimeStr}</span>` : ''}
+            ${plannedStr ? `<span style="color:#cbd5e1; font-weight:600;">Prev: <strong>${escapeHtml(plannedStr)}</strong></span>` : ''}
+            ${realStr ? `<span style="color:#79c0ff; font-weight:600;">Real: <strong>${escapeHtml(realStr)}</strong> ${delayBadge}</span>` : ''}
+            <span>${formatTime(t.duration)}</span>
+            ${endTimeStr ? `<span class="op-end-time" data-end-id="${t.id}" style="color:var(--green); font-weight:600;">Fim Real: ${endTimeStr}</span>` : ''}
           </div>
           <div style="display: flex; gap: 6px; width: 100%; align-items: center;" onclick="event.stopPropagation()">
             <input class="input" data-time-id="${t.id}" value="${escapeHtml(t.startTime || '')}" placeholder="23:00 – 00:15" style="padding: 6px 8px; font-size: 15px !important; width: 116px; text-align:center; flex-shrink: 0;" title="Horário Previsto de atuação (folha de serviço)">
-            <div style="display: flex; align-items: center; gap: 2px; flex-shrink: 0; background: rgba(0, 184, 148, 0.12); border: 1px solid rgba(0, 184, 148, 0.35); border-radius: 8px; padding: 2px 6px;" title="Editar tempo da atuação (ex: 45, 1:30, 60m)">
-              <span style="font-size: 0.72rem; color: #55efc4; font-weight: 800;">⏱️</span>
-              <input class="input input-mono op-item-dur" data-dur-id="${t.id}" value="${formatTime(t.duration)}" style="background: transparent; border: none; padding: 4px 2px; font-size: 15px !important; width: 68px; text-align: center; color: #55efc4; font-weight: 800; outline: none;" placeholder="30:00" spellcheck="false">
+            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0; background: rgba(31, 111, 235, 0.12); border: 1px solid var(--border); border-radius: 6px; padding: 2px 6px;" title="Editar tempo da atuação (ex: 45, 1:30, 60m)">
+              <svg class="st-icon text-accent" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <input class="input input-mono op-item-dur" data-dur-id="${t.id}" value="${formatTime(t.duration)}" style="background: transparent; border: none; padding: 4px 2px; font-size: 15px !important; width: 68px; text-align: center; color: #fff; font-weight: 700; outline: none;" placeholder="30:00" spellcheck="false">
             </div>
-            <input class="input op-item-notes" data-note-id="${t.id}" value="${escapeHtml(t.notes || '')}" placeholder="📝 Notas deste artista..." style="padding: 6px 8px; font-size: 15px !important; flex: 1; min-width: 0;">
+            <input class="input op-item-notes" data-note-id="${t.id}" value="${escapeHtml(t.notes || '')}" placeholder="Notas deste artista..." style="padding: 6px 8px; font-size: 15px !important; flex: 1; min-width: 0;">
           </div>
         </div>
       `;
@@ -789,7 +789,7 @@ function render() {
       const el = $queueList.querySelector(`[data-end-id="${t.id}"]`);
       if (el) {
         const endStr = getEstimatedEndTime(t);
-        el.textContent = endStr ? `🏁 Fim: ${endStr}` : '';
+        el.textContent = endStr ? `Fim: ${endStr}` : '';
       }
     });
   }
@@ -1020,7 +1020,7 @@ if ($addArtistBtn) {
 const $opClearEvent = document.getElementById('op-clear-event');
 if ($opClearEvent) {
   $opClearEvent.addEventListener('click', () => {
-    if (confirm('🧹 Limpar todos os artistas do dia atual?')) {
+    if (confirm('Tem a certeza de que pretende limpar todos os artistas do dia atual?')) {
       client.clearAllTimers();
     }
   });
@@ -1056,7 +1056,7 @@ if ($opImportFile) {
           client.replaceAllDays(sched.days);
           renderDayTabs(true);
           render();
-          alert(`✓ ${sched.totalDays} dias importados com sucesso!`);
+          alert(`${sched.totalDays} dias importados com sucesso!`);
           return;
         } else {
           const ans = prompt(`Qual dia específico deseja carregar para o dia atual? (1 a ${sched.totalDays})`, '1');
@@ -1066,7 +1066,7 @@ if ($opImportFile) {
             client.replaceDayTimers(targetDay, sched.days[dKey]);
             renderDayTabs(true);
             render();
-            alert(`✓ Dia ${targetDay} atualizado com ${sched.days[dKey].length} artistas!`);
+            alert(`Dia ${targetDay} atualizado com ${sched.days[dKey].length} artistas!`);
           }
           return;
         }
@@ -1309,21 +1309,21 @@ window.addEventListener('pointerdown', () => {
     if (!window.StageTimerNotifications) return;
     const perm = window.StageTimerNotifications.getBrowserPermission();
     if (perm === 'granted') {
-      $btn.textContent = '🔔';
-      $btn.style.borderColor = '#00b894';
-      $btn.style.background = 'rgba(0, 184, 148, 0.2)';
-      $btn.style.color = '#55efc4';
+      $btn.innerHTML = '<svg class="st-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>';
+      $btn.style.borderColor = 'rgba(46, 160, 67, 0.4)';
+      $btn.style.background = 'rgba(46, 160, 67, 0.15)';
+      $btn.style.color = 'var(--green)';
       $btn.title = 'Notificações ativas neste telemóvel';
     } else if (perm === 'denied') {
-      $btn.textContent = '🔕';
-      $btn.style.borderColor = '#d63031';
-      $btn.style.background = 'rgba(214, 48, 49, 0.2)';
-      $btn.style.color = '#ff7675';
+      $btn.innerHTML = '<svg class="st-icon" viewBox="0 0 24 24"><path d="M13.73 21a2 2 0 0 1-3.46 0"></path><path d="M18.63 13A17.89 17.89 0 0 1 18 8"></path><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"></path><path d="M18 8a6 6 0 0 0-9.33-5"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+      $btn.style.borderColor = 'rgba(215, 58, 73, 0.4)';
+      $btn.style.background = 'rgba(215, 58, 73, 0.15)';
+      $btn.style.color = 'var(--red)';
       $btn.title = 'Notificações bloqueadas no navegador';
     } else {
-      $btn.textContent = '🔔';
+      $btn.innerHTML = '<svg class="st-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>';
       $btn.style.borderColor = 'var(--border)';
-      $btn.style.background = 'rgba(255, 255, 255, 0.08)';
+      $btn.style.background = 'var(--bg-card)';
       $btn.style.color = '#fff';
       $btn.title = 'Tocar para ativar notificações no telemóvel';
     }

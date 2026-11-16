@@ -133,7 +133,7 @@ function renderViewerEventSelector(force = false) {
             : st.name;
           return `
             <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code)}">
-              🎪 ${escapeHtml(label)}
+              ${escapeHtml(label)}
             </button>
           `;
         }).join('');
@@ -163,17 +163,17 @@ function renderViewerEventSelector(force = false) {
           const evTitle = ev.title || ev.code;
           const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
           if (stages.length > 1) {
-            optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+            optionsHtml += `<optgroup label="${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
             stages.forEach(st => {
               const stCode = (st.code || st.id || '').toUpperCase();
               const isSel = stCode === currentCode;
-              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
+              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
             });
             optionsHtml += `</optgroup>`;
           } else {
             const stCode = (stages[0].code || ev.code).toUpperCase();
             const isSel = stCode === currentCode;
-            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)}</option>`;
           }
         });
 

@@ -113,10 +113,10 @@
         $watchModalUrl.select();
         document.execCommand('copy');
       }
-      $watchModalCopyBtn.textContent = '✓ Copiado!';
+      $watchModalCopyBtn.textContent = 'Copiado!';
       showToast('Link do Relógio copiado!', 'success');
       setTimeout(() => {
-        $watchModalCopyBtn.textContent = '📋 Copiar';
+        $watchModalCopyBtn.innerHTML = '<svg class="st-icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copiar';
       }, 2000);
     });
   }
@@ -156,14 +156,14 @@
     if (triggerBtn) {
       const originalHtml = triggerBtn.innerHTML;
       triggerBtn.classList.add('copied');
-      triggerBtn.innerHTML = '✅ Copiado!';
+      triggerBtn.innerHTML = 'Copiado!';
       setTimeout(() => {
         triggerBtn.classList.remove('copied');
         triggerBtn.innerHTML = originalHtml;
       }, 2500);
     }
 
-    showToast(`⌚ Link do Relógio copiado para "${stageTitle || roomCode}"!\nCole no iMessage ou WhatsApp para o Apple Watch.`, 'success');
+    showToast(`Link do Relógio copiado para "${stageTitle || roomCode}"!\nCole no iMessage ou WhatsApp para o Apple Watch.`, 'success');
     openWatchModal(roomCode, stageTitle, url);
   }
 
@@ -190,20 +190,20 @@
     if (!$kpiCloud) return;
     const status = masterClient.getSyncStatus ? masterClient.getSyncStatus() : 'offline';
     if (status === 'hybrid') {
-      $kpiCloud.textContent = '🛡️ Híbrido (Nuvem + LAN)';
-      $kpiCloud.style.color = '#55efc4';
+      $kpiCloud.textContent = 'Híbrido (Nuvem + LAN)';
+      $kpiCloud.style.color = 'var(--green)';
       $kpiCloud.title = 'Sincronização redundante: Cloud MQTT + LAN Hub Local';
     } else if (status === 'local_hub') {
-      $kpiCloud.textContent = '⚡ LAN Local (Offline Hub)';
-      $kpiCloud.style.color = '#f1c40f';
+      $kpiCloud.textContent = 'LAN Local (Offline Hub)';
+      $kpiCloud.style.color = 'var(--yellow)';
       $kpiCloud.title = 'Sincronização em rede local LAN sem dependência de Internet externa';
     } else if (status === 'cloud') {
-      $kpiCloud.textContent = '🌐 Nuvem (Cloud WSS)';
-      $kpiCloud.style.color = '#74b9ff';
+      $kpiCloud.textContent = 'Nuvem (Cloud WSS)';
+      $kpiCloud.style.color = 'var(--accent)';
       $kpiCloud.title = 'Sincronização via Cloud MQTT (WAN)';
     } else {
-      $kpiCloud.textContent = '🔴 Offline';
-      $kpiCloud.style.color = '#ff7675';
+      $kpiCloud.textContent = 'Offline';
+      $kpiCloud.style.color = 'var(--red)';
       $kpiCloud.title = 'Desligado da rede';
     }
   }
@@ -244,7 +244,7 @@
       }
       return {
         key: 'regies',
-        name: isTech ? (tName ? `🔧 Modo Régies (Técnico: ${tName})` : '🔧 Modo Régies (Técnico)') : (isStage ? '🎛️ Modo Régies (Palco)' : '🎚️ Modo Régies (FOH)'),
+        name: isTech ? (tName ? `Modo Régies (Técnico: ${tName})` : 'Modo Régies (Técnico)') : (isStage ? 'Modo Régies (Palco)' : 'Modo Régies (FOH)'),
         shortName: isTech ? (tName ? `Técnico (${tName})` : 'Técnico') : (isStage ? 'Palco' : 'FOH'),
         badgeClass: 'view-regies'
       };
@@ -254,7 +254,7 @@
     if (viewKey === 'dc' || path.includes('dc.html') || label.includes('jess') || label.includes('diretora') || label.includes('mesa dc')) {
       return {
         key: 'dc',
-        name: '📖 Modo Jess (DC)',
+        name: 'Modo Jess (DC)',
         shortName: 'Modo Jess',
         badgeClass: 'view-dc'
       };
@@ -264,7 +264,7 @@
     if (viewKey === 'cue-station' || path.includes('cue-station') || path.includes('cuestation') || label.includes('posto técnico') || label.includes('cue station')) {
       return {
         key: 'cue-station',
-        name: '🎛️ Posto Técnico (Cue Station)',
+        name: 'Posto Técnico (Cue Station)',
         shortName: 'Posto Cues',
         badgeClass: 'view-cuestation'
       };
@@ -274,7 +274,7 @@
     if (viewKey === 'lineup' || path.includes('lineup') || label.includes('lista') || label.includes('backstage')) {
       return {
         key: 'lineup',
-        name: '📋 Modo Lista (Backstage)',
+        name: 'Modo Lista (Backstage)',
         shortName: 'Lista',
         badgeClass: 'view-lineup'
       };
@@ -284,7 +284,7 @@
     if (viewKey === 'operator' || path.includes('operator') || role === 'operator' || label.includes('operador')) {
       return {
         key: 'operator',
-        name: '📱 Operador Mobile',
+        name: 'Operador Mobile',
         shortName: 'Operador',
         badgeClass: 'view-operator'
       };
@@ -294,7 +294,7 @@
     if (viewKey === 'viewer' || path.includes('viewer') || label.includes('palco') || label.includes('telao') || label.includes('telão')) {
       return {
         key: 'viewer',
-        name: '📺 Modo Palco',
+        name: 'Modo Palco',
         shortName: 'Palco',
         badgeClass: 'view-viewer'
       };
@@ -304,7 +304,7 @@
     if (viewKey === 'watch' || path.includes('watch') || label.includes('watch') || label.includes('Watch')) {
       return {
         key: 'watch',
-        name: '⌚ Apple Watch',
+        name: 'Apple Watch',
         shortName: 'Watch',
         badgeClass: 'view-watch'
       };
@@ -314,7 +314,7 @@
     if (viewKey === 'controller' || path.includes('controller') || label.includes('configurador') || label.includes('controlador')) {
       return {
         key: 'controller',
-        name: '🎛️ Configurador',
+        name: 'Configurador',
         shortName: 'Configurador',
         badgeClass: 'view-controller'
       };
@@ -324,7 +324,7 @@
     if (viewKey === 'master' || path.includes('master') || role === 'master' || label.includes('master')) {
       return {
         key: 'master',
-        name: '👑 Painel Master',
+        name: 'Painel Master',
         shortName: 'Master',
         badgeClass: 'view-master'
       };
@@ -334,7 +334,7 @@
     if (role === 'regies') {
       return {
         key: 'regies',
-        name: '📟 Modo Régies',
+        name: 'Modo Régies',
         shortName: 'Régies',
         badgeClass: 'view-regies'
       };
@@ -342,7 +342,7 @@
     if (role === 'viewer') {
       return {
         key: 'viewer',
-        name: '📺 Modo Palco',
+        name: 'Modo Palco',
         shortName: 'Palco',
         badgeClass: 'view-viewer'
       };
@@ -350,7 +350,7 @@
     if (role === 'controller') {
       return {
         key: 'controller',
-        name: '🎛️ Configurador',
+        name: 'Configurador',
         shortName: 'Configurador',
         badgeClass: 'view-controller'
       };
@@ -358,14 +358,14 @@
 
     return {
       key: 'index',
-      name: '🏠 Início',
+      name: 'Início',
       shortName: 'Início',
       badgeClass: 'view-index'
     };
   }
 
   function getDeviceCleanOS(dev) {
-    if (dev.viewKey === 'watch' || String(dev.label).includes('Watch') || dev.os === 'Apple Watch') return '⌚ Apple Watch';
+    if (dev.viewKey === 'watch' || String(dev.label).includes('Watch') || dev.os === 'Apple Watch') return 'Apple Watch';
     if (dev.os) return dev.os;
     const raw = String(dev.label || '');
     const m = raw.match(/\(([^)]+)\)/);
@@ -380,7 +380,7 @@
       const evTitle = e.title || e.code;
       const stages = Array.isArray(e.stages) && e.stages.length > 0 ? e.stages : [{ code: e.code, name: 'Palco Principal' }];
       if (stages.length > 1) {
-        optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+        optionsHtml += `<optgroup label="${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
         stages.forEach(st => {
           const stCode = (st.code || st.id || '').toUpperCase();
           const isSel = stCode === cleanCurrent;
@@ -477,8 +477,8 @@
           </div>
 
           <div class="device-meta-row">
-            <span class="device-room-pill">🎪 Palco: <strong>${escapeHtml(dev.roomTitle || dev.room || 'PALCO1')}</strong></span>
-            <span class="device-os-pill">📱 ${escapeHtml(deviceOs)}</span>
+            <span class="device-room-pill"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg> Palco: <strong>${escapeHtml(dev.roomTitle || dev.room || 'PALCO1')}</strong></span>
+            <span class="device-os-pill"><svg class="st-icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg> ${escapeHtml(deviceOs)}</span>
           </div>
 
           <div class="device-actions-toolbar">
@@ -487,25 +487,25 @@
             </div>
             <div class="device-btn-group">
               <button type="button" class="device-btn ${viewInfo.key === 'viewer' ? 'is-current-view' : ''}" data-cmd="viewer" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Palco">
-                📺 Palco ${viewInfo.key === 'viewer' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
+                <svg class="st-icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg> Palco ${viewInfo.key === 'viewer' ? '<span class="btn-active-check">Ativo</span>' : ''}
               </button>
               <button type="button" class="device-btn ${viewInfo.key === 'lineup' ? 'is-current-view' : ''}" data-cmd="lineup" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Lista Backstage">
-                📋 Lista ${viewInfo.key === 'lineup' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
+                <svg class="st-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg> Lista ${viewInfo.key === 'lineup' ? '<span class="btn-active-check">Ativo</span>' : ''}
               </button>
               <button type="button" class="device-btn ${viewInfo.key === 'regies' ? 'is-current-view' : ''}" data-cmd="regies" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Régies (FOH & Palco)">
-                📟 Régies ${viewInfo.key === 'regies' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
+                <svg class="st-icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg> Régies ${viewInfo.key === 'regies' ? '<span class="btn-active-check">Ativo</span>' : ''}
               </button>
               <button type="button" class="device-btn ${viewInfo.key === 'operator' ? 'is-current-view' : ''}" data-cmd="operator" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Operador Mobile">
-                📱 Operador ${viewInfo.key === 'operator' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
+                <svg class="st-icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg> Operador ${viewInfo.key === 'operator' ? '<span class="btn-active-check">Ativo</span>' : ''}
               </button>
               <button type="button" class="device-btn ${viewInfo.key === 'controller' ? 'is-current-view' : ''}" data-cmd="controller" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Configurador">
-                🎛️ Configurador ${viewInfo.key === 'controller' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
+                <svg class="st-icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg> Configurador ${viewInfo.key === 'controller' ? '<span class="btn-active-check">Ativo</span>' : ''}
               </button>
               <button type="button" class="device-btn ${viewInfo.key === 'watch' ? 'is-current-view' : ''}" data-cmd="watch" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Mudar este ecrã para Modo Apple Watch">
-                ⌚ Watch ${viewInfo.key === 'watch' ? '<span class="btn-active-check">✓ Ativo</span>' : ''}
+                <svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16.51 17.35l-.85 4.65H8.34l-.85-4.65"></path><path d="M7.49 6.65l.85-4.65h7.32l.85 4.65"></path></svg> Watch ${viewInfo.key === 'watch' ? '<span class="btn-active-check">Ativo</span>' : ''}
               </button>
               <button type="button" class="device-btn btn-warning-action" data-cmd="reload" data-target-uuid="${escapeHtml(dev.deviceUuid)}" data-target-room="${escapeHtml(dev.room || 'PALCO1')}" title="Recarregar página no dispositivo">
-                🔄 Recarregar Ecrã Remoto
+                <svg class="st-icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Recarregar Ecrã Remoto
               </button>
             </div>
 
@@ -518,7 +518,7 @@
 
             <div class="device-danger-zone">
               <button type="button" class="device-btn btn-delete-device" data-cmd="delete_device" data-target-uuid="${escapeHtml(dev.deviceUuid)}" title="Eliminar este dispositivo e fechar a sua sessão (logout se for controlador/operador)">
-                🗑️ Eliminar Dispositivo
+                <svg class="st-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Eliminar Dispositivo
               </button>
             </div>
           </div>
@@ -550,7 +550,7 @@
           if (isCurrent && !checkEl && cmd !== 'reload') {
             const check = document.createElement('span');
             check.className = 'btn-active-check';
-            check.textContent = '✓ Ativo';
+            check.textContent = 'Ativo';
             b.appendChild(check);
           } else if (!isCurrent && checkEl) {
             checkEl.remove();
@@ -561,9 +561,9 @@
         if (seenEl && seenEl.textContent.trim() !== seenLabel) seenEl.textContent = seenLabel;
 
         const roomPill = card.querySelector('.device-room-pill');
-        const expectedRoomText = `🎪 Palco: ${dev.roomTitle || dev.room || 'PALCO1'}`;
+        const expectedRoomText = `Palco: ${dev.roomTitle || dev.room || 'PALCO1'}`;
         if (roomPill && roomPill.textContent !== expectedRoomText) {
-          roomPill.innerHTML = `🎪 Palco: <strong>${escapeHtml(dev.roomTitle || dev.room || 'PALCO1')}</strong>`;
+          roomPill.innerHTML = `<svg class="st-icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg> Palco: <strong>${escapeHtml(dev.roomTitle || dev.room || 'PALCO1')}</strong>`;
         }
 
         card.dataset.deviceRoom = dev.room || 'PALCO1';
@@ -598,16 +598,16 @@
       const evTitle = ev.title || ev.code;
       const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
       if (stages.length > 1) {
-        optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+        optionsHtml += `<optgroup label="${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
         stages.forEach(st => {
           const isSel = st.code === activeCode;
-          optionsHtml += `<option value="${escapeHtml(st.code)}" ${isSel ? 'selected' : ''}>👑 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || st.code)}</option>`;
+          optionsHtml += `<option value="${escapeHtml(st.code)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)} • ${escapeHtml(st.name || st.code)}</option>`;
         });
         optionsHtml += `</optgroup>`;
       } else {
         const stCode = stages[0].code || ev.code;
         const isSel = stCode === activeCode;
-        optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>👑 ${escapeHtml(evTitle)}</option>`;
+        optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)}</option>`;
       }
     });
 
@@ -722,7 +722,7 @@
 
       if (cmd === 'reload') {
         const originalHtml = btn.innerHTML;
-        btn.innerHTML = '🔄 A recarregar...';
+        btn.innerHTML = `${window.stIcon ? window.stIcon('refresh') : ''} A recarregar...`;
         btn.style.filter = 'brightness(1.5)';
         btn.style.borderColor = '#55efc4';
         setTimeout(() => {
@@ -819,8 +819,8 @@
         });
         renderDevicesList();
         masterClient.sendDeviceCommand('ALL', { action: 'navigate', url: 'viewer.html' });
-        $cmdAllViewer.textContent = '⚡ Enviado a Todos!';
-        setTimeout(() => { $cmdAllViewer.textContent = '📺 Todos Palco'; }, 1500);
+        $cmdAllViewer.innerHTML = `${window.stIcon ? window.stIcon('zap') : ''} Enviado a Todos!`;
+        setTimeout(() => { $cmdAllViewer.innerHTML = `${window.stIcon ? window.stIcon('tv') : ''} Todos Palco`; }, 1500);
       }
     });
   }
@@ -839,8 +839,8 @@
         });
         renderDevicesList();
         masterClient.sendDeviceCommand('ALL', { action: 'navigate', url: 'lineup.html' });
-        $cmdAllLineup.textContent = '⚡ Enviado a Todos!';
-        setTimeout(() => { $cmdAllLineup.textContent = '📋 Todos Lista'; }, 1500);
+        $cmdAllLineup.innerHTML = `${window.stIcon ? window.stIcon('zap') : ''} Enviado a Todos!`;
+        setTimeout(() => { $cmdAllLineup.innerHTML = `${window.stIcon ? window.stIcon('list') : ''} Todos Lista`; }, 1500);
       }
     });
   }
@@ -859,8 +859,8 @@
         });
         renderDevicesList();
         masterClient.sendDeviceCommand('ALL', { action: 'navigate', url: 'regies.html' });
-        $cmdAllRegies.textContent = '⚡ Enviado a Todos!';
-        setTimeout(() => { $cmdAllRegies.textContent = '📟 Todos Régies'; }, 1500);
+        $cmdAllRegies.innerHTML = `${window.stIcon ? window.stIcon('zap') : ''} Enviado a Todos!`;
+        setTimeout(() => { $cmdAllRegies.innerHTML = `${window.stIcon ? window.stIcon('server') : ''} Todos Régies`; }, 1500);
       }
     });
   }
@@ -874,8 +874,8 @@
       if (confirm('Recarregar TODOS os ecrãs e dispositivos remotos agora?')) {
         if (navigator.vibrate) { try { navigator.vibrate(50); } catch (e) {} }
         masterClient.sendDeviceCommand('ALL', { action: 'reload' });
-        $cmdAllReload.textContent = '⚡ Recarregar Enviado!';
-        setTimeout(() => { $cmdAllReload.textContent = '🔄 Recarregar Todos'; }, 1500);
+        $cmdAllReload.innerHTML = `${window.stIcon ? window.stIcon('zap') : ''} Recarregar Enviado!`;
+        setTimeout(() => { $cmdAllReload.innerHTML = `${window.stIcon ? window.stIcon('refresh') : ''} Recarregar Todos`; }, 1500);
       }
     });
   }
@@ -890,8 +890,8 @@
         if (navigator.vibrate) { try { navigator.vibrate(50); } catch (e) {} }
         masterClient.clearInactiveDevices(10000);
         renderDevicesList();
-        $cmdClearOffline.textContent = '⚡ Inativos Limpos!';
-        setTimeout(() => { $cmdClearOffline.textContent = '🗑️ Limpar Inativos'; }, 1500);
+        $cmdClearOffline.innerHTML = `${window.stIcon ? window.stIcon('zap') : ''} Inativos Limpos!`;
+        setTimeout(() => { $cmdClearOffline.innerHTML = `${window.stIcon ? window.stIcon('trash') : ''} Limpar Inativos`; }, 1500);
       }
     });
   }
@@ -916,7 +916,7 @@
     if (events.length === 0) {
       $eventsList.innerHTML = `
         <div class="empty-state-box" style="grid-column: 1 / -1; padding: 32px 16px; text-align: center;">
-          <div style="font-size: 2.2rem; margin-bottom: 6px;">🎪</div>
+          <div style="margin-bottom: 8px;">${window.stIcon ? window.stIcon('calendar') : ''}</div>
           <div style="font-weight: 700; color: #fff; font-size: 1rem;">Nenhum evento ativo no momento.</div>
           <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
             Utilize a barra acima para criar o seu primeiro evento com os palcos desejados.
@@ -931,23 +931,24 @@
       const count = typeof ev.timersCount === 'number' ? ev.timersCount : 0;
       const day = ev.currentDay || 1;
       const primaryTargetRoom = (Array.isArray(ev.stages) && ev.stages.length > 0 && ev.stages[0].code) ? ev.stages[0].code : ev.code;
+      const ico = window.stIcon || (() => '');
 
       return `
         <div class="event-manage-card" data-stage-code="${escapeHtml(ev.code)}">
           <div class="event-manage-top">
             <div>
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <div class="event-manage-title" style="margin-bottom: 0;">${isTheatre ? '🎭' : '🎪'} ${escapeHtml(ev.title || ev.code)}</div>
+                <div class="event-manage-title" style="margin-bottom: 0;">${isTheatre ? ico('theater') : ico('calendar')} ${escapeHtml(ev.title || ev.code)}</div>
                 <button type="button" class="btn btn-sm" data-rename-event="${escapeHtml(ev.code)}" data-current-name="${escapeHtml(ev.title || ev.code)}" style="padding: 2px 8px; font-size: 0.72rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe; font-weight: 600;" title="Renomear este Evento">
-                  ✏️ Renomear Evento
+                  ${ico('edit')} Renomear Evento
                 </button>
               </div>
               <div class="event-manage-stats" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
-                ${isTheatre ? '<span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border: 1px solid #fdcb6e; font-weight: 700; font-size: 0.75rem;">🎭 Teatro</span>' : '<span class="badge" style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700; font-size: 0.75rem;">🎪 Concerto</span>'}
+                ${isTheatre ? `<span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border: 1px solid #fdcb6e; font-weight: 700; font-size: 0.75rem;">${ico('theater')} Teatro</span>` : `<span class="badge" style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700; font-size: 0.75rem;">${ico('calendar')} Concerto</span>`}
                 <span>•</span>
                 <span>${ev.stagesCount || 1} palco(s)</span>
                 <span>•</span>
-                <span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 800; font-family: var(--font-mono); padding: 2px 8px; border-radius: 6px; border: 1px solid #fdcb6e; font-size: 0.78rem;">🔑 PIN: ${escapeHtml(ev.pin || '----')}</span>
+                <span class="badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 800; font-family: var(--font-mono); padding: 2px 8px; border-radius: 6px; border: 1px solid #fdcb6e; font-size: 0.78rem;">${ico('key')} PIN: ${escapeHtml(ev.pin || '----')}</span>
                 <span>•</span>
                 <span>${count} artista(s) programado(s) • Dia ${day}</span>
               </div>
@@ -958,45 +959,45 @@
           <div class="event-manage-btns">
             ${isTheatre ? `
               <a href="dc.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" style="background: rgba(253, 203, 110, 0.2); border-color: #fdcb6e; color: #ffeaa7; font-weight: 700;" title="Abrir Modo Jess (Diretora de Cena)">
-                📖 Modo Jess
+                ${ico('book')} Modo Jess
               </a>
               <a href="cue-station.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" style="background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4; font-weight: 700;" title="Abrir Posto Técnico (Cue Station)">
-                🚦 Posto Cues
+                ${ico('traffic')} Posto Cues
               </a>
               <button type="button" class="btn btn-sm btn-master-theatre-reports" data-room="${encodeURIComponent(primaryTargetRoom)}" data-title="${escapeHtml(ev.title || ev.code)}" style="background: rgba(108, 92, 231, 0.2); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Ver relatórios de régie gravados deste espetáculo">
-                📜 Relatórios
+                ${ico('file-text')} Relatórios
               </button>
             ` : `
               <a href="controller.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm btn-primary" title="Abrir configurador para este palco">
-                🎛️ Configurador
+                ${ico('sliders')} Configurador
               </a>
               <a href="operator.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" title="Abrir operador mobile para este palco">
-                📱 Operador
+                ${ico('smartphone')} Operador
               </a>
               <a href="viewer.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" title="Abrir ecrã de palco">
-                📺 Palco
+                ${ico('tv')} Palco
               </a>
               <a href="lineup.html?room=${encodeURIComponent(primaryTargetRoom)}" class="btn btn-sm" title="Abrir lista de horários">
-                📋 Lista
+                ${ico('list')} Lista
               </a>
             `}
             <button type="button" class="btn btn-sm btn-master-copy-watch" data-room="${encodeURIComponent(primaryTargetRoom)}" data-title="${escapeHtml(ev.title || ev.code)}" title="Copiar link do Relógio (Apple Watch) para este evento">
-              ⌚ Copiar Link Relógio
+              ${ico('watch')} Copiar Link Relógio
             </button>
             <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(primaryTargetRoom)}" data-title="${escapeHtml(ev.title || ev.code)}" style="background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
-              📹 Vídeo
+              ${ico('video')} Vídeo
             </button>
             <button type="button" class="btn btn-sm btn-master-stage-notif" data-room="${encodeURIComponent(primaryTargetRoom)}" data-title="${escapeHtml(ev.title || ev.code)}" style="background: rgba(9, 132, 227, 0.25); border-color: #0984e3; color: #74b9ff; font-weight: 700;" title="Configurar Alertas e Telegram deste Evento/Palco">
-              🔔 Alertas
+              ${ico('bell')} Alertas
             </button>
             <button type="button" class="btn btn-sm" data-add-substage="${escapeHtml(ev.code)}" style="background: rgba(0, 184, 148, 0.18); border-color: #00b894; color: #55efc4; font-weight: 700;" title="Adicionar um novo palco a este evento">
-              ➕ + Palco
+              ${ico('plus')} + Palco
             </button>
             <button type="button" class="btn btn-sm" data-rename-event="${escapeHtml(ev.code)}" data-current-name="${escapeHtml(ev.title || ev.code)}" title="Renomear este evento">
-              ✏️ Renomear
+              ${ico('edit')} Renomear
             </button>
             <button type="button" class="btn btn-sm btn-danger" data-delete-stage="${escapeHtml(ev.code)}" title="Apagar definitivamente este evento">
-              🗑️ Apagar
+              ${ico('trash')} Apagar
             </button>
           </div>
           ${Array.isArray(ev.stages) && ev.stages.length > 0 ? `
@@ -1004,32 +1005,32 @@
               <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Palcos deste evento:</span>
               ${ev.stages.map(st => `
                 <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; flex-wrap: wrap;">
-                  <strong style="font-size: 0.78rem; color: #55efc4;">${isTheatre ? '🎭' : '🎪'} ${escapeHtml(st.name || st.code)}</strong>
+                  <strong style="font-size: 0.78rem; color: #55efc4;">${isTheatre ? ico('theater') : ico('calendar')} ${escapeHtml(st.name || st.code)}</strong>
                   <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">(${escapeHtml(st.code)})</span>
                   <button type="button" class="btn btn-sm" data-rename-stage="${escapeHtml(st.code)}" data-parent-event="${escapeHtml(ev.code)}" data-current-name="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; background: rgba(108, 92, 231, 0.2); border-color: var(--accent); color: #a29bfe; font-weight: 600;" title="Renomear este palco">
-                    ✏️ Renomear Palco
+                    ${ico('edit')} Renomear Palco
                   </button>
                   ${isTheatre ? `
-                    <a href="dc.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem; background: rgba(253, 203, 110, 0.2); border-color: #fdcb6e; color: #ffeaa7;" title="Abrir Modo Jess">📖</a>
-                    <a href="cue-station.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem; background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4;" title="Abrir Posto Cues">🚦</a>
+                    <a href="dc.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem; background: rgba(253, 203, 110, 0.2); border-color: #fdcb6e; color: #ffeaa7;" title="Abrir Modo Jess">${ico('book')}</a>
+                    <a href="cue-station.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem; background: rgba(0, 184, 148, 0.2); border-color: #00b894; color: #55efc4;" title="Abrir Posto Cues">${ico('traffic')}</a>
                   ` : `
-                    <a href="controller.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Configurador">🎛️</a>
-                    <a href="operator.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Operador">📱</a>
-                    <a href="viewer.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Palco">📺</a>
-                    <a href="lineup.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Lista">📋</a>
+                    <a href="controller.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Configurador">${ico('sliders')}</a>
+                    <a href="operator.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Operador">${ico('smartphone')}</a>
+                    <a href="viewer.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Palco">${ico('tv')}</a>
+                    <a href="lineup.html?room=${encodeURIComponent(st.code)}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.68rem;" title="Abrir Lista">${ico('list')}</a>
                   `}
                   <button type="button" class="btn btn-sm btn-master-copy-watch" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem;" title="Copiar link do Relógio para o palco ${escapeHtml(st.name || st.code)}">
-                    ⌚ Relógio
+                    ${ico('watch')} Relógio
                   </button>
                   <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
-                    📹
+                    ${ico('video')}
                   </button>
                   <button type="button" class="btn btn-sm btn-master-stage-notif" data-room="${encodeURIComponent(st.code)}" data-title="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; background: rgba(9, 132, 227, 0.25); border-color: #0984e3; color: #74b9ff; font-weight: 700;" title="Configurar Alertas e Telegram deste Palco">
-                    🔔
+                    ${ico('bell')}
                   </button>
                   ${ev.stages.length > 1 ? `
                     <button type="button" class="btn btn-sm btn-danger" data-delete-substage="${escapeHtml(st.code)}" data-parent-event="${escapeHtml(ev.code)}" data-stage-name="${escapeHtml(st.name || st.code)}" style="padding: 2px 7px; font-size: 0.68rem; margin-left: 2px;" title="Eliminar este palco do evento">
-                      ✕
+                      &times;
                     </button>
                   ` : ''}
                 </div>
@@ -1061,20 +1062,21 @@
     const saveBtn = document.getElementById('master-rename-save-btn');
     if (!modal || !input) return;
 
+    const ico = window.stIcon || (() => '');
     if (type === 'event') {
-      if (titleEl) titleEl.innerHTML = '✏️ Renomear Evento';
+      if (titleEl) titleEl.innerHTML = `${ico('edit')} Renomear Evento`;
       if (subtitleEl) subtitleEl.textContent = `Indique o novo nome para o evento (${eventCode}):`;
-      if (saveBtn) saveBtn.textContent = '💾 Guardar Nome';
+      if (saveBtn) saveBtn.innerHTML = `${ico('save')} Guardar Nome`;
       input.placeholder = 'Ex: Festival Rock 2026';
     } else if (type === 'stage') {
-      if (titleEl) titleEl.innerHTML = '🎪 Renomear Palco';
+      if (titleEl) titleEl.innerHTML = `${ico('edit')} Renomear Palco`;
       if (subtitleEl) subtitleEl.textContent = `Indique o novo nome para o palco (${stageCode}):`;
-      if (saveBtn) saveBtn.textContent = '💾 Guardar Nome';
+      if (saveBtn) saveBtn.innerHTML = `${ico('save')} Guardar Nome`;
       input.placeholder = 'Ex: Palco Sunset, Palco Club...';
     } else if (type === 'add-stage') {
-      if (titleEl) titleEl.innerHTML = '➕ Adicionar Novo Palco';
+      if (titleEl) titleEl.innerHTML = `${ico('plus')} Adicionar Novo Palco`;
       if (subtitleEl) subtitleEl.textContent = `Indique o nome do novo palco a adicionar ao evento (${eventCode}):`;
-      if (saveBtn) saveBtn.textContent = '✨ Criar Palco';
+      if (saveBtn) saveBtn.innerHTML = `${ico('plus')} Criar Palco`;
       input.placeholder = 'Ex: Palco 2, VIP Lounge, Sunset...';
     }
 
@@ -1249,8 +1251,7 @@
         renderMultiview();
         renderMasterEventSelector();
         updateMasterNavLinks();
-        const typeEmoji = created.eventType === 'theatre' ? '🎭' : '🎪';
-        alert(`✅ Evento "${created.title}" criado com sucesso!\n${typeEmoji} Tipo: ${created.eventType === 'theatre' ? 'Teatro / Cénico' : 'Concerto / Festival'}\n🎪 Palcos: ${created.stagesCount}\n🔑 PIN atribuído à equipa: ${created.pin}`);
+        alert(`Evento "${created.title}" criado com sucesso!\nTipo: ${created.eventType === 'theatre' ? 'Teatro / Cénico' : 'Concerto / Festival'}\nPalcos: ${created.stagesCount}\nPIN atribuído à equipa: ${created.pin}`);
       } catch (err) {
         alert(err.message || 'Erro ao criar evento.');
       }
@@ -1287,8 +1288,8 @@
         masterClient.forceCloudRegistrySync();
         renderEventsManager();
         renderMultiview();
-        $cleanGhostsBtn.textContent = '✅ Nuvem Limpa!';
-        setTimeout(() => { $cleanGhostsBtn.textContent = '👻 Purgar Fantasmas da Nuvem'; }, 2000);
+        $cleanGhostsBtn.innerHTML = `${window.stIcon ? window.stIcon('check') : ''} Nuvem Limpa!`;
+        setTimeout(() => { $cleanGhostsBtn.innerHTML = `${window.stIcon ? window.stIcon('trash') : ''} Purgar Fantasmas da Nuvem`; }, 2000);
       }
     });
   }
@@ -1435,10 +1436,10 @@
 
         if (isRunning) {
           statusClass = isOvertime ? 'danger' : 'running';
-          statusLabel = isOvertime ? '⚠️ OVERTIME' : '🟢 A DECORRER';
+          statusLabel = isOvertime ? 'OVERTIME' : 'A DECORRER';
         } else if (elapsed > 0) {
           statusClass = 'stopped';
-          statusLabel = '⏸️ EM PAUSA';
+          statusLabel = 'EM PAUSA';
         }
 
         displayTime = formatTime(remaining);
@@ -1450,12 +1451,12 @@
       const stageSlot = (activeTimer && stageCascade) ? stageCascade.slots?.find(s => s.id === activeTimer.id) : null;
       let scheduleNote = '';
       if (stageSlot?.planned?.hasValue) {
-        scheduleNote = `📋 Prev: ${stageSlot.planned.slotRange} • ⏱️ Real: ${stageSlot.real.slotRange}${stageSlot.isDelayed ? ` (${stageSlot.delayStr})` : ''}`;
+        scheduleNote = `Prev: ${stageSlot.planned.slotRange} • Real: ${stageSlot.real.slotRange}${stageSlot.isDelayed ? ` (${stageSlot.delayStr})` : ''}`;
       } else if (activeTimer?.startTime) {
         scheduleNote = `Horário: ${activeTimer.startTime}`;
       }
       if (activeTimer?.notes) {
-        scheduleNote = scheduleNote ? `${scheduleNote} | 📝 ${activeTimer.notes}` : `📝 ${activeTimer.notes}`;
+        scheduleNote = scheduleNote ? `${scheduleNote} | ${activeTimer.notes}` : `${activeTimer.notes}`;
       }
 
       const eventEndTime = stageCascade?.eventEndStr || StageTimerClient.computeEventEndTime(stageState);
@@ -1464,6 +1465,7 @@
 
       if (!card) {
         // Create new card
+        const ico = window.stIcon || (() => '');
         card = document.createElement('div');
         card.dataset.mvRoom = stageCode;
         card.className = `multiview-card status-${statusClass}`;
@@ -1491,20 +1493,20 @@
 
           <div class="multiview-footer">
             <div>
-              🏁 Fim: <span class="multiview-end-badge">${eventEndTime}</span>
+              Fim: <span class="multiview-end-badge">${eventEndTime}</span>
             </div>
             <div style="display: flex; gap: 6px; align-items: center;">
               <button type="button" class="btn btn-sm btn-master-copy-watch" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" style="padding: 4px 8px; font-size: 0.75rem;" title="Copiar link do Relógio para este palco">
-                ⌚ Relógio
+                ${ico('watch')} Relógio
               </button>
               <button type="button" class="btn btn-sm btn-master-stage-video" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(108, 92, 231, 0.25); border-color: #a29bfe; color: #c4b5fd; font-weight: 700;" title="Configurar Vídeo / Stream deste Palco">
-                📹 Vídeo
+                ${ico('video')} Vídeo
               </button>
               <button type="button" class="btn btn-sm btn-master-stage-notif" data-room="${encodeURIComponent(stageCode)}" data-title="${escapeHtml(stageName)}" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(9, 132, 227, 0.25); border-color: #0984e3; color: #74b9ff; font-weight: 700;" title="Configurar Alertas e Telegram deste Palco">
-                🔔
+                ${ico('bell')}
               </button>
               <a href="controller.html?room=${encodeURIComponent(stageCode)}" class="btn btn-sm btn-primary" style="padding: 4px 10px; font-size: 0.75rem;">
-                🎛️ Abrir
+                ${ico('sliders')} Abrir
               </a>
             </div>
           </div>
@@ -1673,7 +1675,8 @@
 
   function openMasterTheatreReports(room, title) {
     if (!$theatreReportsModal || !$theatreReportsList) return;
-    $theatreReportsTitle.textContent = `📜 Relatórios: ${title || room}`;
+    const ico = window.stIcon || (() => '');
+    $theatreReportsTitle.innerHTML = `${ico('file-text')} Relatórios: ${escapeHtml(title || room)}`;
     $theatreReportsSub.textContent = `Sala ${room} • Histórico gravado no evento`;
 
     let state = multiRoomsMap.get(room);
@@ -1693,14 +1696,14 @@
           <div>
             <div style="font-weight: 800; font-size: 0.95rem; color: #ffeaa7;">${escapeHtml(r.title)}</div>
             <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap;">
-              <span>⏱️ Duração: <strong style="color: #fff;">${escapeHtml(r.duration)}</strong></span>
-              <span>⚡ Deixas: <strong style="color: #fff;">${r.cuesCount}</strong></span>
-              <span>📅 ${escapeHtml(r.dateStr)}</span>
+              <span>Duração: <strong style="color: #fff;">${escapeHtml(r.duration)}</strong></span>
+              <span>Deixas: <strong style="color: #fff;">${r.cuesCount}</strong></span>
+              <span>${escapeHtml(r.dateStr)}</span>
             </div>
           </div>
           <div style="display: flex; gap: 6px;">
-            <button type="button" class="btn btn-sm btn-master-copy-rep" data-rep-text="${encodeURIComponent(r.text)}" style="background: rgba(108, 92, 231, 0.2); border: 1px solid var(--accent); color: #c4b5fd; font-size: 0.75rem;">📋 Copiar</button>
-            <button type="button" class="btn btn-sm btn-master-dl-rep" data-rep-text="${encodeURIComponent(r.text)}" data-rep-name="${escapeHtml(r.title)}" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 0.75rem;">📥 TXT</button>
+            <button type="button" class="btn btn-sm btn-master-copy-rep" data-rep-text="${encodeURIComponent(r.text)}" style="background: rgba(108, 92, 231, 0.2); border: 1px solid var(--accent); color: #c4b5fd; font-size: 0.75rem;">${ico('copy')} Copiar</button>
+            <button type="button" class="btn btn-sm btn-master-dl-rep" data-rep-text="${encodeURIComponent(r.text)}" data-rep-name="${escapeHtml(r.title)}" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 0.75rem;">${ico('download')} TXT</button>
           </div>
         </div>
       `).join('');
@@ -1728,8 +1731,9 @@
     if (copyBtn) {
       const text = decodeURIComponent(copyBtn.dataset.repText || '');
       navigator.clipboard.writeText(text).then(() => {
-        copyBtn.textContent = '✓ Copiado!';
-        setTimeout(() => { copyBtn.textContent = '📋 Copiar'; }, 2000);
+        const ico = window.stIcon || (() => '');
+        copyBtn.innerHTML = `${ico('check')} Copiado!`;
+        setTimeout(() => { copyBtn.innerHTML = `${ico('copy')} Copiar`; }, 2000);
       });
       return;
     }
@@ -1872,7 +1876,7 @@
             const isObs = (dev.label || '').toLowerCase().includes('obs') || (dev.label || '').toLowerCase().includes('virtual');
             if (isObs && !obsFound && !savedDevId) obsFound = true;
             const isSelected = savedDevId ? (dev.deviceId === savedDevId) : (isObs || idx === 0);
-            const prefix = isObs ? '🎥 [OBS Virtual Cam]' : '📹';
+            const prefix = isObs ? '[OBS Virtual Cam]' : '[Câmara]';
             return `<option value="${escapeHtml(dev.deviceId)}" ${isSelected ? 'selected' : ''}>${prefix} ${escapeHtml(dev.label || 'Câmara ' + (idx + 1))}</option>`;
           }).join('');
         }
@@ -2270,7 +2274,7 @@
       window.open(pushUrl, '_blank', 'noopener');
 
       const originalText = $mvmVdoLaunchBtn.textContent;
-      $mvmVdoLaunchBtn.textContent = '✅ Link Preenchido! Inicie no VDO.Ninja';
+      $mvmVdoLaunchBtn.textContent = 'Link Preenchido! Inicie no VDO.Ninja';
       setTimeout(() => {
         $mvmVdoLaunchBtn.textContent = originalText;
       }, 3000);
@@ -2285,7 +2289,7 @@
       const rawUrl = $mvmStreamUrl ? $mvmStreamUrl.value.trim() : '';
       const chosenDevId = $mvmVcamSelect ? $mvmVcamSelect.value : '';
       const chosenOpt = $mvmVcamSelect && $mvmVcamSelect.selectedOptions ? $mvmVcamSelect.selectedOptions[0] : null;
-      const chosenDevLabel = chosenOpt ? chosenOpt.textContent.replace(/^🎥 \[OBS Virtual Cam\]\s*|^📹\s*/, '').trim() : '';
+      const chosenDevLabel = chosenOpt ? chosenOpt.textContent.replace(/^\[OBS Virtual Cam\]\s*|^\[Câmara\]\s*/i, '').trim() : '';
 
       if (chosenDevId) {
         localStorage.setItem('stagetimer_master_vcam_device', chosenDevId);
@@ -2426,22 +2430,23 @@
   function updateMasterBrowserStatus() {
     if (!window.StageTimerNotifications) return;
     const perm = window.StageTimerNotifications.getBrowserPermission();
+    const ico = window.stIcon || (() => '');
     if ($masterBrowserStatus) {
       if (perm === 'granted') {
-        $masterBrowserStatus.textContent = '✅ Ativas';
+        $masterBrowserStatus.textContent = 'Ativas';
         $masterBrowserStatus.style.background = 'rgba(0, 184, 148, 0.2)';
         $masterBrowserStatus.style.color = '#55efc4';
-        if ($masterEnableBrowserBtn) $masterEnableBrowserBtn.textContent = '✅ Notificações Ativas Neste Dispositivo';
+        if ($masterEnableBrowserBtn) $masterEnableBrowserBtn.innerHTML = `${ico('check')} Notificações Ativas Neste Dispositivo`;
       } else if (perm === 'denied') {
-        $masterBrowserStatus.textContent = '❌ Bloqueadas';
+        $masterBrowserStatus.textContent = 'Bloqueadas';
         $masterBrowserStatus.style.background = 'rgba(214, 48, 49, 0.2)';
         $masterBrowserStatus.style.color = '#ff7675';
-        if ($masterEnableBrowserBtn) $masterEnableBrowserBtn.textContent = '❌ Desbloquear nas Definições do Browser';
+        if ($masterEnableBrowserBtn) $masterEnableBrowserBtn.innerHTML = `${ico('alert-triangle')} Desbloquear nas Definições do Browser`;
       } else {
-        $masterBrowserStatus.textContent = '⚠️ Desativadas';
+        $masterBrowserStatus.textContent = 'Desativadas';
         $masterBrowserStatus.style.background = 'rgba(253, 203, 110, 0.2)';
         $masterBrowserStatus.style.color = '#ffeaa7';
-        if ($masterEnableBrowserBtn) $masterEnableBrowserBtn.textContent = '🔔 Ativar Notificações Neste Dispositivo';
+        if ($masterEnableBrowserBtn) $masterEnableBrowserBtn.innerHTML = `${ico('bell')} Ativar Notificações Neste Dispositivo`;
       }
     }
   }
@@ -2454,15 +2459,14 @@
 
     if (events.length === 0) {
       const defRoom = masterClient.cleanRoom || 'PALCO1';
-      optionsHtml = `<option value="${escapeHtml(defRoom)}">🎪 Palco Padrão (${escapeHtml(defRoom)})</option>`;
+      optionsHtml = `<option value="${escapeHtml(defRoom)}">Palco Padrão (${escapeHtml(defRoom)})</option>`;
       allStages.push(defRoom);
     } else {
       events.forEach(ev => {
         const isTheatre = ev.eventType === 'theatre';
-        const evIcon = isTheatre ? '🎭' : '🎪';
         const evTitle = ev.title || ev.code;
         if (Array.isArray(ev.stages) && ev.stages.length > 0) {
-          optionsHtml += `<optgroup label="${evIcon} ${escapeHtml(evTitle)} (${escapeHtml(ev.code)})">`;
+          optionsHtml += `<optgroup label="${escapeHtml(evTitle)} (${escapeHtml(ev.code)})">`;
           ev.stages.forEach(st => {
             const stName = st.name || st.code;
             const code = String(st.code || '').toUpperCase().trim();
@@ -2541,7 +2545,7 @@
     if ($masterTgApplyAll) $masterTgApplyAll.checked = false;
 
     if ($masterTgTestBtn) {
-      $masterTgTestBtn.textContent = `🧪 Testar Envio Telegram (${code})`;
+      $masterTgTestBtn.textContent = `Testar Envio Telegram (${code})`;
     }
   }
 
@@ -2654,14 +2658,14 @@
 
       if (!token || !chat) {
         if ($masterTgFeedback) {
-          $masterTgFeedback.textContent = '❌ Preencha o Token e o Chat ID';
+          $masterTgFeedback.textContent = 'Preencha o Token e o Chat ID';
           $masterTgFeedback.style.color = '#ff7675';
         }
         return;
       }
 
       if ($masterTgFeedback) {
-        $masterTgFeedback.textContent = '⏳ A enviar teste...';
+        $masterTgFeedback.textContent = 'A enviar teste...';
         $masterTgFeedback.style.color = '#74b9ff';
       }
 
@@ -2669,13 +2673,13 @@
       const result = await window.StageTimerNotifications.testTelegram(token, chat, stageName);
       if (result.success) {
         if ($masterTgFeedback) {
-          $masterTgFeedback.textContent = '✅ Mensagem entregue no Telegram!';
+          $masterTgFeedback.textContent = 'Mensagem entregue no Telegram!';
           $masterTgFeedback.style.color = '#55efc4';
         }
         showToast(`Teste de Telegram enviado com sucesso para ${stageName}!`, 'success');
       } else {
         if ($masterTgFeedback) {
-          $masterTgFeedback.textContent = '❌ ' + (result.error || 'Falha ao enviar');
+          $masterTgFeedback.textContent = (result.error || 'Falha ao enviar');
           $masterTgFeedback.style.color = '#ff7675';
         }
       }

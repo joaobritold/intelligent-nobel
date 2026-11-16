@@ -55,9 +55,9 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>ShowFlow — Modo Jess (Diretora de Cena)</title>
-  <link rel="stylesheet" href="css/common.css?v=142">
-  <link rel="stylesheet" href="css/controller.css?v=142">
-  <link rel="stylesheet" href="css/dc.css?v=142">
+  <link rel="stylesheet" href="css/common.css?v=143">
+  <link rel="stylesheet" href="css/controller.css?v=143">
+  <link rel="stylesheet" href="css/dc.css?v=143">
 </head>
 <body>
   <div id="dc-screen" class="dc-screen">
@@ -67,17 +67,17 @@
     <header class="dc-hud">
       <div class="dc-hud-left">
         <a href="index.html?portal=1" class="dc-brand-link" title="Voltar ao Início / Escolher Evento">
-          <span style="font-size: 1.5rem;">🎭</span>
+          <svg class="st-icon" viewBox="0 0 24 24" style="width: 22px; height: 22px; color: #fdcb6e;"><path d="M2 10s3-3 5-3 5 3 5 3-3 3-5 3-5-3-5-3z"></path><path d="M12 10s3-3 5-3 5 3 5 3-3 3-5 3-5-3-5-3z"></path><path d="M7 16c1.5 1 3.5 1 5 0"></path><path d="M17 16c1.5 1 3.5 1 5 0"></path></svg>
           <div>
             <div class="dc-brand-title">MODO JESS</div>
             <div class="dc-brand-sub">Diretora de Cena</div>
           </div>
-          <span class="badge dc-version-badge">v142</span>
+          <span class="badge dc-version-badge">v143</span>
         </a>
 
         <!-- Stage / Room Pill -->
         <div class="dc-stage-pill" id="dc-stage-badge-container">
-          <span style="font-size: 0.85rem;">🎪</span>
+          <svg class="st-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
           <span id="dc-stage-badge" class="dc-stage-badge-text">Palco</span>
           <select id="dc-stage-select" class="dc-stage-select-hidden" title="Trocar Palco"></select>
         </div>
@@ -98,22 +98,22 @@
 
         <div class="dc-show-btn-group">
           <button id="dc-btn-start-show" type="button" class="dc-hud-btn dc-hud-btn-start" title="Iniciar espetáculo e contagem">
-            ▶ Iniciar
+            <svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Iniciar
           </button>
           <button id="dc-btn-pause-show" type="button" class="dc-hud-btn" style="display: none;" title="Pausar contagem">
-            ⏸ Pausa
+            <svg class="st-icon" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Pausa
           </button>
           <button id="dc-btn-end-show" type="button" class="dc-hud-btn dc-hud-btn-end" style="display: none;" title="Terminar espetáculo e fechar relatório">
-            ⏹ Terminar
+            <svg class="st-icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect></svg> Terminar
           </button>
           <button id="dc-btn-reset-show" type="button" class="dc-hud-btn dc-hud-btn-reset" title="Reiniciar espetáculo e limpar deixas">
-            🔄 Reset
+            <svg class="st-icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Reset
           </button>
         </div>
 
         <!-- Broadcast Urgent Notice Button -->
         <button id="dc-btn-urgent-toggle" type="button" class="dc-hud-btn dc-hud-btn-warn" title="Enviar aviso imediato para todos os postos técnicos">
-          🚨 Aviso Rápido
+          <svg class="st-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg> Aviso Rápido
         </button>
       </div>
 
@@ -139,10 +139,10 @@
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <div id="dc-urgent-bar" class="dc-urgent-broadcast-bar" style="display: none;">
       <div class="dc-urgent-input-row">
-        <span style="font-size: 1.2rem;">📢</span>
+        <svg class="st-icon" viewBox="0 0 24 24" style="color: #ff7675;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
         <input id="dc-urgent-input" class="dc-urgent-input" placeholder="Escreva aviso urgente para todos os postos técnicos (ex: Aguardar 2 min antes da vara 4)..." autocomplete="off">
-        <button id="dc-urgent-send-btn" type="button" class="dc-btn-primary">⚡ Enviar Aviso</button>
-        <button id="dc-urgent-clear-btn" type="button" class="dc-btn-danger">🗑️ Limpar</button>
+        <button id="dc-urgent-send-btn" type="button" class="dc-btn-primary"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Enviar Aviso</button>
+        <button id="dc-urgent-clear-btn" type="button" class="dc-btn-danger"><svg class="st-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Limpar</button>
       </div>
       <div id="dc-urgent-active-tag" style="display: none;" class="dc-urgent-active-text"></div>
     </div>
@@ -153,7 +153,7 @@
     <nav id="dc-phase-bar" class="dc-phase-bar" aria-label="Fase do Espetáculo" style="margin-bottom: 12px;">
       <button id="dc-phase-btn-prep" type="button" class="dc-phase-btn active" data-phase="prep" title="Fase 1: Preparação de Palco, Elenco/Artistas, Notas e Checklists">
         <div class="dc-phase-btn-left">
-          <span style="font-size: 1.3rem;">🛠️</span>
+          <svg class="st-icon" viewBox="0 0 24 24" style="width: 20px; height: 20px; color: #a29bfe;"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
           <div>
             <div class="dc-phase-title">FASE 1: TRABALHOS DE PALCO & AFINAÇÕES</div>
             <div class="dc-phase-desc">Artistas, alinhamento, notas de palco e verificação de equipamentos</div>
@@ -164,7 +164,7 @@
 
       <button id="dc-phase-btn-live" type="button" class="dc-phase-btn" data-phase="live" title="Fase 2: Espetáculo ao Vivo com Disparo de Deixas (STANDBY e GO)">
         <div class="dc-phase-btn-left">
-          <span style="font-size: 1.3rem;">🎭</span>
+          <svg class="st-icon" viewBox="0 0 24 24" style="width: 20px; height: 20px; color: #55efc4;"><path d="M2 10s3-3 5-3 5 3 5 3-3 3-5 3-5-3-5-3z"></path><path d="M12 10s3-3 5-3 5 3 5 3-3 3-5 3-5-3-5-3z"></path><path d="M7 16c1.5 1 3.5 1 5 0"></path><path d="M17 16c1.5 1 3.5 1 5 0"></path></svg>
           <div>
             <div class="dc-phase-title">FASE 2: MODO DEIXAS (EM CENA / LIVE)</div>
             <div class="dc-phase-desc">Execução em direto: Standby, GO (Barra de Espaço), Recuar Deixa e Timecodes</div>
@@ -181,7 +181,7 @@
       <!-- Stage Hero Banner -->
       <div class="dc-stage-header-banner">
         <div style="display: flex; align-items: center; gap: 14px;">
-          <div style="font-size: 2.3rem; line-height: 1;">🛠️</div>
+          <svg class="st-icon" viewBox="0 0 24 24" style="width: 28px; height: 28px; color: #ffeaa7;"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
           <div>
             <div style="font-weight: 900; font-size: 1.15rem; color: #ffeaa7;">TRABALHOS DE PALCO, ARTISTAS & AFINAÇÕES</div>
             <div style="font-size: 0.82rem; color: #cbd5e1;">Acompanhe o elenco e horários, aponte notas de palco e confirme as afinações de cada posto técnico.</div>
@@ -189,7 +189,7 @@
         </div>
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
           <button id="dc-btn-start-show-prep" type="button" class="dc-hero-start-btn">
-            🎬 DAR ARRANQUE AO ESPETÁCULO ▶
+            <svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> DAR ARRANQUE AO ESPETÁCULO
           </button>
         </div>
       </div>
@@ -202,14 +202,14 @@
           <div class="dc-stage-card">
             <div class="dc-stage-card-title">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span>🎭</span>
+                <svg class="st-icon" viewBox="0 0 24 24"><path d="M2 10s3-3 5-3 5 3 5 3-3 3-5 3-5-3-5-3z"></path><path d="M12 10s3-3 5-3 5 3 5 3-3 3-5 3-5-3-5-3z"></path><path d="M7 16c1.5 1 3.5 1 5 0"></path><path d="M17 16c1.5 1 3.5 1 5 0"></path></svg>
                 <span>Alinhamento & Artistas de Palco</span>
                 <span id="dc-stage-artists-count" style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--dc-muted);">0 Artistas</span>
               </div>
               <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                <button id="dc-btn-stage-add-artist" type="button" class="btn btn-primary btn-sm btn-add-main" style="font-weight: 800; font-size: 0.8rem; padding: 4px 12px; box-shadow: 0 2px 8px rgba(108, 92, 231, 0.4);">+ Add Timer</button>
-                <button id="dc-btn-stage-import-schedule" type="button" class="btn btn-sm btn-import-outline" style="font-size: 0.75rem; padding: 4px 10px;">📂 Importar</button>
-                <button id="dc-btn-stage-clear-schedule" type="button" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 10px;">🧹 Limpar</button>
+                <button id="dc-btn-stage-add-artist" type="button" class="btn btn-primary btn-sm btn-add-main" style="font-weight: 800; font-size: 0.8rem; padding: 4px 12px; box-shadow: 0 2px 8px rgba(108, 92, 231, 0.4);"><svg class="st-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add Timer</button>
+                <button id="dc-btn-stage-import-schedule" type="button" class="btn btn-sm btn-import-outline" style="font-size: 0.75rem; padding: 4px 10px;"><svg class="st-icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> Importar</button>
+                <button id="dc-btn-stage-clear-schedule" type="button" class="btn btn-sm btn-danger" style="font-size: 0.75rem; padding: 4px 10px;"><svg class="st-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Limpar</button>
               </div>
             </div>
 
@@ -217,7 +217,7 @@
             <div id="dc-hero-timer-card" class="dc-hero-timer-box" style="margin-top: 8px;">
               <div style="display: flex; align-items: center; gap: 8px; width: 100%; justify-content: space-between;">
                 <div id="dc-hero-badge" class="dc-hero-badge">PARADO</div>
-                <div id="dc-hero-endtime" style="font-size: 0.78rem; color: #55efc4; font-family: var(--font-mono); font-weight: 700;">&#127937; Fim: --:--</div>
+                <div id="dc-hero-endtime" style="font-size: 0.78rem; color: #55efc4; font-family: var(--font-mono); font-weight: 700;">Fim: --:--</div>
               </div>
               <div id="dc-hero-name" class="dc-hero-name">Sem artista ativo</div>
               <div id="dc-hero-time" class="dc-hero-time">00:00</div>
@@ -227,20 +227,20 @@
               <!-- Giant Touch Controls -->
               <div class="dc-hero-primary-controls">
                 <button id="dc-hero-btn-toggle" type="button" class="dc-hero-btn-giant dc-hero-btn-play">
-                  &#9654; INICIAR
+                  <svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> INICIAR
                 </button>
                 <button id="dc-hero-btn-reset" type="button" class="dc-hero-btn-giant dc-hero-btn-reset">
-                  &#9209; RESET
+                  <svg class="st-icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect></svg> RESET
                 </button>
               </div>
 
               <!-- Passar para tras e para a frente -->
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; max-width: 420px; margin-top: 6px;">
                 <button id="dc-hero-btn-prev" type="button" class="op-move-btn" style="padding: 8px; font-weight: 700; font-size: 0.85rem; border-radius: 8px;">
-                  &#9198; Anterior
+                  <svg class="st-icon" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg> Anterior
                 </button>
                 <button id="dc-hero-btn-next" type="button" class="op-move-btn" style="padding: 8px; font-weight: 700; font-size: 0.85rem; border-radius: 8px;">
-                  Pr&oacute;ximo &#9197;
+                  Próximo <svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
                 </button>
               </div>
 
@@ -267,7 +267,7 @@
             <div style="display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); align-items: center;">
               <input id="dc-stage-artist-name-input" class="input input-sm" style="flex: 1; font-size: 0.85rem;" placeholder="Ou adicione rápido: Nome do artista / ato...">
               <input id="dc-stage-artist-dur-input" class="input input-mono input-sm" type="number" min="1" max="300" style="width: 84px; text-align: center;" placeholder="Minutos">
-              <button id="dc-stage-artist-add-btn" type="button" class="btn btn-primary btn-sm" style="white-space: nowrap; font-weight: 700;">➕ Adicionar</button>
+              <button id="dc-stage-artist-add-btn" type="button" class="btn btn-primary btn-sm" style="white-space: nowrap; font-weight: 700;"><svg class="st-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Adicionar</button>
             </div>
           </div>
 
@@ -275,7 +275,7 @@
           <div class="dc-stage-card">
             <div class="dc-stage-card-title">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span>📝</span>
+                <svg class="st-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                 <span>Notas Rápidas de Palco & Camarins</span>
               </div>
               <span style="font-size: 0.72rem; color: var(--dc-muted);">Visíveis na régie</span>
@@ -285,7 +285,7 @@
             </div>
             <div style="display: flex; gap: 8px; margin-top: 6px;">
               <input id="dc-stage-note-input" class="dc-input-sm" style="flex: 1;" placeholder="Nota de palco (ex: Atriz X entra com capa vermelha pela coxia esquerda)...">
-              <button id="dc-stage-note-add-btn" type="button" class="dc-btn-primary dc-btn-sm" style="white-space: nowrap;">➕ Adicionar</button>
+              <button id="dc-stage-note-add-btn" type="button" class="dc-btn-primary dc-btn-sm" style="white-space: nowrap;"><svg class="st-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Adicionar</button>
             </div>
           </div>
 
@@ -293,16 +293,16 @@
           <div class="dc-stage-card" style="border-color: rgba(253, 203, 110, 0.3);">
             <div class="dc-stage-card-title">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span>⚡</span>
+                <svg class="st-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                 <span>Folha de Deixas do Espetáculo</span>
               </div>
               <span id="dc-prep-cues-count" style="font-size: 0.75rem; font-family: var(--font-mono); color: #ffeaa7;">0 Deixas</span>
             </div>
             <p style="font-size: 0.8rem; color: #cbd5e1; margin: 0;">Pode importar a folha de deixas em PDF, Excel, Word ou texto antes de arrancar.</p>
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
-              <button id="dc-btn-prep-import-cues" type="button" class="dc-btn-primary dc-btn-sm">📥 Importar Folha de Deixas</button>
-              <button id="dc-btn-prep-add-cue" type="button" class="dc-tool-btn">➕ Nova Deixa</button>
-              <button id="dc-btn-prep-view-script" type="button" class="dc-tool-btn">📖 Guião / Texto</button>
+              <button id="dc-btn-prep-import-cues" type="button" class="dc-btn-primary dc-btn-sm"><svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Importar Folha de Deixas</button>
+              <button id="dc-btn-prep-add-cue" type="button" class="dc-tool-btn"><svg class="st-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Nova Deixa</button>
+              <button id="dc-btn-prep-view-script" type="button" class="dc-tool-btn"><svg class="st-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> Guião / Texto</button>
             </div>
           </div>
         </div>
@@ -311,7 +311,7 @@
         <div class="dc-stage-card">
           <div class="dc-stage-card-title">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span>📋</span>
+              <svg class="st-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
               <span>Checklists de Equipas & Presets</span>
             </div>
             <span id="dc-readiness-percent" class="dc-readiness-pill">0% PRONTO</span>
@@ -329,11 +329,11 @@
           <!-- Add Item Bar -->
           <div class="dc-add-task-row">
             <select id="dc-task-dept-select" class="dc-select-sm">
-              <option value="Luz">💡 Luz</option>
-              <option value="Som">🔊 Som</option>
-              <option value="Maquinaria">⚙️ Maquinaria</option>
-              <option value="Vídeo">🎥 Vídeo</option>
-              <option value="Coxias">🎭 Coxias</option>
+              <option value="Luz">Luz</option>
+              <option value="Som">Som</option>
+              <option value="Maquinaria">Maquinaria</option>
+              <option value="Vídeo">Vídeo</option>
+              <option value="Coxias">Coxias</option>
             </select>
             <input id="dc-task-label-input" class="dc-input-sm" placeholder="Nova verificação de equipa...">
             <label class="dc-checkbox-label" title="Marcar como tarefa pontual que só se aplica a esta récita">
@@ -364,37 +364,37 @@
         </div>
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <button id="dc-btn-return-stage" type="button" class="dc-tool-btn" title="Consultar elenco de artistas, notas ou afinações de palco">
-            🛠️ Ver Trabalhos de Palco
+            <svg class="st-icon" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg> Ver Trabalhos de Palco
           </button>
           <button id="dc-btn-toggle-script-modal" type="button" class="dc-tool-btn" title="Abrir guião de leitura em janela dedicada">
-            📖 Guião da Peça
+            <svg class="st-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> Guião da Peça
           </button>
           <button id="dc-btn-toggle-telemetry" type="button" class="dc-tool-btn" title="Ver telemetria e relatórios gravados">
-            📊 Relatórios & Histórico
+            <svg class="st-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> Relatórios & Histórico
           </button>
         </div>
       </div>
 
       <!-- Giant Hero Cue Action Box (Opção A) -->
-            <!-- Mini Live Stage Timer Bar in Cue View -->
+      <!-- Mini Live Stage Timer Bar in Cue View -->
       <div id="dc-cue-stage-timer-bar" class="dc-cue-stage-timer-bar" style="display: flex;">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.1rem;">&#9201;&#65039;</span>
+          <svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
           <span style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase;">PALCO ATIVO:</span>
           <strong id="dc-cue-timer-name" style="color: #fff; font-size: 0.95rem;">--</strong>
         </div>
         <div style="display: flex; align-items: center; gap: 12px;">
           <span id="dc-cue-timer-clock" style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 800; color: #55efc4;">00:00</span>
-          <span id="dc-cue-timer-end" style="font-size: 0.78rem; font-family: var(--font-mono); color: #cbd5e1;">&#127937; --:--</span>
-          <button id="dc-cue-timer-toggle" type="button" class="btn btn-sm btn-success" style="font-size: 0.75rem; padding: 3px 8px;">&#9654;</button>
-          <button id="dc-cue-timer-reset" type="button" class="btn btn-sm" style="font-size: 0.75rem; padding: 3px 8px;">&#9209;</button>
+          <span id="dc-cue-timer-end" style="font-size: 0.78rem; font-family: var(--font-mono); color: #cbd5e1;">--:--</span>
+          <button id="dc-cue-timer-toggle" type="button" class="btn btn-sm btn-success" style="font-size: 0.75rem; padding: 3px 8px;"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></button>
+          <button id="dc-cue-timer-reset" type="button" class="btn btn-sm" style="font-size: 0.75rem; padding: 3px 8px;"><svg class="st-icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect></svg></button>
         </div>
       </div>
 
       <div class="dc-action-box" style="padding: 18px 20px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
           <div>
-            <span class="dc-action-hint">⚡ DEIXA ATUAL A DISPARAR:</span>
+            <span class="dc-action-hint"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> DEIXA ATUAL A DISPARAR:</span>
             <div style="display: flex; align-items: baseline; gap: 14px; margin-top: 4px;">
               <span id="dc-hero-cue-num" style="font-family: var(--font-mono); font-size: 2.4rem; font-weight: 900; color: #55efc4; line-height: 1;">Q1</span>
               <span id="dc-hero-cue-name" style="font-size: 1.35rem; font-weight: 800; color: #fff;">Abertura de Sala</span>
@@ -419,11 +419,11 @@
         <!-- Giant Buttons Row -->
         <div class="dc-action-btn-row" style="margin-top: 4px;">
           <button id="dc-btn-standby" type="button" class="dc-hero-btn dc-btn-standby" style="flex: 1; padding: 20px 14px; font-size: 1.15rem;" title="Colocar a próxima deixa em Standby (Sinal Amarelo no telemóvel dos técnicos)">
-            <span class="dc-hero-icon" style="font-size: 1.6rem;">🟡</span>
+            <span class="dc-hero-icon" style="display: inline-flex;"><svg class="st-icon" viewBox="0 0 24 24" style="width: 24px; height: 24px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>
             <span class="dc-hero-text" style="font-size: 1.25rem;">STANDBY</span>
           </button>
           <button id="dc-btn-go" type="button" class="dc-hero-btn dc-btn-go" style="flex: 1.4; padding: 20px 14px; font-size: 1.25rem;" title="Executar deixa ativa (Sinal Verde). Atalho: BARRA DE ESPAÇO">
-            <span class="dc-hero-icon" style="font-size: 1.8rem;">🟢</span>
+            <span class="dc-hero-icon" style="display: inline-flex;"><svg class="st-icon" viewBox="0 0 24 24" style="width: 28px; height: 28px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></span>
             <span class="dc-hero-text" style="font-size: 1.35rem;">GO (BARRA DE ESPAÇO)</span>
           </button>
         </div>
@@ -432,24 +432,24 @@
         <div class="dc-action-subtools" style="margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button id="dc-btn-undo-cue" type="button" class="dc-mini-btn" style="background: rgba(255, 118, 117, 0.15); border-color: rgba(255, 118, 117, 0.4); color: #ff7675; font-weight: 800;" title="Desfazer último GO e voltar a colocar a deixa anterior em Standby">
-              ↩️ Recuar Deixa (Desfazer)
+              <svg class="st-icon" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg> Recuar Deixa (Desfazer)
             </button>
             <button id="dc-btn-skip-cue" type="button" class="dc-mini-btn" title="Saltar deixa sem disparar">
-              ⏭️ Saltar Deixa
+              <svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg> Saltar Deixa
             </button>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button id="dc-btn-add-cue" type="button" class="dc-mini-btn" title="Adicionar nova deixa">
-              ➕ Nova Deixa
+              <svg class="st-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Nova Deixa
             </button>
             <button id="dc-btn-import-cues" type="button" class="dc-mini-btn" title="Importar lista de deixas via PDF, Excel, Word ou CSV">
-              📥 Importar Deixas
+              <svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Importar Deixas
             </button>
             <button id="dc-btn-reset-cues" type="button" class="dc-mini-btn" title="Voltar todas as deixas a pendente">
-              🔄 Reset Deixas
+              <svg class="st-icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Reset Deixas
             </button>
             <button id="dc-btn-clear-cues" type="button" class="dc-mini-btn" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4);" title="Eliminar todas as deixas">
-              🗑️ Limpar
+              <svg class="st-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Limpar
             </button>
           </div>
         </div>
@@ -459,7 +459,7 @@
       <div class="dc-stage-card" style="padding: 16px 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
           <div>
-            <strong style="color: #fff; font-size: 1.05rem; letter-spacing: 0.02em;">📋 Fila de Deixas do Espetáculo (<span id="dc-cues-count-badge">0</span>)</strong>
+            <strong style="color: #fff; font-size: 1.05rem; letter-spacing: 0.02em;"><svg class="st-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg> Fila de Deixas do Espetáculo (<span id="dc-cues-count-badge">0</span>)</strong>
             <div style="font-size: 0.74rem; color: var(--dc-muted);">Clique em qualquer deixa para a focar ou colocar em Standby manual.</div>
           </div>
           <div id="dc-next-cue-summary" style="font-family: var(--font-mono); font-weight: 800; font-size: 0.88rem; color: #ffeaa7;">
@@ -492,13 +492,13 @@
 
           <div class="dc-telemetry-actions">
             <button id="dc-btn-save-report" type="button" class="btn btn-sm" style="background: #00b894; border: 1.5px solid #00b894; color: #000; font-weight: 800; padding: 7px 12px; border-radius: 8px; cursor: pointer;">
-              💾 Guardar no Evento
+              <svg class="st-icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Guardar no Evento
             </button>
             <button id="dc-btn-copy-report" type="button" class="dc-btn-primary dc-btn-sm">
-              📋 Copiar Relatório
+              <svg class="st-icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copiar Relatório
             </button>
             <button id="dc-btn-download-report" type="button" class="dc-tool-btn">
-              📥 Descarregar TXT
+              <svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Descarregar TXT
             </button>
           </div>
         </div>
@@ -506,14 +506,14 @@
         <!-- Saved Reports History Section -->
         <div class="dc-saved-reports-section" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <strong style="font-size: 0.9rem; color: #ffeaa7;">📜 Relatórios Gravados deste Evento (<span id="dc-saved-reports-count">0</span>)</strong>
+            <strong style="font-size: 0.9rem; color: #ffeaa7;"><svg class="st-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Relatórios Gravados deste Evento (<span id="dc-saved-reports-count">0</span>)</strong>
           </div>
           <div id="dc-saved-reports-list" class="dc-saved-reports-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;"></div>
         </div>
 
         <!-- Live Telemetry List -->
         <div>
-          <strong style="font-size: 0.85rem; color: #fff;">⚡ Telemetria da Sessão em Direto</strong>
+          <strong style="font-size: 0.85rem; color: #fff;"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Telemetria da Sessão em Direto</strong>
           <div id="dc-telemetry-list" class="dc-telemetry-list" style="margin-top: 8px;"></div>
         </div>
       </div>
@@ -526,21 +526,21 @@
     <div class="dc-modal-content" style="max-width: 840px; width: 94%;">
       <div class="dc-modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dc-border); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.25rem;">📖</span>
+          <svg class="st-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
           <h3 style="margin: 0; font-size: 1.15rem; color: #ffeaa7;">Guião da Peça & Acompanhamento de Texto</h3>
         </div>
         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
           <button id="dc-script-font-minus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Diminuir letra">A−</button>
           <button id="dc-script-font-plus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Aumentar letra">A+</button>
-          <button id="dc-script-scroll-toggle" type="button" class="dc-tool-btn" title="Iniciar/pausar rolagem contínua">▶ Rolar Texto</button>
+          <button id="dc-script-scroll-toggle" type="button" class="dc-tool-btn" title="Iniciar/pausar rolagem contínua"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Rolar Texto</button>
           <select id="dc-script-scroll-speed" class="dc-tool-btn" style="padding: 4px 6px; font-size: 0.72rem; outline: none; background: rgba(255,255,255,0.06); color: #fff;">
             <option value="1">Lento</option>
             <option value="2" selected>Médio</option>
             <option value="3">Rápido</option>
           </select>
-          <button id="dc-btn-edit-script-text" type="button" class="dc-tool-btn">✏️ Editar</button>
-          <button id="dc-btn-import-script" type="button" class="dc-tool-btn">📥 Importar</button>
-          <button type="button" class="dc-modal-close" data-close-modal="dc-modal-view-script" style="margin-left: 8px;">✕</button>
+          <button id="dc-btn-edit-script-text" type="button" class="dc-tool-btn"><svg class="st-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg> Editar</button>
+          <button id="dc-btn-import-script" type="button" class="dc-tool-btn"><svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Importar</button>
+          <button type="button" class="dc-modal-close" data-close-modal="dc-modal-view-script" style="margin-left: 8px;">X</button>
         </div>
       </div>
       <div class="dc-modal-body" style="padding: 0;">
@@ -555,13 +555,13 @@
   <div id="dc-modal-view-report" class="dc-modal" style="display: none;">
     <div class="dc-modal-content" style="max-width: 680px; width: 92%;">
       <div class="dc-modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dc-border); padding-bottom: 10px; margin-bottom: 12px;">
-        <h3 id="dc-modal-view-report-title" style="margin: 0; font-size: 1.1rem; color: #ffeaa7;">📜 Relatório de Régie</h3>
-        <button id="dc-modal-view-report-close" type="button" class="dc-tool-btn" style="font-size: 1.1rem;">✕</button>
+        <h3 id="dc-modal-view-report-title" style="margin: 0; font-size: 1.1rem; color: #ffeaa7;"><svg class="st-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Relatório de Régie</h3>
+        <button id="dc-modal-view-report-close" type="button" class="dc-tool-btn" style="font-size: 1.1rem;">X</button>
       </div>
       <pre id="dc-modal-view-report-body" style="background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.08); padding: 14px; border-radius: 8px; font-family: var(--font-mono); font-size: 0.82rem; color: #cbd5e1; white-space: pre-wrap; max-height: 420px; overflow-y: auto; line-height: 1.5;"></pre>
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;">
-        <button id="dc-modal-view-report-copy" type="button" class="dc-btn-primary dc-btn-sm">📋 Copiar Texto</button>
-        <button id="dc-modal-view-report-download" type="button" class="dc-tool-btn">📥 Descarregar TXT</button>
+        <button id="dc-modal-view-report-copy" type="button" class="dc-btn-primary dc-btn-sm"><svg class="st-icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copiar Texto</button>
+        <button id="dc-modal-view-report-download" type="button" class="dc-tool-btn"><svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Descarregar TXT</button>
       </div>
     </div>
   </div>
@@ -574,18 +574,18 @@
   <div id="dc-modal-import-script" class="dc-modal" style="display: none;">
     <div class="dc-modal-content" style="max-width: 720px; width: 94%;">
       <div class="dc-modal-header">
-        <h3>📥 Importar Guião & Texto (PDF, Word, Excel, Docs, TXT)</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-script">✕</button>
+        <h3><svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Importar Guião & Texto (PDF, Word, Excel, Docs, TXT)</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-script">X</button>
       </div>
       <div class="dc-modal-body">
         <div class="dc-import-tabs">
-          <button type="button" class="dc-import-tab-btn active" data-tab-panel="script-import-file-panel">📁 Ficheiro (PDF, Word, Excel, Docs, TXT)</button>
-          <button type="button" class="dc-import-tab-btn" data-tab-panel="script-import-paste-panel">✏️ Colar Texto Direto</button>
+          <button type="button" class="dc-import-tab-btn active" data-tab-panel="script-import-file-panel"><svg class="st-icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> Ficheiro (PDF, Word, Excel, Docs, TXT)</button>
+          <button type="button" class="dc-import-tab-btn" data-tab-panel="script-import-paste-panel"><svg class="st-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg> Colar Texto Direto</button>
         </div>
 
         <div id="script-import-file-panel" class="dc-import-panel">
           <div id="dc-script-dropzone" class="dc-import-dropzone">
-            <div class="dc-import-dropzone-icon">📄</div>
+            <div class="dc-import-dropzone-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width: 32px; height: 32px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
             <div class="dc-import-dropzone-title">Clique ou arraste um ficheiro com o guião</div>
             <div class="dc-import-dropzone-sub">Suporta <strong>PDF (.pdf)</strong>, <strong>Word (.docx)</strong>, <strong>Excel (.xlsx, .csv)</strong> ou <strong>Texto (.txt)</strong></div>
             <input type="file" id="dc-script-file-input" accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.rtf" style="display: none;">
@@ -629,18 +629,18 @@
   <div id="dc-modal-import-cues" class="dc-modal" style="display: none;">
     <div class="dc-modal-content" style="max-width: 760px; width: 94%;">
       <div class="dc-modal-header">
-        <h3>📥 Importar Folha de Deixas / Cues</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-cues">✕</button>
+        <h3><svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Importar Folha de Deixas / Cues</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-cues">X</button>
       </div>
       <div class="dc-modal-body">
         <div class="dc-import-tabs">
-          <button type="button" class="dc-import-cues-tab-btn active" data-tab-panel="cues-import-file-panel">📁 Ficheiro (Excel, PDF, Word, CSV)</button>
-          <button type="button" class="dc-import-cues-tab-btn" data-tab-panel="cues-import-paste-panel">✏️ Colar Tabela / Texto</button>
+          <button type="button" class="dc-import-cues-tab-btn active" data-tab-panel="cues-import-file-panel"><svg class="st-icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> Ficheiro (Excel, PDF, Word, CSV)</button>
+          <button type="button" class="dc-import-cues-tab-btn" data-tab-panel="cues-import-paste-panel"><svg class="st-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg> Colar Tabela / Texto</button>
         </div>
 
         <div id="cues-import-file-panel" class="dc-import-panel">
           <div id="dc-cues-dropzone" class="dc-import-dropzone">
-            <div class="dc-import-dropzone-icon">📊</div>
+            <div class="dc-import-dropzone-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width: 32px; height: 32px;"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></div>
             <div class="dc-import-dropzone-title">Clique ou arraste folha Excel, PDF ou Word com deixas</div>
             <div class="dc-import-dropzone-sub">Colunas recomendadas: <strong>Q# | Nome | Departamentos (Luz, Som, etc.) | Ponto / Fala | Notas</strong></div>
             <input type="file" id="dc-cues-file-input" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc,.txt" style="display: none;">
@@ -684,8 +684,8 @@
   <div id="dc-modal-new-cue" class="dc-modal" style="display: none;">
     <div class="dc-modal-content">
       <div class="dc-modal-header">
-        <h3>➕ Nova Deixa / Cue</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-new-cue">✕</button>
+        <h3><svg class="st-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Nova Deixa / Cue</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-new-cue">X</button>
       </div>
       <div class="dc-modal-body">
         <div class="dc-form-group">
@@ -703,11 +703,11 @@
         <div class="dc-form-group">
           <label>Departamentos Destinatários:</label>
           <div class="dc-dept-checkbox-row">
-            <label><input type="checkbox" name="dc-dept" value="Luz" checked> 💡 Luz</label>
-            <label><input type="checkbox" name="dc-dept" value="Som"> 🔊 Som</label>
-            <label><input type="checkbox" name="dc-dept" value="Maquinaria"> ⚙️ Maquinaria</label>
-            <label><input type="checkbox" name="dc-dept" value="Vídeo"> 🎥 Vídeo</label>
-            <label><input type="checkbox" name="dc-dept" value="Coxias"> 🎭 Coxias</label>
+            <label><input type="checkbox" name="dc-dept" value="Luz" checked> Luz</label>
+            <label><input type="checkbox" name="dc-dept" value="Som"> Som</label>
+            <label><input type="checkbox" name="dc-dept" value="Maquinaria"> Maquinaria</label>
+            <label><input type="checkbox" name="dc-dept" value="Vídeo"> Vídeo</label>
+            <label><input type="checkbox" name="dc-dept" value="Coxias"> Coxias</label>
           </div>
         </div>
         <div class="dc-form-group">
@@ -726,8 +726,8 @@
   <div id="dc-modal-edit-cue" class="dc-modal" style="display: none;">
     <div class="dc-modal-content">
       <div class="dc-modal-header">
-        <h3>✏️ Editar Deixa / Cue</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-cue">✕</button>
+        <h3><svg class="st-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg> Editar Deixa / Cue</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-cue">X</button>
       </div>
       <div class="dc-modal-body">
         <input type="hidden" id="dc-edit-cue-id">
@@ -748,11 +748,11 @@
         <div class="dc-form-group">
           <label>Departamentos Destinatários:</label>
           <div class="dc-dept-checkbox-row">
-            <label><input type="checkbox" name="dc-edit-dept" value="Luz"> 💡 Luz</label>
-            <label><input type="checkbox" name="dc-edit-dept" value="Som"> 🔊 Som</label>
-            <label><input type="checkbox" name="dc-edit-dept" value="Maquinaria"> ⚙️ Maquinaria</label>
-            <label><input type="checkbox" name="dc-edit-dept" value="Vídeo"> 🎥 Vídeo</label>
-            <label><input type="checkbox" name="dc-edit-dept" value="Coxias"> 🎭 Coxias</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="Luz"> Luz</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="Som"> Som</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="Maquinaria"> Maquinaria</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="Vídeo"> Vídeo</label>
+            <label><input type="checkbox" name="dc-edit-dept" value="Coxias"> Coxias</label>
           </div>
         </div>
         <div class="dc-form-group">
@@ -761,7 +761,7 @@
         </div>
       </div>
       <div class="dc-modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <button id="dc-edit-cue-delete-btn" type="button" class="dc-btn-secondary" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4); font-weight: 700;">🗑️ Eliminar Deixa</button>
+        <button id="dc-edit-cue-delete-btn" type="button" class="dc-btn-secondary" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4); font-weight: 700;"><svg class="st-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Eliminar Deixa</button>
         <div style="display: flex; gap: 8px;">
           <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-edit-cue">Cancelar</button>
           <button id="dc-edit-cue-confirm" type="button" class="dc-btn-primary">Guardar Alterações</button>
@@ -774,8 +774,8 @@
   <div id="dc-modal-edit-script-text" class="dc-modal" style="display: none;">
     <div class="dc-modal-content" style="max-width: 700px;">
       <div class="dc-modal-header">
-        <h3>✏️ Texto Completo do Guião da Peça</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-script-text">✕</button>
+        <h3><svg class="st-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg> Texto Completo do Guião da Peça</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-script-text">X</button>
       </div>
       <div class="dc-modal-body">
         <p class="dc-modal-desc">Edite ou cole aqui o texto da peça. Pode escrever falas no formato <code>NOME: Fala</code> e indicações/rubricas cénicas entre parênteses retos <code>[A cortina abre...]</code>:</p>
@@ -783,7 +783,7 @@
       </div>
       <div class="dc-modal-footer">
         <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-edit-script-text">Cancelar</button>
-        <button id="dc-full-script-save" type="button" class="dc-btn-primary">💾 Guardar Texto no Guião</button>
+        <button id="dc-full-script-save" type="button" class="dc-btn-primary"><svg class="st-icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Guardar Texto no Guião</button>
       </div>
     </div>
   </div>
@@ -792,18 +792,18 @@
   <div id="dc-modal-import-schedule" class="dc-modal" style="display: none;">
     <div class="dc-modal-content" style="max-width: 760px; width: 94%;">
       <div class="dc-modal-header">
-        <h3>📂 Importar Alinhamento de Palco (Artistas & Horários)</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-schedule">✕</button>
+        <h3><svg class="st-icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> Importar Alinhamento de Palco (Artistas & Horários)</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-import-schedule">X</button>
       </div>
       <div class="dc-modal-body">
         <div class="dc-import-tabs">
-          <button type="button" class="dc-import-sched-tab-btn active" data-tab-panel="sched-import-file-panel">📁 Ficheiro (Excel, PDF, Word, CSV)</button>
-          <button type="button" class="dc-import-sched-tab-btn" data-tab-panel="sched-import-paste-panel">✏️ Colar Texto / Horários</button>
+          <button type="button" class="dc-import-sched-tab-btn active" data-tab-panel="sched-import-file-panel"><svg class="st-icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> Ficheiro (Excel, PDF, Word, CSV)</button>
+          <button type="button" class="dc-import-sched-tab-btn" data-tab-panel="sched-import-paste-panel"><svg class="st-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg> Colar Texto / Horários</button>
         </div>
 
         <div id="sched-import-file-panel" class="dc-import-panel">
           <div id="dc-sched-dropzone" class="dc-import-dropzone">
-            <div class="dc-import-dropzone-icon">📋</div>
+            <div class="dc-import-dropzone-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width: 32px; height: 32px;"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></div>
             <div class="dc-import-dropzone-title">Clique ou arraste um ficheiro com o alinhamento de palco</div>
             <div class="dc-import-dropzone-sub">Suporta <strong>Excel (.xlsx, .xls, .csv)</strong>, <strong>PDF (.pdf texto ou imagem)</strong>, <strong>Word (.docx)</strong>, <strong>Imagem (.png, .jpg)</strong> ou <strong>Texto (.txt)</strong></div>
             <input type="file" id="dc-sched-file-input" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc,.png,.jpg,.jpeg,.webp,.txt" style="display: none;">
@@ -846,8 +846,8 @@
   <div id="dc-modal-edit-artist" class="dc-modal" style="display: none;">
     <div class="dc-modal-content" style="max-width: 520px;">
       <div class="dc-modal-header">
-        <h3>✏️ Editar Artista / Ato de Palco</h3>
-        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-artist">✕</button>
+        <h3><svg class="st-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg> Editar Artista / Ato de Palco</h3>
+        <button type="button" class="dc-modal-close" data-close-modal="dc-modal-edit-artist">X</button>
       </div>
       <div class="dc-modal-body">
         <input type="hidden" id="dc-edit-artist-id">
@@ -871,7 +871,7 @@
         </div>
       </div>
       <div class="dc-modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <button id="dc-edit-artist-delete-btn" type="button" class="dc-btn-secondary" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4); font-weight: 700;">🗑️ Eliminar</button>
+        <button id="dc-edit-artist-delete-btn" type="button" class="dc-btn-secondary" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4); font-weight: 700;"><svg class="st-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Eliminar</button>
         <div style="display: flex; gap: 8px;">
           <button type="button" class="dc-btn-secondary" data-close-modal="dc-modal-edit-artist">Cancelar</button>
           <button id="dc-edit-artist-confirm" type="button" class="dc-btn-primary">Guardar Alterações</button>
@@ -909,16 +909,17 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/mqtt.min.js?v=142"></script>
+  <script src="js/st-icons.js?v=143"></script>
+  <script src="js/mqtt.min.js?v=143"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=142"></script>
-  <script src="js/theatre-importer.js?v=142"></script>
-  <script src="js/pwa.js?v=142"></script>
-  <script src="js/local-sync.js?v=142"></script>
-  <script src="js/notifications.js?v=142"></script>
-  <script src="js/dc.js?v=142"></script>
-<script src="js/view-mode.js?v=142"></script>
+  <script src="js/schedule-importer.js?v=143"></script>
+  <script src="js/theatre-importer.js?v=143"></script>
+  <script src="js/pwa.js?v=143"></script>
+  <script src="js/local-sync.js?v=143"></script>
+  <script src="js/notifications.js?v=143"></script>
+  <script src="js/dc.js?v=143"></script>
+  <script src="js/view-mode.js?v=143"></script>
 </body>
 </html>

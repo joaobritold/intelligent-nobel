@@ -120,7 +120,7 @@ function renderLineupEventSelector(force = false) {
             : st.name;
           return `
             <button type="button" class="stage-pill ${st.isCurrent ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code)}">
-              🎪 ${escapeHtml(label)}
+              ${escapeHtml(label)}
             </button>
           `;
         }).join('');
@@ -150,17 +150,17 @@ function renderLineupEventSelector(force = false) {
           const evTitle = ev.title || ev.code;
           const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
           if (stages.length > 1) {
-            optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+            optionsHtml += `<optgroup label="${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
             stages.forEach(st => {
               const stCode = (st.code || st.id || '').toUpperCase();
               const isSel = stCode === currentCode;
-              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
+              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
             });
             optionsHtml += `</optgroup>`;
           } else {
             const stCode = (stages[0].code || ev.code).toUpperCase();
             const isSel = stCode === currentCode;
-            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)}</option>`;
           }
         });
 
@@ -468,11 +468,11 @@ function render() {
       } else if (isNext) {
         rowClass += ' is-next';
         statusClass = 'status-next';
-        statusText = '⏭ NEXT';
+        statusText = 'NEXT';
       } else if (isDone) {
         rowClass += ' is-done';
         statusClass = 'status-done';
-        statusText = '✓ FIM';
+        statusText = 'FIM';
       }
 
       const slot = slots[idx];
@@ -1060,7 +1060,9 @@ if ($videoMuteBtn) {
     if ($videoElement) {
       $videoElement.muted = isVideoMuted;
     }
-    $videoMuteBtn.textContent = isVideoMuted ? '🔇' : '🔊';
+    $videoMuteBtn.innerHTML = isVideoMuted
+      ? (window.stIcon ? window.stIcon('bell-off') : 'MUTE')
+      : (window.stIcon ? window.stIcon('bell') : 'AUDIO');
     $videoMuteBtn.title = isVideoMuted ? 'Ligar Áudio' : 'Desligar Áudio';
   });
 }

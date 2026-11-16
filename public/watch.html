@@ -4,7 +4,7 @@
   <script>
     (function() {
       try {
-        var EPOCH_KEY = 'stagetimer_watch_clean_v142';
+        var EPOCH_KEY = 'stagetimer_watch_clean_v143';
         if (localStorage.getItem(EPOCH_KEY) !== 'true') {
           var mActive = localStorage.getItem('stagetimer_master_active');
           var mV12 = localStorage.getItem('stagetimer_master_auth_v12');
@@ -57,9 +57,9 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>ShowFlow — Apple Watch (Palco)</title>
-  <link rel="stylesheet" href="css/common.css?v=142">
-  <link rel="stylesheet" href="css/viewer.css?v=142">
-  <link rel="stylesheet" href="css/watch.css?v=142">
+  <link rel="stylesheet" href="css/common.css?v=143">
+  <link rel="stylesheet" href="css/viewer.css?v=143">
+  <link rel="stylesheet" href="css/watch.css?v=143">
 </head>
 <body class="watch-body">
   <!-- Ecrã Apple Watch: Idêntico ao Modo Palco (Viewer) -->
@@ -90,7 +90,7 @@
 
     <!-- Estado de Espera (Standby) -->
     <div id="viewer-empty" class="viewer-empty" style="display: none;">
-      <div class="viewer-empty-icon">⏳</div>
+      <div class="viewer-empty-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width:24px;height:24px;stroke:#388bfd;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
       <div class="viewer-empty-text">Standby</div>
     </div>
 
@@ -106,12 +106,14 @@
     <div id="flash-overlay" class="viewer-flash-overlay"></div>
   </div>
 
+  <!-- Central SVG Icons -->
+  <script src="js/st-icons.js?v=143"></script>
   <!-- Cloud MQTT over WSS (Local + Port 443 / Port 8084) -->
-  <script src="js/mqtt.min.js?v=142"></script>
+  <script src="js/mqtt.min.js?v=143"></script>
   <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=142"></script>
-  <script src="js/local-sync.js?v=142"></script>
+  <script src="js/pwa.js?v=143"></script>
+  <script src="js/local-sync.js?v=143"></script>
   <!-- Motor de Palco (Viewer) Oficial e Testado -->
-  <script src="js/viewer.js?v=142"></script>
+  <script src="js/viewer.js?v=143"></script>
 </body>
 </html>

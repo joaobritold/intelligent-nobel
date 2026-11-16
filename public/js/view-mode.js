@@ -5,7 +5,11 @@
   var KEY = 'stagetimer_view_mode';
   var MODES = ['auto', 'phone', 'pc'];
   var LABELS = { auto: 'Auto', phone: 'Telemóvel', pc: 'PC' };
-  var ICONS = { auto: '🔄', phone: '📱', pc: '🖥️' };
+  var ICONS = {
+    auto: '<svg class="st-icon" viewBox="0 0 24 24" style="width:12px;height:12px;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>',
+    phone: '<svg class="st-icon" viewBox="0 0 24 24" style="width:12px;height:12px;"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',
+    pc: '<svg class="st-icon" viewBox="0 0 24 24" style="width:12px;height:12px;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>'
+  };
   var root = document.documentElement;
   var isViewer = /viewer(\.html)?$/i.test(location.pathname);
 

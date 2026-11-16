@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stagetimer-pfp-v142';
+const CACHE_NAME = 'stagetimer-pfp-v143';
 const ASSETS = [
   './',
   './index.html',
@@ -30,6 +30,7 @@ const ASSETS = [
   './css/dc.css',
   './css/cue-station.css',
   './css/master.css',
+  './js/st-icons.js',
   './js/mqtt.min.js',
   './js/local-sync.js',
   './js/notifications.js',

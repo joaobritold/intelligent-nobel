@@ -485,7 +485,9 @@
   function mountLockScreen() {
     const overlay = document.createElement('div');
     overlay.id = 'st-auth-overlay';
-    const roleIcon = isMasterPage ? '👑' : (isRegiesPage ? '📟' : '🔒');
+    const roleIcon = isMasterPage
+      ? (window.stIcon ? window.stIcon('shield') : '')
+      : (isRegiesPage ? (window.stIcon ? window.stIcon('radio') : '') : (window.stIcon ? window.stIcon('lock') : ''));
     const roleTitle = isMasterPage ? 'Super Régie Master' : (isRegiesPage ? 'Modo Régies' : 'Acesso Restrito');
     const roleSub = isMasterPage
       ? 'Acesso exclusivo ao Painel Master.<br>Introduza a credencial de administração:'
@@ -520,7 +522,7 @@
           spellcheck="false"
           autofocus
         />
-        <button type="button" class="st-auth-kbd-toggle" id="st-auth-kbd-toggle">🔤 Usar teclado ABC</button>
+        <button type="button" class="st-auth-kbd-toggle" id="st-auth-kbd-toggle">Usar teclado ABC</button>
         <div class="st-auth-pad" id="st-auth-pad">
           ${['1','2','3','4','5','6','7','8','9','⌫','0','OK'].map(k => `<button type="button" data-k="${k}">${k}</button>`).join('')}
         </div>`}
@@ -562,11 +564,11 @@
         if (numeric) {
           input.setAttribute('inputmode', 'text');
           input.removeAttribute('pattern');
-          kbdToggle.textContent = '🔢 Usar teclado numérico';
+          kbdToggle.textContent = 'Usar teclado numérico';
         } else {
           input.setAttribute('inputmode', 'numeric');
           input.setAttribute('pattern', '[0-9]*');
-          kbdToggle.textContent = '🔤 Usar teclado ABC';
+          kbdToggle.textContent = 'Usar teclado ABC';
         }
         input.blur();
         setTimeout(() => { try { input.focus(); } catch (_) {} }, 50);

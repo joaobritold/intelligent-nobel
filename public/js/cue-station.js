@@ -32,11 +32,11 @@ let state = null;
 const VALID_DEPTS = ['Som', 'Luz', 'Maquinaria', 'Vídeo', 'Coxias'];
 
 const DEPT_INFO = {
-  'Som': { name: 'POSTO SOM', icon: '🔊', title: 'Técnico de Som', color: '#74b9ff', border: '#0984e3' },
-  'Luz': { name: 'POSTO LUZ', icon: '💡', title: 'Técnico de Luz', color: '#ffeaa7', border: '#fdcb6e' },
-  'Maquinaria': { name: 'POSTO MAQUINARIA', icon: '⚙️', title: 'Técnico de Maquinaria', color: '#fab1a0', border: '#e17055' },
-  'Vídeo': { name: 'POSTO VÍDEO', icon: '🎥', title: 'Técnico de Vídeo', color: '#55efc4', border: '#00b894' },
-  'Coxias': { name: 'POSTO COXIAS', icon: '🎭', title: 'Técnico de Coxias / Adereços', color: '#fd79a8', border: '#e84393' }
+  'Som': { name: 'POSTO SOM', iconKey: 'volume', title: 'Técnico de Som', color: '#74b9ff', border: '#0984e3' },
+  'Luz': { name: 'POSTO LUZ', iconKey: 'sun', title: 'Técnico de Luz', color: '#ffeaa7', border: '#fdcb6e' },
+  'Maquinaria': { name: 'POSTO MAQUINARIA', iconKey: 'settings', title: 'Técnico de Maquinaria', color: '#fab1a0', border: '#e17055' },
+  'Vídeo': { name: 'POSTO VÍDEO', iconKey: 'video', title: 'Técnico de Vídeo', color: '#55efc4', border: '#00b894' },
+  'Coxias': { name: 'POSTO COXIAS', iconKey: 'theater', title: 'Técnico de Coxias / Adereços', color: '#fd79a8', border: '#e84393' }
 };
 
 function resolveDeptName(deptStr) {
@@ -230,7 +230,7 @@ function updateDeptUI() {
   const $heroBadge = document.getElementById('cs-hero-dept-badge');
   const $chkTitle = document.getElementById('cs-checklist-dept-title');
 
-  if ($icon) $icon.textContent = info.icon;
+  if ($icon) $icon.innerHTML = (window.stIcon && info.iconKey) ? window.stIcon(info.iconKey) : '';
   if ($name) {
     $name.textContent = info.name;
     $name.style.color = info.color;
@@ -288,11 +288,11 @@ function updateAudioUI() {
   if (!$audioBtn) return;
   if (audioEnabled) {
     $audioBtn.classList.add('enabled');
-    $audioIcon.textContent = '🔔';
+    $audioIcon.innerHTML = window.stIcon ? window.stIcon('bell') : '';
     $audioText.textContent = 'Som Ativo';
   } else {
     $audioBtn.classList.remove('enabled');
-    $audioIcon.textContent = '🔕';
+    $audioIcon.innerHTML = window.stIcon ? window.stIcon('bell-off') : '';
     $audioText.textContent = 'Som Mudo';
   }
 }
@@ -385,7 +385,7 @@ document.querySelectorAll('.cs-fb-btn').forEach(btn => {
 
     if ($feedbackStatus) {
       $feedbackStatus.style.display = 'inline-block';
-      $feedbackStatus.textContent = `✓ Feedback "${btn.textContent.trim()}" enviado para o Modo Jess!`;
+      $feedbackStatus.textContent = `Feedback "${btn.textContent.trim()}" enviado para o Modo Jess!`;
       setTimeout(() => {
         if ($feedbackStatus) $feedbackStatus.style.display = 'none';
       }, 3000);
@@ -425,7 +425,7 @@ function renderHeroLight() {
   if (firedCue) {
     activeFeedbackCueId = firedCue.id;
     $heroLight.className = 'cs-hero-cue-box is-go';
-    $heroIndicator.textContent = '🟢 GO! EXECUTAR AGORA';
+    $heroIndicator.textContent = 'GO! EXECUTAR AGORA';
     $heroCueNum.textContent = firedCue.num;
     $heroCueName.textContent = firedCue.name;
     $heroCueTarget.textContent = firedCue.targetText ? `Ponto de Deixa: "${firedCue.targetText}"` : (firedCue.notes || '');
@@ -440,7 +440,7 @@ function renderHeroLight() {
   } else if (standbyCue) {
     activeFeedbackCueId = standbyCue.id;
     $heroLight.className = 'cs-hero-cue-box is-standby';
-    $heroIndicator.textContent = '🟡 STANDBY — PREPARAR';
+    $heroIndicator.textContent = 'STANDBY — PREPARAR';
     $heroCueNum.textContent = standbyCue.num;
     $heroCueName.textContent = standbyCue.name;
     $heroCueTarget.textContent = standbyCue.targetText ? `Aguardar fala: "${standbyCue.targetText}"` : (standbyCue.notes || 'Preparado na posição');
@@ -458,7 +458,7 @@ function renderHeroLight() {
     if (th?.phase === 'prep' && th.showState !== 'running') {
       const timers = Array.isArray(state?.timers) ? state.timers : [];
       const firstTimer = timers.length > 0 ? timers[0] : null;
-      $heroIndicator.textContent = '🎭 PRÉ-SHOW • ALINHAMENTO DE PALCO';
+      $heroIndicator.textContent = 'PRÉ-SHOW • ALINHAMENTO DE PALCO';
       $heroCueNum.textContent = firstTimer ? '#1' : 'PRÉ';
       if (firstTimer) {
         $heroCueName.textContent = `Ato 1: ${firstTimer.name}`;
@@ -774,19 +774,19 @@ function renderStageTimer() {
   // End of event badge
   if ($eventEndBadge && typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.computeEventEndTime === 'function') {
     const endStr = StageTimerClient.computeEventEndTime(state);
-    $eventEndBadge.textContent = `🏁 Fim: ${endStr}`;
+    $eventEndBadge.textContent = `Fim: ${endStr}`;
   }
 
   if ($preShowBadge) {
     const isLive = state?.theatre?.showState === 'running' || state?.theatre?.phase === 'live';
     if (isLive) {
       $preShowBadge.textContent = '● EM CENA';
-      $preShowBadge.style.background = 'rgba(0, 184, 148, 0.2)';
-      $preShowBadge.style.color = '#55efc4';
+      $preShowBadge.style.background = 'rgba(46, 160, 67, 0.2)';
+      $preShowBadge.style.color = '#3fb950';
     } else {
-      $preShowBadge.textContent = '⏳ PRÉ-SHOW';
-      $preShowBadge.style.background = 'rgba(108, 92, 231, 0.2)';
-      $preShowBadge.style.color = '#c4b5fd';
+      $preShowBadge.textContent = 'PRÉ-SHOW';
+      $preShowBadge.style.background = 'rgba(56, 139, 253, 0.15)';
+      $preShowBadge.style.color = '#79c0ff';
     }
   }
 
@@ -890,7 +890,7 @@ function renderStageTimer() {
     }
     if ($stNotes) {
       if (activeTimer.notes && activeTimer.notes.trim()) {
-        $stNotes.textContent = `📝 ${activeTimer.notes.trim()}`;
+        $stNotes.textContent = activeTimer.notes.trim();
         $stNotes.style.display = 'block';
       } else {
         $stNotes.style.display = 'none';
@@ -980,7 +980,7 @@ function renderStageTimer() {
             badgeStyle = 'background: #fdcb6e; color: #000; font-weight: 800;';
           } else if (isDone) {
             itemClass += ' is-done';
-            badgeText = '✓ TERMINADO';
+            badgeText = 'TERMINADO';
             badgeStyle = 'background: rgba(255,255,255,0.05); color: #64748b;';
           }
 
@@ -1068,19 +1068,19 @@ render();
     if (!window.StageTimerNotifications) return;
     const perm = window.StageTimerNotifications.getBrowserPermission();
     if (perm === 'granted') {
-      if ($notifIcon) $notifIcon.textContent = '✅';
+      if ($notifIcon) $notifIcon.innerHTML = window.stIcon ? window.stIcon('check') : '';
       if ($notifText) $notifText.textContent = 'Alertas Ativos';
       $notifBtn.classList.add('enabled');
-      $notifBtn.style.borderColor = '#00b894';
+      $notifBtn.style.borderColor = '#2ea043';
       $notifBtn.title = 'Notificações nativas ativas neste ecrã';
     } else if (perm === 'denied') {
-      if ($notifIcon) $notifIcon.textContent = '❌';
+      if ($notifIcon) $notifIcon.innerHTML = window.stIcon ? window.stIcon('alert-triangle') : '';
       if ($notifText) $notifText.textContent = 'Bloqueado';
       $notifBtn.classList.remove('enabled');
-      $notifBtn.style.borderColor = '#d63031';
+      $notifBtn.style.borderColor = '#d73a49';
       $notifBtn.title = 'Notificações bloqueadas nas definições do browser';
     } else {
-      if ($notifIcon) $notifIcon.textContent = '📲';
+      if ($notifIcon) $notifIcon.innerHTML = window.stIcon ? window.stIcon('smartphone') : '';
       if ($notifText) $notifText.textContent = 'Alertas Web';
       $notifBtn.classList.remove('enabled');
       $notifBtn.style.borderColor = '';

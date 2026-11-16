@@ -63,7 +63,7 @@
   <meta property="og:type" content="website">
   <link rel="canonical" href="./index.html">
   <title>ShowFlow App — Controlo de Palco & Régies em Tempo Real</title>
-  <link rel="stylesheet" href="css/common.css?v=142">
+  <link rel="stylesheet" href="css/common.css?v=143">
   <style>
     body {
       display: flex;
@@ -330,30 +330,30 @@
         <p class="hub-sub">Selecione o seu Evento para aceder aos palcos</p>
       </div>
 
-      <!-- Master Action Bar (Escondido por defeito; desbloqueado ao clicar no relógio ⏱️) -->
-      <div id="portal-master-bar" style="display: none; background: rgba(253, 203, 110, 0.08); border: 1px solid rgba(253, 203, 110, 0.3); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+      <!-- Master Action Bar (Escondido por defeito; desbloqueado ao clicar no logótipo) -->
+      <div id="portal-master-bar" style="display: none; background: rgba(56, 139, 253, 0.08); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.25rem;">👑</span>
+          <svg class="st-icon" viewBox="0 0 24 24" style="width: 20px; height: 20px; stroke: #388bfd;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <div>
-            <div id="portal-master-status-title" style="font-size: 0.85rem; font-weight: 700; color: #fdcb6e;">👑 Modo Master Ativo</div>
-            <div id="portal-master-status-sub" style="font-size: 0.72rem; color: var(--text-secondary);">Acesso total a todos os eventos, palcos e PINs de segurança</div>
+            <div id="portal-master-status-title" style="font-size: 0.85rem; font-weight: 700; color: #79c0ff;">Modo Master Ativo</div>
+            <div id="portal-master-status-sub" style="font-size: 0.72rem; color: var(--text-muted);">Acesso total a todos os eventos, palcos e PINs de segurança</div>
           </div>
         </div>
         <div id="portal-master-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <button id="portal-btn-create-event" type="button" class="btn btn-sm btn-primary" style="font-weight: 700; background: #6c5ce7; border-color: #6c5ce7;">
-            ✨ + Criar Novo Evento
+          <button id="portal-btn-create-event" type="button" class="btn btn-sm btn-primary" style="font-weight: 700;">
+            + Criar Novo Evento
           </button>
-          <a id="portal-link-master-panel" href="master.html" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff;">
-            👑 Painel Super Régie
+          <a id="portal-link-master-panel" href="master.html" class="btn btn-sm" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-main);">
+            Painel Super Régie
           </a>
-          <button id="portal-btn-clean-ghosts" type="button" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.18); border: 1px solid rgba(108, 92, 231, 0.4); color: #c4b5fd; font-weight: 600;" title="Sincronizar nuvem e purgar eventos fantasmas em todos os aparelhos">
-            👻 Purgar Fantasmas
+          <button id="portal-btn-clean-ghosts" type="button" class="btn btn-sm" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-muted); font-weight: 600;" title="Sincronizar nuvem e purgar eventos fantasmas em todos os aparelhos">
+            Purgar Fantasmas
           </button>
-          <button id="portal-btn-clear-all" type="button" class="btn btn-sm" style="background: rgba(235, 87, 87, 0.15); border: 1px solid rgba(235, 87, 87, 0.4); color: #ff7675; font-weight: 600;" title="Eliminar todos os eventos e começar limpo a zeros">
-            🗑️ Limpar Todos os Eventos
+          <button id="portal-btn-clear-all" type="button" class="btn btn-sm btn-danger" style="font-weight: 600;" title="Eliminar todos os eventos e começar limpo a zeros">
+            Limpar Todos os Eventos
           </button>
-          <button id="portal-btn-master-logout" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-muted);">
-            🚪 Sair do Master
+          <button id="portal-btn-master-logout" type="button" class="btn btn-sm" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-muted);">
+            Sair do Master
           </button>
         </div>
       </div>
@@ -362,11 +362,11 @@
       <div class="room-card" style="margin-bottom: 20px;">
         <div class="room-label">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span>🎪 Eventos Ativos</span>
-            <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; text-transform: none;">Escolha o evento</span>
+            <span>Eventos Ativos</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500; text-transform: none;">Escolha o evento</span>
           </div>
-          <button id="portal-btn-quick-create" type="button" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 5px 12px; font-weight: 700; background: #6c5ce7; border-color: #6c5ce7;">
-            ✨ + Criar Evento
+          <button id="portal-btn-quick-create" type="button" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 5px 12px; font-weight: 700;">
+            + Criar Evento
           </button>
         </div>
         <div id="portal-events-list" class="events-list-box" style="max-height: 380px;"></div>
@@ -374,114 +374,114 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 10px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        ShowFlow App • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v142</span>
+        ShowFlow App • <span style="background: rgba(56, 139, 253, 0.15); color: #79c0ff; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(56, 139, 253, 0.3); font-weight: 700;">v143</span>
       </footer>
     </div>
 
     <!-- MODAL 1: Digitar PIN do Evento -->
     <div id="portal-pin-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
-      <div style="background: #1a1a2e; border: 1.5px solid var(--accent); border-radius: 16px; max-width: 380px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center;">
-        <div style="font-size: 2.2rem; margin-bottom: 8px;">🔒</div>
+      <div style="background: var(--bg-surface); border: 1.5px solid var(--border-subtle); border-radius: var(--radius-lg); max-width: 380px; width: 100%; padding: 24px; box-shadow: var(--shadow-lg); text-align: center;">
+        <svg class="st-icon" viewBox="0 0 24 24" style="width: 32px; height: 32px; stroke: #388bfd; margin-bottom: 8px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         <h3 id="pin-modal-event-title" style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 4px;">Nome do Evento</h3>
-        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 18px;">Introduza o PIN de 4 dígitos atribuído pela Régie:</p>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 18px;">Introduza o PIN de 4 dígitos atribuído pela Régie:</p>
         
-        <input id="pin-modal-input" type="tel" inputmode="numeric" maxlength="4" pattern="[0-9]*" placeholder="••••" autocomplete="one-time-code" style="width: 180px; text-align: center; font-size: 2rem; font-weight: 800; letter-spacing: 0.35em; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 2px solid var(--accent); border-radius: 12px; color: #fff; margin-bottom: 12px; outline: none;">
+        <input id="pin-modal-input" type="tel" inputmode="numeric" maxlength="4" pattern="[0-9]*" placeholder="••••" autocomplete="one-time-code" style="width: 180px; text-align: center; font-size: 2rem; font-weight: 800; letter-spacing: 0.35em; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 2px solid var(--border-subtle); border-radius: 12px; color: #fff; margin-bottom: 12px; outline: none;">
         
-        <div id="pin-modal-error" style="display: none; color: #ff7675; font-size: 0.8rem; font-weight: 700; margin-bottom: 14px;">❜ PIN de 4 dígitos incorreto. Tente novamente.</div>
+        <div id="pin-modal-error" style="display: none; color: #f85149; font-size: 0.8rem; font-weight: 700; margin-bottom: 14px;">PIN de 4 dígitos incorreto. Tente novamente.</div>
         
         <div style="display: flex; gap: 10px; justify-content: center; margin-top: 6px;">
-          <button id="pin-modal-cancel" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff; padding: 10px 18px;">Cancelar</button>
-          <button id="pin-modal-confirm" type="button" class="btn btn-sm btn-primary" style="padding: 10px 22px; font-weight: 700; background: #00b894; border-color: #00b894;">🔑 Entrar no Evento</button>
+          <button id="pin-modal-cancel" type="button" class="btn btn-sm" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-main); padding: 10px 18px;">Cancelar</button>
+          <button id="pin-modal-confirm" type="button" class="btn btn-sm btn-primary" style="padding: 10px 22px; font-weight: 700;">Entrar no Evento</button>
         </div>
       </div>
     </div>
 
     <!-- MODAL 2: Criar Novo Evento (Exclusivo Master) -->
     <div id="portal-create-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
-      <div style="background: #1a1a2e; border: 1.5px solid #fdcb6e; border-radius: 16px; max-width: 440px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.8);">
+      <div style="background: var(--bg-surface); border: 1.5px solid var(--border-subtle); border-radius: var(--radius-lg); max-width: 440px; width: 100%; padding: 24px; box-shadow: var(--shadow-lg);">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
-          <span style="font-size: 1.6rem;">✨</span>
+          <svg class="st-icon" viewBox="0 0 24 24" style="width: 22px; height: 22px; stroke: #388bfd;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           <div>
             <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0;">Criar Novo Evento</h3>
-            <span style="font-size: 0.72rem; color: #fdcb6e; font-weight: 600;">Exclusivo Master Régie</span>
+            <span style="font-size: 0.72rem; color: #79c0ff; font-weight: 600;">Exclusivo Master Régie</span>
           </div>
         </div>
 
         <div style="margin-bottom: 14px; text-align: left;">
-          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Tipo de Produção / Evento:</label>
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">Tipo de Produção / Evento:</label>
           <div style="display: flex; gap: 8px;">
-            <button type="button" id="create-type-concert-btn" class="btn" style="flex: 1; padding: 10px 8px; font-size: 0.85rem; font-weight: 800; border-radius: 10px; border: 1.5px solid #6c5ce7; background: rgba(108, 92, 231, 0.28); color: #fff; cursor: pointer; transition: all 0.2s ease;">
-              🎪 Concerto / Festival
+            <button type="button" id="create-type-concert-btn" class="btn" style="flex: 1; padding: 10px 8px; font-size: 0.85rem; font-weight: 800; border-radius: var(--radius-sm); border: 1.5px solid #1f6feb; background: rgba(31, 111, 235, 0.2); color: #fff; cursor: pointer; transition: all 0.2s ease;">
+              Concerto / Festival
             </button>
-            <button type="button" id="create-type-theatre-btn" class="btn" style="flex: 1; padding: 10px 8px; font-size: 0.85rem; font-weight: 700; border-radius: 10px; border: 1.5px solid var(--border); background: rgba(255, 255, 255, 0.05); color: #94a3b8; cursor: pointer; transition: all 0.2s ease;">
-              🎭 Teatro / Cénico
+            <button type="button" id="create-type-theatre-btn" class="btn" style="flex: 1; padding: 10px 8px; font-size: 0.85rem; font-weight: 700; border-radius: var(--radius-sm); border: 1.5px solid var(--border-subtle); background: var(--bg-surface); color: var(--text-muted); cursor: pointer; transition: all 0.2s ease;">
+              Teatro / Cénico
             </button>
           </div>
         </div>
 
         <div style="margin-bottom: 14px; text-align: left;">
-          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Nome do Evento / Espetáculo:</label>
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">Nome do Evento / Espetáculo:</label>
           <input id="create-modal-title" class="input" placeholder="ex: Festival de Verão 2026, Peça Hamlet, Gala..." style="width: 100%; font-size: 0.95rem;" autocomplete="off">
         </div>
 
         <div style="margin-bottom: 16px; text-align: left;">
-          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Número de Palcos no Evento:</label>
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">Número de Palcos no Evento:</label>
           <div style="display: flex; align-items: center; gap: 10px;">
             <button id="create-modal-stages-minus" type="button" class="btn btn-sm" style="padding: 8px 16px; font-size: 1.2rem; font-weight: 800;">−</button>
-            <input id="create-modal-stages-count" type="number" min="1" max="20" value="1" style="width: 70px; text-align: center; font-size: 1.2rem; font-weight: 800; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 8px; color: #fff; padding: 6px;">
+            <input id="create-modal-stages-count" type="number" min="1" max="20" value="1" style="width: 70px; text-align: center; font-size: 1.2rem; font-weight: 800; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: #fff; padding: 6px;">
             <button id="create-modal-stages-plus" type="button" class="btn btn-sm" style="padding: 8px 16px; font-size: 1.2rem; font-weight: 800;">+</button>
             <span style="font-size: 0.75rem; color: var(--text-muted);">(1 por defeito)</span>
           </div>
         </div>
 
-        <div style="background: rgba(253, 203, 110, 0.1); border: 1px dashed #fdcb6e; border-radius: 10px; padding: 12px; margin-bottom: 18px; text-align: center;">
-          <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">PIN Aleatório Gerado de 4 Dígitos:</div>
+        <div style="background: rgba(56, 139, 253, 0.08); border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 18px; text-align: center;">
+          <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">PIN Aleatório Gerado de 4 Dígitos:</div>
           <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 4px;">
-            <span id="create-modal-generated-pin" style="font-size: 1.8rem; font-weight: 900; color: #fdcb6e; letter-spacing: 0.25em;">----</span>
-            <button id="create-modal-regen-pin" type="button" class="btn btn-sm" title="Gerar outro PIN" style="padding: 4px 8px; font-size: 0.8rem; background: rgba(255,255,255,0.08);">🔄</button>
+            <span id="create-modal-generated-pin" style="font-size: 1.8rem; font-weight: 900; color: #79c0ff; letter-spacing: 0.25em; font-family: var(--font-mono);">----</span>
+            <button id="create-modal-regen-pin" type="button" class="btn btn-sm" title="Gerar outro PIN" style="padding: 4px 8px; font-size: 0.8rem; background: var(--bg-surface); border: 1px solid var(--border-subtle);"><svg class="st-icon" viewBox="0 0 24 24" style="width:12px;height:12px;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
           </div>
-          <div style="font-size: 0.7rem; color: #fdcb6e; margin-top: 4px;">Este PIN é único e exclusivo deste evento para a sua equipa.</div>
+          <div style="font-size: 0.7rem; color: #79c0ff; margin-top: 4px;">Este PIN é único e exclusivo deste evento para a sua equipa.</div>
         </div>
 
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
           <button id="create-modal-cancel" type="button" class="btn btn-sm" style="padding: 10px 18px;">Cancelar</button>
-          <button id="create-modal-confirm" type="button" class="btn btn-sm btn-primary" style="padding: 10px 22px; font-weight: 800; background: #6c5ce7; border-color: #6c5ce7;">✨ Criar e Abrir Evento</button>
+          <button id="create-modal-confirm" type="button" class="btn btn-sm btn-primary" style="padding: 10px 22px; font-weight: 800;">Criar e Abrir Evento</button>
         </div>
       </div>
     </div>
 
     <!-- MODAL 3: Palavra-passe Master (Super Régie) -->
     <div id="portal-master-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 16px;">
-      <div style="background: #1a1a2e; border: 1.5px solid #fdcb6e; border-radius: 16px; max-width: 390px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center;">
-        <div style="font-size: 2.4rem; margin-bottom: 6px;">👑</div>
-        <h3 style="font-size: 1.25rem; font-weight: 800; color: #fdcb6e; margin-bottom: 4px;">Acesso Super Régie Master</h3>
-        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 16px;">Introduza a palavra-passe Master:</p>
+      <div style="background: var(--bg-surface); border: 1.5px solid var(--border-subtle); border-radius: var(--radius-lg); max-width: 390px; width: 100%; padding: 24px; box-shadow: var(--shadow-lg); text-align: center;">
+        <svg class="st-icon" viewBox="0 0 24 24" style="width: 36px; height: 36px; stroke: #388bfd; margin-bottom: 6px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #79c0ff; margin-bottom: 4px;">Acesso Super Régie Master</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">Introduza a palavra-passe Master:</p>
 
-        <input id="master-modal-input" type="password" placeholder="Palavra-passe..." autocomplete="current-password" style="width: 100%; max-width: 250px; text-align: center; font-size: 1.15rem; font-weight: 700; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 2px solid #fdcb6e; border-radius: 12px; color: #fff; margin-bottom: 12px; outline: none;">
+        <input id="master-modal-input" type="password" placeholder="Palavra-passe..." autocomplete="current-password" style="width: 100%; max-width: 250px; text-align: center; font-size: 1.15rem; font-weight: 700; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 2px solid var(--border-subtle); border-radius: 12px; color: #fff; margin-bottom: 12px; outline: none;">
 
-        <div id="master-modal-error" style="display: none; color: #ff7675; font-size: 0.82rem; font-weight: 700; margin-bottom: 14px;">❜ Senha Master incorreta.</div>
+        <div id="master-modal-error" style="display: none; color: #f85149; font-size: 0.82rem; font-weight: 700; margin-bottom: 14px;">Senha Master incorreta.</div>
 
         <div style="display: flex; gap: 10px; justify-content: center; margin-top: 6px;">
-          <button id="master-modal-cancel" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff; padding: 10px 18px;">Cancelar</button>
-          <button id="master-modal-confirm" type="button" class="btn btn-sm btn-primary" style="padding: 10px 22px; font-weight: 800; background: #e17055; border-color: #e17055;">👑 Entrar</button>
+          <button id="master-modal-cancel" type="button" class="btn btn-sm" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-main); padding: 10px 18px;">Cancelar</button>
+          <button id="master-modal-confirm" type="button" class="btn btn-sm btn-primary" style="padding: 10px 22px; font-weight: 800;">Entrar</button>
         </div>
       </div>
     </div>
 
     <!-- MODAL 4: Ações Rápidas Master (Quando já está ativo) -->
     <div id="portal-master-active-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 16px;">
-      <div style="background: #1a1a2e; border: 1.5px solid #fdcb6e; border-radius: 16px; max-width: 390px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center;">
-        <div style="font-size: 2.4rem; margin-bottom: 6px;">👑</div>
-        <h3 style="font-size: 1.25rem; font-weight: 800; color: #fdcb6e; margin-bottom: 4px;">Modo Master Ativo</h3>
-        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 18px;">Acesso total de produção ativo:</p>
+      <div style="background: var(--bg-surface); border: 1.5px solid var(--border-subtle); border-radius: var(--radius-lg); max-width: 390px; width: 100%; padding: 24px; box-shadow: var(--shadow-lg); text-align: center;">
+        <svg class="st-icon" viewBox="0 0 24 24" style="width: 36px; height: 36px; stroke: #388bfd; margin-bottom: 6px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #79c0ff; margin-bottom: 4px;">Modo Master Ativo</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 18px;">Acesso total de produção ativo:</p>
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
-          <a href="master.html" class="btn btn-primary" style="padding: 12px; font-weight: 800; background: #e17055; border-color: #e17055; text-decoration: none;">👑 Abrir Painel Super Régie</a>
-          <button id="master-active-create-btn" type="button" class="btn" style="padding: 12px; font-weight: 700; background: rgba(108, 92, 231, 0.2); border: 1px solid var(--accent); color: #c4b5fd;">✨ + Criar Novo Evento</button>
-          <button id="master-active-logout-btn" type="button" class="btn btn-danger" style="padding: 10px; font-weight: 700;">🚪 Sair do Modo Master</button>
+          <a href="master.html" class="btn btn-primary" style="padding: 12px; font-weight: 800; text-decoration: none;">Abrir Painel Super Régie</a>
+          <button id="master-active-create-btn" type="button" class="btn" style="padding: 12px; font-weight: 700; background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-main);">+ Criar Novo Evento</button>
+          <button id="master-active-logout-btn" type="button" class="btn btn-danger" style="padding: 10px; font-weight: 700;">Sair do Modo Master</button>
         </div>
 
-        <button id="master-active-close-btn" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff;">Fechar</button>
+        <button id="master-active-close-btn" type="button" class="btn btn-sm" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-main);">Fechar</button>
       </div>
     </div>
 
@@ -491,34 +491,34 @@
     <div id="view-hub" style="display: none;">
       <!-- Header do Evento com botão de voltar ao portal -->
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
-        <button id="hub-back-to-portal-btn" type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: #c4b5fd; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+        <button id="hub-back-to-portal-btn" type="button" class="btn btn-sm" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-main); font-weight: 700; display: flex; align-items: center; gap: 6px;">
           <span>←</span> Escolher Outro Evento
         </button>
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Evento:</span>
-          <span id="hub-current-event-name" style="font-size: 0.95rem; font-weight: 800; color: #55efc4;"></span>
+          <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Evento:</span>
+          <span id="hub-current-event-name" style="font-size: 0.95rem; font-weight: 800; color: #3fb950;"></span>
           <span id="hub-event-type-badge" style="font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;"></span>
           <span id="hub-current-stage-badge" class="event-code-pill" style="display: none;"></span>
-          <a id="hub-master-link-top" href="master.html" class="btn btn-sm" style="display: none; background: rgba(253, 203, 110, 0.18); border: 1.5px solid #fdcb6e; color: #fdcb6e; font-weight: 800; text-decoration: none;">👑 Super Régie</a>
+          <a id="hub-master-link-top" href="master.html" class="btn btn-sm" style="display: none; background: rgba(56, 139, 253, 0.15); border: 1px solid var(--border-subtle); color: #79c0ff; font-weight: 800; text-decoration: none;">Super Régie</a>
         </div>
       </div>
 
       <!-- Header Principal -->
       <div class="hub-header" style="margin-bottom: 16px;">
-        <button type="button" class="hub-logo-btn" id="hub-secret-clock-btn" style="background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 8px; line-height: 1; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation;" title="Acesso Master"><img src="icon.svg?v=142" alt="ShowFlow Logo" width="72" height="72" style="filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6)); border-radius: 18px; display: inline-block;"></button>
+        <button type="button" class="hub-logo-btn" id="hub-secret-clock-btn" style="background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 8px; line-height: 1; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation;" title="Acesso Master"><img src="icon.svg?v=143" alt="ShowFlow Logo" width="72" height="72" style="filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6)); border-radius: 18px; display: inline-block;"></button>
         <h1 class="hub-title" id="hub-title-display">ShowFlow</h1>
         <p class="hub-sub">Sincronização em Tempo Real para Eventos & Palcos</p>
       </div>
 
       <!-- Caixa de Troca de Eventos (Visível quando há múltiplos eventos ou modo Master) -->
-      <div id="hub-master-events-card" class="room-card" style="display: none; margin-bottom: 20px; border: 1.5px solid rgba(253, 203, 110, 0.45); background: linear-gradient(180deg, rgba(253, 203, 110, 0.08) 0%, rgba(26, 26, 46, 0.85) 100%);">
+      <div id="hub-master-events-card" class="room-card" style="display: none; margin-bottom: 20px; border: 1px solid var(--border-subtle); background: var(--bg-surface);">
         <div class="room-label" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
-          <span id="hub-events-card-title" style="color: #fdcb6e; display: flex; align-items: center; gap: 6px; font-weight: 800;">
-            👑 Trocar de Evento (Acesso Master Régie)
+          <span id="hub-events-card-title" style="color: #79c0ff; display: flex; align-items: center; gap: 6px; font-weight: 800;">
+            Trocar de Evento (Acesso Master Régie)
           </span>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <button id="hub-portal-link-btn" type="button" class="btn btn-sm" style="background: rgba(108, 92, 231, 0.22); border: 1px solid rgba(108, 92, 231, 0.5); color: #c4b5fd; font-weight: 700; padding: 4px 10px; border-radius: 8px; font-size: 0.74rem;">📂 Ver Todos os Eventos (Portal)</button>
-            <span style="font-size: 0.72rem; color: #ffeaa7; font-weight: 600; text-transform: none;">
+            <button id="hub-portal-link-btn" type="button" class="btn btn-sm" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-main); font-weight: 700; padding: 4px 10px; border-radius: var(--radius-sm); font-size: 0.74rem;">Ver Todos os Eventos (Portal)</button>
+            <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: none;">
               Clique para mudar
             </span>
           </div>
@@ -529,9 +529,9 @@
       </div>
 
       <!-- Seletor de Palcos (só é mostrado se o evento tiver mais de 1 palco) -->
-      <div id="hub-stages-box" style="display: none; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 20px;">
-        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; margin-bottom: 10px;">
-          🎪 Palcos deste Evento (clique para alternar):
+      <div id="hub-stages-box" style="display: none; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 20px;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; margin-bottom: 10px;">
+          Palcos deste Evento (clique para alternar):
         </div>
         <div id="hub-stages-pills" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;"></div>
       </div>
@@ -542,7 +542,7 @@
       <div id="hub-grid-concert" class="modes-grid">
         <!-- Modo Configurador -->
         <a id="card-controller" href="controller.html" class="mode-card">
-          <div class="mode-icon">🎛️</div>
+          <div class="mode-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width:28px;height:28px;stroke:#388bfd;"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="10" r="2"/><circle cx="20" cy="14" r="2"/></svg></div>
           <div class="mode-info">
             <div class="mode-name">Configurador</div>
             <div class="mode-desc">Painel completo para PC. Criar timers, durações, cores e alertas.</div>
@@ -552,7 +552,7 @@
 
         <!-- Modo Operador (Mobile Safari) -->
         <a id="card-operator" href="operator.html" class="mode-card">
-          <div class="mode-icon">📱</div>
+          <div class="mode-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width:28px;height:28px;stroke:#388bfd;"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
           <div class="mode-info">
             <div class="mode-name">Modo Operador</div>
             <div class="mode-desc">Otimizado para telemóvel/Safari. Botões grandes, +1m/-1m e mensagens rápidas.</div>
@@ -562,7 +562,7 @@
 
         <!-- Modo Palco -->
         <a id="card-viewer" href="viewer.html" class="mode-card">
-          <div class="mode-icon">📺</div>
+          <div class="mode-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width:28px;height:28px;stroke:#388bfd;"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg></div>
           <div class="mode-info">
             <div class="mode-name">Modo de Palco</div>
             <div class="mode-desc">Ecrã inteiro limpo com números gigantes e alertas para o apresentador.</div>
@@ -572,7 +572,7 @@
 
         <!-- Modo Lista (Lineup & Horários) -->
         <a id="card-lineup" href="lineup.html" class="mode-card">
-          <div class="mode-icon">📋</div>
+          <div class="mode-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width:28px;height:28px;stroke:#388bfd;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></div>
           <div class="mode-info">
             <div class="mode-name">Modo Lista</div>
             <div class="mode-desc">Apresentação com a lista completa de artistas, horários e quem está em palco.</div>
@@ -581,80 +581,80 @@
         </a>
 
         <!-- Modo Régies (FOH, Palco & Técnico Mobile) -->
-        <a id="card-regies" href="regies.html" class="mode-card" style="border: 1px solid rgba(108, 92, 231, 0.45); background: linear-gradient(135deg, rgba(108, 92, 231, 0.12) 0%, rgba(225, 112, 85, 0.1) 100%);">
-          <div class="mode-icon">📟</div>
+        <a id="card-regies" href="regies.html" class="mode-card" style="border: 1px solid var(--border-subtle); background: var(--bg-surface);">
+          <div class="mode-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width:28px;height:28px;stroke:#388bfd;"><rect x="2" y="3" width="20" height="14" rx="2"/><circle cx="8" cy="10" r="2"/><circle cx="16" cy="10" r="2"/></svg></div>
           <div class="mode-info">
-            <div class="mode-name" style="color: #c4b5fd;">Modo Régies (FOH, Palco & Técnico)</div>
+            <div class="mode-name" style="color: #79c0ff;">Modo Régies (FOH, Palco & Técnico)</div>
             <div class="mode-desc">Comunicação FOH ↔ Palco e Modo Técnico Mobile: acompanhamento de palco e avisos de SM sem chamadas de intercom.</div>
             <div style="display: flex; gap: 6px; justify-content: center; margin-top: 8px; flex-wrap: wrap;">
-              <span class="mode-badge" style="background: rgba(108, 92, 231, 0.25); color: #c4b5fd;">🎚️ FOH</span>
-              <span class="mode-badge" style="background: rgba(225, 112, 85, 0.25); color: #fab1a0;">🎛️ Palco</span>
-              <span class="mode-badge" style="background: rgba(0, 184, 148, 0.25); color: #55efc4; border: 1px solid rgba(0, 184, 148, 0.5);">📱 Técnico Mobile</span>
+              <span class="mode-badge">FOH</span>
+              <span class="mode-badge">Palco</span>
+              <span class="mode-badge" style="border: 1px solid rgba(46, 160, 67, 0.4); color: #3fb950;">Técnico Mobile</span>
             </div>
           </div>
-          <span class="mode-badge" style="background: rgba(108, 92, 231, 0.25); color: #c4b5fd; border-color: #6c5ce7;">FOH • Palco • Técnico</span>
+          <span class="mode-badge" style="border-color: var(--border-subtle);">FOH • Palco • Técnico</span>
         </a>
 
         <!-- Modo Master / Super Régie -->
-        <a id="card-master" href="master.html" class="mode-card" style="border: 1px solid rgba(253, 203, 110, 0.45); background: linear-gradient(135deg, rgba(253, 203, 110, 0.08) 0%, rgba(108, 92, 231, 0.12) 100%);">
-          <div class="mode-icon">👑</div>
+        <a id="card-master" href="master.html" class="mode-card" style="border: 1px solid var(--border-subtle); background: var(--bg-surface);">
+          <div class="mode-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width:28px;height:28px;stroke:#388bfd;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
           <div class="mode-info">
-            <div class="mode-name" style="color: #fdcb6e;">Painel Master (Super Régie)</div>
+            <div class="mode-name" style="color: #79c0ff;">Painel Master (Super Régie)</div>
             <div class="mode-desc">Exclusivo: ver dispositivos online, mudar ecrãs remotamente, apagar palcos e multiview.</div>
           </div>
-          <span class="mode-badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border-color: #fdcb6e;">🔒 Acesso Restrito</span>
+          <span class="mode-badge" style="border-color: var(--border-subtle);">Acesso Restrito</span>
         </a>
       </div>
 
       <!-- Container 2: Modos de Teatro & Artes Cénicas -->
       <div id="hub-grid-theatre" class="modes-grid" style="display: none;">
         <!-- Modo Jess (Diretora de Cena) -->
-        <a id="card-dc" href="dc.html" class="mode-card" style="border: 1.5px solid #fdcb6e; background: linear-gradient(135deg, rgba(235, 77, 75, 0.2) 0%, rgba(26, 20, 45, 0.95) 100%);">
-          <div class="mode-icon">📖</div>
+        <a id="card-dc" href="dc.html" class="mode-card" style="border: 1px solid var(--border-subtle); background: var(--bg-surface);">
+          <div class="mode-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width:28px;height:28px;stroke:#388bfd;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
           <div class="mode-info">
-            <div class="mode-name" style="color: #ffeaa7; font-size: 1.15rem; font-weight: 800;">Modo Jess (Diretora de Cena)</div>
+            <div class="mode-name" style="color: #fff; font-size: 1.15rem; font-weight: 800;">Modo Jess (Diretora de Cena)</div>
             <div class="mode-desc">Ecrã Master para Teatro: guião da peça lado a lado com deixas sequenciais (STANDBY & GO com Barra de Espaço), checklists de afinação e telemetria.</div>
           </div>
-          <span class="mode-badge" style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; border: 1.5px solid #fdcb6e; font-weight: 800;">Ecrã Master / Jess</span>
+          <span class="mode-badge" style="border: 1px solid var(--border-subtle); font-weight: 700;">Ecrã Master / Jess</span>
         </a>
 
         <!-- Postos Técnicos (Cue Station) por Departamento -->
-        <div id="card-cuestation-wrapper" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(0, 184, 148, 0.15) 0%, rgba(20, 26, 38, 0.95) 100%); border: 1.5px solid #00b894; border-radius: 16px; padding: 18px;">
+        <div id="card-cuestation-wrapper" style="grid-column: 1 / -1; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 1.6rem;">🚦</span>
+              <svg class="st-icon" viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#388bfd;"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
               <div>
-                <div style="color: #55efc4; font-size: 1.15rem; font-weight: 800;">Postos Técnicos (Cue Station)</div>
-                <div style="color: var(--text-secondary); font-size: 0.82rem;">Acesso exclusivo por equipa: canal isolado sem cruzamento de deixas ou afinações.</div>
+                <div style="color: #79c0ff; font-size: 1.15rem; font-weight: 800;">Postos Técnicos (Cue Station)</div>
+                <div style="color: var(--text-muted); font-size: 0.82rem;">Acesso exclusivo por equipa: canal isolado sem cruzamento de deixas ou afinações.</div>
               </div>
             </div>
-            <span class="mode-badge" style="background: rgba(0, 184, 148, 0.2); color: #55efc4; border: 1.5px solid #00b894; font-weight: 800;">Canais Isolados</span>
+            <span class="mode-badge" style="border: 1px solid var(--border-subtle); font-weight: 700;">Canais Isolados</span>
           </div>
 
           <!-- Botões Diretos de Cada Equipa -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 10px;">
-            <a class="btn cs-dept-hub-link" data-dept="Som" href="cue-station.html?dept=Som" style="background: rgba(9, 132, 227, 0.22); border: 1.5px solid #0984e3; color: #74b9ff; font-weight: 800; padding: 12px 10px; border-radius: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none;">
-              <span style="font-size: 1.5rem;">🔊</span>
+            <a class="btn cs-dept-hub-link" data-dept="Som" href="cue-station.html?dept=Som" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-main); font-weight: 700; padding: 12px 10px; border-radius: var(--radius-sm); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none;">
+              <svg class="st-icon" viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#388bfd;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
               <span style="font-size: 0.92rem;">Posto SOM</span>
               <small style="font-size: 0.68rem; opacity: 0.8;">Deixas & Afinações</small>
             </a>
-            <a class="btn cs-dept-hub-link" data-dept="Luz" href="cue-station.html?dept=Luz" style="background: rgba(253, 203, 110, 0.22); border: 1.5px solid #fdcb6e; color: #ffeaa7; font-weight: 800; padding: 12px 10px; border-radius: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none;">
-              <span style="font-size: 1.5rem;">💡</span>
+            <a class="btn cs-dept-hub-link" data-dept="Luz" href="cue-station.html?dept=Luz" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-main); font-weight: 700; padding: 12px 10px; border-radius: var(--radius-sm); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none;">
+              <svg class="st-icon" viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#d29922;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
               <span style="font-size: 0.92rem;">Posto LUZ</span>
               <small style="font-size: 0.68rem; opacity: 0.8;">Deixas & Afinações</small>
             </a>
-            <a class="btn cs-dept-hub-link" data-dept="Maquinaria" href="cue-station.html?dept=Maquinaria" style="background: rgba(225, 112, 85, 0.22); border: 1.5px solid #e17055; color: #fab1a0; font-weight: 800; padding: 12px 10px; border-radius: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none;">
-              <span style="font-size: 1.5rem;">⚙️</span>
+            <a class="btn cs-dept-hub-link" data-dept="Maquinaria" href="cue-station.html?dept=Maquinaria" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-main); font-weight: 700; padding: 12px 10px; border-radius: var(--radius-sm); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none;">
+              <svg class="st-icon" viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#8b949e;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               <span style="font-size: 0.92rem;">Posto MAQ</span>
               <small style="font-size: 0.68rem; opacity: 0.8;">Cenário & Varas</small>
             </a>
-            <a class="btn cs-dept-hub-link" data-dept="Vídeo" href="cue-station.html?dept=Vídeo" style="background: rgba(0, 184, 148, 0.22); border: 1.5px solid #00b894; color: #55efc4; font-weight: 800; padding: 12px 10px; border-radius: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none;">
-              <span style="font-size: 1.5rem;">🎥</span>
+            <a class="btn cs-dept-hub-link" data-dept="Vídeo" href="cue-station.html?dept=Vídeo" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-main); font-weight: 700; padding: 12px 10px; border-radius: var(--radius-sm); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none;">
+              <svg class="st-icon" viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#388bfd;"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
               <span style="font-size: 0.92rem;">Posto VÍDEO</span>
               <small style="font-size: 0.68rem; opacity: 0.8;">Projeção & Telas</small>
             </a>
-            <a class="btn cs-dept-hub-link" data-dept="Coxias" href="cue-station.html?dept=Coxias" style="background: rgba(232, 67, 147, 0.22); border: 1.5px solid #e84393; color: #fd79a8; font-weight: 800; padding: 12px 10px; border-radius: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none;">
-              <span style="font-size: 1.5rem;">🎭</span>
+            <a class="btn cs-dept-hub-link" data-dept="Coxias" href="cue-station.html?dept=Coxias" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-main); font-weight: 700; padding: 12px 10px; border-radius: var(--radius-sm); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none;">
+              <svg class="st-icon" viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#bc8cff;"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
               <span style="font-size: 0.92rem;">Posto COXIA</span>
               <small style="font-size: 0.68rem; opacity: 0.8;">Atores & Adereços</small>
             </a>
@@ -664,10 +664,10 @@
 
       <!-- Share / QR Code Box -->
       <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 14px;">
-        <button id="toggle-qr-btn" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-secondary);">
-          📱 Mostrar QR Code para abrir noutro dispositivo
+        <button id="toggle-qr-btn" class="btn btn-sm" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-muted);">
+          Mostrar QR Code para abrir noutro dispositivo
         </button>
-        <div id="qr-container" style="display: none; margin-top: 8px; padding: 16px; background: #fff; border-radius: 12px; width: fit-content; margin-left: auto; margin-right: auto; text-align: center;">
+        <div id="qr-container" style="display: none; margin-top: 8px; padding: 16px; background: #fff; border-radius: var(--radius-md); width: fit-content; margin-left: auto; margin-right: auto; text-align: center;">
           <img id="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://joaobritold.github.io/intelligent-nobel/public/" alt="QR Code" style="width: 180px; height: 180px; display: block;">
           <div style="color: #111; font-size: 0.75rem; font-weight: 700; margin-top: 6px;">Aponte a câmara do telemóvel</div>
         </div>
@@ -675,14 +675,16 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        ShowFlow App • <span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.4); font-weight: 700;">v142</span>
+        ShowFlow App • <span style="background: rgba(56, 139, 253, 0.15); color: #79c0ff; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(56, 139, 253, 0.3); font-weight: 700;">v143</span>
       </footer>
     </div>
   </div>
 
-  <script src="js/mqtt.min.js?v=142"></script>
-  <script src="js/auth.js?v=142"></script>
-  <script src="js/pwa.js?v=142"></script>
+  <script src="js/auth.js?v=143"></script>
+  <script src="js/st-icons.js?v=143"></script>
+  <script src="js/mqtt.min.js?v=143"></script>
+  <script src="js/pwa.js?v=143"></script>
+  <script src="js/local-sync.js?v=143"></script>
   <script src="js/local-sync.js?v=142"></script>
   <script>
     const hubClient = new StageTimerClient({
@@ -890,15 +892,15 @@
 
       if (allEvents.length === 0) {
         $portalEventsList.innerHTML = `
-          <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary);">
-            <div style="font-size: 2.4rem; margin-bottom: 8px;">🎪</div>
+          <div style="text-align: center; padding: 32px 16px; color: var(--text-muted);">
+            <div style="margin-bottom: 8px;"><svg class="st-icon" viewBox="0 0 24 24" style="width:36px;height:36px;stroke:#388bfd;"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>
             <div style="font-size: 1.1rem; font-weight: 700; color: #fff;">Nenhum evento ativo no momento.</div>
             <div style="font-size: 0.82rem; margin-top: 6px; color: var(--text-muted);">
-              ${isMasterActive ? 'Carregue no botão abaixo para criar o seu primeiro evento com os palcos desejados.' : 'Aguarde que a Régie Master crie um evento ou clique em ⏱️ com a senha Master.'}
+              ${isMasterActive ? 'Carregue no botão abaixo para criar o seu primeiro evento com os palcos desejados.' : 'Aguarde que a Régie Master crie um evento ou use o acesso Master.'}
             </div>
             ${isMasterActive ? `
-              <button type="button" id="portal-btn-create-first" class="btn btn-primary" style="margin-top: 14px; padding: 10px 20px; font-weight: 800; background: #6c5ce7; border-color: #6c5ce7;">
-                ✨ + Criar o Primeiro Evento
+              <button type="button" id="portal-btn-create-first" class="btn btn-primary" style="margin-top: 14px; padding: 10px 20px; font-weight: 800;">
+                + Criar o Primeiro Evento
               </button>
             ` : ''}
           </div>
@@ -915,26 +917,26 @@
         const count = ev.stagesCount || (ev.stages ? ev.stages.length : 1);
         const stageLabel = count > 1 ? `${count} palcos` : '1 palco';
         const typeBadge = isTheatre
-          ? `<span style="background: rgba(253, 203, 110, 0.18); color: #fdcb6e; font-weight: 800; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(253, 203, 110, 0.35);">🎭 Teatro</span>`
-          : `<span style="background: rgba(108, 92, 231, 0.18); color: #c4b5fd; font-weight: 800; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(108, 92, 231, 0.35);">🎪 Concerto</span>`;
+          ? `<span style="background: rgba(56, 139, 253, 0.15); color: #79c0ff; font-weight: 700; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(56, 139, 253, 0.3);">Teatro</span>`
+          : `<span style="background: rgba(46, 160, 67, 0.15); color: #3fb950; font-weight: 700; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(46, 160, 67, 0.3);">Concerto</span>`;
         const pinBadge = isMasterActive
-          ? `<span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 800; font-family: var(--font-mono); padding: 4px 10px; border-radius: 8px; border: 1px solid #fdcb6e; font-size: 0.82rem;">🔑 PIN: ${escapeHtml(ev.pin)}</span>`
+          ? `<span style="background: var(--bg-surface); color: #79c0ff; font-weight: 700; font-family: var(--font-mono); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-subtle); font-size: 0.82rem;">PIN: ${escapeHtml(ev.pin)}</span>`
           : '';
 
         const copyButtons = isMasterActive ? `
-          <button type="button" class="btn btn-sm btn-copy-pin" data-copy-pin="${escapeHtml(ev.pin)}" style="padding: 4px 8px; font-size: 0.72rem; background: rgba(255,255,255,0.08); border: 1px solid var(--border);" title="Copiar PIN">📋 Copiar PIN</button>
-          <button type="button" class="btn btn-sm btn-copy-link" data-event-code="${escapeHtml(ev.code)}" data-event-pin="${escapeHtml(ev.pin)}" style="padding: 4px 8px; font-size: 0.72rem; background: rgba(108, 92, 231, 0.2); border: 1px solid var(--accent); color: #c4b5fd;" title="Copiar Link para WhatsApp">📲 Link WhatsApp</button>
+          <button type="button" class="btn btn-sm btn-copy-pin" data-copy-pin="${escapeHtml(ev.pin)}" style="padding: 4px 8px; font-size: 0.72rem; background: var(--bg-surface); border: 1px solid var(--border-subtle);" title="Copiar PIN">Copiar PIN</button>
+          <button type="button" class="btn btn-sm btn-copy-link" data-event-code="${escapeHtml(ev.code)}" data-event-pin="${escapeHtml(ev.pin)}" style="padding: 4px 8px; font-size: 0.72rem; background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-main);" title="Copiar Link para WhatsApp">Link WhatsApp</button>
         ` : '';
 
         const deleteButton = isMasterActive ? `
-          <button type="button" class="btn btn-sm" data-portal-delete="${escapeHtml(ev.code)}" data-portal-delete-title="${escapeHtml(ev.title || ev.code)}" style="padding: 8px 12px; background: rgba(235, 87, 87, 0.15); border: 1px solid rgba(235, 87, 87, 0.4); color: #ff7675; font-size: 0.85rem;" title="Eliminar este evento em definitivo">🗑️</button>
+          <button type="button" class="btn btn-sm btn-danger" data-portal-delete="${escapeHtml(ev.code)}" data-portal-delete-title="${escapeHtml(ev.title || ev.code)}" style="padding: 6px 10px; font-size: 0.85rem;" title="Eliminar este evento em definitivo">X</button>
         ` : '';
 
         return `
           <div class="event-row" data-portal-code="${escapeHtml(ev.code)}" style="padding: 14px 16px; cursor: pointer;">
             <div class="event-row-left">
                <div class="event-row-title" style="font-size: 1.05rem;">
-                <span>${isTheatre ? '🎭' : '🎪'} ${escapeHtml(ev.title || ev.code)}</span>
+                <span>${escapeHtml(ev.title || ev.code)}</span>
               </div>
               <div class="event-row-meta" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
                 ${typeBadge}
@@ -989,15 +991,15 @@
       const $typeBadge = document.getElementById('hub-event-type-badge');
       if ($typeBadge) {
         if (isTheatreEv) {
-          $typeBadge.textContent = '🎭 Modo Teatro';
-          $typeBadge.style.background = 'rgba(253, 203, 110, 0.2)';
-          $typeBadge.style.color = '#fdcb6e';
-          $typeBadge.style.border = '1px solid rgba(253, 203, 110, 0.45)';
+          $typeBadge.textContent = 'Modo Teatro';
+          $typeBadge.style.background = 'rgba(56, 139, 253, 0.15)';
+          $typeBadge.style.color = '#79c0ff';
+          $typeBadge.style.border = '1px solid rgba(56, 139, 253, 0.3)';
         } else {
-          $typeBadge.textContent = '🎪 Modo Concerto';
-          $typeBadge.style.background = 'rgba(108, 92, 231, 0.2)';
-          $typeBadge.style.color = '#c4b5fd';
-          $typeBadge.style.border = '1px solid rgba(108, 92, 231, 0.45)';
+          $typeBadge.textContent = 'Modo Concerto';
+          $typeBadge.style.background = 'rgba(46, 160, 67, 0.15)';
+          $typeBadge.style.color = '#3fb950';
+          $typeBadge.style.border = '1px solid rgba(46, 160, 67, 0.3)';
         }
       }
 
@@ -1034,8 +1036,8 @@
           $hubStagesPills.innerHTML = stages.map(st => {
             const isSel = st.code === selectedRoom;
             return `
-              <button type="button" class="btn btn-sm ${isSel ? 'btn-primary' : ''}" data-select-stage="${escapeHtml(st.code)}" style="padding: 7px 16px; font-weight: 700; border-radius: 8px; ${isSel ? 'background: #00b894; border-color: #00b894; color: #fff;' : 'background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: #cbd5e1;'}">
-                ${isSel ? '🟢' : '⚪'} ${escapeHtml(st.name || st.code)}
+              <button type="button" class="btn btn-sm ${isSel ? 'btn-primary' : ''}" data-select-stage="${escapeHtml(st.code)}" style="padding: 7px 16px; font-weight: 700; border-radius: 8px; ${isSel ? 'background: #2ea043; border-color: #2ea043; color: #fff;' : 'background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-muted);'}">
+                ${escapeHtml(st.name || st.code)}
               </button>
             `;
           }).join('');
@@ -1080,9 +1082,9 @@
       const titleSpan = document.getElementById('hub-events-card-title');
       if (titleSpan) {
         if (isMasterActive) {
-          titleSpan.innerHTML = '👑 Trocar de Evento (Acesso Master Régie)';
+          titleSpan.innerHTML = 'Trocar de Evento (Acesso Master Régie)';
         } else {
-          titleSpan.innerHTML = `🎪 Trocar de Evento Ativo (${allEvents.length} Disponíveis)`;
+          titleSpan.innerHTML = `Trocar de Evento Ativo (${allEvents.length} Disponíveis)`;
         }
       }
       const portalLinkBtn = document.getElementById('hub-portal-link-btn');
@@ -1100,30 +1102,30 @@
         const stageLabel = count > 1 ? `${count} palcos` : '1 palco';
         const timerCount = typeof ev.timersCount === 'number' ? `${ev.timersCount} artista(s)` : '0 artistas';
         const typeBadge = isTheatre
-          ? `<span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 700; font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(253, 203, 110, 0.4);">🎭 Teatro</span>`
-          : `<span style="background: rgba(108, 92, 231, 0.2); color: #c4b5fd; font-weight: 700; font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(108, 92, 231, 0.4);">🎪 Concerto</span>`;
+          ? `<span style="background: rgba(56, 139, 253, 0.15); color: #79c0ff; font-weight: 700; font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(56, 139, 253, 0.3);">Teatro</span>`
+          : `<span style="background: rgba(46, 160, 67, 0.15); color: #3fb950; font-weight: 700; font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(46, 160, 67, 0.3);">Concerto</span>`;
 
         return `
-          <div class="event-row ${isSelected ? 'active' : ''}" data-hub-switch-event="${escapeHtml(ev.code)}" style="cursor: pointer; padding: 12px 14px; border-radius: 10px; background: ${isSelected ? 'rgba(0, 184, 148, 0.16)' : 'rgba(255,255,255,0.04)'}; border: 1.5px solid ${isSelected ? '#00b894' : 'rgba(255,255,255,0.12)'}; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: all 0.2s ease;">
+          <div class="event-row ${isSelected ? 'active' : ''}" data-hub-switch-event="${escapeHtml(ev.code)}" style="cursor: pointer; padding: 12px 14px; border-radius: var(--radius-sm); background: ${isSelected ? 'rgba(46, 160, 67, 0.15)' : 'var(--bg-surface)'}; border: 1px solid ${isSelected ? '#2ea043' : 'var(--border-subtle)'}; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: all 0.2s ease;">
             <div class="event-row-left">
               <div class="event-row-title" style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1rem; font-weight: 800; color: #fff;">${isSelected ? '🟢' : '⚪'} ${isTheatre ? '🎭' : '🎪'} ${escapeHtml(ev.title || ev.code)}</span>
+                <span style="font-size: 1rem; font-weight: 700; color: #fff;">${escapeHtml(ev.title || ev.code)}</span>
                 <span class="event-code-pill">${escapeHtml(ev.code)}</span>
               </div>
-              <div class="event-row-meta" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; font-size: 0.75rem; color: var(--text-secondary);">
+              <div class="event-row-meta" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; font-size: 0.75rem; color: var(--text-muted);">
                 ${typeBadge}
                 <span>•</span>
                 <span>${stageLabel}</span>
                 <span>•</span>
-                <span style="background: rgba(253, 203, 110, 0.2); color: #fdcb6e; font-weight: 800; font-family: var(--font-mono); padding: 1px 7px; border-radius: 5px; border: 1px solid rgba(253, 203, 110, 0.4); font-size: 0.72rem;">🔑 PIN: ${escapeHtml(ev.pin)}</span>
+                <span style="background: var(--bg-surface); color: #79c0ff; font-weight: 700; font-family: var(--font-mono); padding: 1px 7px; border-radius: 5px; border: 1px solid var(--border-subtle); font-size: 0.72rem;">PIN: ${escapeHtml(ev.pin)}</span>
                 <span>•</span>
                 <span>${timerCount}</span>
-                ${isSelected ? '<strong style="color: #55efc4; margin-left: 4px;">• EVENTO ATIVO</strong>' : ''}
+                ${isSelected ? '<strong style="color: #3fb950; margin-left: 4px;">• EVENTO ATIVO</strong>' : ''}
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
-              <button type="button" class="btn btn-sm ${isSelected ? 'btn-primary' : ''}" style="pointer-events: none; padding: 5px 12px; font-size: 0.75rem; ${isSelected ? 'background: #00b894; border-color: #00b894; color: #fff; font-weight: 700;' : 'background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #cbd5e1;'}">
-                ${isSelected ? '✓ Selecionado' : 'Mudar para Este'}
+              <button type="button" class="btn btn-sm ${isSelected ? 'btn-primary' : ''}" style="pointer-events: none; padding: 5px 12px; font-size: 0.75rem; ${isSelected ? 'background: #2ea043; border-color: #2ea043; color: #fff; font-weight: 700;' : 'background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-muted);'}">
+                ${isSelected ? 'Selecionado' : 'Mudar para Este'}
               </button>
             </div>
           </div>
@@ -1204,7 +1206,7 @@
           const pin = copyPinBtn.dataset.copyPin;
           navigator.clipboard.writeText(pin).then(() => {
             const old = copyPinBtn.textContent;
-            copyPinBtn.textContent = '✓ Copiado!';
+            copyPinBtn.textContent = 'Copiado!';
             setTimeout(() => { copyPinBtn.textContent = old; }, 1500);
           }).catch(() => {});
           return;
@@ -1220,7 +1222,7 @@
           const shareUrl = `${baseUrl}/index.html?event=${encodeURIComponent(code)}&pin=${encodeURIComponent(pin)}`;
           navigator.clipboard.writeText(shareUrl).then(() => {
             const old = copyLinkBtn.textContent;
-            copyLinkBtn.textContent = '✓ Link Copiado!';
+            copyLinkBtn.textContent = 'Link Copiado!';
             setTimeout(() => { copyLinkBtn.textContent = old; }, 1500);
           }).catch(() => {});
           return;
@@ -1308,7 +1310,7 @@
       } else {
         if ($pinModalError) {
           $pinModalError.style.display = 'block';
-          $pinModalError.textContent = res.error || '❜ PIN de 4 dígitos incorreto.';
+          $pinModalError.textContent = res.error || 'PIN de 4 dígitos incorreto.';
         }
         if ($pinModalInput) {
           $pinModalInput.focus();
@@ -1439,15 +1441,15 @@
         if (confirm('Purgar todos os eventos e palcos fantasmas e sincronizar a nuvem em todos os dispositivos?')) {
           hubClient.forceCloudRegistrySync();
           renderView();
-          $portalBtnCleanGhosts.textContent = '✅ Nuvem Limpa!';
-          setTimeout(() => { $portalBtnCleanGhosts.textContent = '👻 Purgar Fantasmas'; }, 2000);
+          $portalBtnCleanGhosts.textContent = 'Nuvem Limpa!';
+          setTimeout(() => { $portalBtnCleanGhosts.textContent = 'Purgar Fantasmas'; }, 2000);
         }
       });
     }
     if ($portalBtnClearAll) {
       $portalBtnClearAll.addEventListener('click', () => {
         if (!isMasterActive) return;
-        const conf = confirm('⚠️ ATENÇÃO: Deseja eliminar TODOS os eventos e repor o sistema do zero em todos os dispositivos?');
+        const conf = confirm('AVISO: Deseja eliminar TODOS os eventos e repor o sistema do zero em todos os dispositivos?');
         if (conf) {
           hubClient.clearAllEvents();
           currentUnlockedEventCode = '';
@@ -1457,7 +1459,7 @@
           localStorage.removeItem('stagetimer_device_room');
           localStorage.removeItem('stagetimer_last_room');
           renderView();
-          alert('✅ Todos os eventos foram eliminados com sucesso!');
+          alert('Todos os eventos foram eliminados com sucesso!');
         }
       });
     }
@@ -1686,6 +1688,6 @@
 
     renderView();
   </script>
-<script src="js/view-mode.js?v=142"></script>
+<script src="js/view-mode.js?v=143"></script>
 </body>
 </html>

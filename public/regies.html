@@ -55,8 +55,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>ShowFlow — Modo Régies (FOH & Palco)</title>
-  <link rel="stylesheet" href="css/common.css?v=142">
-  <link rel="stylesheet" href="css/regies.css?v=142">
+  <link rel="stylesheet" href="css/common.css?v=143">
+  <link rel="stylesheet" href="css/regies.css?v=143">
 </head>
 <body>
   <div id="lineup-screen" class="lineup-screen">
@@ -65,50 +65,50 @@
       <div class="regie-header-left">
         <!-- Home / Brand -->
         <a id="regie-nav-hub" href="index.html?portal=1" class="regie-home-link" title="Voltar ao Início / Escolher Evento">
-          <span style="font-size: 1.4rem;">📟</span>
+          <svg class="st-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; stroke: #388bfd;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           <span class="regie-header-title">RÉGIES</span>
-          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(108, 92, 231, 0.2); color: #c4b5fd; border: 1px solid rgba(108, 92, 231, 0.4);">v142</span>
+          <span class="badge" style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; opacity: 0.8; background: rgba(56, 139, 253, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.3);">v143</span>
         </a>
 
         <!-- Stage Selector Pill -->
         <div class="regie-stage-pill-box">
-          <span style="font-size: 0.85rem;">🎪</span>
+          <svg class="st-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
           <span id="lineup-stage-badge" class="regie-stage-badge-text" title="Tocar para trocar de palco">Palco</span>
-          <select id="lineup-event-select" class="master-stage-select" style="display: none;" title="👑 Trocar Palco"></select>
+          <select id="lineup-event-select" class="master-stage-select" style="display: none;" title="Trocar Palco"></select>
         </div>
         <div id="lineup-stage-pills" class="stage-pills-bar" style="display: none;"></div>
 
         <!-- Sleek Station Toggle (FOH vs Palco vs Técnico) -->
         <div class="regie-station-pill">
           <button id="regie-btn-foh" class="regie-station-toggle-btn active" type="button" title="Modo Régie de Frente">
-            🎚️ FOH
+            <svg class="st-icon" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="10" r="2"/><circle cx="20" cy="14" r="2"/></svg> FOH
           </button>
           <button id="regie-btn-stage" class="regie-station-toggle-btn" type="button" title="Modo Régie de Palco">
-            🎛️ Palco
+            <svg class="st-icon" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><rect x="2" y="3" width="20" height="14" rx="2"/><circle cx="8" cy="10" r="2"/><circle cx="16" cy="10" r="2"/></svg> Palco
           </button>
           <button id="regie-btn-tech" class="regie-station-toggle-btn" type="button" title="Modo Técnico Mobile (Avisos de SM e Palco sem chamadas sonoras)">
-            🔧 Técnico
+            <svg class="st-icon" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> Técnico
           </button>
         </div>
 
         <!-- Notification Bell -->
-        <button id="regie-notif-btn" type="button" class="btn btn-sm" title="Ativar Notificações no Telemóvel" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); padding: 5px 8px; font-size: 0.9rem; border-radius: 8px; cursor: pointer;">🔔</button>
+        <button id="regie-notif-btn" type="button" class="btn btn-sm" title="Ativar Notificações no Telemóvel" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); padding: 5px 8px; border-radius: var(--radius-sm); cursor: pointer;"><svg class="st-icon" viewBox="0 0 24 24" style="width: 15px; height: 15px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
 
         <!-- Technician User Badge (Visible in Técnico mode) -->
         <button id="regie-tech-user-btn" class="regie-tech-user-btn" type="button" style="display: none;" title="Tocar para definir ou alterar o seu nome de Técnico">
-          <span>👤</span>
+          <svg class="st-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span id="regie-tech-user-label">Identificar Técnico</span>
-          <span class="regie-tech-user-edit">✏️</span>
+          <span class="regie-tech-user-edit"><svg class="st-icon" viewBox="0 0 24 24" style="width: 12px; height: 12px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>
         </button>
       </div>
 
       <!-- Center Hero Call Button (5s Burst) -->
       <div class="regie-header-center">
         <button id="regie-call-btn" class="regie-hero-call-btn" type="button" title="Acionar aviso de 5 segundos no Intercom">
-          <span>🚨</span> <span id="regie-call-btn-text">CALL PALCO</span>
+          <svg class="st-icon" viewBox="0 0 24 24" style="width: 16px; height: 16px; stroke: #fff;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> <span id="regie-call-btn-text">CALL PALCO</span>
         </button>
         <button id="regie-audio-btn" class="regie-mini-audio-btn enabled" type="button" title="Ativar ou desativar aviso sonoro">
-          <span id="regie-audio-icon">🔔</span>
+          <span id="regie-audio-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></span>
         </button>
       </div>
 
@@ -116,7 +116,7 @@
       <div class="regie-header-right">
         <div class="regie-meta-box regie-header-timer-box" title="Contador do artista / ato atual em palco">
           <span class="regie-meta-label">CONTADOR</span>
-          <span id="regie-header-timer" class="regie-meta-value" style="color: #00ffb3; font-weight: 800; font-family: var(--font-mono, monospace);">--:--</span>
+          <span id="regie-header-timer" class="regie-meta-value" style="color: #3fb950; font-weight: 800; font-family: var(--font-mono, monospace);">--:--</span>
         </div>
         <div class="regie-meta-box">
           <span class="regie-meta-label">FIM PREVISTO</span>
@@ -127,7 +127,7 @@
           <div id="lineup-local-clock" class="regie-clock-value">--:--:--</div>
         </div>
         <button id="regie-fs-btn" type="button" class="regie-fs-btn" title="Ecrã Completo (F)" aria-label="Ecrã Completo">
-          <span id="regie-fs-icon">⛶</span>
+          <span id="regie-fs-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><polyline points="21 15 21 21 15 21"/><polyline points="3 9 3 3 9 3"/></svg></span>
         </button>
       </div>
     </header>
@@ -135,14 +135,14 @@
     <!-- Massive Flashing Incoming Call Alert (Full-Screen Alarm Takeover) -->
     <section id="regie-incoming-alert" class="regie-incoming-alert" role="alert" aria-live="assertive" title="Tocar em qualquer ponto do ecrã para atender">
       <div class="regie-incoming-inner">
-        <div class="regie-incoming-icon" aria-hidden="true">🚨</div>
+        <div class="regie-incoming-icon" aria-hidden="true"><svg class="st-icon" viewBox="0 0 24 24" style="width: 48px; height: 48px; stroke: #d73a49;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
         <div class="regie-incoming-text-box">
           <div id="regie-incoming-title" class="regie-incoming-title">CHAMADA INTERCOM!</div>
           <div id="regie-incoming-sub" class="regie-incoming-sub">A outra régie está a chamar. Por favor verifique o intercomunicador.</div>
         </div>
         <div class="regie-incoming-actions">
           <button id="regie-incoming-ack-btn" class="regie-ack-btn" type="button">
-            ✓ CIENTE / ATENDIDO
+            CIENTE / ATENDIDO
           </button>
           <div class="regie-incoming-hint">Toque no botão, clique no ecrã ou prima [Espaço] / [Enter] para atender</div>
         </div>
@@ -153,29 +153,29 @@
     <section id="regie-msg-banner" class="regie-msg-banner">
       <div class="regie-msg-content">
         <div class="regie-msg-header">
-          <span id="regie-msg-sender-label">📱 MENSAGEM S.MANAGER</span>
+          <span id="regie-msg-sender-label">MENSAGEM S.MANAGER</span>
           <span id="regie-msg-time" style="opacity: 0.8; font-family: var(--font-mono);"></span>
         </div>
         <div id="regie-msg-text" class="regie-msg-text">--</div>
         <div id="regie-msg-receipts" class="regie-msg-receipts">
-          <span id="regie-receipt-foh" class="regie-msg-receipt-pill">🎚️ FOH: Aguarda</span>
-          <span id="regie-receipt-stage" class="regie-msg-receipt-pill">🎛️ Palco: Aguarda</span>
-          <span id="regie-receipt-tech" class="regie-msg-receipt-pill">🔧 Técnico: Aguarda</span>
+          <span id="regie-receipt-foh" class="regie-msg-receipt-pill">FOH: Aguarda</span>
+          <span id="regie-receipt-stage" class="regie-msg-receipt-pill">Palco: Aguarda</span>
+          <span id="regie-receipt-tech" class="regie-msg-receipt-pill">Técnico: Aguarda</span>
           <span id="regie-receipt-tech-list" style="display: contents;"></span>
         </div>
       </div>
       <button id="regie-msg-ack-btn" class="regie-msg-ack-btn" type="button">
-        ✓ CONFIRMAR LEITURA
+        CONFIRMAR LEITURA
       </button>
     </section>
 
     <!-- Mobile Segment Switcher (Visível em Telemóveis e Tablets) -->
     <nav id="regie-mobile-tabs" class="regie-mobile-tab-bar" aria-label="Navegação Régie Mobile">
       <button type="button" class="regie-mobile-tab-btn active" data-regie-view="now">
-        <span>⚡</span> <span>Em Palco & Avisos</span>
+        <svg class="st-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> <span>Em Palco & Avisos</span>
       </button>
       <button type="button" class="regie-mobile-tab-btn" data-regie-view="lineup">
-        <span>📋</span> <span>Alinhamento & Horários</span>
+        <svg class="st-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> <span>Alinhamento & Horários</span>
       </button>
     </nav>
 
@@ -196,7 +196,7 @@
         <aside id="regie-history-card" class="regie-history-card">
           <div class="regie-history-header">
             <div class="regie-history-title">
-              <span>📋</span>
+              <svg class="st-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
               <span>HISTÓRICO DE AVISOS & CHAMADAS</span>
             </div>
             <span id="regie-history-count" class="regie-history-count-badge">0</span>
@@ -222,7 +222,7 @@
   <div id="regie-tech-modal" class="regie-tech-modal-overlay" style="display: none;">
     <div class="regie-tech-modal">
       <div class="regie-tech-modal-header">
-        <div class="regie-tech-modal-title">🔧 Identificação do Técnico</div>
+        <div class="regie-tech-modal-title">Identificação do Técnico</div>
         <p class="regie-tech-modal-sub">
           Indique o seu nome para que o Stage Manager e as Régies vejam a sua confirmação de leitura individualmente.
         </p>
@@ -241,36 +241,38 @@
 
         <div class="regie-tech-role-chips-label">Especialidade rápida (opcional):</div>
         <div class="regie-tech-role-chips">
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="Som">🔊 Som</button>
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="Monitores">🎧 Monitores</button>
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="RF / Micros">🎤 RF / Micros</button>
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="Backline">🎸 Backline</button>
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="Luz">💡 Luz</button>
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="Vídeo">📽️ Vídeo</button>
-          <button type="button" class="regie-tech-role-chip" data-role-suffix="Palco">🎪 Palco</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Som">Som</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Monitores">Monitores</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="RF / Micros">RF / Micros</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Backline">Backline</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Luz">Luz</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Vídeo">Vídeo</button>
+          <button type="button" class="regie-tech-role-chip" data-role-suffix="Palco">Palco</button>
         </div>
 
         <div id="regie-tech-online-box" class="regie-tech-online-box" style="display: none;">
-          <div class="regie-tech-online-title">🟢 Técnicos ativos neste palco:</div>
+          <div class="regie-tech-online-title">Técnicos ativos neste palco:</div>
           <div id="regie-tech-online-list" class="regie-tech-online-list"></div>
         </div>
       </div>
 
       <div class="regie-tech-modal-actions">
         <button id="regie-tech-cancel-btn" type="button" class="regie-tech-btn-secondary">Cancelar</button>
-        <button id="regie-tech-save-btn" type="button" class="regie-tech-btn-primary">✓ Guardar Nome</button>
+        <button id="regie-tech-save-btn" type="button" class="regie-tech-btn-primary">Guardar Nome</button>
       </div>
     </div>
   </div>
 
   <!-- Access Control -->
-  <script src="js/auth.js?v=142"></script>
+  <script src="js/auth.js?v=143"></script>
+  <!-- Central SVG Icons -->
+  <script src="js/st-icons.js?v=143"></script>
   <!-- Cloud MQTT over WSS -->
-  <script src="js/mqtt.min.js?v=142"></script>
-  <script src="js/pwa.js?v=142"></script>
-  <script src="js/local-sync.js?v=142"></script>
-  <script src="js/notifications.js?v=142"></script>
-  <script src="js/regies.js?v=142"></script>
-<script src="js/view-mode.js?v=142"></script>
+  <script src="js/mqtt.min.js?v=143"></script>
+  <script src="js/pwa.js?v=143"></script>
+  <script src="js/local-sync.js?v=143"></script>
+  <script src="js/notifications.js?v=143"></script>
+  <script src="js/regies.js?v=143"></script>
+  <script src="js/view-mode.js?v=143"></script>
 </body>
 </html>

@@ -119,15 +119,15 @@ function renderDayTabs(force = false) {
     const isAct = d === currentDay;
     const count = Array.isArray(daysMap[String(d)]) ? daysMap[String(d)].length : (isAct ? state.timers.length : 0);
     return `
-      <div style="display: inline-flex; align-items: center; border-radius: 8px; overflow: hidden; border: 1px solid ${isAct ? 'var(--accent)' : 'var(--border)'}; background: ${isAct ? 'rgba(108, 92, 231, 0.25)' : 'rgba(255,255,255,0.03)'};">
+      <div style="display: inline-flex; align-items: center; border-radius: 6px; overflow: hidden; border: 1px solid ${isAct ? 'var(--accent)' : 'var(--border)'}; background: ${isAct ? 'rgba(31, 111, 235, 0.2)' : 'var(--bg-card)'};">
         <button type="button" class="btn btn-sm ${isAct ? 'btn-primary' : ''}" data-switch-day="${d}" style="padding: 4px 10px; font-size: 0.76rem; font-weight: 700; border: none; border-radius: 0;">
-          📅 Dia ${d} <span style="opacity: 0.75; font-size: 0.7rem;">(${count})</span>
+          Dia ${d} <span style="opacity: 0.75; font-size: 0.7rem;">(${count})</span>
         </button>
-        ${dayKeys.length > 1 ? `<button type="button" data-del-day="${d}" title="Apagar Dia ${d}" style="background: transparent; border: none; color: #ff7675; cursor: pointer; padding: 4px 6px; font-size: 0.7rem; font-weight: 700;">✕</button>` : ''}
+        ${dayKeys.length > 1 ? `<button type="button" data-del-day="${d}" title="Apagar Dia ${d}" style="background: transparent; border: none; color: var(--red); cursor: pointer; padding: 4px 6px; font-size: 0.7rem; font-weight: 700;">X</button>` : ''}
       </div>
     `;
   }).join('') + `
-    <button id="ctrl-add-day-btn" type="button" class="btn btn-sm" style="padding: 4px 9px; font-size: 0.74rem; background: rgba(0, 184, 148, 0.18); border-color: rgba(0, 184, 148, 0.45); color: #55efc4;" title="Adicionar novo dia a este evento">+ Dia</button>
+    <button id="ctrl-add-day-btn" type="button" class="btn btn-sm" style="padding: 4px 9px; font-size: 0.74rem; background: rgba(46, 160, 67, 0.15); border-color: rgba(46, 160, 67, 0.4); color: var(--green);" title="Adicionar novo dia a este evento">+ Dia</button>
   `;
 }
 
@@ -228,24 +228,24 @@ function renderEventSelector(force = false) {
           const evTitle = ev.title || ev.code;
           const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
           if (stages.length > 1) {
-            optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+            optionsHtml += `<optgroup label="${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
             stages.forEach(st => {
               const stCode = (st.code || st.id || '').toUpperCase();
               const isSel = stCode === currentCode;
-              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
+              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
             });
             optionsHtml += `</optgroup>`;
           } else {
             const stCode = (stages[0].code || ev.code).toUpperCase();
             const isSel = stCode === currentCode;
-            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)}</option>`;
           }
         });
 
         // Add utility actions into select
-        optionsHtml += `<optgroup label="⚡ Ações">`;
-        optionsHtml += `<option value="__NEW_CLEAN__">➕ Criar / Gerir Eventos...</option>`;
-        optionsHtml += `<option value="__GO_PORTAL__">🏠 Escolher Outro Evento (Início)...</option>`;
+        optionsHtml += `<optgroup label="Ações">`;
+        optionsHtml += `<option value="__NEW_CLEAN__">+ Criar / Gerir Eventos...</option>`;
+        optionsHtml += `<option value="__GO_PORTAL__">Início (Hub de Eventos)...</option>`;
         optionsHtml += `</optgroup>`;
 
         $ctrlEventSelect.innerHTML = optionsHtml;
@@ -289,7 +289,7 @@ function renderEventSelector(force = false) {
             : st.name;
           return `
             <button type="button" class="stage-pill ${isAct ? 'active' : ''}" data-ctrl-switch-stage="${escapeHtml(st.code)}" data-switch-stage="${escapeHtml(st.code)}">
-              🎪 ${escapeHtml(label)}
+              <span class="st-icon">${window.ST_ICONS?.stage || ''}</span> ${escapeHtml(label)}
             </button>
           `;
         }).join('');
@@ -306,14 +306,14 @@ function renderEventSelector(force = false) {
       const targetStageCode = (Array.isArray(ev.stages) && ev.stages.length > 0) ? (ev.stages[0].code || ev.code) : ev.code;
       const isAct = ev.code === currentCode || (Array.isArray(ev.stages) && ev.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode));
       return `
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid ${isAct ? '#00b894' : 'var(--border)'}; font-size: 0.8rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 6px; background: var(--bg-card); border: 1px solid ${isAct ? 'var(--green)' : 'var(--border)'}; font-size: 0.8rem;">
           <div>
             <strong>${escapeHtml(ev.title || ev.code)}</strong>
             <span style="color: var(--text-secondary); font-family: var(--font-mono); margin-left: 6px; font-size: 0.72rem;">(${escapeHtml(ev.code)})</span>
           </div>
           <div style="display: flex; gap: 6px;">
             <button type="button" class="btn btn-sm ${isAct ? 'btn-primary' : ''}" data-open-ev="${escapeHtml(targetStageCode)}" data-event-root="${escapeHtml(ev.code)}" style="padding: 3px 8px; font-size: 0.72rem;">${isAct ? 'Ativo' : 'Abrir'}</button>
-            ${list.length > 1 ? `<button type="button" class="btn btn-sm btn-danger" data-del-ev="${escapeHtml(ev.code)}" style="padding: 3px 8px; font-size: 0.72rem;" title="Apagar este evento">🗑️</button>` : ''}
+            ${list.length > 1 ? `<button type="button" class="btn btn-sm btn-danger" data-del-ev="${escapeHtml(ev.code)}" style="padding: 3px 8px; font-size: 0.72rem;" title="Apagar este evento"><svg class="st-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>` : ''}
           </div>
         </div>
       `;
@@ -499,19 +499,19 @@ function updateConnectionBadge(count) {
 
   if (status === 'hybrid') {
     $connectionBadge.className = 'connection-badge connected';
-    $connectionBadge.innerHTML = `<span class="connection-dot" style="background:#55efc4; box-shadow:0 0 8px #55efc4;"></span> 🛡️ Híbrido ${countStr}`;
+    $connectionBadge.innerHTML = `<span class="connection-dot" style="background:var(--green);"></span> Híbrido ${countStr}`;
     $connectionBadge.title = 'Modo de Alta Disponibilidade: Cloud MQTT + LAN Hub Local ativos em simultâneo.';
   } else if (status === 'local_hub') {
     $connectionBadge.className = 'connection-badge connected';
-    $connectionBadge.innerHTML = `<span class="connection-dot" style="background:#f1c40f; box-shadow:0 0 8px #f1c40f;"></span> ⚡ LAN Local ${countStr}`;
+    $connectionBadge.innerHTML = `<span class="connection-dot" style="background:var(--yellow);"></span> LAN Local ${countStr}`;
     $connectionBadge.title = 'Sincronização em rede local LAN ativa (resiliente a falhas de Internet externa).';
   } else if (status === 'cloud') {
     $connectionBadge.className = 'connection-badge connected';
-    $connectionBadge.innerHTML = `<span class="connection-dot" style="background:#0984e3; box-shadow:0 0 8px #0984e3;"></span> 🌐 Nuvem ${countStr}`;
+    $connectionBadge.innerHTML = `<span class="connection-dot" style="background:var(--accent);"></span> Nuvem ${countStr}`;
     $connectionBadge.title = 'Sincronização via Cloud MQTT (Internet WAN).';
   } else {
     $connectionBadge.className = 'connection-badge disconnected';
-    $connectionBadge.innerHTML = `<span class="connection-dot" style="background:#ff7675;"></span> 🔴 Desligado`;
+    $connectionBadge.innerHTML = `<span class="connection-dot" style="background:var(--red);"></span> Desligado`;
     $connectionBadge.title = 'Desligado da rede.';
   }
 }
@@ -747,9 +747,9 @@ function renderTimers() {
     lastRenderedStructureSig = 'EMPTY';
     $timerList.innerHTML = `
       <div class="empty-state">
-        <div class="empty-state-icon">⏱️</div>
-        <div class="empty-state-text">No timers yet</div>
-        <div class="empty-state-sub">Click "Add Timer" to get started</div>
+        <div class="empty-state-icon"><svg class="st-icon" style="width: 44px; height: 44px; opacity: 0.35;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
+        <div class="empty-state-text">Nenhum artista ou timer adicionado</div>
+        <div class="empty-state-sub">Clique em "Adicionar Artista" para começar</div>
       </div>
     `;
     return;
@@ -774,7 +774,7 @@ function renderTimers() {
         }
         const endBadge = card.querySelector('.timer-end-badge');
         if (endBadge) {
-          endBadge.textContent = `🏁 Fim previsto: ${getEstimatedEndTime(timer)}`;
+          endBadge.textContent = `Fim previsto: ${getEstimatedEndTime(timer)}`;
         }
         const bar = card.querySelector('.timer-progress-bar');
         if (bar && timer.mode === 'countdown') {
@@ -828,9 +828,9 @@ function renderTimers() {
               data-action="fire-direct"
               data-timer-id="${timer.id}"
               title="Disparar direto: coloca no ar e arranca imediatamente o contador"
-              style="font-weight: 800; padding: 4px 10px; box-shadow: 0 2px 6px rgba(0, 184, 148, 0.4);"
+              style="font-weight: 600; padding: 4px 10px;"
             >
-              🚀 Disparar
+              <svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Disparar
             </button>
             <button
               class="btn btn-sm timer-active-btn ${isActive ? 'is-active' : ''}"
@@ -856,12 +856,12 @@ function renderTimers() {
           <div class="timer-meta">
             <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
               <select class="input timer-mode-select" data-timer-id="${timer.id}" data-field="mode">
-                <option value="countdown" ${timer.mode === 'countdown' ? 'selected' : ''}>⏬ Countdown</option>
-                <option value="countup" ${timer.mode === 'countup' ? 'selected' : ''}>⏫ Count Up</option>
-                <option value="clock" ${timer.mode === 'clock' ? 'selected' : ''}>🕐 Clock</option>
+                <option value="countdown" ${timer.mode === 'countdown' ? 'selected' : ''}>Countdown</option>
+                <option value="countup" ${timer.mode === 'countup' ? 'selected' : ''}>Count Up</option>
+                <option value="clock" ${timer.mode === 'clock' ? 'selected' : ''}>Clock</option>
               </select>
               ${timer.mode !== 'clock' ? `
-                <span class="timer-end-badge" title="Hora prevista de término">🏁 Fim previsto: ${endTimeStr}</span>
+                <span class="timer-end-badge" title="Hora prevista de término">Fim: ${endTimeStr}</span>
               ` : ''}
             </div>
             ${timer.mode !== 'clock' ? `
@@ -888,8 +888,8 @@ function renderTimers() {
                   spellcheck="false"
                 />
                 ${slot?.real?.slotRange ? `
-                  <span class="badge" style="font-size: 0.68rem; background: rgba(108,92,231,0.22); color: #c4b5fd; border: 1px solid rgba(108,92,231,0.45); font-weight: 700; padding: 2px 6px;" title="Horário Real estimado em tempo real para situar no dia">
-                    ⏱️ Real: ${escapeHtml(slot.real.slotRange)}${slot.isDelayed ? ` <span style="color:#fdcb6e;">(${slot.delayStr})</span>` : ''}
+                  <span class="badge" style="font-size: 0.68rem; background: rgba(31, 111, 235, 0.15); color: #79c0ff; border: 1px solid rgba(56, 139, 253, 0.4); font-weight: 600; padding: 2px 6px;" title="Horário Real estimado em tempo real para situar no dia">
+                    Real: ${escapeHtml(slot.real.slotRange)}${slot.isDelayed ? ` <span style="color:var(--yellow);">(${slot.delayStr})</span>` : ''}
                   </span>
                 ` : ''}
               </div>
@@ -901,7 +901,7 @@ function renderTimers() {
           <input
             class="input timer-notes-input"
             style="width: 100%; font-size: 0.8rem; padding: 6px 10px;"
-            placeholder="📝 Notas de palco para este artista (aparece debaixo do relógio)..."
+            placeholder="Notas de palco para este artista (aparece debaixo do relógio)..."
             value="${escapeHtml(timer.notes || '')}"
             data-timer-id="${timer.id}"
             data-field="notes"
@@ -910,11 +910,11 @@ function renderTimers() {
 
         <div class="timer-card-bottom">
           <div class="timer-controls">
-            <button class="btn btn-icon btn-sm ${isRunning ? 'btn-success' : ''}" data-action="toggle" data-timer-id="${timer.id}" title="${isRunning ? 'Pause' : 'Start'}">
-              ${isRunning ? '⏸' : '▶'}
+            <button class="btn btn-icon btn-sm ${isRunning ? 'btn-success' : ''}" data-action="toggle" data-timer-id="${timer.id}" title="${isRunning ? 'Pausar' : 'Iniciar'}">
+              ${isRunning ? '<svg class="st-icon" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>' : '<svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>'}
             </button>
             <button class="btn btn-icon btn-sm" data-action="reset" data-timer-id="${timer.id}" title="Reset">
-              ⏹
+              <svg class="st-icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect></svg>
             </button>
             <button class="btn btn-sm" data-action="minus1m" data-timer-id="${timer.id}" title="Retirar 1 minuto (atualiza seguintes)" style="padding: 2px 7px; font-size: 0.72rem;">-1m</button>
             <button class="btn btn-sm" data-action="plus1m" data-timer-id="${timer.id}" title="Adicionar 1 minuto (atualiza seguintes)" style="padding: 2px 7px; font-size: 0.72rem;">+1m</button>
@@ -927,11 +927,11 @@ function renderTimers() {
             <button class="btn btn-icon btn-sm" data-action="move-down" data-timer-id="${timer.id}" title="Mover para baixo" ${idx === state.timers.length - 1 ? 'disabled style="opacity:0.35"' : ''}>
               ↓
             </button>
-            <button class="btn btn-icon btn-sm" data-action="edit" data-timer-id="${timer.id}" title="Edit warnings">
-              ⚙️
+            <button class="btn btn-icon btn-sm" data-action="edit" data-timer-id="${timer.id}" title="Editar avisos">
+              <svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </button>
-            <button class="btn btn-icon btn-sm btn-danger" data-action="delete" data-timer-id="${timer.id}" title="Delete">
-              🗑️
+            <button class="btn btn-icon btn-sm btn-danger" data-action="delete" data-timer-id="${timer.id}" title="Apagar">
+              <svg class="st-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </button>
           </div>
         </div>
@@ -983,7 +983,7 @@ function renderPreview() {
   if ($previewEndTime) {
     const endStr = getEstimatedEndTime(activeTimer);
     const evEnd = getEventEndTime();
-    $previewEndTime.textContent = endStr ? `🏁 Fim artista: ${endStr}  |  🏁 Fim Evento: ${evEnd}` : '';
+    $previewEndTime.textContent = endStr ? `Fim artista: ${endStr}  |  Fim Evento: ${evEnd}` : '';
   }
 
   const $previewNotes = document.getElementById('preview-notes');
@@ -1011,11 +1011,11 @@ function renderPreview() {
   const $ctrlPrevToggle = document.getElementById('ctrl-preview-toggle');
   if ($ctrlPrevToggle) {
     if (activeTimer.state === 'running') {
-      $ctrlPrevToggle.textContent = '⏸ Pausar';
+      $ctrlPrevToggle.innerHTML = '<svg class="st-icon" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Pausar';
       $ctrlPrevToggle.classList.remove('btn-primary');
       $ctrlPrevToggle.classList.add('btn-warning');
     } else {
-      $ctrlPrevToggle.textContent = '▶ Iniciar';
+      $ctrlPrevToggle.innerHTML = '<svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Iniciar';
       $ctrlPrevToggle.classList.add('btn-primary');
       $ctrlPrevToggle.classList.remove('btn-warning');
     }
@@ -1039,15 +1039,15 @@ function renderMessageState() {
 
   if ($toggleMsgBtn) {
     if (isVisible) {
-      $toggleMsgBtn.innerHTML = '🙈 Ocultar';
-      $toggleMsgBtn.style.background = '#d63031';
-      $toggleMsgBtn.style.borderColor = '#d63031';
+      $toggleMsgBtn.innerHTML = '<svg class="st-icon" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg> Ocultar';
+      $toggleMsgBtn.style.background = 'var(--red)';
+      $toggleMsgBtn.style.borderColor = 'var(--red)';
       $toggleMsgBtn.style.color = '#fff';
       $toggleMsgBtn.title = 'A mensagem está visível no palco. Clique para ocultar.';
     } else {
-      $toggleMsgBtn.innerHTML = '👁️ Mostrar';
-      $toggleMsgBtn.style.background = 'rgba(0, 184, 148, 0.2)';
-      $toggleMsgBtn.style.borderColor = '#00b894';
+      $toggleMsgBtn.innerHTML = '<svg class="st-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> Mostrar';
+      $toggleMsgBtn.style.background = 'rgba(46, 160, 67, 0.2)';
+      $toggleMsgBtn.style.borderColor = 'var(--green)';
       $toggleMsgBtn.style.color = '#55efc4';
       $toggleMsgBtn.title = 'A mensagem está oculta. Clique para mostrar no palco.';
     }
@@ -1194,9 +1194,9 @@ $addTimerBtn.addEventListener('click', () => {
 const $clearEventBtn = document.getElementById('clear-event-btn');
 if ($clearEventBtn) {
   $clearEventBtn.addEventListener('click', () => {
-    if (confirm('🧹 Limpar todos os artistas do dia atual?')) {
+    if (confirm('Tem a certeza de que pretende limpar todos os artistas do dia atual?')) {
       client.clearAllTimers();
-      showToast('✓ Dia limpo com sucesso.');
+      showToast('Dia limpo com sucesso.');
     }
   });
 }
@@ -1507,8 +1507,8 @@ function updateImportPreview() {
   if (sched.totalTimers === 0) {
     $importPreviewBox.style.display = 'block';
     $importPreviewBox.innerHTML = `
-      <div style="color: #fab1a0; font-size: 0.78rem;">
-        ⚠️ Não foram detetados artistas com horários válidos. Certifique-se de que cada linha tem um artista e horário (ex: <em>23h00 - 00h15</em> ou <em>23:00</em>).
+      <div style="color: var(--yellow); font-size: 0.78rem;">
+        Aviso: Não foram detetados artistas com horários válidos. Certifique-se de que cada linha tem um artista e horário (ex: <em>23h00 - 00h15</em> ou <em>23:00</em>).
       </div>
     `;
     return;
@@ -1519,7 +1519,7 @@ function updateImportPreview() {
     const dayKeys = Object.keys(sched.days).sort((a, b) => Number(a) - Number(b));
     $importPreviewBox.innerHTML = `
       <div style="color: var(--green); font-weight: 700; margin-bottom: 8px; font-size: 0.82rem; display: flex; align-items: center; justify-content: space-between;">
-        <span>✓ Detetados ${sched.totalDays} Dias (${sched.totalTimers} entradas no total):</span>
+        <span>Detetados ${sched.totalDays} Dias (${sched.totalTimers} entradas no total):</span>
         <span style="font-size: 0.72rem; color: #a29bfe; font-weight: 500;">Cronologia de festival</span>
       </div>
       <div style="display: flex; flex-direction: column; gap: 6px;">
@@ -1529,7 +1529,7 @@ function updateImportPreview() {
           return `
             <div style="background: rgba(255,255,255,0.05); padding: 7px 10px; border-radius: 6px; border-left: 3px solid var(--accent);">
               <div style="font-weight: 700; color: #fdcb6e; font-size: 0.78rem; margin-bottom: 4px;">
-                📅 ${escapeHtml(sched.dayTitles[k] || 'Dia ' + k)} (${list.length} itens)
+                ${escapeHtml(sched.dayTitles[k] || 'Dia ' + k)} (${list.length} itens)
               </div>
               <div style="font-size: 0.72rem; color: #cbd5e1; line-height: 1.5;">${lines}</div>
             </div>
@@ -1541,7 +1541,7 @@ function updateImportPreview() {
     const timers = sched.days['1'] || [];
     $importPreviewBox.innerHTML = `
       <div style="color: var(--green); font-weight: 700; margin-bottom: 6px; font-size: 0.82rem;">
-        ✓ ${timers.length} Entrada(s) detetada(s) (ordenadas cronologicamente):
+        ${timers.length} Entrada(s) detetada(s) (ordenadas cronologicamente):
       </div>
       <div style="display: flex; flex-direction: column; gap: 4px;">
         ${timers.map((t, i) => `
@@ -1563,7 +1563,7 @@ async function handleProcessImportFile(file) {
     }
   };
   try {
-    setImportStatus(`⏳ A ler ficheiro "${file.name}"...`);
+    setImportStatus(`A ler ficheiro "${file.name}"...`);
     const ext = file.name.split('.').pop().toLowerCase();
     if (ext === 'pdf') {
       rawExtractedData = await ScheduleImporter.extractPdfPages(file, setImportStatus);
@@ -1579,7 +1579,7 @@ async function handleProcessImportFile(file) {
       const dayKeys = Object.keys(currentSchedule.days).sort((a, b) => Number(a) - Number(b));
       if ($importPageSelect) {
         $importPageSelect.innerHTML =
-          `<option value="all_days">🌟 Todos os Dias (${currentSchedule.totalDays} dias / ${currentSchedule.totalTimers} artistas)</option>` +
+          `<option value="all_days">Todos os Dias (${currentSchedule.totalDays} dias / ${currentSchedule.totalTimers} artistas)</option>` +
           dayKeys.map(k => {
             const count = currentSchedule.days[k].length;
             const title = currentSchedule.dayTitles[k] || `Dia ${k}`;
@@ -1750,7 +1750,7 @@ if ($importConfirm) {
       renderDayTabs(true);
       renderTimers();
       $importModal.classList.remove('visible');
-      showToast(`✓ Dia ${dayNum} atualizado com ${dayTimers.length} artistas!`);
+      showToast(`Dia ${dayNum} atualizado com ${dayTimers.length} artistas!`);
     } else if (sched.isMultiDay) {
       // Import all days at once
       client.replaceAllDays(sched.days);
@@ -1758,7 +1758,7 @@ if ($importConfirm) {
       renderDayTabs(true);
       renderTimers();
       $importModal.classList.remove('visible');
-      showToast(`✓ ${sched.totalDays} dias e ${sched.totalTimers} artistas importados com sucesso!`);
+      showToast(`${sched.totalDays} dias e ${sched.totalTimers} artistas importados com sucesso!`);
     } else {
       // Single day import
       const singleTimers = sched.days['1'] || [];
@@ -1767,7 +1767,7 @@ if ($importConfirm) {
       renderDayTabs(true);
       renderTimers();
       $importModal.classList.remove('visible');
-      showToast(`✓ ${singleTimers.length} artistas importados com sucesso!`);
+      showToast(`${singleTimers.length} artistas importados com sucesso!`);
     }
   });
 }
@@ -1880,20 +1880,20 @@ if ($ctrlPrevReset) {
     const perm = window.StageTimerNotifications.getBrowserPermission();
     if ($browserStatus) {
       if (perm === 'granted') {
-        $browserStatus.textContent = '✅ Ativas';
-        $browserStatus.style.background = 'rgba(0, 184, 148, 0.2)';
-        $browserStatus.style.color = '#55efc4';
-        if ($enableBrowserBtn) $enableBrowserBtn.textContent = '✅ Notificações Ativas Neste Dispositivo';
+        $browserStatus.textContent = 'Ativas';
+        $browserStatus.style.background = 'rgba(46, 160, 67, 0.15)';
+        $browserStatus.style.color = 'var(--green)';
+        if ($enableBrowserBtn) $enableBrowserBtn.textContent = 'Notificações Ativas Neste Dispositivo';
       } else if (perm === 'denied') {
-        $browserStatus.textContent = '❌ Bloqueadas';
-        $browserStatus.style.background = 'rgba(214, 48, 49, 0.2)';
-        $browserStatus.style.color = '#ff7675';
-        if ($enableBrowserBtn) $enableBrowserBtn.textContent = '❌ Desbloquear nas Definições do Browser';
+        $browserStatus.textContent = 'Bloqueadas';
+        $browserStatus.style.background = 'rgba(215, 58, 73, 0.15)';
+        $browserStatus.style.color = 'var(--red)';
+        if ($enableBrowserBtn) $enableBrowserBtn.textContent = 'Desbloquear nas Definições do Browser';
       } else {
-        $browserStatus.textContent = '⚠️ Desativadas';
-        $browserStatus.style.background = 'rgba(253, 203, 110, 0.2)';
-        $browserStatus.style.color = '#ffeaa7';
-        if ($enableBrowserBtn) $enableBrowserBtn.textContent = '🔔 Ativar Notificações Neste Dispositivo';
+        $browserStatus.textContent = 'Desativadas';
+        $browserStatus.style.background = 'rgba(210, 153, 34, 0.15)';
+        $browserStatus.style.color = 'var(--yellow)';
+        if ($enableBrowserBtn) $enableBrowserBtn.textContent = 'Ativar Notificações Neste Dispositivo';
       }
     }
   }
@@ -1979,31 +1979,31 @@ if ($ctrlPrevReset) {
 
       if (!token || !chat) {
         if ($tgFeedback) {
-          $tgFeedback.textContent = '❌ Preencha o Token e o Chat ID';
-          $tgFeedback.style.color = '#ff7675';
+          $tgFeedback.textContent = 'Preencha o Token e o Chat ID';
+          $tgFeedback.style.color = 'var(--red)';
         }
         return;
       }
 
       if ($tgFeedback) {
-        $tgFeedback.textContent = '⏳ A enviar teste...';
-        $tgFeedback.style.color = '#74b9ff';
+        $tgFeedback.textContent = 'A enviar teste...';
+        $tgFeedback.style.color = 'var(--accent)';
       }
 
       const stageName = state?.name || state?.id || 'Palco';
       const result = await window.StageTimerNotifications.testTelegram(token, chat, stageName);
       if (result.success) {
         if ($tgFeedback) {
-          $tgFeedback.textContent = '✅ Mensagem entregue no Telegram!';
-          $tgFeedback.style.color = '#55efc4';
+          $tgFeedback.textContent = 'Mensagem entregue no Telegram!';
+          $tgFeedback.style.color = 'var(--green)';
         }
         if (typeof showToast === 'function') {
           showToast('Teste de Telegram enviado com sucesso!', 'success');
         }
       } else {
         if ($tgFeedback) {
-          $tgFeedback.textContent = '❌ ' + (result.error || 'Falha ao enviar');
-          $tgFeedback.style.color = '#ff7675';
+          $tgFeedback.textContent = result.error || 'Falha ao enviar';
+          $tgFeedback.style.color = 'var(--red)';
         }
       }
     });
@@ -2034,12 +2034,12 @@ if ($ctrlPrevReset) {
       const dateStr = new Date(r.savedAt).toLocaleDateString('pt-PT');
       item.innerHTML = `
         <div style="flex: 1; min-width: 0;">
-          <div style="font-weight: 700; color: #c7d2fe;">${idx === 0 ? '⭐ Mais Recente: ' : ''}${dateStr} às ${timeStr}</div>
+          <div style="font-weight: 700; color: #c7d2fe;">${idx === 0 ? 'Mais Recente: ' : ''}${dateStr} às ${timeStr}</div>
           <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 2px;">
             ${r.timerCount || 0} artistas • Dia ${r.currentDay || 1} • Estado: ${r.showState || 'pre'}
           </div>
         </div>
-        <button type="button" class="btn btn-sm btn-restore-rev" data-revid="${r.revId}" style="background: rgba(85, 239, 196, 0.2); border: 1px solid rgba(85, 239, 196, 0.5); color: #55efc4; font-weight: 700; font-size: 0.74rem;">Restaurar</button>
+        <button type="button" class="btn btn-sm btn-restore-rev" data-revid="${r.revId}" style="background: rgba(46, 160, 67, 0.15); border: 1px solid rgba(46, 160, 67, 0.4); color: var(--green); font-weight: 700; font-size: 0.74rem;">Restaurar</button>
       `;
       $cloudBackupsList.appendChild(item);
     });
@@ -2084,7 +2084,7 @@ if ($ctrlPrevReset) {
       $createBackupBtn.textContent = 'A guardar...';
       const ok = await client.saveCloudSnapshotNow('Manual Controller');
       $createBackupBtn.disabled = false;
-      $createBackupBtn.textContent = '💾 Criar Backup Agora';
+      $createBackupBtn.innerHTML = '<svg class="st-icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Criar Backup Agora';
       if (ok) {
         if (typeof showToast === 'function') showToast('Backup criado com sucesso na nuvem!', 'success');
         loadCloudRevisionsUI();

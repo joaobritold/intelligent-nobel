@@ -262,7 +262,7 @@
     const msg = state.message;
     if (msg && msg.visible && msg.text) {
       if ($msgText) $msgText.textContent = msg.text;
-      if ($msgBadge) $msgBadge.textContent = msg.level === 'urgent' ? '⚠️ URGENTE' : '💬 AVISO';
+      if ($msgBadge) $msgBadge.textContent = msg.level === 'urgent' ? 'URGENTE' : 'AVISO';
       if ($msgOverlay) {
         $msgOverlay.className = `watch-message-overlay visible ${msg.level === 'urgent' ? 'urgent' : ''}`;
       }

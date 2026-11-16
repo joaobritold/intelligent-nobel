@@ -191,30 +191,30 @@
             <img src="icon.svg" alt="Icon" style="width: 42px; height: 42px; border-radius: 10px;">
             <div>
               <div style="font-size: 1.1rem; font-weight: 800; line-height: 1.2;">Instalar App StageTimer</div>
-              <div style="font-size: 0.75rem; color: #55efc4; font-weight: 600;">⚡ App Leve • Ecrã Inteiro • Sem Barras</div>
+              <div style="font-size: 0.75rem; color: #3fb950; font-weight: 600;">App Leve • Ecrã Inteiro • Sem Barras</div>
             </div>
           </div>
-          <button id="st-pwa-close" style="background: rgba(255,255,255,0.08); border: none; color: #cbd5e1; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 1rem;">✕</button>
+          <button id="st-pwa-close" style="background: rgba(255,255,255,0.08); border: none; color: #cbd5e1; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 1rem;">X</button>
         </div>
 
         ${ios ? `
-          <div style="background: rgba(108, 92, 231, 0.14); border: 1px solid rgba(108, 92, 231, 0.4); border-radius: 12px; padding: 14px; font-size: 0.88rem; line-height: 1.5; margin-bottom: 14px;">
-            <div style="font-weight: 700; color: #a29bfe; margin-bottom: 8px;">📱 Como instalar no iPhone / iPad (Safari):</div>
-            <div style="margin-bottom: 8px;">1. Toque no botão <strong>Partilhar</strong> <span style="display:inline-block; background:#0d1b2a; padding:2px 7px; border-radius:6px; border:1px solid #2d3748;">⬆️</span> na barra do Safari.</div>
+          <div style="background: rgba(56, 139, 253, 0.12); border: 1px solid rgba(56, 139, 253, 0.3); border-radius: 12px; padding: 14px; font-size: 0.88rem; line-height: 1.5; margin-bottom: 14px;">
+            <div style="font-weight: 700; color: #79c0ff; margin-bottom: 8px;">Como instalar no iPhone / iPad (Safari):</div>
+            <div style="margin-bottom: 8px;">1. Toque no botão <strong>Partilhar</strong> [Partilhar] na barra do Safari.</div>
             <div style="margin-bottom: 8px;">2. Deslize e escolha <strong>"Adicionar ao Ecrã Principal"</strong> <em>(Add to Home Screen)</em>.</div>
             <div>3. Toque em <strong>Adicionar</strong> no canto superior direito!</div>
           </div>
         ` : `
-          <div style="background: rgba(108, 92, 231, 0.14); border: 1px solid rgba(108, 92, 231, 0.4); border-radius: 12px; padding: 14px; font-size: 0.88rem; line-height: 1.5; margin-bottom: 14px;">
-            <div style="font-weight: 700; color: #a29bfe; margin-bottom: 8px;">💻 Como instalar no PC / Mac ou Android:</div>
-            <div style="margin-bottom: 8px;">• <strong>No PC (Chrome / Edge):</strong> Clique no ícone de instalação <span style="display:inline-block; background:#0d1b2a; padding:1px 6px; border-radius:5px; border:1px solid #2d3748;">📲</span> no lado direito da barra de endereço (ou Menu <strong>⋮ → Guardar e partilhar → Instalar StageTimer</strong>).</div>
-            <div>• <strong>No Android (Chrome):</strong> Toque no menu <strong>⋮ → Instalar aplicação</strong>.</div>
+          <div style="background: rgba(56, 139, 253, 0.12); border: 1px solid rgba(56, 139, 253, 0.3); border-radius: 12px; padding: 14px; font-size: 0.88rem; line-height: 1.5; margin-bottom: 14px;">
+            <div style="font-weight: 700; color: #79c0ff; margin-bottom: 8px;">Como instalar no PC / Mac ou Android:</div>
+            <div style="margin-bottom: 8px;">• <strong>No PC (Chrome / Edge):</strong> Clique no ícone de instalação no lado direito da barra de endereço (ou Menu <strong>Menu → Guardar e partilhar → Instalar StageTimer</strong>).</div>
+            <div>• <strong>No Android (Chrome):</strong> Toque no menu <strong>Menu → Instalar aplicação</strong>.</div>
           </div>
         `}
 
         <div style="font-size: 0.78rem; color: #8892a4; margin-bottom: 16px;">
-          ✓ Abre como aplicação independente na secretária ou telemóvel.<br>
-          ✓ Mantém o ecrã sempre ligado durante o espetáculo.
+          Abre como aplicação independente na secretária ou telemóvel.<br>
+          Mantém o ecrã sempre ligado durante o espetáculo.
         </div>
 
         <button id="st-pwa-ok" style="width: 100%; padding: 11px; border-radius: 10px; border: none; background: #6c5ce7; color: #fff; font-weight: 700; font-size: 0.95rem; cursor: pointer;">Entendido</button>

@@ -156,7 +156,7 @@ function updateTechOnlineList() {
     $techOnlineBox.style.display = 'block';
     $techOnlineList.innerHTML = names.map(n => {
       const isMe = currentTechName && n.toLowerCase() === currentTechName.toLowerCase();
-      return `<span class="regie-tech-online-pill"><span class="dot"></span> 🔧 ${escapeHtml(n)}${isMe ? ' (Tu)' : ''}</span>`;
+      return `<span class="regie-tech-online-pill"><span class="dot"></span> ${escapeHtml(n)}${isMe ? ' (Tu)' : ''}</span>`;
     }).join('');
   } else {
     $techOnlineBox.style.display = 'none';
@@ -352,10 +352,10 @@ function updateAudioUI() {
   if (!$btnAudio) return;
   if (audioEnabled) {
     $btnAudio.classList.add('enabled');
-    $btnAudio.innerHTML = `<span>🔔</span> Som Ativo`;
+    $btnAudio.innerHTML = `<span class="st-icon-wrap" style="display:inline-flex;align-items:center;">${window.stIcon ? window.stIcon('bell') : ''}</span> Som Ativo`;
   } else {
     $btnAudio.classList.remove('enabled');
-    $btnAudio.innerHTML = `<span>🔕</span> Som Mudo`;
+    $btnAudio.innerHTML = `<span class="st-icon-wrap" style="display:inline-flex;align-items:center;">${window.stIcon ? window.stIcon('bell-off') : ''}</span> Som Mudo`;
   }
 }
 
@@ -480,7 +480,7 @@ function updateFullscreenUI() {
     $regieFsBtn.setAttribute('aria-label', fs ? 'Sair de Ecrã Completo' : 'Ecrã Completo');
   }
   if ($regieFsIcon) {
-    $regieFsIcon.textContent = fs ? '✕' : '⛶';
+    $regieFsIcon.innerHTML = fs ? (window.stIcon ? window.stIcon('x') : 'X') : (window.stIcon ? window.stIcon('maximize') : 'FS');
   }
 }
 
@@ -575,13 +575,13 @@ function triggerRegieAckWithCountdown() {
     $msgAckBtn.disabled = true;
     const whoLabel = currentStation === 'tech' && currentTechName ? ` POR ${currentTechName.toUpperCase()}` : '';
     let countdown = 5;
-    $msgAckBtn.textContent = `✓ LIDO${whoLabel} (a fechar em ${countdown}s...)`;
+    $msgAckBtn.textContent = `LIDO${whoLabel} (a fechar em ${countdown}s...)`;
 
     if (dismissCountdownTimer) clearInterval(dismissCountdownTimer);
     dismissCountdownTimer = setInterval(() => {
       countdown--;
       if (countdown > 0) {
-        $msgAckBtn.textContent = `✓ LIDO${whoLabel} (a fechar em ${countdown}s...)`;
+        $msgAckBtn.textContent = `LIDO${whoLabel} (a fechar em ${countdown}s...)`;
       } else {
         clearInterval(dismissCountdownTimer);
         dismissCountdownTimer = null;
@@ -667,13 +667,13 @@ function updateRegieControls() {
     const isOpCaller = rc.senderRole === 'operator' || /^(operador|sm|s\.m\.|s\.manager|stage manager|operator)$/i.test(rawCaller);
     $incomingAlert.classList.add('visible');
     if (isOpCaller) {
-      $incomingTitle.textContent = `🚨 ATENÇÃO ${isFoh ? 'FOH' : 'PALCO'}: S.MANAGER ESTÁ A CHAMAR (${remSecs}s)!`;
+      $incomingTitle.textContent = `CHAMADA ${isFoh ? 'FOH' : 'PALCO'}: S.MANAGER ESTÁ A CHAMAR (${remSecs}s)!`;
       $incomingSub.textContent = 'O Stage Manager (S.Manager) está a chamar com urgência. Por favor verifique o intercomunicador.';
     } else if (isFoh) {
-      $incomingTitle.textContent = `🚨 ATENÇÃO FOH: PALCO ESTÁ A CHAMAR (${remSecs}s)!`;
+      $incomingTitle.textContent = `CHAMADA FOH: PALCO ESTÁ A CHAMAR (${remSecs}s)!`;
       $incomingSub.textContent = 'A Régie de Palco está a chamar no intercomunicador. Por favor coloque os auscultadores.';
     } else {
-      $incomingTitle.textContent = `🚨 ATENÇÃO PALCO: FOH ESTÁ A CHAMAR (${remSecs}s)!`;
+      $incomingTitle.textContent = `CHAMADA PALCO: FOH ESTÁ A CHAMAR (${remSecs}s)!`;
       $incomingSub.textContent = 'A Régie da Frente está a chamar no intercomunicador. Por favor coloque os auscultadores.';
     }
 
@@ -708,7 +708,7 @@ function updateRegieControls() {
 
     const rawMsgFrom = String(rm.from || '').trim();
     const isMsgFromOp = rm.senderRole === 'operator' || !rawMsgFrom || /^(operador|stage manager|sm|s\.m\.|s\.manager|operator)$/i.test(rawMsgFrom);
-    const senderBadgeText = isMsgFromOp ? '📱 MENSAGEM S.MANAGER' : `📢 MENSAGEM DE ${rawMsgFrom.toUpperCase()}`;
+    const senderBadgeText = isMsgFromOp ? 'MENSAGEM S.MANAGER' : `MENSAGEM DE ${rawMsgFrom.toUpperCase()}`;
     const $msgSenderLabel = document.getElementById('regie-msg-sender-label');
     if ($msgSenderLabel) {
       $msgSenderLabel.textContent = senderBadgeText;
@@ -727,11 +727,11 @@ function updateRegieControls() {
 
     if ($receiptFoh) {
       $receiptFoh.className = `regie-msg-receipt-pill ${fohRead ? 'read' : ''}`;
-      $receiptFoh.textContent = fohRead ? `🎚️ FOH: ✓ Lido (${rm.ackFoh})` : '🎚️ FOH: ⏳ Aguarda';
+      $receiptFoh.textContent = fohRead ? `FOH: Lido (${rm.ackFoh})` : 'FOH: Aguarda';
     }
     if ($receiptStage) {
       $receiptStage.className = `regie-msg-receipt-pill ${stageRead ? 'read' : ''}`;
-      $receiptStage.textContent = stageRead ? `🎛️ Palco: ✓ Lido (${rm.ackStage})` : '🎛️ Palco: ⏳ Aguarda';
+      $receiptStage.textContent = stageRead ? `Palco: Lido (${rm.ackStage})` : 'Palco: Aguarda';
     }
 
     // Build combined list of technicians (acked + online + current tech)
@@ -755,7 +755,7 @@ function updateRegieControls() {
       $receiptTechList.style.display = 'contents';
       $receiptTechList.innerHTML = techEntries.map(t => {
         const isRead = Boolean(t.ackTime);
-        return `<span class="regie-msg-receipt-pill ${isRead ? 'read' : ''}">🔧 ${escapeHtml(t.name)}: ${isRead ? `✓ Lido (${escapeHtml(t.ackTime)})` : '⏳ Aguarda'}</span>`;
+        return `<span class="regie-msg-receipt-pill ${isRead ? 'read' : ''}">${escapeHtml(t.name)}: ${isRead ? `Lido (${escapeHtml(t.ackTime)})` : 'Aguarda'}</span>`;
       }).join('');
     } else {
       if ($receiptTechList) {
@@ -766,7 +766,7 @@ function updateRegieControls() {
         $receiptTech.style.display = 'inline-flex';
         const techRead = Boolean(rm.ackTech);
         $receiptTech.className = `regie-msg-receipt-pill ${techRead ? 'read' : ''}`;
-        $receiptTech.textContent = techRead ? `🔧 Técnico: ✓ Lido (${rm.ackTech})` : '🔧 Técnico: ⏳ Aguarda';
+        $receiptTech.textContent = techRead ? `Técnico: Lido (${rm.ackTech})` : 'Técnico: Aguarda';
       }
     }
 
@@ -791,17 +791,17 @@ function updateRegieControls() {
           $msgAckBtn.classList.add('acknowledged');
           $msgAckBtn.disabled = true;
           const techLabel = currentTechName ? currentTechName.toUpperCase() : 'TÉCNICO';
-          $msgAckBtn.textContent = isFoh ? '✓ LIDO POR FOH' : (isStage ? '✓ LIDO POR PALCO' : `✓ LIDO POR ${techLabel}`);
+          $msgAckBtn.textContent = isFoh ? 'LIDO POR FOH' : (isStage ? 'LIDO POR PALCO' : `LIDO POR ${techLabel}`);
         }
       } else {
         $msgAckBtn.classList.remove('acknowledged');
         $msgAckBtn.disabled = false;
         if (isTech && currentTechName) {
-          $msgAckBtn.textContent = `✓ CONFIRMAR LEITURA (${currentTechName})`;
+          $msgAckBtn.textContent = `CONFIRMAR LEITURA (${currentTechName})`;
         } else if (isTech && !currentTechName) {
-          $msgAckBtn.textContent = '👤 IDENTIFICAR E CONFIRMAR LEITURA';
+          $msgAckBtn.textContent = 'IDENTIFICAR E CONFIRMAR LEITURA';
         } else {
-          $msgAckBtn.textContent = '✓ CONFIRMAR LEITURA';
+          $msgAckBtn.textContent = 'CONFIRMAR LEITURA';
         }
       }
     }
@@ -844,7 +844,9 @@ function renderRegieHistory() {
   $regieHistoryList.innerHTML = history.map(item => {
     const isCall = item.type === 'call';
     const isMsg = item.type === 'msg';
-    const icon = isCall ? '🚨' : '📱';
+    const icon = isCall
+      ? (window.stIcon ? window.stIcon('alert-triangle') : 'CALL')
+      : (window.stIcon ? window.stIcon('smartphone') : 'MSG');
     const rawSender = String(item.from || '').trim();
     const isOpSender = !rawSender || /^(operador|stage manager|sm|s\.m\.|s\.manager|operator)$/i.test(rawSender);
     const cleanSender = isOpSender ? 'S.MANAGER' : rawSender.toUpperCase();
@@ -860,17 +862,17 @@ function renderRegieHistory() {
       let techTagsHtml = '';
       if (techEntries.length > 0) {
         techTagsHtml = techEntries.map(([tName, tTime]) =>
-          `<span class="regie-history-receipt-tag read">🔧 ${escapeHtml(tName)}: ✓ Lido (${escapeHtml(tTime)})</span>`
+          `<span class="regie-history-receipt-tag read">${escapeHtml(tName)}: Lido (${escapeHtml(tTime)})</span>`
         ).join('');
       } else {
         const techRead = Boolean(item.ackTech);
-        techTagsHtml = `<span class="regie-history-receipt-tag ${techRead ? 'read' : ''}">🔧 Técnico: ${techRead ? `✓ Lido (${escapeHtml(item.ackTech)})` : '⏳ Aguarda'}</span>`;
+        techTagsHtml = `<span class="regie-history-receipt-tag ${techRead ? 'read' : ''}">Técnico: ${techRead ? `Lido (${escapeHtml(item.ackTech)})` : 'Aguarda'}</span>`;
       }
 
       receiptsHtml = `
         <div class="regie-history-receipts">
-          <span class="regie-history-receipt-tag ${fohRead ? 'read' : ''}">🎚️ FOH: ${fohRead ? `✓ Lido (${escapeHtml(item.ackFoh)})` : '⏳ Aguarda'}</span>
-          <span class="regie-history-receipt-tag ${stageRead ? 'read' : ''}">🎛️ Palco: ${stageRead ? `✓ Lido (${escapeHtml(item.ackStage)})` : '⏳ Aguarda'}</span>
+          <span class="regie-history-receipt-tag ${fohRead ? 'read' : ''}">FOH: ${fohRead ? `Lido (${escapeHtml(item.ackFoh)})` : 'Aguarda'}</span>
+          <span class="regie-history-receipt-tag ${stageRead ? 'read' : ''}">Palco: ${stageRead ? `Lido (${escapeHtml(item.ackStage)})` : 'Aguarda'}</span>
           ${techTagsHtml}
         </div>
       `;
@@ -950,7 +952,7 @@ function updateLineupStageUI(force = false) {
             : st.name;
           return `
             <button type="button" class="stage-pill ${st.isCurrent ? 'active' : ''}" data-switch-stage="${escapeHtml(st.code)}">
-              🎪 ${escapeHtml(label)}
+              ${escapeHtml(label)}
             </button>
           `;
         }).join('');
@@ -980,17 +982,17 @@ function updateLineupStageUI(force = false) {
           const evTitle = ev.title || ev.code;
           const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
           if (stages.length > 1) {
-            optionsHtml += `<optgroup label="🎪 ${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+            optionsHtml += `<optgroup label="${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
             stages.forEach(st => {
               const stCode = (st.code || st.id || '').toUpperCase();
               const isSel = stCode === currentCode;
-              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
+              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
             });
             optionsHtml += `</optgroup>`;
           } else {
             const stCode = (stages[0].code || ev.code).toUpperCase();
             const isSel = stCode === currentCode;
-            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>🎪 ${escapeHtml(evTitle)}</option>`;
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)}</option>`;
           }
         });
         $lineupEventSelect.innerHTML = optionsHtml;
@@ -1273,11 +1275,11 @@ function render() {
       } else if (isNext) {
         rowClass += ' is-next';
         statusClass = 'status-next';
-        statusText = '⏭ NEXT';
+        statusText = 'NEXT';
       } else if (isDone) {
         rowClass += ' is-done';
         statusClass = 'status-done';
-        statusText = '✓ FIM';
+        statusText = 'FIM';
       }
 
       const timeDisplay = slots[idx] || '--:--';
@@ -1355,22 +1357,22 @@ setStation(currentStation, true);
     if (!window.StageTimerNotifications) return;
     const perm = window.StageTimerNotifications.getBrowserPermission();
     if (perm === 'granted') {
-      $btn.textContent = '🔔';
-      $btn.style.borderColor = '#00b894';
-      $btn.style.background = 'rgba(0, 184, 148, 0.2)';
-      $btn.style.color = '#55efc4';
+      $btn.innerHTML = window.stIcon ? window.stIcon('bell') : 'ALERT';
+      $btn.style.borderColor = '#2ea043';
+      $btn.style.background = 'rgba(46, 160, 67, 0.15)';
+      $btn.style.color = '#3fb950';
       $btn.title = 'Notificações ativas neste dispositivo';
     } else if (perm === 'denied') {
-      $btn.textContent = '🔕';
-      $btn.style.borderColor = '#d63031';
-      $btn.style.background = 'rgba(214, 48, 49, 0.2)';
-      $btn.style.color = '#ff7675';
+      $btn.innerHTML = window.stIcon ? window.stIcon('bell-off') : 'MUTE';
+      $btn.style.borderColor = '#d73a49';
+      $btn.style.background = 'rgba(215, 58, 73, 0.15)';
+      $btn.style.color = '#f85149';
       $btn.title = 'Notificações bloqueadas no navegador';
     } else {
-      $btn.textContent = '🔔';
-      $btn.style.borderColor = 'var(--border)';
-      $btn.style.background = 'rgba(255, 255, 255, 0.08)';
-      $btn.style.color = '#fff';
+      $btn.innerHTML = window.stIcon ? window.stIcon('bell') : 'ALERT';
+      $btn.style.borderColor = 'var(--border-subtle)';
+      $btn.style.background = 'var(--bg-surface)';
+      $btn.style.color = 'var(--text-main)';
       $btn.title = 'Tocar para ativar notificações no telemóvel';
     }
   }

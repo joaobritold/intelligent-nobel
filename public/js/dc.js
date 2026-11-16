@@ -744,7 +744,7 @@ function renderScript() {
     $scriptFeed.innerHTML = `
       <div style="text-align: center; padding: 32px 16px; color: var(--dc-muted);">
         Nenhum texto carregado no guião da peça.<br>
-        <button id="dc-btn-script-empty-import" class="dc-tool-btn" style="margin-top: 10px;">📥 Importar Texto</button>
+        <button id="dc-btn-script-empty-import" class="dc-tool-btn" style="margin-top: 10px;">${window.stIcon ? window.stIcon('download') : ''} Importar Texto</button>
       </div>
     `;
     document.getElementById('dc-btn-script-empty-import')?.addEventListener('click', () => {
@@ -762,7 +762,8 @@ function renderScript() {
       const cueObj = state?.theatre?.cues?.find(c => c.id === item.cueAnchor);
       const cueNum = cueObj ? cueObj.num : 'CUE';
       const cueName = cueObj ? cueObj.name : '';
-      cueBadgeHtml = `<button type="button" class="dc-cue-anchor-pill" data-jump-cue="${escapeHtml(item.cueAnchor)}" title="Focar Deixa">⚡ ${escapeHtml(cueNum)}: ${escapeHtml(cueName)}</button>`;
+      const ico = window.stIcon ? window.stIcon('zap') : '';
+      cueBadgeHtml = `<button type="button" class="dc-cue-anchor-pill" data-jump-cue="${escapeHtml(item.cueAnchor)}" title="Focar Deixa">${ico} ${escapeHtml(cueNum)}: ${escapeHtml(cueName)}</button>`;
     }
 
     return `
@@ -835,7 +836,7 @@ function renderCues() {
 
   if ($nextCueSummary) {
     if (standbyCue) {
-      $nextCueSummary.textContent = `🟡 STANDBY: ${standbyCue.num} (${standbyCue.name})`;
+      $nextCueSummary.textContent = `STANDBY: ${standbyCue.num} (${standbyCue.name})`;
       $nextCueSummary.style.color = 'var(--dc-gold)';
     } else if (nextPendingCue) {
       $nextCueSummary.textContent = `Próxima: ${nextPendingCue.num} (${nextPendingCue.name})`;
@@ -855,6 +856,7 @@ function renderCues() {
     return;
   }
 
+  const ico = window.stIcon || (() => '');
   $cuesList.innerHTML = cues.map(cue => {
     const isStandby = cue.status === 'standby';
     const isFired = cue.status === 'fired';
@@ -894,11 +896,11 @@ function renderCues() {
         <div class="dc-cue-actions-col" style="display: flex; align-items: center; gap: 8px;">
           ${cue.firedTimecode ? `<span style="font-family: var(--font-mono); font-size: 0.82rem; color: #00ffb3; font-weight: 800;">${escapeHtml(cue.firedTimecode)}</span>` : ''}
           <span class="dc-status-pill ${escapeHtml(cue.status)}">${escapeHtml(cue.status)}</span>
-          <button type="button" class="dc-cue-btn" data-cue-action="standby" data-id="${escapeHtml(cue.id)}" title="Standby">🟡</button>
-          <button type="button" class="dc-cue-btn" data-cue-action="go" data-id="${escapeHtml(cue.id)}" title="Disparar GO">🟢</button>
-          <button type="button" class="dc-cue-btn" data-cue-action="reset" data-id="${escapeHtml(cue.id)}" title="Voltar a pendente">↩️</button>
-          <button type="button" class="dc-cue-btn" data-cue-action="edit" data-id="${escapeHtml(cue.id)}" title="Editar Deixa">✏️</button>
-          <button type="button" class="dc-cue-btn" data-cue-action="delete" data-id="${escapeHtml(cue.id)}" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4);" title="Eliminar Deixa">🗑️</button>
+          <button type="button" class="dc-cue-btn" data-cue-action="standby" data-id="${escapeHtml(cue.id)}" title="Standby"><svg class="st-icon" viewBox="0 0 24 24" style="color: #f1c40f;"><circle cx="12" cy="12" r="8"></circle></svg></button>
+          <button type="button" class="dc-cue-btn" data-cue-action="go" data-id="${escapeHtml(cue.id)}" title="Disparar GO"><svg class="st-icon" viewBox="0 0 24 24" style="color: #2ea043;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></button>
+          <button type="button" class="dc-cue-btn" data-cue-action="reset" data-id="${escapeHtml(cue.id)}" title="Voltar a pendente">${ico('undo') || '<svg class="st-icon" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>'}</button>
+          <button type="button" class="dc-cue-btn" data-cue-action="edit" data-id="${escapeHtml(cue.id)}" title="Editar Deixa">${ico('edit') || '<svg class="st-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>'}</button>
+          <button type="button" class="dc-cue-btn" data-cue-action="delete" data-id="${escapeHtml(cue.id)}" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4);" title="Eliminar Deixa">${ico('trash') || '<svg class="st-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>'}</button>
         </div>
       </div>
     `;
@@ -1023,7 +1025,7 @@ function renderStagePhase() {
               <div class="dc-note-text">${escapeHtml(n.text)}</div>
               <div class="dc-note-meta">${escapeHtml(n.author || 'DC')} • ${escapeHtml(timeStr)}</div>
             </div>
-            <button type="button" class="dc-note-del-btn" data-delete-stage-note="${escapeHtml(n.id)}" title="Remover anotação">✕</button>
+            <button type="button" class="dc-note-del-btn" data-delete-stage-note="${escapeHtml(n.id)}" title="Remover anotação">X</button>
           </div>
         `;
       }).join('');
@@ -1087,7 +1089,7 @@ function renderChecklists() {
           <input type="checkbox" data-check-item="${escapeHtml(item.id)}" data-check-dept="${escapeHtml(dept)}" ${item.done ? 'checked' : ''} style="cursor: pointer; width: 18px; height: 18px;">
           <span style="flex: 1;">${escapeHtml(item.label)}</span>
           ${item.isOneOff ? `<span class="dc-oneoff-tag" title="Tarefa pontual de hoje">Só Hoje</span>` : ''}
-          <button type="button" class="dc-tool-btn" data-remove-task="${escapeHtml(item.id)}" data-remove-dept="${escapeHtml(dept)}" style="padding: 2px 6px; font-size: 0.68rem; color: #ff7675;">✕</button>
+          <button type="button" class="dc-tool-btn" data-remove-task="${escapeHtml(item.id)}" data-remove-dept="${escapeHtml(dept)}" style="padding: 2px 6px; font-size: 0.68rem; color: #ff7675;">X</button>
         </div>
       `).join('');
 
@@ -1180,7 +1182,7 @@ function render() {
     } else {
       $showStatusText.textContent = 'PRÉ-SHOW';
       $btnStartShow.style.display = 'inline-flex';
-      $btnStartShow.textContent = '▶ Iniciar';
+      $btnStartShow.innerHTML = `${window.stIcon ? window.stIcon('play') : ''} Iniciar`;
       $btnPauseShow.style.display = 'none';
       $btnEndShow.style.display = 'none';
     }
@@ -1190,7 +1192,8 @@ function render() {
   if ($urgentActiveTag) {
     if (th.urgentNotice && th.urgentNotice.visible && th.urgentNotice.text) {
       $urgentActiveTag.style.display = 'block';
-      $urgentActiveTag.textContent = `🚨 AVISO ATIVO ENVIADO: "${th.urgentNotice.text}"`;
+      const ico = window.stIcon ? window.stIcon('alert-triangle') : '';
+      $urgentActiveTag.innerHTML = `${ico} AVISO ATIVO ENVIADO: "${escapeHtml(th.urgentNotice.text)}"`;
       $urgentBar.style.display = 'flex';
     } else {
       $urgentActiveTag.style.display = 'none';
@@ -1833,7 +1836,7 @@ async function handleScriptFile(file) {
     const parsed = TheatreImporter.parseScriptText(text);
     if ($scriptImportTextarea) $scriptImportTextarea.value = text;
     renderScriptPreview(parsed, `${file.name} (${Math.round(file.size / 1024)} KB)`);
-    if (titleEl) titleEl.textContent = `✓ ${file.name} carregado com sucesso`;
+    if (titleEl) titleEl.textContent = `${file.name} carregado com sucesso`;
   } catch (err) {
     console.error('Error importing script file:', err);
     alert('Erro ao processar ficheiro: ' + (err.message || err));
@@ -1976,11 +1979,11 @@ async function handleCuesFile(file) {
   if (!file) return;
   try {
     const titleEl = $cuesDropzone?.querySelector('.dc-import-dropzone-title');
-    if (titleEl) titleEl.textContent = '⏳ A analisar folha de deixas com TheatreImporter...';
+    if (titleEl) titleEl.textContent = 'A analisar folha de deixas com TheatreImporter...';
     
     const parsed = await TheatreImporter.parseCuesFromFile(file);
     renderCuesPreview(parsed, `${file.name} (${Math.round(file.size / 1024)} KB)`);
-    if (titleEl) titleEl.textContent = `✓ ${file.name} analisado com sucesso`;
+    if (titleEl) titleEl.textContent = `${file.name} analisado com sucesso`;
   } catch (err) {
     console.error('Error importing cues file:', err);
     alert('Erro ao analisar folha de deixas: ' + (err.message || err));
@@ -2283,7 +2286,7 @@ function buildReportText() {
   const firedCount = th?.telemetry?.length || 0;
 
   let text = `======================================================\n`;
-  text += `🎭 RELATÓRIO DE RÉGIE — MODO JESS\n`;
+  text += `RELATÓRIO DE RÉGIE — MODO JESS\n`;
   text += `Sala / Palco: ${state?.name || roomId}  •  Data: ${showDate}\n`;
   text += `Duração de Espetáculo: ${duration}  •  Deixas Executadas: ${firedCount}\n`;
   text += `======================================================\n\n`;
@@ -2314,8 +2317,9 @@ if ($btnCopyReport) {
   $btnCopyReport.addEventListener('click', () => {
     const report = buildReportText();
     navigator.clipboard.writeText(report).then(() => {
-      $btnCopyReport.textContent = '✓ Relatório Copiado!';
-      setTimeout(() => { $btnCopyReport.textContent = '📋 Copiar Relatório'; }, 2000);
+      const ico = window.stIcon || (() => '');
+      $btnCopyReport.innerHTML = `${ico('check')} Relatório Copiado!`;
+      setTimeout(() => { $btnCopyReport.innerHTML = `${ico('copy')} Copiar Relatório`; }, 2000);
     }).catch(() => {
       alert('Erro ao copiar. Selecione o texto manualmente.');
     });
@@ -2349,20 +2353,21 @@ function renderSavedReports() {
     return;
   }
 
+  const ico = window.stIcon || (() => '');
   $savedReportsList.innerHTML = reports.map(r => `
     <div class="dc-saved-report-card" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 10px 14px; gap: 10px; flex-wrap: wrap;">
       <div>
         <div style="font-weight: 800; font-size: 0.9rem; color: #ffeaa7;">${escapeHtml(r.title)}</div>
         <div style="font-size: 0.74rem; color: var(--dc-muted); margin-top: 3px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <span>⏱️ Duração: <strong style="color: #fff;">${escapeHtml(r.duration)}</strong></span>
-          <span>⚡ Deixas: <strong style="color: #fff;">${r.cuesCount}</strong></span>
-          <span>📅 ${escapeHtml(r.dateStr)}</span>
+          <span>Duração: <strong style="color: #fff;">${escapeHtml(r.duration)}</strong></span>
+          <span>Deixas: <strong style="color: #fff;">${r.cuesCount}</strong></span>
+          <span>${escapeHtml(r.dateStr)}</span>
         </div>
       </div>
       <div style="display: flex; align-items: center; gap: 6px;">
-        <button type="button" class="btn btn-sm btn-open-report" data-rep-id="${escapeHtml(r.id)}" style="background: rgba(108, 92, 231, 0.2); border: 1px solid var(--accent); color: #c4b5fd; font-size: 0.75rem; padding: 4px 9px; border-radius: 6px; cursor: pointer; font-weight: 700;">👁️ Ver</button>
-        <button type="button" class="btn btn-sm btn-download-saved-rep" data-rep-id="${escapeHtml(r.id)}" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 0.75rem; padding: 4px 9px; border-radius: 6px; cursor: pointer;">📥 TXT</button>
-        <button type="button" class="btn btn-sm btn-delete-saved-rep" data-rep-id="${escapeHtml(r.id)}" style="background: rgba(235, 77, 75, 0.2); border: 1px solid #eb4d4b; color: #ff7675; font-size: 0.75rem; padding: 4px 9px; border-radius: 6px; cursor: pointer;" title="Eliminar este relatório do evento">🗑️</button>
+        <button type="button" class="btn btn-sm btn-open-report" data-rep-id="${escapeHtml(r.id)}" style="background: rgba(108, 92, 231, 0.2); border: 1px solid var(--accent); color: #c4b5fd; font-size: 0.75rem; padding: 4px 9px; border-radius: 6px; cursor: pointer; font-weight: 700;">${ico('eye')} Ver</button>
+        <button type="button" class="btn btn-sm btn-download-saved-rep" data-rep-id="${escapeHtml(r.id)}" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 0.75rem; padding: 4px 9px; border-radius: 6px; cursor: pointer;">${ico('download')} TXT</button>
+        <button type="button" class="btn btn-sm btn-delete-saved-rep" data-rep-id="${escapeHtml(r.id)}" style="background: rgba(235, 77, 75, 0.2); border: 1px solid #eb4d4b; color: #ff7675; font-size: 0.75rem; padding: 4px 9px; border-radius: 6px; cursor: pointer;" title="Eliminar este relatório do evento">${ico('trash')}</button>
       </div>
     </div>
   `).join('');
@@ -2378,8 +2383,9 @@ if ($btnSaveReport) {
       duration: dur,
       cuesCount: fCount
     });
-    $btnSaveReport.textContent = '✓ Gravado no Evento!';
-    setTimeout(() => { $btnSaveReport.textContent = '💾 Guardar no Evento'; }, 2500);
+    const ico = window.stIcon || (() => '');
+    $btnSaveReport.innerHTML = `${ico('check')} Gravado no Evento!`;
+    setTimeout(() => { $btnSaveReport.innerHTML = `${ico('save')} Guardar no Evento`; }, 2500);
   });
 }
 
@@ -2392,7 +2398,8 @@ document.addEventListener('click', (e) => {
     const rep = reports.find(r => r.id === repId);
     if (rep) {
       viewingReport = rep;
-      if ($modalViewReportTitle) $modalViewReportTitle.textContent = `📜 ${rep.title}`;
+      const ico = window.stIcon || (() => '');
+      if ($modalViewReportTitle) $modalViewReportTitle.innerHTML = `${ico('file-text')} ${escapeHtml(rep.title)}`;
       if ($modalViewReportBody) $modalViewReportBody.textContent = rep.text;
       if ($modalViewReport) $modalViewReport.style.display = 'flex';
     }
@@ -2437,8 +2444,9 @@ if ($modalViewReportCopy) {
   $modalViewReportCopy.addEventListener('click', () => {
     if (!viewingReport || !viewingReport.text) return;
     navigator.clipboard.writeText(viewingReport.text).then(() => {
-      $modalViewReportCopy.textContent = '✓ Copiado!';
-      setTimeout(() => { $modalViewReportCopy.textContent = '📋 Copiar Texto'; }, 2000);
+      const ico = window.stIcon || (() => '');
+      $modalViewReportCopy.innerHTML = `${ico('check')} Copiado!`;
+      setTimeout(() => { $modalViewReportCopy.innerHTML = `${ico('copy')} Copiar Texto`; }, 2000);
     });
   });
 }
@@ -2725,7 +2733,7 @@ async function handleScheduleFile(file) {
       }
     }
     renderSchedulePreview(parsedTimers, `${file.name} (${Math.max(1, Math.round(file.size / 1024))} KB)`);
-    if (titleEl) titleEl.textContent = `✓ ${file.name} carregado com sucesso (${parsedTimers.length} itens)`;
+    if (titleEl) titleEl.textContent = `${file.name} carregado com sucesso (${parsedTimers.length} itens)`;
   } catch (err) {
     console.error('Error importing schedule file:', err);
     alert('Erro ao processar ficheiro de horários: ' + (err.message || err));
@@ -2877,25 +2885,25 @@ function updateDcSyncBadge() {
     badge.style.borderColor = 'rgba(85, 239, 196, 0.4)';
     badge.style.background = 'rgba(85, 239, 196, 0.15)';
     badge.style.color = '#55efc4';
-    text.textContent = '🛡️ Híbrido (Cloud + LAN)';
+    text.textContent = 'Híbrido (Cloud + LAN)';
     badge.title = 'Sincronização redundante de palco: Cloud MQTT e LAN Hub Local ativos';
   } else if (status === 'local_hub') {
     badge.style.borderColor = 'rgba(241, 196, 15, 0.4)';
     badge.style.background = 'rgba(241, 196, 15, 0.15)';
     badge.style.color = '#f1c40f';
-    text.textContent = '⚡ LAN Local (Offline)';
+    text.textContent = 'LAN Local (Offline)';
     badge.title = 'Sincronização em rede local (sem dependência de Internet)';
   } else if (status === 'cloud') {
     badge.style.borderColor = 'rgba(9, 132, 227, 0.4)';
     badge.style.background = 'rgba(9, 132, 227, 0.15)';
     badge.style.color = '#74b9ff';
-    text.textContent = '🌐 Nuvem (WSS)';
+    text.textContent = 'Nuvem (WSS)';
     badge.title = 'Sincronização via Cloud MQTT (WAN)';
   } else {
     badge.style.borderColor = 'rgba(255, 118, 117, 0.4)';
     badge.style.background = 'rgba(255, 118, 117, 0.15)';
     badge.style.color = '#ff7675';
-    text.textContent = '🔴 Desligado';
+    text.textContent = 'Desligado';
     badge.title = 'Desligado da rede';
   }
 }

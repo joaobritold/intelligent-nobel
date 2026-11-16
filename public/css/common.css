@@ -11,36 +11,37 @@
 }
 
 :root {
-  /* Colors */
-  --bg-primary: #0f0f1a;
-  --bg-secondary: #1a1a2e;
-  --bg-card: #16213e;
-  --bg-card-hover: #1c2a4a;
-  --bg-input: #0d1b2a;
+  /* Colors — Studio Pro Matte (Estilo DaVinci Resolve / QLab 5 / Riedel / Blackmagic) */
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-card: #161b22;
+  --bg-card-hover: #21262d;
+  --bg-panel-header: #1c2128;
+  --bg-input: #0d1117;
 
-  --text-primary: #e8e8e8;
-  --text-secondary: #8892a4;
-  --text-muted: #4a5568;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
 
-  --accent: #6c5ce7;
-  --accent-hover: #7f70f0;
+  --accent: #1f6feb;
+  --accent-hover: #388bfd;
 
-  --green: #00b894;
-  --green-glow: rgba(0, 184, 148, 0.3);
-  --yellow: #fdcb6e;
-  --yellow-glow: rgba(253, 203, 110, 0.3);
-  --red: #e17055;
-  --red-glow: rgba(225, 112, 85, 0.3);
-  --danger: #ff4757;
+  --green: #2ea043;
+  --green-glow: rgba(46, 160, 67, 0.15);
+  --yellow: #d29922;
+  --yellow-glow: rgba(210, 153, 34, 0.15);
+  --red: #d73a49;
+  --red-glow: rgba(215, 58, 73, 0.15);
+  --danger: #d73a49;
 
-  --border: #2d3748;
-  --border-light: #4a5568;
+  --border: #30363d;
+  --border-light: #484f58;
 
-  --radius: 8px;
-  --radius-lg: 12px;
+  --radius: 6px;
+  --radius-lg: 8px;
 
-  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.4);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.4);
 
   /* Typography */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -96,30 +97,34 @@ button, a, input, select, textarea {
 .gap-lg { gap: 16px; }
 .gap-xl { gap: 24px; }
 
-/* ─── Buttons ───────────────────────────────────────────────────── */
+/* ─── Buttons (Studio Pro Matte) ────────────────────────────────── */
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 0 14px;
+  height: 36px;
+  min-height: 36px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--bg-card);
-  color: var(--text-primary);
+  background: #21262d;
+  color: #c9d1d9;
   font-family: var(--font-sans);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.84rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: all 0.15s ease;
   white-space: nowrap;
   user-select: none;
+  box-sizing: border-box;
 }
 
 .btn:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--border-light);
+  background: #30363d;
+  border-color: #8b949e;
+  color: #f0f6fc;
 }
 
 .btn:active {
@@ -127,103 +132,178 @@ button, a, input, select, textarea {
 }
 
 .btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
+  background: #1f6feb;
+  border-color: #388bfd;
+  color: #ffffff;
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: #388bfd;
+  border-color: #58a6ff;
+  color: #ffffff;
 }
 
 .btn-success {
-  background: var(--green);
-  border-color: var(--green);
-  color: white;
+  background: #2ea043;
+  border-color: #3fb950;
+  color: #ffffff;
+}
+
+.btn-success:hover {
+  background: #3fb950;
+  border-color: #56d364;
+  color: #ffffff;
 }
 
 .btn-danger {
-  background: transparent;
-  border-color: var(--danger);
-  color: var(--danger);
+  background: #21262d;
+  border-color: #d73a49;
+  color: #f85149;
 }
 
 .btn-danger:hover {
-  background: var(--danger);
-  color: white;
+  background: #d73a49;
+  border-color: #cb2431;
+  color: #ffffff;
 }
 
 .btn-icon {
-  padding: 6px 8px;
-  min-width: 34px;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
   font-size: 1rem;
 }
 
 .btn-sm {
-  padding: 4px 10px;
-  font-size: 0.8rem;
+  padding: 0 10px;
+  height: 28px;
+  min-height: 28px;
+  font-size: 0.76rem;
 }
 
 .btn-lg {
-  padding: 12px 24px;
-  font-size: 1rem;
+  padding: 0 20px;
+  height: 44px;
+  min-height: 44px;
+  font-size: 0.95rem;
 }
 
 /* ─── Inputs ────────────────────────────────────────────────────── */
 
 .input {
-  padding: 8px 12px;
+  padding: 0 10px;
+  height: 36px;
+  min-height: 36px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-input);
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 0.875rem;
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition);
   outline: none;
+  box-sizing: border-box;
 }
 
 .input:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 
 .input-mono {
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0.05em;
 }
 
 select.input {
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238892a4' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 30px;
 }
 
-/* ─── Connection Badge ──────────────────────────────────────────── */
+/* ─── Studio Pro SVG Icons ───────────────────────────────────────── */
+
+.st-icon {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: -2px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.st-icon.st-icon-filled {
+  fill: currentColor;
+  stroke: none;
+}
+
+.st-icon-sm { width: 12px; height: 12px; }
+.st-icon-md { width: 16px; height: 16px; }
+.st-icon-lg { width: 20px; height: 20px; }
+.st-icon-xl { width: 28px; height: 28px; }
+
+/* Functional color accents for icons */
+.st-icon-blue { color: #58a6ff; }
+.st-icon-green { color: #3fb950; }
+.st-icon-amber { color: #d29922; }
+.st-icon-red { color: #f85149; }
+.st-icon-muted { color: #8b949e; }
+
+/* ─── Tabular Numeral Relógios e Cronómetros (Sem oscilação) ─────── */
+
+.font-mono-nums,
+.font-mono,
+[class*="clock"],
+[class*="timer"],
+.timer-time,
+.timer-countdown,
+.preview-timer-display,
+.op-hero-time,
+.viewer-timer,
+.lineup-clock-time,
+.regie-clock-value,
+.dc-clock-value,
+.cs-clock-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Connection Badge (Studio Pro Matte) ───────────────────────── */
 
 .connection-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: var(--radius);
+  font-size: 0.72rem;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
 }
 
 .connection-badge.connected {
-  background: rgba(0, 184, 148, 0.15);
-  color: var(--green);
+  background: rgba(46, 160, 67, 0.12);
+  border-color: rgba(46, 160, 67, 0.35);
+  color: #3fb950;
 }
 
 .connection-badge.disconnected {
-  background: rgba(225, 112, 85, 0.15);
-  color: var(--red);
+  background: rgba(215, 58, 73, 0.12);
+  border-color: rgba(215, 58, 73, 0.35);
+  color: #f85149;
 }
 
 .connection-dot {
@@ -234,12 +314,7 @@ select.input {
 }
 
 .connected .connection-dot {
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  opacity: 1;
 }
 
 /* ─── Timer Colors ──────────────────────────────────────────────── */
@@ -252,7 +327,8 @@ select.input {
 /* ─── Scrollbar ─────────────────────────────────────────────────── */
 
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -272,20 +348,19 @@ select.input {
 .master-stage-select {
   appearance: none;
   -webkit-appearance: none;
-  background: rgba(253, 203, 110, 0.18) url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fdcb6e'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e") no-repeat right 8px center/14px;
-  color: #fdcb6e;
-  border: 1px solid rgba(253, 203, 110, 0.55);
-  font-weight: 800;
+  background: #161b22 url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") no-repeat right 8px center/12px;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  font-weight: 700;
   font-size: 0.82rem;
   padding: 4px 26px 4px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   cursor: pointer;
   outline: none;
   max-width: 200px;
   white-space: nowrap;
   text-overflow: ellipsis;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: border-color var(--transition);
   touch-action: manipulation;
 }
 
@@ -305,7 +380,7 @@ select.input {
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 .ctrl-stage-badge-btn:hover {
-  filter: brightness(1.2);
+  filter: brightness(1.15);
 }
 .ctrl-stage-badge-btn:active {
   transform: scale(0.96);
@@ -313,14 +388,13 @@ select.input {
 
 .master-stage-select:hover,
 .master-stage-select:focus {
-  background-color: rgba(253, 203, 110, 0.28);
-  border-color: #fdcb6e;
-  box-shadow: 0 0 10px rgba(253, 203, 110, 0.4);
+  background-color: #21262d;
+  border-color: var(--accent);
 }
 
 .master-stage-select option {
-  background: #111424;
-  color: #ffffff;
+  background: #161b22;
+  color: #e6edf3;
   font-weight: 600;
   padding: 8px;
 }
@@ -344,12 +418,12 @@ select.input {
   padding: 4px 10px;
   font-size: 0.78rem;
   font-weight: 700;
-  border-radius: 8px;
+  border-radius: var(--radius);
   white-space: nowrap;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.08);
+  background: #21262d;
   border: 1px solid var(--border);
-  color: #cbd5e1;
+  color: var(--text-secondary);
   cursor: pointer;
   touch-action: manipulation;
   transition: all 0.15s ease;
@@ -357,16 +431,15 @@ select.input {
 
 .stage-pill:hover,
 .stage-pill:active {
-  background: rgba(108, 92, 231, 0.25);
-  border-color: var(--accent);
-  color: #fff;
+  background: #30363d;
+  border-color: var(--border-light);
+  color: #f0f6fc;
 }
 
 .stage-pill.active {
-  background: #00b894 !important;
-  border-color: #00b894 !important;
+  background: #1f6feb !important;
+  border-color: #388bfd !important;
   color: #ffffff !important;
-  box-shadow: 0 0 10px rgba(0, 184, 148, 0.4);
 }
 
 /* ─── Unified Compact Top Navigation Menu ───────────────────────── */
@@ -384,32 +457,35 @@ select.input {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  padding: 5px 11px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  padding: 0 10px;
+  height: 28px;
+  min-height: 28px;
+  font-size: 0.76rem;
+  font-weight: 600;
   font-family: var(--font-sans);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #e2e8f0;
+  border-radius: var(--radius);
+  background: #21262d;
+  border: 1px solid var(--border);
+  color: #c9d1d9;
   text-decoration: none;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
   touch-action: manipulation;
+  box-sizing: border-box;
 }
 
 .st-nav-home-btn:hover,
 .st-nav-trigger:hover {
-  background: rgba(108, 92, 231, 0.22);
-  border-color: var(--accent);
-  color: #ffffff;
+  background: #30363d;
+  border-color: #8b949e;
+  color: #f0f6fc;
 }
 
 .st-nav-trigger {
-  background: rgba(108, 92, 231, 0.18);
-  border-color: rgba(108, 92, 231, 0.45);
-  color: #c4b5fd;
+  background: #21262d;
+  border-color: var(--border);
+  color: #e6edf3;
 }
 
 .st-nav-dropdown {
@@ -423,13 +499,13 @@ select.input {
   top: calc(100% + 6px);
   right: 0;
   min-width: 215px;
-  background: #131829;
-  border: 1.5px solid rgba(108, 92, 231, 0.5);
-  border-radius: 12px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: var(--radius-lg);
   padding: 6px;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.75);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   z-index: 9999;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -446,49 +522,49 @@ select.input {
 
 .st-nav-group-label {
   font-size: 0.64rem;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-secondary);
-  padding: 5px 10px 2px;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 6px 10px 2px;
 }
 
 .st-nav-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #e2e8f0;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #c9d1d9;
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   transition: background 0.15s ease, color 0.15s ease;
   white-space: nowrap;
 }
 
 .st-nav-item:hover {
-  background: rgba(108, 92, 231, 0.22);
-  color: #ffffff;
+  background: #21262d;
+  color: #f0f6fc;
 }
 
 .st-nav-item.active {
-  background: rgba(0, 184, 148, 0.18);
-  color: #55efc4;
-  font-weight: 800;
-  border: 1px solid rgba(0, 184, 148, 0.35);
+  background: rgba(31, 111, 235, 0.18);
+  color: #58a6ff;
+  font-weight: 700;
+  border: 1px solid rgba(56, 139, 253, 0.35);
 }
 
 .st-nav-item-master {
-  color: #fdcb6e;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  margin-top: 3px;
-  padding-top: 9px;
+  color: #d29922;
+  border-top: 1px solid #30363d;
+  margin-top: 4px;
+  padding-top: 8px;
 }
 
 .st-nav-item-master:hover {
-  background: rgba(253, 203, 110, 0.18);
-  color: #ffeaa7;
+  background: rgba(210, 153, 34, 0.12);
+  color: #e3b341;
 }
 
 /* ═══ v113 — Responsividade + Seletor de Modo ═══════════════════════ */
