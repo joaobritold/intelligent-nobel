@@ -652,9 +652,10 @@
       }
     },
 
-    async testTelegram(botToken, chatId, stageName = 'Palco') {
+    async testTelegram(botToken, chatId, stageName = 'Palco', senderName = '') {
       const token = String(botToken || '').trim();
       const chat = String(chatId || '').trim();
+      const customSender = String(senderName || '').trim();
 
       if (!token || !chat) {
         return { success: false, error: 'Por favor, preencha o Bot Token e o Chat ID.' };
@@ -662,11 +663,13 @@
 
       const nowStr = getNowTimeStr(true);
       const safeStage = escapeHtml(stageName || 'Palco');
+      const senderLine = customSender ? `👤 <b>Emissor Configurado:</b> <code>${escapeHtml(customSender)}</code>\n` : '';
       const testMsg =
         `🧪 <b>STAGETIMER PFP — TESTE DE LIGAÇÃO</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `✅ <b>Estado:</b> Operacional (Tempo Real)\n` +
         `🎪 <b>Palco / Sala:</b> <code>${safeStage}</code>\n` +
+        senderLine +
         `⏰ <b>Hora Sincronizada:</b> <code>${nowStr}</code>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `🔔 <i>Alertas ativos: Avisos 5m/1m/Fim, Chamadas de Régie, Comunicações Técnicas e Prompter.</i>\n` +
@@ -674,7 +677,7 @@
 
       return await this.sendTelegramMessage(
         testMsg,
-        { enabled: true, botToken: token, chatId: chat },
+        { enabled: true, botToken: token, chatId: chat, senderName: customSender },
         { immediate: true, priority: 'high', room: stageName }
       );
     },
@@ -1059,6 +1062,7 @@
       const timerDelayMs = this._getTimerArbitrationDelayMs(roomCode);
       const canSendTimerTg = isLeader && timerDelayMs >= 0 && tgCfg && tgCfg.enabled;
       const nowStr = getNowTimeStr(false);
+      const respLine = tgCfg?.senderName ? `\n👤 <b>Responsável:</b> ${escapeHtml(tgCfg.senderName)}` : '';
 
       // Reset flags if user added time (+1m / +5m) back above threshold
       if (remainingMs > 305000) rState.sent5m = false;
@@ -1082,7 +1086,7 @@
             `⏳ <b>AVISO 5 MINUTOS</b> • <code>${safeStage}</code> • ⏰ <b>${nowStr}</b>\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `🎤 <b>Em Palco:</b> ${safeArtist}\n` +
-            `⏱️ <b>Tempo Restante:</b> <code>05:00</code>`,
+            `⏱️ <b>Tempo Restante:</b> <code>05:00</code>` + respLine,
             tgCfg,
             { eventKey, room: roomCode, priority: 'normal', delayMs: timerDelayMs }
           );
@@ -1107,7 +1111,7 @@
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `🎤 <b>Em Palco:</b> ${safeArtist}\n` +
             `⏱️ <b>Tempo Restante:</b> <code>01:00</code> (Reta Final)\n` +
-            `⏭️ <i>Próxima atuação / mudança de palco a postos!</i>`,
+            `⏭️ <i>Próxima atuação / mudança de palco a postos!</i>` + respLine,
             tgCfg,
             { eventKey, room: roomCode, priority: 'high', delayMs: timerDelayMs }
           );
@@ -1131,7 +1135,7 @@
             `🛑 <b>TEMPO ESGOTADO (OVERTIME)</b> • <code>${safeStage}</code> • ⏰ <b>${nowStr}</b>\n` +
             `━━━━━━━━━━━━━━━━━━━━\n` +
             `🎤 <b>Artista:</b> ${safeArtist}\n` +
-            `⏱️ <b>Estado:</b> Tempo regulamentar concluído (<code>00:00</code>)`,
+            `⏱️ <b>Estado:</b> Tempo regulamentar concluído (<code>00:00</code>)` + respLine,
             tgCfg,
             { eventKey, room: roomCode, priority: 'high', delayMs: timerDelayMs }
           );
@@ -1153,6 +1157,7 @@
       const tgCfg = this._resolveTelegramConfig(roomCode, state.integrations?.telegram);
       const isLeader = this._isTelegramLeader(roomCode);
       const timeStr = getNowTimeStr(false);
+      const customSender = String(tgCfg?.senderName || '').trim();
 
       // 1. Chamadas entre Régies ou do Stage Manager / Operador (Intercom: FOH ⇄ Palco ⇄ S.Manager ⇄ Geral)
       if (state.regieCall && state.regieCall.triggeredAt && (state.regieCall.fohCallingStage || state.regieCall.stageCallingFoh)) {
@@ -1164,29 +1169,29 @@
           const rawCaller = String(state.regieCall.triggeredBy || '').trim();
           const callerRole = String(state.regieCall.senderRole || '').toLowerCase();
           const isOperatorCall = callerRole === 'operator' || /^(operador|sm|s\.m\.|s\.manager|stage manager|operator)$/i.test(rawCaller);
-          const callerDisplay = isOperatorCall ? 'S.Manager' : (rawCaller || 'Régie');
+          const callerDisplay = isOperatorCall ? (customSender || 'S.Manager') : (rawCaller || customSender || 'Régie');
           const safeCaller = escapeHtml(callerDisplay);
 
-          let callTitle = isOperatorCall ? '📱 Chamada S.Manager' : '📞 Chamada de Régie';
+          let callTitle = isOperatorCall ? `📱 Chamada ${callerDisplay}` : '📞 Chamada de Régie';
           let callBody = isOperatorCall
-            ? 'O Stage Manager (S.Manager) está a chamar com urgência!'
+            ? `O ${callerDisplay} está a chamar com urgência!`
             : 'Uma régie está a chamar com urgência!';
           let callRoute = `${safeCaller} ➔ INTERCOM`;
           let tgHeader = isOperatorCall
-            ? `📱 <b>CHAMADA S.MANAGER</b> • <code>${safeStage}</code> • ⏰ <b>${timeStr}</b>`
+            ? `📱 <b>CHAMADA ${escapeHtml(callerDisplay.toUpperCase())}</b> • <code>${safeStage}</code> • ⏰ <b>${timeStr}</b>`
             : `📞 <b>CHAMADA URGENTE DE RÉGIE</b> • <code>${safeStage}</code> • ⏰ <b>${timeStr}</b>`;
 
           if (state.regieCall.fohCallingStage && state.regieCall.stageCallingFoh) {
-            callTitle = isOperatorCall ? '📱 S.MANAGER ➔ TODAS AS RÉGIES' : '📞 CHAMADA GERAL DE RÉGIE';
+            callTitle = isOperatorCall ? `📱 ${callerDisplay.toUpperCase()} ➔ TODAS AS RÉGIES` : '📞 CHAMADA GERAL DE RÉGIE';
             callBody = isOperatorCall
-              ? 'O Stage Manager (S.Manager) está a chamar todas as régies e postos técnicos com urgência!'
+              ? `O ${callerDisplay} está a chamar todas as régies e postos técnicos com urgência!`
               : 'Alerta máximo: chamada geral para todas as régies e postos técnicos!';
             callRoute = `${safeCaller} ➔ TODAS AS RÉGIES`;
           } else if (state.regieCall.fohCallingStage) {
             if (isOperatorCall) {
-              callTitle = '📱 S.MANAGER ➔ PALCO';
-              callBody = 'O Stage Manager (S.Manager) está a chamar a Régie de Palco com urgência!';
-              callRoute = 'S.MANAGER ➔ PALCO';
+              callTitle = `📱 ${callerDisplay.toUpperCase()} ➔ PALCO`;
+              callBody = `O ${callerDisplay} está a chamar a Régie de Palco com urgência!`;
+              callRoute = `${callerDisplay.toUpperCase()} ➔ PALCO`;
             } else {
               callTitle = '📞 FOH ➔ PALCO';
               callBody = 'A Régie de Frente (FOH) está a chamar a Régie de Palco com urgência!';
@@ -1194,9 +1199,9 @@
             }
           } else if (state.regieCall.stageCallingFoh) {
             if (isOperatorCall) {
-              callTitle = '📱 S.MANAGER ➔ FOH';
-              callBody = 'O Stage Manager (S.Manager) está a chamar a Régie de Frente (FOH) com urgência!';
-              callRoute = 'S.MANAGER ➔ FOH (Frente)';
+              callTitle = `📱 ${callerDisplay.toUpperCase()} ➔ FOH`;
+              callBody = `O ${callerDisplay} está a chamar a Régie de Frente (FOH) com urgência!`;
+              callRoute = `${callerDisplay.toUpperCase()} ➔ FOH (Frente)`;
             } else {
               callTitle = '📞 PALCO ➔ FOH';
               callBody = 'A Régie de Palco está a chamar a Frente (FOH) com urgência!';
@@ -1236,11 +1241,11 @@
           const rawFrom = String(state.regieMessage.from || '').trim();
           const senderRole = String(state.regieMessage.senderRole || '').toLowerCase();
           const isFromOperator = senderRole === 'operator' || !rawFrom || /^(operador|stage manager|sm|s\.m\.|s\.manager|operator)$/i.test(rawFrom);
-          const senderDisplay = isFromOperator ? 'Stage Manager (S.Manager)' : rawFrom;
+          const senderDisplay = isFromOperator ? (customSender || 'Stage Manager (S.Manager)') : (rawFrom || customSender || 'Régie');
           const safeSender = escapeHtml(senderDisplay);
 
           const localNotifTitle = isFromOperator
-            ? `📱 Mensagem S.Manager — ${stageName}`
+            ? `📱 Mensagem ${senderDisplay} — ${stageName}`
             : `📟 Mensagem de ${senderDisplay} — ${stageName}`;
 
           this.showLocalNotification(localNotifTitle, {
@@ -1255,7 +1260,7 @@
             const safeMsg = escapeHtml(state.regieMessage.text);
             const msgTime = escapeHtml(state.regieMessage.sentTimeStr || timeStr);
             const tgHeader = isFromOperator
-              ? `📱 <b>MENSAGEM S.MANAGER</b> • <code>${safeStage}</code> • ⏰ <b>${msgTime}</b>`
+              ? `📱 <b>MENSAGEM DE ${escapeHtml(senderDisplay.toUpperCase())}</b> • <code>${safeStage}</code> • ⏰ <b>${msgTime}</b>`
               : `📟 <b>MENSAGEM DE ${escapeHtml(senderDisplay.toUpperCase())}</b> • <code>${safeStage}</code> • ⏰ <b>${msgTime}</b>`;
 
             this.sendTelegramMessage(
@@ -1320,7 +1325,7 @@
             const safePrompter = escapeHtml(state.message.text);
             const rawPrompterFrom = String(state.message.from || '').trim();
             const prompterSender = (!rawPrompterFrom || /^(operador|stage manager|sm|s\.m\.|s\.manager|operator)$/i.test(rawPrompterFrom))
-              ? 'Stage Manager (S.Manager)'
+              ? (customSender || 'Stage Manager (S.Manager)')
               : rawPrompterFrom;
             const lvl = state.message.level === 'danger' || state.message.level === 'urgent'
               ? '🔴 URGENTE'

@@ -574,7 +574,7 @@ class UniversalSyncClient {
       const sender = String(cmdObj.sender || '');
       const secret = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('stagetimer_auth_token') : null) ||
                      (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_auth_token') : null) ||
-                     'st_showflow_cmd_sig_v144';
+                     'st_showflow_cmd_sig_v146';
       const raw = `${action}:${target}:${sentAt}:${sender}:${secret.slice(-16)}`;
       let hash = 0x811c9dc5;
       for (let i = 0; i < raw.length; i++) {
@@ -956,7 +956,7 @@ class UniversalSyncClient {
       if (typeof document !== 'undefined' && !this._mqttScriptLoading) {
         this._mqttScriptLoading = true;
         const s = document.createElement('script');
-        s.src = 'js/mqtt.min.js?v=142';
+        s.src = 'js/mqtt.min.js?v=146';
         s.onload = () => {
           this._mqttScriptLoading = false;
           this._initCloudSync();
@@ -2349,6 +2349,7 @@ class UniversalSyncClient {
         enabled: false,
         botToken: '',
         chatId: '',
+        senderName: '',
         alert5m: true,
         alert1m: true,
         alertEnd: true,
@@ -4072,14 +4073,15 @@ class UniversalSyncClient {
   _resolveSenderIdentity(customFrom = '') {
     const viewKey = this._getCurrentViewKey();
     const trimmed = String(customFrom || '').trim();
+    const tgCustomSender = String(this._state?.integrations?.telegram?.senderName || '').trim();
     if (trimmed) {
       const upper = trimmed.toUpperCase();
       if (upper === 'SM' || upper === 'S.M.' || upper === 'S.MANAGER' || upper === 'STAGE MANAGER' || upper === 'OPERATOR' || upper === 'OPERADOR') {
-        return { from: 'S.Manager', senderRole: 'operator' };
+        return { from: tgCustomSender || 'S.Manager', senderRole: 'operator' };
       }
       return { from: trimmed, senderRole: viewKey };
     }
-    if (viewKey === 'operator') return { from: 'S.Manager', senderRole: 'operator' };
+    if (viewKey === 'operator') return { from: tgCustomSender || 'S.Manager', senderRole: 'operator' };
     if (viewKey === 'controller') return { from: 'Configurador', senderRole: 'controller' };
     if (viewKey === 'master') return { from: 'Super Régie Master', senderRole: 'master' };
     if (viewKey === 'dc') return { from: 'Direção de Cena', senderRole: 'dc' };

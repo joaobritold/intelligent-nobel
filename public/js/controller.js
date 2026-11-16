@@ -1865,6 +1865,7 @@ if ($ctrlPrevReset) {
   const $tgEnabled = document.getElementById('notif-tg-enabled');
   const $tgToken = document.getElementById('notif-tg-token');
   const $tgChat = document.getElementById('notif-tg-chat');
+  const $tgSender = document.getElementById('notif-tg-sender');
   const $tgAlert5m = document.getElementById('notif-tg-alert-5m');
   const $tgAlert1m = document.getElementById('notif-tg-alert-1m');
   const $tgAlertEnd = document.getElementById('notif-tg-alert-end');
@@ -1906,6 +1907,7 @@ if ($ctrlPrevReset) {
     if ($tgEnabled) $tgEnabled.checked = !!tg.enabled;
     if ($tgToken) $tgToken.value = tg.botToken || '';
     if ($tgChat) $tgChat.value = tg.chatId || '';
+    if ($tgSender) $tgSender.value = tg.senderName || '';
     if ($tgAlert5m) $tgAlert5m.checked = tg.alert5m !== false;
     if ($tgAlert1m) $tgAlert1m.checked = tg.alert1m !== false;
     if ($tgAlertEnd) $tgAlertEnd.checked = tg.alertEnd !== false;
@@ -1952,6 +1954,7 @@ if ($ctrlPrevReset) {
         enabled: $tgEnabled ? $tgEnabled.checked : false,
         botToken: $tgToken ? $tgToken.value.trim() : '',
         chatId: $tgChat ? $tgChat.value.trim() : '',
+        senderName: $tgSender ? $tgSender.value.trim() : '',
         alert5m: $tgAlert5m ? $tgAlert5m.checked : true,
         alert1m: $tgAlert1m ? $tgAlert1m.checked : true,
         alertEnd: $tgAlertEnd ? $tgAlertEnd.checked : true,
@@ -1991,7 +1994,8 @@ if ($ctrlPrevReset) {
       }
 
       const stageName = state?.name || state?.id || 'Palco';
-      const result = await window.StageTimerNotifications.testTelegram(token, chat, stageName);
+      const sender = $tgSender ? $tgSender.value.trim() : '';
+      const result = await window.StageTimerNotifications.testTelegram(token, chat, stageName, sender);
       if (result.success) {
         if ($tgFeedback) {
           $tgFeedback.textContent = 'Mensagem entregue no Telegram!';

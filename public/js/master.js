@@ -2436,6 +2436,7 @@
   const $masterTgEnabled = document.getElementById('master-tg-enabled');
   const $masterTgToken = document.getElementById('master-tg-token');
   const $masterTgChat = document.getElementById('master-tg-chat');
+  const $masterTgSender = document.getElementById('master-tg-sender');
   const $masterTgAlert5m = document.getElementById('master-tg-alert-5m');
   const $masterTgAlert1m = document.getElementById('master-tg-alert-1m');
   const $masterTgAlertEnd = document.getElementById('master-tg-alert-end');
@@ -2555,6 +2556,7 @@
     if ($masterTgEnabled) $masterTgEnabled.checked = !!tg.enabled;
     if ($masterTgToken) $masterTgToken.value = tg.botToken || '';
     if ($masterTgChat) $masterTgChat.value = tg.chatId || '';
+    if ($masterTgSender) $masterTgSender.value = tg.senderName || '';
     if ($masterTgAlert5m) $masterTgAlert5m.checked = tg.alert5m !== false;
     if ($masterTgAlert1m) $masterTgAlert1m.checked = tg.alert1m !== false;
     if ($masterTgAlertEnd) $masterTgAlertEnd.checked = tg.alertEnd !== false;
@@ -2615,6 +2617,7 @@
         enabled: $masterTgEnabled ? $masterTgEnabled.checked : false,
         botToken: $masterTgToken ? $masterTgToken.value.trim() : '',
         chatId: $masterTgChat ? $masterTgChat.value.trim() : '',
+        senderName: $masterTgSender ? $masterTgSender.value.trim() : '',
         alert5m: $masterTgAlert5m ? $masterTgAlert5m.checked : true,
         alert1m: $masterTgAlert1m ? $masterTgAlert1m.checked : true,
         alertEnd: $masterTgAlertEnd ? $masterTgAlertEnd.checked : true,
@@ -2691,7 +2694,8 @@
       }
 
       const stageName = currentNotifStageCode || masterClient?.cleanRoom || 'Super Régie Master';
-      const result = await window.StageTimerNotifications.testTelegram(token, chat, stageName);
+      const sender = $masterTgSender ? $masterTgSender.value.trim() : '';
+      const result = await window.StageTimerNotifications.testTelegram(token, chat, stageName, sender);
       if (result.success) {
         if ($masterTgFeedback) {
           $masterTgFeedback.textContent = 'Mensagem entregue no Telegram!';
