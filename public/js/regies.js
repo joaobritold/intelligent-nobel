@@ -15,6 +15,33 @@ if (!roomId) {
   }
 }
 
+// Security: Check if current room belongs to an event and user is authorized
+try {
+  const isMasterUser = (typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
+    sessionStorage.getItem('stagetimer_master_active') === '1' ||
+    localStorage.getItem('stagetimer_master_active') === '1' ||
+    sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
+    localStorage.getItem('stagetimer_master_auth_v12') === 'true';
+
+  if (!isMasterUser) {
+    const localEvents = JSON.parse(localStorage.getItem('stagetimer_v63_registry') || localStorage.getItem('stagetimer_v10_events_list') || '[]');
+    if (localEvents && localEvents.length > 0) {
+      const owningEvent = localEvents.find(e => {
+        if ((e.code || '').toUpperCase() === roomId) return true;
+        if (Array.isArray(e.stages) && e.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId)) return true;
+        return false;
+      });
+      if (owningEvent) {
+        const unlockedEv = (sessionStorage.getItem('stagetimer_unlocked_event') || localStorage.getItem('stagetimer_unlocked_event') || '').trim().toUpperCase();
+        if (!unlockedEv || unlockedEv !== (owningEvent.code || '').toUpperCase()) {
+          console.warn('[Regies] Acesso não autorizado ao evento', owningEvent.code, '— redirecionando para o Portal');
+          window.location.replace('index.html?portal=1');
+        }
+      }
+    }
+  }
+} catch (_) {}
+
 try {
   localStorage.setItem('stagetimer_device_room', roomId);
   localStorage.setItem('stagetimer_last_room', roomId);
@@ -924,9 +951,15 @@ function updateLineupStageUI(force = false) {
     }
   }
 
+  const isMaster = (typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
+    sessionStorage.getItem('stagetimer_master_active') === '1' ||
+    localStorage.getItem('stagetimer_master_active') === '1' ||
+    sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
+    localStorage.getItem('stagetimer_master_auth_v12') === 'true';
+
   if ($lineupStagePills) {
     const allStages = [];
-    const pillEvents = currentEvent ? [currentEvent] : list;
+    const pillEvents = currentEvent ? [currentEvent] : (isMaster ? list : []);
     pillEvents.forEach(ev => {
       const evTitle = ev.title || ev.code;
       const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: evTitle }];
@@ -966,19 +999,21 @@ function updateLineupStageUI(force = false) {
     }
   }
 
-  let totalStagesCount = 0;
-  list.forEach(e => {
-    totalStagesCount += (Array.isArray(e.stages) && e.stages.length > 0) ? e.stages.length : 1;
+  // Security: Non-master users can ONLY see and switch between stages of their currently unlocked event!
+  const selectableEvents = isMaster ? list : (currentEvent ? [currentEvent] : []);
+  let selectableStagesCount = 0;
+  selectableEvents.forEach(e => {
+    selectableStagesCount += (Array.isArray(e.stages) && e.stages.length > 0) ? e.stages.length : 1;
   });
 
   if ($lineupEventSelect) {
-    if (list.length > 1 || totalStagesCount > 1) {
+    if (selectableEvents.length > 1 || selectableStagesCount > 1) {
       $lineupEventSelect.style.display = 'inline-block';
-      const selectSig = list.map(ev => `${ev.code}:${ev.title}:${(ev.stages || []).map(s => `${s.code}:${s.name}`).join(';')}`).join('||') + `::${currentCode}`;
+      const selectSig = selectableEvents.map(ev => `${ev.code}:${ev.title}:${(ev.stages || []).map(s => `${s.code}:${s.name}`).join(';')}`).join('||') + `::${currentCode}`;
       if (force || selectSig !== lastLineupSelectSig) {
         lastLineupSelectSig = selectSig;
         let optionsHtml = '';
-        list.forEach(ev => {
+        selectableEvents.forEach(ev => {
           const evTitle = ev.title || ev.code;
           const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
           if (stages.length > 1) {
@@ -1020,6 +1055,19 @@ document.addEventListener('click', (e) => {
   if (pill) {
     const targetRoom = (pill.dataset.switchStage || '').toUpperCase().trim();
     if (targetRoom && targetRoom !== (state?.id || roomId).toUpperCase()) {
+      const isMaster = (typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
+        sessionStorage.getItem('stagetimer_master_active') === '1' ||
+        localStorage.getItem('stagetimer_master_active') === '1';
+      if (!isMaster) {
+        const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+        const currentCode = (state?.id || roomId).toUpperCase();
+        const currentEv = rawList.find(ev => ev.code === currentCode || (Array.isArray(ev.stages) && ev.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode)));
+        const isAllowed = currentEv && ((currentEv.code || '').toUpperCase() === targetRoom || (Array.isArray(currentEv.stages) && currentEv.stages.some(s => (s.code || s.id || '').toUpperCase() === targetRoom)));
+        if (!isAllowed) {
+          console.warn('[Regies] Acesso bloqueado a palco de outro evento.');
+          return;
+        }
+      }
       try {
         localStorage.setItem('stagetimer_device_room', targetRoom);
         localStorage.setItem('stagetimer_last_room', targetRoom);
@@ -1034,6 +1082,19 @@ if ($lineupEventSelect) {
   $lineupEventSelect.addEventListener('change', () => {
     const chosen = $lineupEventSelect.value;
     if (chosen && chosen !== (state?.id || roomId)) {
+      const isMaster = (typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
+        sessionStorage.getItem('stagetimer_master_active') === '1' ||
+        localStorage.getItem('stagetimer_master_active') === '1';
+      if (!isMaster) {
+        const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+        const currentCode = (state?.id || roomId).toUpperCase();
+        const currentEv = rawList.find(ev => ev.code === currentCode || (Array.isArray(ev.stages) && ev.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode)));
+        const isAllowed = currentEv && ((currentEv.code || '').toUpperCase() === chosen.toUpperCase() || (Array.isArray(currentEv.stages) && currentEv.stages.some(s => (s.code || s.id || '').toUpperCase() === chosen.toUpperCase())));
+        if (!isAllowed) {
+          console.warn('[Regies] Acesso bloqueado a palco de outro evento.');
+          return;
+        }
+      }
       try {
         localStorage.setItem('stagetimer_device_room', chosen.toUpperCase());
         localStorage.setItem('stagetimer_last_room', chosen.toUpperCase());

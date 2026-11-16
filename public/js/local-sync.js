@@ -8,6 +8,34 @@
  * - Reliable event deletion & unified cumulative end time calculation
  */
 
+const _safeMemStore = {};
+function safeStorageGet(storageName, key) {
+  try {
+    if (typeof window !== 'undefined' && window[storageName] && typeof window[storageName].getItem === 'function') {
+      return window[storageName].getItem(key);
+    }
+  } catch (_) {}
+  return _safeMemStore[`${storageName}_${key}`] || null;
+}
+function safeStorageSet(storageName, key, value) {
+  try {
+    if (typeof window !== 'undefined' && window[storageName] && typeof window[storageName].setItem === 'function') {
+      window[storageName].setItem(key, value);
+      return;
+    }
+  } catch (_) {}
+  _safeMemStore[`${storageName}_${key}`] = String(value);
+}
+function safeStorageRemove(storageName, key) {
+  try {
+    if (typeof window !== 'undefined' && window[storageName] && typeof window[storageName].removeItem === 'function') {
+      window[storageName].removeItem(key);
+      return;
+    }
+  } catch (_) {}
+  delete _safeMemStore[`${storageName}_${key}`];
+}
+
 class UniversalSyncClient {
   constructor({ role = 'viewer', room } = {}) {
     this.role = role;
@@ -34,7 +62,7 @@ class UniversalSyncClient {
       sessionStorage.setItem('stagetimer_active_room', this.cleanRoom);
     } catch (e) {}
 
-    let orgNs = (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_org_namespace') : null) || '';
+    let orgNs = safeStorageGet('localStorage', 'stagetimer_org_namespace') || '';
     if (typeof window !== 'undefined' && window.location) {
       try {
         const urlParams = new URLSearchParams(window.location.search);
@@ -68,7 +96,7 @@ class UniversalSyncClient {
 
     // ── Clean Slate Epoch v63 Reset (Permanent Zero Wipe) ──
     const CLEAN_SLATE_EPOCH = 'stagetimer_clean_slate_epoch_v63';
-    if (localStorage.getItem(CLEAN_SLATE_EPOCH) !== 'true') {
+    if (safeStorageGet('localStorage', CLEAN_SLATE_EPOCH) !== 'true') {
       try {
         const preserveAuthMaster = localStorage.getItem('stagetimer_master_active');
         const preserveAuthV12 = localStorage.getItem('stagetimer_master_auth_v12');
@@ -574,7 +602,7 @@ class UniversalSyncClient {
       const sender = String(cmdObj.sender || '');
       const secret = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('stagetimer_auth_token') : null) ||
                      (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_auth_token') : null) ||
-                     'st_showflow_cmd_sig_v2.02';
+                     'st_showflow_cmd_sig_v2.03';
       const raw = `${action}:${target}:${sentAt}:${sender}:${secret.slice(-16)}`;
       let hash = 0x811c9dc5;
       for (let i = 0; i < raw.length; i++) {
@@ -956,7 +984,7 @@ class UniversalSyncClient {
       if (typeof document !== 'undefined' && !this._mqttScriptLoading) {
         this._mqttScriptLoading = true;
         const s = document.createElement('script');
-        s.src = 'js/mqtt.min.js?v=2.02';
+        s.src = 'js/mqtt.min.js?v=2.03';
         s.onload = () => {
           this._mqttScriptLoading = false;
           this._initCloudSync();

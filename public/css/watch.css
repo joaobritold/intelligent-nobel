@@ -55,6 +55,7 @@ html, body.watch-body {
   text-align: center;
   white-space: nowrap;
   font-size: clamp(3.6rem, 33vw, 6.2rem);
+  color: #00b894;
   margin: auto 0;
 }
 
@@ -72,6 +73,11 @@ html, body.watch-body {
 .watch-viewer .viewer-timer.warn {
   color: #fa8231;
   text-shadow: 0 0 25px rgba(250, 130, 49, 0.45);
+}
+
+.watch-viewer .viewer-timer.paused {
+  color: #74b9ff;
+  text-shadow: 0 0 20px rgba(116, 185, 255, 0.45);
 }
 
 /* Tempo Negativo / Overtime / Fim: Vermelho Vivo Pulsante */
@@ -247,24 +253,46 @@ html, body.watch-body {
 }
 
 /* Prompter Message Overlay */
-.watch-viewer .viewer-message {
+.watch-viewer .viewer-message,
+.watch-message-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(255, 71, 87, 0.95);
+  background: rgba(255, 71, 87, 0.96);
+  backdrop-filter: blur(8px);
   color: #ffffff;
   display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 8px;
-  font-size: clamp(1.2rem, 8vw, 1.8rem);
+  padding: 12px;
+  font-size: clamp(1.1rem, 7vw, 1.6rem);
   font-weight: 900;
   text-align: center;
 }
 
-.watch-viewer .viewer-message.visible {
+.watch-viewer .viewer-message.visible,
+.watch-message-overlay.visible {
   display: flex;
+}
+
+.watch-msg-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: #000000;
+  color: #ff4757;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.watch-msg-text {
+  font-size: clamp(1rem, 7vw, 1.4rem);
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.25;
 }
 
 @media (min-width: 650px) {

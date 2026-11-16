@@ -1,49 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <script>
-    (function() {
-      try {
-        var EPOCH_KEY = 'stagetimer_watch_clean_v2.02';
-        if (localStorage.getItem(EPOCH_KEY) !== 'true') {
-          var mActive = localStorage.getItem('stagetimer_master_active');
-          var mV12 = localStorage.getItem('stagetimer_master_auth_v12');
-          var mToken = localStorage.getItem('stagetimer_auth_token');
-          var devUuid = localStorage.getItem('stagetimer_device_uuid');
-
-          var keys = [];
-          for (var i = 0; i < localStorage.length; i++) {
-            var k = localStorage.key(i);
-            if (k && k.indexOf('stagetimer_') === 0) {
-              keys.push(k);
-            }
-          }
-          for (var j = 0; j < keys.length; j++) {
-            localStorage.removeItem(keys[j]);
-          }
-          try { sessionStorage.clear(); } catch (_) {}
-
-          if (mActive) localStorage.setItem('stagetimer_master_active', mActive);
-          if (mV12) localStorage.setItem('stagetimer_master_auth_v12', mV12);
-          if (mToken) localStorage.setItem('stagetimer_auth_token', mToken);
-          if (devUuid) localStorage.setItem('stagetimer_device_uuid', devUuid);
-
-          localStorage.setItem(EPOCH_KEY, 'true');
-
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(regs) {
-              for (var r of regs) r.unregister();
-            }).catch(function() {});
-          }
-          if ('caches' in window) {
-            caches.keys().then(function(names) {
-              for (var n of names) caches.delete(n);
-            }).catch(function() {});
-          }
-        }
-      } catch (e) {}
-    })();
-  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -51,69 +8,74 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="ShowFlow Watch">
   <meta name="theme-color" content="#000000">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/svg+xml" href="icon.svg">
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <title>ShowFlow — Apple Watch (Palco)</title>
-  <link rel="stylesheet" href="css/common.css?v=2.02">
-  <link rel="stylesheet" href="css/viewer.css?v=2.02">
-  <link rel="stylesheet" href="css/watch.css?v=2.02">
+  <title>ShowFlow — Apple Watch</title>
+  <link rel="stylesheet" href="css/watch.css?v=2.03">
+  <script>
+    // Inicialização visual instantânea (0ms) antes do download de scripts externos
+    document.addEventListener('DOMContentLoaded', function() {
+      try {
+        var p = new URLSearchParams(window.location.search);
+        var r = (p.get('room') || 'PALCO1').toUpperCase().trim();
+        var $name = document.getElementById('watch-artist-name');
+        var $clock = document.getElementById('watch-clock-time');
+        if ($name) $name.textContent = r;
+        function updateFastClock() {
+          if ($clock) {
+            var d = new Date();
+            var h = String(d.getHours()).padStart(2, '0');
+            var m = String(d.getMinutes()).padStart(2, '0');
+            var s = String(d.getSeconds()).padStart(2, '0');
+            $clock.textContent = h + ':' + m + ':' + s;
+          }
+        }
+        updateFastClock();
+        setInterval(updateFastClock, 1000);
+      } catch (_) {}
+    });
+  </script>
 </head>
 <body class="watch-body">
-  <!-- Ecrã Apple Watch: Idêntico ao Modo Palco (Viewer) -->
   <div class="viewer watch-viewer">
-    <!-- Ponto discreto de estado de ligação -->
-    <div id="viewer-connection" class="viewer-connection disconnected" title="Estado de Ligação"></div>
+    <!-- Ponto de Ligação no Canto Superior Esquerdo -->
+    <div id="watch-status-dot" class="viewer-connection disconnected" title="Estado de Ligação"></div>
 
-    <!-- Nome do Artista em Palco (Topo) -->
-    <div id="viewer-timer-name" class="viewer-timer-name"></div>
+    <!-- Nome do Artista em Palco no Topo -->
+    <div id="watch-artist-name" class="viewer-timer-name">PALCO1</div>
 
-    <!-- Cronómetro Gigante de Palco (Conta Normal & Negativo em Vermelho) -->
-    <div id="viewer-timer" class="viewer-timer">--:--</div>
+    <!-- Cronómetro Gigante no Centro -->
+    <div id="watch-timer" class="viewer-timer safe">00:00</div>
 
-    <!-- Notas do Artista -->
+    <!-- Notas do Artista (Debaixo do Relógio) -->
     <div id="viewer-notes" class="viewer-notes"></div>
 
     <!-- Próximo Artista (Canto Inferior Direito) -->
-    <div id="viewer-next" class="viewer-next" style="display: none;">
+    <div id="watch-next" class="viewer-next" style="display: none;">
       <span class="viewer-next-label">NEXT:</span>
-      <span id="viewer-next-name" class="viewer-next-name"></span>
+      <span id="watch-next-name" class="viewer-next-name"></span>
     </div>
 
     <!-- Hora Local (Canto Inferior Esquerdo) -->
-    <div id="viewer-local-clock" class="viewer-local-clock">
-      <span class="viewer-clock-label">HORA LOCAL</span>
-      <span id="viewer-clock-time">--:--:--</span>
-    </div>
-
-    <!-- Estado de Espera (Standby) -->
-    <div id="viewer-empty" class="viewer-empty" style="display: none;">
-      <div class="viewer-empty-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width:24px;height:24px;stroke:#388bfd;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-      <div class="viewer-empty-text">Standby</div>
+    <div id="watch-local-clock" class="viewer-local-clock">
+      <span class="viewer-clock-label">HORA</span>
+      <span id="watch-clock-time">--:--:--</span>
     </div>
 
     <!-- Barra de Progresso Fina na Base -->
     <div class="viewer-progress">
-      <div id="viewer-progress-bar" class="viewer-progress-bar"></div>
+      <div id="watch-progress-bar" class="viewer-progress-bar"></div>
     </div>
 
     <!-- Overlay de Mensagem da Régie -->
-    <div id="viewer-message" class="viewer-message"></div>
-
-    <!-- Efeito Flash de Fim / Overtime -->
-    <div id="flash-overlay" class="viewer-flash-overlay"></div>
+    <div id="watch-message-overlay" class="watch-message-overlay">
+      <div id="watch-msg-badge" class="watch-msg-badge">AVISO</div>
+      <div id="watch-msg-text" class="watch-msg-text"></div>
+    </div>
   </div>
 
-  <!-- Central SVG Icons -->
-  <script src="js/st-icons.js?v=2.02"></script>
-  <!-- Cloud MQTT over WSS (Local + Port 443 / Port 8084) -->
-  <script src="js/mqtt.min.js?v=2.02"></script>
-  <!-- Local browser sync + Cloud -->
-  <script src="js/pwa.js?v=2.02"></script>
-  <script src="js/local-sync.js?v=2.02"></script>
-  <!-- Motor de Palco (Viewer) Oficial e Testado -->
-  <script src="js/viewer.js?v=2.02"></script>
+  <!-- Scripts: Apenas os necessários, sem Service Worker nem bloqueios -->
+  <script src="js/st-icons.js?v=2.03"></script>
+  <script src="js/mqtt.min.js?v=2.03"></script>
+  <script src="js/local-sync.js?v=2.03"></script>
+  <script src="js/watch.js?v=2.03"></script>
 </body>
 </html>

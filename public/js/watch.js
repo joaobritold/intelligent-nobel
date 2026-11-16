@@ -10,19 +10,37 @@
 (function() {
   'use strict';
 
+  // ─── Safe Storage Helpers (100% immune to WebKit SecurityError) ─────
+  function safeGet(storageName, key) {
+    try {
+      if (typeof window !== 'undefined' && window[storageName] && typeof window[storageName].getItem === 'function') {
+        return window[storageName].getItem(key) || '';
+      }
+    } catch (_) {}
+    return '';
+  }
+  function safeSet(storageName, key, val) {
+    try {
+      if (typeof window !== 'undefined' && window[storageName] && typeof window[storageName].setItem === 'function') {
+        window[storageName].setItem(key, val);
+      }
+    } catch (_) {}
+  }
+
   // ─── Room & Device Resolution ─────────────────────────────────────────
   const params = new URLSearchParams(location.search);
   const rawParamRoom = (params.get('room') || '').trim();
   const normalizedParam = rawParamRoom.replace(/\s+/g, '-').toUpperCase();
-  const savedActiveRoom = (sessionStorage.getItem('stagetimer_active_room') || '').trim();
-  const savedDeviceRoom = (localStorage.getItem('stagetimer_device_room') || '').trim();
-  const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').trim();
+  const savedActiveRoom = safeGet('sessionStorage', 'stagetimer_active_room').trim();
+  const savedDeviceRoom = safeGet('localStorage', 'stagetimer_device_room').trim();
+  const savedLastRoom = safeGet('localStorage', 'stagetimer_last_room').trim();
 
   let roomId = (normalizedParam || savedActiveRoom || savedDeviceRoom || savedLastRoom || 'PALCO1').toUpperCase();
 
   // Smart resolve from cached registry if available
   try {
-    const localEvents = JSON.parse(localStorage.getItem('stagetimer_v63_registry') || localStorage.getItem('stagetimer_v10_events_list') || '[]');
+    const rawReg = safeGet('localStorage', 'stagetimer_v63_registry') || safeGet('localStorage', 'stagetimer_v10_events_list') || '[]';
+    const localEvents = JSON.parse(rawReg);
     const cleanLookup = roomId.replace(/[^A-Z0-9]/g, '');
     const matchedEv = localEvents.find(e => {
       const c = (e.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -37,23 +55,31 @@
     }
   } catch (_) {}
 
-  try {
-    localStorage.setItem('stagetimer_device_room', roomId);
-    localStorage.setItem('stagetimer_last_room', roomId);
-    sessionStorage.setItem('stagetimer_active_room', roomId);
-  } catch (_) {}
+  safeSet('localStorage', 'stagetimer_device_room', roomId);
+  safeSet('localStorage', 'stagetimer_last_room', roomId);
+  safeSet('sessionStorage', 'stagetimer_active_room', roomId);
 
-  // ─── DOM References ──────────────────────────────────────────────────
-  const $statusDot = document.getElementById('watch-status-dot');
-  const $artistName = document.getElementById('watch-artist-name');
-  const $timer = document.getElementById('watch-timer');
-  const $clockTime = document.getElementById('watch-clock-time');
-  const $next = document.getElementById('watch-next');
-  const $nextName = document.getElementById('watch-next-name');
-  const $progressBar = document.getElementById('watch-progress-bar');
-  const $msgOverlay = document.getElementById('watch-message-overlay');
+  // ─── DOM References (Dual ID support: watch-* and viewer-*) ─────────────
+  const $statusDot = document.getElementById('watch-status-dot') || document.getElementById('viewer-connection');
+  const $artistName = document.getElementById('watch-artist-name') || document.getElementById('viewer-timer-name');
+  const $timer = document.getElementById('watch-timer') || document.getElementById('viewer-timer');
+  const $clockTime = document.getElementById('watch-clock-time') || document.getElementById('viewer-clock-time');
+  const $next = document.getElementById('watch-next') || document.getElementById('viewer-next');
+  const $nextName = document.getElementById('watch-next-name') || document.getElementById('viewer-next-name');
+  const $progressBar = document.getElementById('watch-progress-bar') || document.getElementById('viewer-progress-bar');
+  const $msgOverlay = document.getElementById('watch-message-overlay') || document.getElementById('viewer-message');
   const $msgBadge = document.getElementById('watch-msg-badge');
   const $msgText = document.getElementById('watch-msg-text');
+
+  // ─── Instant First Frame (Screen is NEVER blank) ────────────────────────
+  if ($artistName) $artistName.textContent = roomId;
+  if ($timer) {
+    $timer.textContent = '00:00';
+    $timer.className = 'watch-timer safe';
+  }
+  if ($clockTime && typeof StageTimerClient !== 'undefined' && typeof StageTimerClient.getTrueTimeString === 'function') {
+    $clockTime.textContent = StageTimerClient.getTrueTimeString();
+  }
 
   // ─── Client Sync (Role 'watch' announces Apple Watch to Master) ─────────
   const client = new StageTimerClient({

@@ -22,6 +22,28 @@ try {
       roomId = matchedEv.stages[0].code.toUpperCase();
     }
   }
+
+  // Security: Check if current room belongs to an event and user is authorized
+  const isMasterUser = (typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
+    sessionStorage.getItem('stagetimer_master_active') === '1' ||
+    localStorage.getItem('stagetimer_master_active') === '1' ||
+    sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
+    localStorage.getItem('stagetimer_master_auth_v12') === 'true';
+
+  if (!isMasterUser && localEvents && localEvents.length > 0) {
+    const owningEvent = localEvents.find(e => {
+      if ((e.code || '').toUpperCase() === roomId) return true;
+      if (Array.isArray(e.stages) && e.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId)) return true;
+      return false;
+    });
+    if (owningEvent) {
+      const unlockedEv = (sessionStorage.getItem('stagetimer_unlocked_event') || localStorage.getItem('stagetimer_unlocked_event') || '').trim().toUpperCase();
+      if (!unlockedEv || unlockedEv !== (owningEvent.code || '').toUpperCase()) {
+        console.warn('[Controller] Acesso não autorizado ao evento', owningEvent.code, '— redirecionando para o Portal');
+        window.location.replace('index.html?portal=1');
+      }
+    }
+  }
 } catch (_) {}
 
 try {
@@ -209,22 +231,24 @@ function renderEventSelector(force = false) {
     localStorage.getItem('stagetimer_master_auth_v12') === 'true'
   );
 
-  let totalStagesCount = 0;
-  list.forEach(e => {
-    totalStagesCount += (Array.isArray(e.stages) && e.stages.length > 0) ? e.stages.length : 1;
+  // Security: Non-master users can ONLY see and switch between stages of their currently unlocked event!
+  const selectableEvents = isMaster ? list : (currentEvent ? [currentEvent] : []);
+  let selectableStagesCount = 0;
+  selectableEvents.forEach(e => {
+    selectableStagesCount += (Array.isArray(e.stages) && e.stages.length > 0) ? e.stages.length : 1;
   });
 
   if ($ctrlEventSelect) {
-    if (isMaster || list.length > 1 || totalStagesCount > 1) {
+    if (isMaster || selectableEvents.length > 1 || selectableStagesCount > 1) {
       $ctrlEventSelect.style.display = 'inline-block';
       if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'none';
-      if ($ctrlSwitchEventBtn) $ctrlSwitchEventBtn.style.display = 'inline-flex';
+      if ($ctrlSwitchEventBtn) $ctrlSwitchEventBtn.style.display = isMaster ? 'inline-flex' : 'none';
 
-      const selectSig = `${currentCode}:${list.map(e => `${e.code}:${e.title}:${(e.stages||[]).map(s=>`${s.code}:${s.name}`).join(';')}`).join('|')}`;
+      const selectSig = `${currentCode}:${selectableEvents.map(e => `${e.code}:${e.title}:${(e.stages||[]).map(s=>`${s.code}:${s.name}`).join(';')}`).join('|')}`;
       if (force || selectSig !== lastCtrlSelectSig) {
         lastCtrlSelectSig = selectSig;
         let optionsHtml = '';
-        list.forEach(ev => {
+        selectableEvents.forEach(ev => {
           const evTitle = ev.title || ev.code;
           const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: 'Palco Principal' }];
           if (stages.length > 1) {
@@ -247,7 +271,9 @@ function renderEventSelector(force = false) {
 
         // Add utility actions into select
         optionsHtml += `<optgroup label="Ações">`;
-        optionsHtml += `<option value="__NEW_CLEAN__">+ Criar / Gerir Eventos...</option>`;
+        if (isMaster) {
+          optionsHtml += `<option value="__NEW_CLEAN__">+ Criar / Gerir Eventos...</option>`;
+        }
         optionsHtml += `<option value="__GO_PORTAL__">Início (Hub de Eventos)...</option>`;
         optionsHtml += `</optgroup>`;
 
@@ -258,14 +284,14 @@ function renderEventSelector(force = false) {
       $ctrlEventSelect.style.display = 'none';
       lastCtrlSelectSig = '';
       if ($ctrlStageBadge) $ctrlStageBadge.style.display = 'inline-block';
-      if ($ctrlSwitchEventBtn) $ctrlSwitchEventBtn.style.display = 'inline-flex';
+      if ($ctrlSwitchEventBtn) $ctrlSwitchEventBtn.style.display = isMaster ? 'inline-flex' : 'none';
     }
   }
 
-  // Quick stages pills (rendered next to Day tabs - show stages of current event)
+  // Quick stages pills (rendered next to Day tabs - show stages of current event ONLY, unless Master)
   if ($ctrlStagePills) {
     const allStages = [];
-    const pillEvents = currentEvent ? [currentEvent] : list;
+    const pillEvents = currentEvent ? [currentEvent] : (isMaster ? list : []);
     pillEvents.forEach(ev => {
       const evTitle = ev.title || ev.code;
       const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: evTitle }];
@@ -356,10 +382,23 @@ if ($ctrlEventSelect) {
       return;
     }
     if (val && val !== (state?.id || roomId)) {
+      const isMaster = (typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
+        sessionStorage.getItem('stagetimer_master_active') === '1' ||
+        localStorage.getItem('stagetimer_master_active') === '1';
+      if (!isMaster) {
+        const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+        const currentCode = (state?.id || roomId).toUpperCase();
+        const currentEv = rawList.find(ev => ev.code === currentCode || (Array.isArray(ev.stages) && ev.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode)));
+        const isAllowed = currentEv && ((currentEv.code || '').toUpperCase() === val.toUpperCase() || (Array.isArray(currentEv.stages) && currentEv.stages.some(s => (s.code || s.id || '').toUpperCase() === val.toUpperCase())));
+        if (!isAllowed) {
+          console.warn('[Controller] Acesso bloqueado a palco de outro evento.');
+          return;
+        }
+      }
       const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
       const owningEv = rawList.find(e => e.code === val || (Array.isArray(e.stages) && e.stages.some(s => (s.code || s.id || '').toUpperCase() === val.toUpperCase())));
       try {
-        if (owningEv) {
+        if (owningEv && isMaster) {
           localStorage.setItem('stagetimer_unlocked_event', owningEv.code);
           sessionStorage.setItem('stagetimer_unlocked_event', owningEv.code);
         }
@@ -374,7 +413,14 @@ if ($ctrlEventSelect) {
 
 if ($ctrlSwitchEventBtn) {
   $ctrlSwitchEventBtn.addEventListener('click', () => {
-    openNewEventModal();
+    const isMaster = (typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
+      sessionStorage.getItem('stagetimer_master_active') === '1' ||
+      localStorage.getItem('stagetimer_master_active') === '1';
+    if (isMaster) {
+      openNewEventModal();
+    } else {
+      window.location.href = 'index.html?portal=1';
+    }
   });
 }
 
@@ -384,7 +430,14 @@ if ($ctrlStageBadge) {
       $ctrlEventSelect.focus();
       try { $ctrlEventSelect.showPicker(); } catch (_) {}
     } else {
-      openNewEventModal();
+      const isMaster = (typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
+        sessionStorage.getItem('stagetimer_master_active') === '1' ||
+        localStorage.getItem('stagetimer_master_active') === '1';
+      if (isMaster) {
+        openNewEventModal();
+      } else {
+        window.location.href = 'index.html?portal=1';
+      }
     }
   });
 }
@@ -395,6 +448,19 @@ if ($ctrlStagePills) {
     if (btn) {
       const targetStage = (btn.dataset.ctrlSwitchStage || btn.dataset.switchStage || '').toUpperCase().trim();
       if (targetStage && targetStage !== (state?.id || roomId).toUpperCase()) {
+        const isMaster = (typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
+          sessionStorage.getItem('stagetimer_master_active') === '1' ||
+          localStorage.getItem('stagetimer_master_active') === '1';
+        if (!isMaster) {
+          const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+          const currentCode = (state?.id || roomId).toUpperCase();
+          const currentEv = rawList.find(ev => ev.code === currentCode || (Array.isArray(ev.stages) && ev.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode)));
+          const isAllowed = currentEv && ((currentEv.code || '').toUpperCase() === targetStage || (Array.isArray(currentEv.stages) && currentEv.stages.some(s => (s.code || s.id || '').toUpperCase() === targetStage)));
+          if (!isAllowed) {
+            console.warn('[Controller] Acesso bloqueado a palco de outro evento.');
+            return;
+          }
+        }
         try {
           localStorage.setItem('stagetimer_device_room', targetStage);
           localStorage.setItem('stagetimer_last_room', targetStage);
