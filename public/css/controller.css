@@ -561,6 +561,11 @@
   margin-bottom: 4px;
 }
 
+.preview-timer-display.timer-warn { color: var(--yellow) !important; }
+.preview-timer-display.timer-danger,
+.preview-timer-display.timer-finished,
+.preview-timer-display.timer-overtime { color: var(--red) !important; }
+
 .preview-timer-display {
   font-family: var(--font-mono);
   font-size: 2.5rem;

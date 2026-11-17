@@ -212,7 +212,8 @@ body {
 
 .lineup-now-timer.warn { color: var(--yellow); text-shadow: 0 0 30px rgba(250, 130, 49, 0.55); }
 .lineup-now-timer.danger { color: var(--red); text-shadow: 0 0 30px rgba(255, 71, 87, 0.65); }
-.lineup-now-timer.finished {
+.lineup-now-timer.finished,
+.lineup-now-timer.overtime {
   color: var(--red);
   animation: lineup-flash 0.8s ease-in-out infinite;
   text-shadow: 0 0 40px rgba(255, 71, 87, 0.8);

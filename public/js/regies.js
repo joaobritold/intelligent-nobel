@@ -1281,7 +1281,7 @@ function render() {
       $regieHeaderTimer.textContent = displayVal;
       if (color === 'danger') $regieHeaderTimer.style.color = '#ff6b6b';
       else if (color === 'warn') $regieHeaderTimer.style.color = '#ffeaa7';
-      else if (color === 'finished') $regieHeaderTimer.style.color = '#ff4757';
+      else if (color === 'finished' || color === 'overtime') $regieHeaderTimer.style.color = '#ff4757';
       else $regieHeaderTimer.style.color = '#00ffb3';
     }
   }

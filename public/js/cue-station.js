@@ -756,11 +756,11 @@ function getTimerElapsed(timer) {
 
 function getTimerColor(timer) {
   if (!timer) return 'safe';
-  if (timer.state === 'finished') return 'finished';
+  if (timer.state === 'finished') return 'overtime';
   const elapsed = getTimerElapsed(timer);
   if (timer.mode === 'countdown') {
     const remaining = timer.duration - elapsed;
-    if (remaining <= 0) return 'finished';
+    if (remaining <= 0) return 'overtime';
     if (timer.duration > 0) {
       const pct = (elapsed / timer.duration) * 100;
       if (pct > 95) return 'danger';
@@ -771,6 +771,7 @@ function getTimerColor(timer) {
     if (remaining <= (timer.warnAt || 180000)) return 'warn';
     return 'safe';
   }
+  if (timer.duration > 0 && elapsed >= timer.duration) return 'overtime';
   return 'safe';
 }
 
@@ -916,7 +917,7 @@ function renderStageTimer() {
     // HUD Timer
     if ($hudTimerVal) {
       $hudTimerVal.textContent = displayVal;
-      $hudTimerVal.className = `cs-clock-value cs-timer-val is-${color}`;
+      $hudTimerVal.className = `cs-clock-value cs-timer-val ${color} is-${color}`;
     }
     if ($tabTimerPreview) {
       $tabTimerPreview.textContent = displayVal;
@@ -944,7 +945,7 @@ function renderStageTimer() {
     }
     if ($stTimer) {
       $stTimer.textContent = displayVal;
-      $stTimer.className = `cs-st-timer is-${color}`;
+      $stTimer.className = `cs-st-timer ${color} is-${color}`;
     }
     if ($stNextAct) {
       if (nextTimer) {
@@ -968,12 +969,12 @@ function renderStageTimer() {
     }
     if ($rhTimer) {
       $rhTimer.textContent = displayVal;
-      $rhTimer.className = `cs-rh-timer is-${color}`;
+      $rhTimer.className = `cs-rh-timer ${color} is-${color}`;
     }
     if ($rhProgressBar) {
       const progress = getTimerProgress(activeTimer);
       $rhProgressBar.style.width = `${progress}%`;
-      if (color === 'danger' || color === 'finished') {
+      if (color === 'danger' || color === 'finished' || color === 'overtime') {
         $rhProgressBar.style.background = '#ff4757';
       } else if (color === 'warn') {
         $rhProgressBar.style.background = '#fdcb6e';

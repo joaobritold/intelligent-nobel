@@ -840,7 +840,10 @@ body {
 }
 .cs-clock-value.cs-timer-val.warn { color: #fdcb6e; }
 .cs-clock-value.cs-timer-val.danger { color: #ff7675; }
-.cs-clock-value.cs-timer-val.overtime { color: #ff3838; }
+.cs-clock-value.cs-timer-val.overtime, .cs-clock-value.cs-timer-val.is-overtime,
+.cs-clock-value.cs-timer-val.finished, .cs-clock-value.cs-timer-val.is-finished { color: #ff3838 !important; }
+.cs-clock-value.cs-timer-val.warn, .cs-clock-value.cs-timer-val.is-warn { color: #fdcb6e; }
+.cs-clock-value.cs-timer-val.danger, .cs-clock-value.cs-timer-val.is-danger { color: #ff7675; }
 
 @keyframes csTimerBlink {
   0% { opacity: 1; }
@@ -940,7 +943,10 @@ body {
 }
 .cs-st-timer.warn { color: #fdcb6e; }
 .cs-st-timer.danger { color: #ff7675; }
-.cs-st-timer.overtime { color: #ff3838; animation: csTimerBlink 1s infinite alternate ease-in-out; }
+.cs-st-timer.overtime, .cs-st-timer.is-overtime,
+.cs-st-timer.finished, .cs-st-timer.is-finished { color: #ff3838 !important; animation: csTimerBlink 1s infinite alternate ease-in-out; }
+.cs-st-timer.warn, .cs-st-timer.is-warn { color: #fdcb6e; }
+.cs-st-timer.danger, .cs-st-timer.is-danger { color: #ff7675; }
 
 .cs-st-next {
   font-size: 0.72rem;
@@ -981,7 +987,10 @@ body {
 }
 .cs-rh-timer.warn { color: #fdcb6e; }
 .cs-rh-timer.danger { color: #ff7675; }
-.cs-rh-timer.overtime { color: #ff3838; animation: csTimerBlink 1s infinite alternate ease-in-out; }
+.cs-rh-timer.overtime, .cs-rh-timer.is-overtime,
+.cs-rh-timer.finished, .cs-rh-timer.is-finished { color: #ff3838 !important; animation: csTimerBlink 1s infinite alternate ease-in-out; }
+.cs-rh-timer.warn, .cs-rh-timer.is-warn { color: #fdcb6e; }
+.cs-rh-timer.danger, .cs-rh-timer.is-danger { color: #ff7675; }
 
 .cs-rh-progress-bg {
   width: 100%;

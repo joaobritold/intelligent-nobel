@@ -323,6 +323,7 @@ select.input {
 .timer-warn { color: var(--yellow); }
 .timer-danger { color: var(--red); }
 .timer-finished { color: var(--red); }
+.timer-overtime { color: var(--red); }
 
 /* ─── Scrollbar ─────────────────────────────────────────────────── */
 

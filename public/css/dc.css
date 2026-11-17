@@ -1657,7 +1657,8 @@ body {
 
 .dc-hero-time.warn { color: #fdcb6e; }
 .dc-hero-time.danger { color: #ff7675; }
-.dc-hero-time.finished {
+.dc-hero-time.finished,
+.dc-hero-time.overtime {
   color: #ff7675;
   animation: dc-hero-flash 0.8s ease-in-out infinite;
 }
@@ -1683,7 +1684,9 @@ body {
 }
 
 .dc-hero-progress-bar.warn { background: #fdcb6e; }
-.dc-hero-progress-bar.danger { background: #ff7675; }
+.dc-hero-progress-bar.danger,
+.dc-hero-progress-bar.finished,
+.dc-hero-progress-bar.overtime { background: #ff7675; }
 
 .dc-hero-primary-controls {
   display: grid;

@@ -106,7 +106,8 @@ body::-webkit-scrollbar,
   animation: viewer-gentle-pulse 1.3s ease-in-out infinite;
 }
 
-.viewer-timer.finished {
+.viewer-timer.finished,
+.viewer-timer.overtime {
   color: #ff4757;
   text-shadow: 0 0 50px rgba(255, 71, 87, 0.75);
   animation: viewer-gentle-pulse 0.9s ease-in-out infinite;

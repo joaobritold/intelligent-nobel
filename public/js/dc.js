@@ -277,11 +277,15 @@ function getTimerRemaining(timer) {
 function getTimerColor(timer) {
   if (!timer) return 'white';
   if (timer.mode === 'clock') return 'white';
+  if (timer.state === 'finished') return 'overtime';
   const elapsed = getTimerElapsed(timer);
-  const rem = (timer.duration || 0) - elapsed;
-  if (rem <= 0) return 'overtime';
-  if (rem <= (timer.dangerAt ?? 10000)) return 'danger';
-  if (rem <= (timer.warnAt ?? 60000)) return 'warn';
+  if (timer.duration > 0) {
+    const rem = timer.duration - elapsed;
+    if (rem <= 0) return 'overtime';
+    if (rem <= (timer.dangerAt ?? 10000)) return 'danger';
+    if (rem <= (timer.warnAt ?? 60000)) return 'warn';
+    return 'green';
+  }
   return 'green';
 }
 
@@ -364,7 +368,15 @@ function updateHeroTimerDisplay() {
       const displayVal = getTimerDisplayValue(active);
 
       if ($dcHeroBadge) {
-        $dcHeroBadge.textContent = isRunning ? 'EM CENA / LIVE' : (active.state === 'finished' ? 'TERMINADO' : 'PARADO');
+        if (color === 'overtime') {
+          $dcHeroBadge.textContent = '● TEMPO ESGOTADO / OVERTIME';
+          $dcHeroBadge.style.background = 'rgba(255, 118, 117, 0.25)';
+          $dcHeroBadge.style.color = '#ff7675';
+        } else {
+          $dcHeroBadge.textContent = isRunning ? 'EM CENA / LIVE' : (active.state === 'finished' ? 'TERMINADO' : 'PARADO');
+          $dcHeroBadge.style.background = '';
+          $dcHeroBadge.style.color = '';
+        }
       }
       if ($dcHeroName) $dcHeroName.textContent = active.name || 'Sem Nome';
       if ($dcHeroTime) {
@@ -426,7 +438,7 @@ function updateHeroTimerDisplay() {
       if ($dcCueTimerName) $dcCueTimerName.textContent = active.name || 'Sem Nome';
       if ($dcCueTimerClock) {
         $dcCueTimerClock.textContent = getTimerDisplayValue(active);
-        $dcCueTimerClock.style.color = color === 'warn' ? '#fdcb6e' : (color === 'danger' || color === 'finished') ? '#ff7675' : '#55efc4';
+        $dcCueTimerClock.style.color = (color === 'danger' || color === 'finished' || color === 'overtime') ? '#ff7675' : (color === 'warn' ? '#fdcb6e' : '#55efc4');
       }
       if ($dcCueTimerEnd) {
         const endStr = getEstimatedEndTime(active);

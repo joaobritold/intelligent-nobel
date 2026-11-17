@@ -134,7 +134,8 @@ html, body {
 
 .op-hero-time.warn { color: var(--yellow); }
 .op-hero-time.danger { color: var(--red); }
-.op-hero-time.finished {
+.op-hero-time.finished,
+.op-hero-time.overtime {
   color: var(--red);
   animation: op-flash 0.8s ease-in-out infinite;
 }
