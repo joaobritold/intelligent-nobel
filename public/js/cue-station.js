@@ -475,15 +475,17 @@ let lastAutoScrolledCueId = null;
 
 function isCueRelevant(cue) {
   if (!cue) return false;
-  const targetNorm = currentDept.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const depts = Array.isArray(cue.departments) ? cue.departments : [];
+  if (depts.length === 0) return true; // Se não tem departamentos específicos, é de interesse de todos os operadores
+  const targetNorm = currentDept.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   return depts.some(d => {
     const dNorm = String(d || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return dNorm.includes(targetNorm);
+    return dNorm.includes(targetNorm) || dNorm.includes('todo') || dNorm.includes('geral');
   });
 }
 
 let _heroGoTimer = null;
+const GO_ACTIVE_DURATION_MS = 25000; // 25 segundos de sinal verde evidente
 
 function renderHeroLight() {
   const th = state?.theatre;
@@ -492,19 +494,28 @@ function renderHeroLight() {
   // Strictly filter cues for this department
   const relevantCues = cues.filter(isCueRelevant);
 
-  // Check if any relevant cue is currently FIRED (flash de GO de 3.5s) or on STANDBY
-  const firedCue = relevantCues.find(c => c.status === 'fired' && (Date.now() - (c.firedAt || 0) < 3500)) ||
-                   cues.find(c => c.status === 'fired' && (Date.now() - (c.firedAt || 0) < 3500));
-  const standbyCue = relevantCues.find(c => c.status === 'standby') ||
-                     cues.find(c => c.status === 'standby');
+  const now = Date.now();
+  const isFiredActive = (c) => {
+    if (c.status !== 'fired') return false;
+    const firedAt = c.firedAt || 0;
+    const age = now - firedAt;
+    const effAge = age < 0 ? 0 : age;
+    return effAge < GO_ACTIVE_DURATION_MS;
+  };
+
+  const firedCue = relevantCues.find(isFiredActive) || cues.find(isFiredActive);
+  const standbyCue = relevantCues.find(c => c.status === 'standby') || cues.find(c => c.status === 'standby');
   const nextMyPending = relevantCues.find(c => c.status === 'pending');
   const nextOverallPending = cues.find(c => c.status === 'pending');
   const nextPending = nextMyPending || nextOverallPending;
 
-  if (firedCue) {
+  // Se houve disparo de GO recente, ele tem prioridade a menos que uma deixa MAIS RECENTE tenha entrado em standby
+  const hasActiveGo = firedCue && (!standbyCue || (standbyCue.standbyAt || 0) < (firedCue.firedAt || 0));
+
+  if (hasActiveGo) {
     activeFeedbackCueId = firedCue.id;
     $heroLight.className = 'cs-hero-cue-box is-go';
-    $heroIndicator.textContent = 'GO! EXECUTAR AGORA';
+    $heroIndicator.textContent = '● GO! EXECUTAR AGORA';
     $heroCueNum.textContent = firedCue.num;
     $heroCueName.textContent = firedCue.name;
     const isMine = isCueRelevant(firedCue);
@@ -517,12 +528,19 @@ function renderHeroLight() {
     if (lastTriggeredGoCueId !== firedCue.id) {
       lastTriggeredGoCueId = firedCue.id;
       playGoChime();
-      if (navigator.vibrate) { try { navigator.vibrate([120, 60, 120]); } catch (_) {} }
+      if (navigator.vibrate) { try { navigator.vibrate([150, 80, 150]); } catch (_) {} }
+
+      const screenEl = document.getElementById('cue-screen');
+      if (screenEl) {
+        screenEl.classList.remove('has-go-alert');
+        void screenEl.offsetWidth;
+        screenEl.classList.add('has-go-alert');
+      }
     }
 
-    // Auto-transição para a próxima deixa após os 3.5 segundos de exibição do GO
-    const elapsed = Date.now() - (firedCue.firedAt || 0);
-    const remaining = Math.max(100, 3550 - elapsed);
+    // Auto-transição para a próxima deixa após os 25 segundos de GO
+    const elapsed = Math.max(0, now - (firedCue.firedAt || 0));
+    const remaining = Math.max(500, GO_ACTIVE_DURATION_MS - elapsed);
     if (_heroGoTimer) clearTimeout(_heroGoTimer);
     _heroGoTimer = setTimeout(() => {
       renderHeroLight();
@@ -645,9 +663,9 @@ function renderCuesList() {
     if (isMine) cardClass += ' is-my-dept-cue';
 
     const isStandby = c.status === 'standby';
-    const isFired = c.status === 'fired';
+    const isFired = c.status === 'fired' && (now - (c.firedAt || 0) < GO_ACTIVE_DURATION_MS);
     const isNext = !isStandby && !isFired && c.status === 'pending' && c.id === focalNextPending?.id;
-    const isCompleted = c.status === 'completed' || (c.status === 'fired' && c.firedTimecode);
+    const isCompleted = c.status === 'completed' || (c.status === 'fired' && !isFired);
 
     if (isStandby) cardClass += ' is-active-standby';
     else if (isFired) cardClass += ' is-active-go';
@@ -667,11 +685,11 @@ function renderCuesList() {
       badgeStyle = 'background: #ff793f; color: #000; font-weight: 900;';
       badgeText = 'STANDBY (PREPARAR)';
     } else if (isFired) {
-      cardBorder = '#00b894';
-      cardBg = 'linear-gradient(135deg, rgba(0, 184, 148, 0.22) 0%, rgba(15, 30, 25, 0.95) 100%)';
+      cardBorder = '#00ffb3';
+      cardBg = 'linear-gradient(135deg, rgba(0, 255, 179, 0.3) 0%, rgba(5, 45, 30, 0.98) 100%)';
       numColor = '#00ffb3';
-      badgeStyle = 'background: #00b894; color: #000; font-weight: 900;';
-      badgeText = 'GO (EXECUTADO)';
+      badgeStyle = 'background: #00ffb3; color: #000; font-weight: 900; box-shadow: 0 0 12px rgba(0, 255, 179, 0.6);';
+      badgeText = 'GO! EXECUTAR';
     } else if (isNext) {
       cardBorder = '#74b9ff';
       cardBg = 'linear-gradient(135deg, rgba(116, 185, 255, 0.16) 0%, rgba(20, 24, 38, 0.95) 100%)';
