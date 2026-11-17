@@ -650,16 +650,16 @@ function triggerGoAction() {
     client.fireCue(cueToFire.id);
     highlightScriptForCue(cueToFire.id);
 
-    // Auto put next pending cue into standby shortly after
+    // Automaticamente a próxima deixa fica a aparecer (sem colocar em standby automático)
     setTimeout(() => {
       const freshTh = state?.theatre;
       if (freshTh && Array.isArray(freshTh.cues)) {
-        const nextPending = freshTh.cues.find(c => c.status === 'pending');
-        if (nextPending && !freshTh.standbyCueId) {
-          client.standbyCue(nextPending.id);
+        const nextPending = freshTh.cues.find(c => c.status === 'pending' && c.id !== cueToFire.id);
+        if (nextPending) {
+          highlightScriptForCue(nextPending.id);
         }
       }
-    }, 1500);
+    }, 150);
   }
 }
 
@@ -853,10 +853,35 @@ function renderCues() {
   const nextPendingCue = cues.find(c => c.status === 'pending');
   const activeCue = standbyCue || nextPendingCue;
 
+  const $actionBox = document.querySelector('.dc-action-box');
+  const $heroHint = document.querySelector('.dc-action-hint');
+
+  if ($actionBox) {
+    $actionBox.classList.toggle('is-standby', !!standbyCue);
+  }
+
+  if ($btnStandby) {
+    $btnStandby.classList.toggle('is-active-standby', !!standbyCue);
+    const $standbyText = $btnStandby.querySelector('.dc-hero-text');
+    if ($standbyText) {
+      $standbyText.textContent = standbyCue ? 'STANDBY ATIVO' : 'STANDBY';
+    }
+  }
+
+  if ($heroHint) {
+    if (standbyCue) {
+      $heroHint.innerHTML = `<svg class="st-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px; color: #ff793f;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> <span style="color: #ff793f; font-weight: 900;">STANDBY ATIVO (OPERADORES EM ALERTA):</span>`;
+    } else if (nextPendingCue) {
+      $heroHint.innerHTML = `<svg class="st-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px; color: #55efc4;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> <span style="color: #55efc4; font-weight: 800;">PRÓXIMA DEIXA A ENTRAR EM CENA:</span>`;
+    } else {
+      $heroHint.innerHTML = `<svg class="st-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px; color: var(--dc-muted);"><circle cx="12" cy="12" r="10"></circle></svg> <span style="color: var(--dc-muted);">SEM DEIXAS PENDENTES:</span>`;
+    }
+  }
+
   if ($heroCueNum) {
     if (activeCue) {
       $heroCueNum.textContent = activeCue.num;
-      $heroCueNum.style.color = standbyCue ? 'var(--dc-gold)' : '#55efc4';
+      $heroCueNum.style.color = standbyCue ? '#ff793f' : '#55efc4';
     } else {
       $heroCueNum.textContent = '--';
       $heroCueNum.style.color = 'var(--dc-muted)';
@@ -898,10 +923,10 @@ function renderCues() {
   if ($nextCueSummary) {
     if (standbyCue) {
       $nextCueSummary.textContent = `STANDBY: ${standbyCue.num} (${standbyCue.name})`;
-      $nextCueSummary.style.color = 'var(--dc-gold)';
+      $nextCueSummary.style.color = '#ff793f';
     } else if (nextPendingCue) {
       $nextCueSummary.textContent = `Próxima: ${nextPendingCue.num} (${nextPendingCue.name})`;
-      $nextCueSummary.style.color = '#fff';
+      $nextCueSummary.style.color = '#55efc4';
     } else {
       $nextCueSummary.textContent = 'Sem deixas pendentes';
       $nextCueSummary.style.color = 'var(--dc-muted)';
@@ -922,11 +947,13 @@ function renderCues() {
     const isStandby = cue.status === 'standby';
     const isFired = cue.status === 'fired';
     const isCompleted = cue.status === 'completed';
+    const isNext = !isStandby && !isFired && !isCompleted && cue.id === nextPendingCue?.id;
 
     let rowClass = 'dc-cue-row-full';
     if (isStandby) rowClass += ' is-standby';
     else if (isFired) rowClass += ' is-fired';
     else if (isCompleted) rowClass += ' is-completed';
+    else if (isNext) rowClass += ' is-next-pending';
 
     const deptsHtml = (cue.departments || []).map(d => {
       const dClean = String(d || '').toLowerCase();
@@ -944,7 +971,7 @@ function renderCues() {
 
     return `
       <div class="${rowClass}" data-cue-id="${escapeHtml(cue.id)}">
-        <div class="dc-cue-num-col" style="font-family: var(--font-mono); font-weight: 900; font-size: 1.35rem; color: ${isStandby ? 'var(--dc-gold)' : (isFired ? '#00b894' : '#fff')}; min-width: 55px;">
+        <div class="dc-cue-num-col" style="font-family: var(--font-mono); font-weight: 900; font-size: 1.35rem; color: ${isStandby ? '#ff793f' : (isFired ? '#00b894' : (isNext ? '#55efc4' : '#fff'))}; min-width: 55px;">
           ${escapeHtml(cue.num)}
         </div>
         <div class="dc-cue-info-col" style="flex: 1; min-width: 0;">
@@ -957,7 +984,7 @@ function renderCues() {
         <div class="dc-cue-actions-col" style="display: flex; align-items: center; gap: 8px;">
           ${cue.firedTimecode ? `<span style="font-family: var(--font-mono); font-size: 0.82rem; color: #00ffb3; font-weight: 800;">${escapeHtml(cue.firedTimecode)}</span>` : ''}
           <span class="dc-status-pill ${escapeHtml(cue.status)}">${escapeHtml(cue.status)}</span>
-          <button type="button" class="dc-cue-btn" data-cue-action="standby" data-id="${escapeHtml(cue.id)}" title="Standby"><svg class="st-icon" viewBox="0 0 24 24" style="color: #f1c40f;"><circle cx="12" cy="12" r="8"></circle></svg></button>
+          <button type="button" class="dc-cue-btn" data-cue-action="standby" data-id="${escapeHtml(cue.id)}" title="Standby (Alerta Operador)"><svg class="st-icon" viewBox="0 0 24 24" style="color: #ff793f;"><circle cx="12" cy="12" r="8"></circle></svg></button>
           <button type="button" class="dc-cue-btn" data-cue-action="go" data-id="${escapeHtml(cue.id)}" title="Disparar GO"><svg class="st-icon" viewBox="0 0 24 24" style="color: #2ea043;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></button>
           <button type="button" class="dc-cue-btn" data-cue-action="reset" data-id="${escapeHtml(cue.id)}" title="Voltar a pendente">${ico('undo') || '<svg class="st-icon" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>'}</button>
           <button type="button" class="dc-cue-btn" data-cue-action="edit" data-id="${escapeHtml(cue.id)}" title="Editar Deixa">${ico('edit') || '<svg class="st-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>'}</button>

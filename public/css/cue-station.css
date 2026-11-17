@@ -4,8 +4,8 @@
   --cs-bg: #070712;
   --cs-card-bg: rgba(18, 18, 34, 0.9);
   --cs-card-border: rgba(255, 255, 255, 0.1);
-  --cs-amber: #fdcb6e;
-  --cs-amber-glow: rgba(253, 203, 110, 0.5);
+  --cs-amber: #ff793f;
+  --cs-amber-glow: rgba(255, 121, 63, 0.6);
   --cs-emerald: #00b894;
   --cs-emerald-glow: rgba(0, 184, 148, 0.6);
   --cs-accent: #6c5ce7;
@@ -323,39 +323,64 @@ body {
   margin-top: 4px;
 }
 
-/* ── STATE: IDLE ── */
+/* ── STATE: IDLE / REPOUSO ── */
 .cs-hero-cue-box.is-idle {
   border-color: rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, rgba(18, 18, 34, 0.95) 0%, rgba(10, 10, 20, 0.98) 100%);
 }
 
-/* ── STATE: STANDBY (AMARELO / ÂMBAR) ── */
+/* ── STATE: PRÓXIMA DEIXA EM ESPERA (AUTOMÁTICA) ── */
+.cs-hero-cue-box.is-pending-next {
+  background: linear-gradient(135deg, rgba(85, 239, 196, 0.08) 0%, rgba(18, 18, 34, 0.95) 100%);
+  border: 2px solid rgba(85, 239, 196, 0.4);
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.55);
+}
+
+.cs-hero-cue-box.is-pending-next .cs-hero-indicator {
+  background: rgba(85, 239, 196, 0.18);
+  color: #55efc4;
+  border: 1px solid rgba(85, 239, 196, 0.4);
+  font-weight: 800;
+}
+
+.cs-hero-cue-box.is-pending-next .cs-hero-num {
+  color: #55efc4;
+  text-shadow: 0 0 16px rgba(85, 239, 196, 0.35);
+}
+
+.cs-hero-cue-box.is-pending-next .cs-hero-target {
+  color: #cbd5e1;
+}
+
+/* ── STATE: STANDBY (LARANJA VIBRANTE • ALERTA OPERADOR) ── */
 .cs-hero-cue-box.is-standby {
-  background: linear-gradient(135deg, rgba(253, 203, 110, 0.22) 0%, rgba(35, 25, 20, 0.95) 100%);
-  border: 3px solid var(--cs-amber);
-  box-shadow: 0 0 45px rgba(253, 203, 110, 0.45);
-  animation: csPulseStandby 1.5s infinite alternate ease-in-out;
+  background: linear-gradient(135deg, rgba(255, 121, 63, 0.28) 0%, rgba(40, 20, 10, 0.95) 100%);
+  border: 3.5px solid var(--cs-amber);
+  box-shadow: 0 0 50px rgba(255, 121, 63, 0.65);
+  animation: csPulseStandby 1.2s infinite alternate ease-in-out;
 }
 
 @keyframes csPulseStandby {
   0% {
-    box-shadow: 0 0 25px rgba(253, 203, 110, 0.35);
-    border-color: rgba(253, 203, 110, 0.7);
+    box-shadow: 0 0 25px rgba(255, 121, 63, 0.45);
+    border-color: rgba(255, 121, 63, 0.7);
   }
   100% {
-    box-shadow: 0 0 55px rgba(253, 203, 110, 0.75);
-    border-color: #ffeaa7;
+    box-shadow: 0 0 65px rgba(255, 121, 63, 0.9);
+    border-color: #ffa502;
   }
 }
 
 .cs-hero-cue-box.is-standby .cs-hero-indicator {
-  background: #fdcb6e;
-  color: #111;
-  box-shadow: 0 0 15px rgba(253, 203, 110, 0.6);
+  background: #ff793f;
+  color: #000;
+  font-weight: 900;
+  box-shadow: 0 0 20px rgba(255, 121, 63, 0.8);
 }
 
 .cs-hero-cue-box.is-standby .cs-hero-num {
-  color: #ffeaa7;
-  text-shadow: 0 0 20px rgba(253, 203, 110, 0.5);
+  color: #ff9f43;
+  text-shadow: 0 0 25px rgba(255, 121, 63, 0.7);
 }
 
 .cs-hero-cue-box.is-standby .cs-hero-target {
@@ -595,6 +620,166 @@ body {
   filter: brightness(1.15);
 }
 
+/* ─── LIVE OPERATION: SPLIT VIEW (DC SCRIPT + ALL CUES) ────────── */
+.cs-live-split-container {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .cs-live-split-container {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.cs-split-panel {
+  background: rgba(13, 15, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.cs-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cs-panel-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cs-panel-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+.cs-panel-meta-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cs-cue-filter-group {
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 2px;
+}
+
+.cs-cue-filter-pill {
+  background: transparent;
+  border: none;
+  color: var(--cs-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.cs-cue-filter-pill.active {
+  background: rgba(253, 203, 110, 0.2);
+  color: #ffeaa7;
+  font-weight: 800;
+}
+
+.cs-cue-focus-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #55efc4;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.cs-cue-focus-btn:hover {
+  background: rgba(85, 239, 196, 0.2);
+  border-color: #55efc4;
+}
+
+/* Hero Cue Box: State Next Cue */
+.cs-hero-cue-box.is-next-cue {
+  border-color: rgba(116, 185, 255, 0.4);
+  background: linear-gradient(135deg, rgba(116, 185, 255, 0.12) 0%, rgba(18, 22, 38, 0.95) 100%);
+}
+
+.cs-hero-cue-box.is-next-cue .cs-hero-indicator {
+  background: rgba(116, 185, 255, 0.2);
+  color: #74b9ff;
+  border: 1px solid rgba(116, 185, 255, 0.4);
+}
+
+.cs-hero-cue-box.is-next-cue .cs-hero-num {
+  color: #74b9ff;
+}
+
+/* Cues List Cards Enhancements */
+.cs-cue-card.is-next-pending {
+  border: 1.5px solid #74b9ff !important;
+  background: linear-gradient(90deg, rgba(116, 185, 255, 0.18) 0%, rgba(20, 24, 38, 0.95) 100%) !important;
+  box-shadow: 0 0 16px rgba(116, 185, 255, 0.25);
+}
+
+.cs-cue-card.is-next-pending .cs-cue-num {
+  color: #74b9ff !important;
+}
+
+.cs-cue-card.is-active-go {
+  border: 2px solid #00ffb3 !important;
+  background: linear-gradient(90deg, rgba(0, 255, 179, 0.25) 0%, rgba(10, 35, 25, 0.95) 100%) !important;
+  box-shadow: 0 0 25px rgba(0, 255, 179, 0.5);
+  animation: csPulseCardGo 0.9s infinite alternate ease-in-out;
+}
+
+@keyframes csPulseCardGo {
+  0% { border-color: rgba(0, 255, 179, 0.6); box-shadow: 0 0 14px rgba(0, 255, 179, 0.35); }
+  100% { border-color: #00ffb3; box-shadow: 0 0 30px rgba(0, 255, 179, 0.8); }
+}
+
+.cs-cue-card.is-active-go .cs-cue-num {
+  color: #00ffb3 !important;
+  text-shadow: 0 0 14px rgba(0, 255, 179, 0.7);
+}
+
+.cs-cue-card.is-completed {
+  opacity: 0.65;
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.cs-cue-card.is-completed .cs-cue-num {
+  color: #94a3b8;
+}
+
 /* Cues List */
 .cs-cues-list {
   display: flex;
@@ -634,8 +819,29 @@ body {
 }
 
 .cs-cue-card.is-active-standby {
-  border-color: var(--cs-amber);
-  background: linear-gradient(90deg, rgba(253, 203, 110, 0.18) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border: 2px solid #ff793f !important;
+  background: linear-gradient(90deg, rgba(255, 121, 63, 0.24) 0%, rgba(35, 20, 15, 0.95) 100%) !important;
+  box-shadow: 0 0 25px rgba(255, 121, 63, 0.45);
+  animation: csPulseCardStandby 1.3s infinite alternate ease-in-out;
+}
+
+@keyframes csPulseCardStandby {
+  0% { border-color: rgba(255, 121, 63, 0.6); box-shadow: 0 0 14px rgba(255, 121, 63, 0.3); }
+  100% { border-color: #ffa502; box-shadow: 0 0 28px rgba(255, 121, 63, 0.65); }
+}
+
+.cs-cue-card.is-active-standby .cs-cue-num {
+  color: #ff9f43 !important;
+  text-shadow: 0 0 12px rgba(255, 121, 63, 0.6);
+}
+
+.cs-cue-card.is-active-next {
+  border: 1.5px solid rgba(85, 239, 196, 0.45) !important;
+  background: linear-gradient(90deg, rgba(85, 239, 196, 0.1) 0%, rgba(20, 24, 38, 0.95) 100%) !important;
+}
+
+.cs-cue-card.is-active-next .cs-cue-num {
+  color: #55efc4 !important;
 }
 
 .cs-cue-card.is-active-go {

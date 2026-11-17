@@ -553,6 +553,12 @@ body {
   flex-direction: column;
   gap: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transition: all 0.25s ease;
+}
+
+.dc-action-box.is-standby {
+  border-color: #ff793f;
+  box-shadow: 0 0 35px rgba(255, 121, 63, 0.45);
 }
 
 .dc-action-meta {
@@ -611,6 +617,15 @@ body {
   background: linear-gradient(135deg, #fdcb6e, #e17055);
   color: #111;
   box-shadow: 0 4px 18px rgba(253, 203, 110, 0.45);
+}
+
+.dc-btn-standby.is-active-standby {
+  background: linear-gradient(135deg, #ff793f, #e17055);
+  color: #000;
+  font-weight: 900;
+  border: 2px solid #ffa502;
+  box-shadow: 0 0 25px rgba(255, 121, 63, 0.7);
+  animation: csPulseStandby 1.2s infinite alternate ease-in-out;
 }
 
 .dc-btn-go {
@@ -676,15 +691,15 @@ body {
 }
 
 .dc-cue-row.is-standby {
-  border-color: var(--dc-gold);
-  background: linear-gradient(90deg, rgba(253, 203, 110, 0.18) 0%, rgba(255, 255, 255, 0.03) 100%);
-  box-shadow: 0 0 16px rgba(253, 203, 110, 0.35);
+  border-color: #ff793f;
+  background: linear-gradient(90deg, rgba(255, 121, 63, 0.22) 0%, rgba(255, 255, 255, 0.03) 100%);
+  box-shadow: 0 0 18px rgba(255, 121, 63, 0.45);
   animation: dcPulseStandby 1.5s infinite alternate;
 }
 
 @keyframes dcPulseStandby {
-  0% { border-color: rgba(253, 203, 110, 0.5); }
-  100% { border-color: rgba(253, 203, 110, 1); }
+  0% { border-color: rgba(255, 121, 63, 0.5); }
+  100% { border-color: #ffa502; }
 }
 
 .dc-cue-row.is-fired {
@@ -1584,10 +1599,21 @@ body {
 }
 
 .dc-cue-row-full.is-standby {
-  border-color: #fdcb6e;
-  background: linear-gradient(135deg, rgba(253, 203, 110, 0.18) 0%, rgba(20, 20, 36, 0.95) 100%);
-  box-shadow: 0 0 16px rgba(253, 203, 110, 0.3);
-  animation: pulseStandby 2s infinite ease-in-out;
+  border-color: #ff793f;
+  background: linear-gradient(135deg, rgba(255, 121, 63, 0.25) 0%, rgba(20, 20, 36, 0.95) 100%);
+  box-shadow: 0 0 22px rgba(255, 121, 63, 0.45);
+  animation: pulseStandby 1.5s infinite ease-in-out;
+}
+
+@keyframes pulseStandby {
+  0% { border-color: rgba(255, 121, 63, 0.5); box-shadow: 0 0 12px rgba(255, 121, 63, 0.3); }
+  50% { border-color: #ff793f; box-shadow: 0 0 25px rgba(255, 121, 63, 0.6); }
+  100% { border-color: rgba(255, 121, 63, 0.5); box-shadow: 0 0 12px rgba(255, 121, 63, 0.3); }
+}
+
+.dc-cue-row-full.is-next-pending {
+  border-color: rgba(85, 239, 196, 0.4);
+  background: linear-gradient(135deg, rgba(85, 239, 196, 0.06) 0%, rgba(20, 20, 36, 0.95) 100%);
 }
 
 .dc-cue-row-full.is-fired {

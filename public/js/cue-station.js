@@ -464,12 +464,14 @@ document.querySelectorAll('.cs-fb-btn').forEach(btn => {
   });
 });
 
-// ─── Cue Relevance & Hero Cue Light ─────────────────────────────────
+// ─── Cue Relevance, Filter & Hero Cue Light ─────────────────────────
 let lastTriggeredStandbyCueId = null;
 let lastTriggeredGoCueId = null;
 
 let lastMyCuesSig = '';
 let lastMyChecklistSig = '';
+let csCuesFilterMode = 'all'; // 'all' (lista toda de cues) ou 'my' (apenas meu posto)
+let lastAutoScrolledCueId = null;
 
 function isCueRelevant(cue) {
   if (!cue) return false;
@@ -481,6 +483,8 @@ function isCueRelevant(cue) {
   });
 }
 
+let _heroGoTimer = null;
+
 function renderHeroLight() {
   const th = state?.theatre;
   const cues = th?.cues || [];
@@ -488,10 +492,14 @@ function renderHeroLight() {
   // Strictly filter cues for this department
   const relevantCues = cues.filter(isCueRelevant);
 
-  // Check if any relevant cue is currently FIRED or on STANDBY
-  const firedCue = relevantCues.find(c => c.status === 'fired' && (Date.now() - (c.firedAt || 0) < 12000));
-  const standbyCue = relevantCues.find(c => c.status === 'standby');
-  const nextPending = relevantCues.find(c => c.status === 'pending');
+  // Check if any relevant cue is currently FIRED (flash de GO de 3.5s) or on STANDBY
+  const firedCue = relevantCues.find(c => c.status === 'fired' && (Date.now() - (c.firedAt || 0) < 3500)) ||
+                   cues.find(c => c.status === 'fired' && (Date.now() - (c.firedAt || 0) < 3500));
+  const standbyCue = relevantCues.find(c => c.status === 'standby') ||
+                     cues.find(c => c.status === 'standby');
+  const nextMyPending = relevantCues.find(c => c.status === 'pending');
+  const nextOverallPending = cues.find(c => c.status === 'pending');
+  const nextPending = nextMyPending || nextOverallPending;
 
   if (firedCue) {
     activeFeedbackCueId = firedCue.id;
@@ -499,83 +507,182 @@ function renderHeroLight() {
     $heroIndicator.textContent = 'GO! EXECUTAR AGORA';
     $heroCueNum.textContent = firedCue.num;
     $heroCueName.textContent = firedCue.name;
-    $heroCueTarget.textContent = firedCue.targetText ? `Ponto de Deixa: "${firedCue.targetText}"` : (firedCue.notes || '');
+    const isMine = isCueRelevant(firedCue);
+    const baseTarget = firedCue.targetText ? `Ponto de Deixa: "${firedCue.targetText}"` : (firedCue.notes || '');
+    const followUp = nextPending && nextPending.id !== firedCue.id ? ` • (A seguir: ${nextPending.num} ${nextPending.name})` : '';
+    $heroCueTarget.textContent = (isMine ? '' : `[Posto: ${(firedCue.departments || []).join(', ')}] `) + baseTarget + followUp;
 
     if ($feedbackBar) $feedbackBar.style.display = 'flex';
 
     if (lastTriggeredGoCueId !== firedCue.id) {
       lastTriggeredGoCueId = firedCue.id;
       playGoChime();
-      if (navigator.vibrate) { try { navigator.vibrate([100, 50, 100]); } catch (_) {} }
+      if (navigator.vibrate) { try { navigator.vibrate([120, 60, 120]); } catch (_) {} }
     }
+
+    // Auto-transição para a próxima deixa após os 3.5 segundos de exibição do GO
+    const elapsed = Date.now() - (firedCue.firedAt || 0);
+    const remaining = Math.max(100, 3550 - elapsed);
+    if (_heroGoTimer) clearTimeout(_heroGoTimer);
+    _heroGoTimer = setTimeout(() => {
+      renderHeroLight();
+    }, remaining);
+
   } else if (standbyCue) {
+    if (_heroGoTimer) { clearTimeout(_heroGoTimer); _heroGoTimer = null; }
     activeFeedbackCueId = standbyCue.id;
     $heroLight.className = 'cs-hero-cue-box is-standby';
-    $heroIndicator.textContent = 'STANDBY — PREPARAR';
+    $heroIndicator.textContent = 'STANDBY — PREPARAR!';
     $heroCueNum.textContent = standbyCue.num;
     $heroCueName.textContent = standbyCue.name;
-    $heroCueTarget.textContent = standbyCue.targetText ? `Aguardar fala: "${standbyCue.targetText}"` : (standbyCue.notes || 'Preparado na posição');
+    const isMine = isCueRelevant(standbyCue);
+    const targetText = standbyCue.targetText ? `Aguardar fala: "${standbyCue.targetText}"` : (standbyCue.notes || 'Preparado na posição de disparo');
+    $heroCueTarget.textContent = (isMine ? '' : `[Posto: ${(standbyCue.departments || []).join(', ')}] `) + targetText;
 
     if ($feedbackBar) $feedbackBar.style.display = 'flex';
 
     if (lastTriggeredStandbyCueId !== standbyCue.id) {
       lastTriggeredStandbyCueId = standbyCue.id;
       playStandbyChime();
-      if (navigator.vibrate) { try { navigator.vibrate(60); } catch (_) {} }
+      if (navigator.vibrate) { try { navigator.vibrate([100, 50, 100]); } catch (_) {} }
     }
   } else {
+    if (_heroGoTimer) { clearTimeout(_heroGoTimer); _heroGoTimer = null; }
     activeFeedbackCueId = null;
-    $heroLight.className = 'cs-hero-cue-box is-idle';
-    if (th?.phase === 'prep' && th.showState !== 'running') {
+
+    if (nextMyPending) {
+      // Automaticamente a próxima deixa a ser dada pelo meu posto
+      $heroLight.className = 'cs-hero-cue-box is-idle is-next-cue';
+      $heroIndicator.textContent = '● PRÓXIMA DEIXA A SER DADA';
+      $heroCueNum.textContent = nextMyPending.num;
+      $heroCueName.textContent = nextMyPending.name;
+      $heroCueTarget.textContent = nextMyPending.targetText ? `Ponto de Deixa: "${nextMyPending.targetText}"` : (nextMyPending.notes || 'Aguardar sinal de Standby da Diretora de Cena');
+    } else if (nextOverallPending) {
+      // Próxima deixa geral no espetáculo
+      $heroLight.className = 'cs-hero-cue-box is-idle is-next-cue';
+      $heroIndicator.textContent = '● PRÓXIMA DEIXA GERAL';
+      $heroCueNum.textContent = nextOverallPending.num;
+      $heroCueName.textContent = `${nextOverallPending.name} [${(nextOverallPending.departments || []).join(', ')}]`;
+      $heroCueTarget.textContent = nextOverallPending.targetText ? `Ponto de Deixa: "${nextOverallPending.targetText}"` : (nextOverallPending.notes || 'Aguardar sinal da Diretora de Cena');
+    } else if (th?.phase === 'prep' && th.showState !== 'running') {
+      $heroLight.className = 'cs-hero-cue-box is-idle';
       const timers = Array.isArray(state?.timers) ? state.timers : [];
       const firstTimer = timers.length > 0 ? timers[0] : null;
       $heroIndicator.textContent = 'PRÉ-SHOW • ALINHAMENTO DE PALCO';
       $heroCueNum.textContent = firstTimer ? '#1' : 'PRÉ';
       if (firstTimer) {
         $heroCueName.textContent = `Ato 1: ${firstTimer.name}`;
-        $heroCueTarget.textContent = `Duração: ${formatTime(firstTimer.duration)} • Consulte a lista de atos e notas na aba "Visualizador & Palco".`;
+        $heroCueTarget.textContent = `Duração: ${formatTime(firstTimer.duration)} • Consulte a lista de atos e notas na aba "Alinhamento & Palco".`;
       } else {
         $heroCueName.textContent = 'Espetáculo em Preparação';
-        $heroCueTarget.textContent = 'Consulte o alinhamento de palco e as notas da Diretora de Cena na aba "Visualizador & Palco".';
+        $heroCueTarget.textContent = 'Consulte o alinhamento de palco e as notas da Diretora de Cena na aba "Alinhamento & Palco".';
       }
     } else {
-      $heroIndicator.textContent = '● REPOUSO';
-      $heroCueNum.textContent = '--';
-      if (nextPending) {
-        $heroCueName.textContent = `Aguardando Deixa ${nextPending.num}`;
-        $heroCueTarget.textContent = `Próxima: ${nextPending.name} (${nextPending.targetText || nextPending.notes || 'Aguardar sinal'})`;
-      } else {
-        $heroCueName.textContent = 'Sem Deixas Pendentes';
-        $heroCueTarget.textContent = `Todas as deixas do Posto de ${currentDept} foram executadas nesta sessão.`;
-      }
+      $heroLight.className = 'cs-hero-cue-box is-idle';
+      $heroIndicator.textContent = '● CONCLUÍDO';
+      $heroCueNum.textContent = cues.length > 0 ? 'FIM' : '✓';
+      $heroCueName.textContent = cues.length > 0 ? 'Todas as Deixas Executadas' : 'Sem Deixas Pendentes';
+      $heroCueTarget.textContent = cues.length > 0 ? 'Todas as deixas do espetáculo foram disparadas com sucesso.' : `Todas as deixas do Posto de ${currentDept} foram executadas nesta sessão.`;
     }
 
     if ($feedbackBar) $feedbackBar.style.display = 'none';
   }
 }
 
-// ─── Render Cues List (Strictly for this Department) ────────────────
+// ─── Auto-Scroll da Lista Toda de Cues ──────────────────────────────
+function autoScrollCuesList(force = false) {
+  if (!$cuesList) return;
+  const activeEl = $cuesList.querySelector('.cs-cue-card.is-active-go') ||
+                   $cuesList.querySelector('.cs-cue-card.is-active-standby') ||
+                   $cuesList.querySelector('.cs-cue-card.is-next-pending') ||
+                   $cuesList.querySelector('.cs-cue-card.is-active-next');
+  if (activeEl) {
+    const cueId = activeEl.getAttribute('data-cue-id');
+    if (force || (cueId && cueId !== lastAutoScrolledCueId)) {
+      lastAutoScrolledCueId = cueId;
+      requestAnimationFrame(() => {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  }
+}
+
+// ─── Render Cues List (A Lista Toda de Cues com Autoscroll) ──────────
 function renderCuesList() {
   const cues = state?.theatre?.cues || [];
   const myCues = cues.filter(isCueRelevant);
 
+  const $countAllEl = document.getElementById('cs-count-all-cues');
   const $countMyEl = document.getElementById('cs-count-my-cues');
+  const $totalBadge = document.getElementById('cs-cues-total-badge');
+  if ($countAllEl) $countAllEl.textContent = cues.length;
   if ($countMyEl) $countMyEl.textContent = myCues.length;
-  if ($myCuesCount) $myCuesCount.textContent = myCues.length;
+  if ($totalBadge) $totalBadge.textContent = `${cues.length} Cues`;
 
-  const sig = `${currentDept}:${myCues.map(c => `${c.id}:${c.status}:${c.firedTimecode}`).join('|')}`;
-  if (sig === lastMyCuesSig) return;
+  // Próxima deixa pendente para o meu posto ou geral
+  const nextMyPending = myCues.find(c => c.status === 'pending');
+  const nextOverallPending = cues.find(c => c.status === 'pending');
+  const focalNextPending = nextMyPending || nextOverallPending;
+
+  // Lista a apresentar de acordo com o filtro
+  const targetList = csCuesFilterMode === 'my' ? myCues : cues;
+
+  const sig = `${currentDept}:${csCuesFilterMode}:${targetList.map(c => `${c.id}:${c.status}:${c.firedTimecode}`).join('|')}`;
+  if (sig === lastMyCuesSig) {
+    autoScrollCuesList(false);
+    return;
+  }
   lastMyCuesSig = sig;
 
-  if (myCues.length === 0) {
-    $cuesList.innerHTML = `<div style="text-align: center; padding: 28px; color: var(--cs-muted);">Nenhuma deixa atribuída ao Posto de ${currentDept} neste espetáculo.</div>`;
+  if (targetList.length === 0) {
+    $cuesList.innerHTML = `<div style="text-align: center; padding: 28px; color: var(--cs-muted);">${csCuesFilterMode === 'my' ? `Nenhuma deixa atribuída ao Posto de ${currentDept}.` : 'Nenhuma deixa registada no espetáculo.'}</div>`;
     return;
   }
 
-  $cuesList.innerHTML = myCues.map(c => {
-    let cardClass = 'cs-cue-card is-my-dept-cue';
-    if (c.status === 'standby') cardClass += ' is-active-standby';
-    else if (c.status === 'fired') cardClass += ' is-active-go';
+  $cuesList.innerHTML = targetList.map(c => {
+    const isMine = isCueRelevant(c);
+    let cardClass = 'cs-cue-card';
+    if (isMine) cardClass += ' is-my-dept-cue';
+
+    const isStandby = c.status === 'standby';
+    const isFired = c.status === 'fired';
+    const isNext = !isStandby && !isFired && c.status === 'pending' && c.id === focalNextPending?.id;
+    const isCompleted = c.status === 'completed' || (c.status === 'fired' && c.firedTimecode);
+
+    if (isStandby) cardClass += ' is-active-standby';
+    else if (isFired) cardClass += ' is-active-go';
+    else if (isNext) cardClass += ' is-next-pending is-active-next';
+    else if (isCompleted) cardClass += ' is-completed';
+
+    let cardBorder = isMine ? 'rgba(85, 239, 196, 0.35)' : 'rgba(255, 255, 255, 0.08)';
+    let cardBg = isMine ? 'linear-gradient(90deg, rgba(85, 239, 196, 0.07) 0%, rgba(20, 24, 38, 0.9) 100%)' : 'rgba(18, 20, 32, 0.75)';
+    let numColor = isMine ? '#55efc4' : '#94a3b8';
+    let badgeStyle = 'background: rgba(255, 255, 255, 0.08); color: #94a3b8;';
+    let badgeText = c.status || 'pendente';
+
+    if (isStandby) {
+      cardBorder = '#ff793f';
+      cardBg = 'linear-gradient(135deg, rgba(255, 121, 63, 0.22) 0%, rgba(35, 20, 15, 0.95) 100%)';
+      numColor = '#ff9f43';
+      badgeStyle = 'background: #ff793f; color: #000; font-weight: 900;';
+      badgeText = 'STANDBY (PREPARAR)';
+    } else if (isFired) {
+      cardBorder = '#00b894';
+      cardBg = 'linear-gradient(135deg, rgba(0, 184, 148, 0.22) 0%, rgba(15, 30, 25, 0.95) 100%)';
+      numColor = '#00ffb3';
+      badgeStyle = 'background: #00b894; color: #000; font-weight: 900;';
+      badgeText = 'GO (EXECUTADO)';
+    } else if (isNext) {
+      cardBorder = '#74b9ff';
+      cardBg = 'linear-gradient(135deg, rgba(116, 185, 255, 0.16) 0%, rgba(20, 24, 38, 0.95) 100%)';
+      numColor = '#74b9ff';
+      badgeStyle = 'background: rgba(116, 185, 255, 0.25); color: #74b9ff; font-weight: 800; border: 1px solid rgba(116, 185, 255, 0.4);';
+      badgeText = 'A SEGUIR';
+    } else if (isCompleted) {
+      badgeText = 'CONCLUÍDO';
+      cardBg = 'rgba(255, 255, 255, 0.02)';
+      numColor = '#64748b';
+    }
 
     const depts = Array.isArray(c.departments) ? c.departments : [];
     const deptPills = depts.map(d => {
@@ -591,25 +698,61 @@ function renderCuesList() {
       return `<span style="background: ${bg}; color: ${color}; border: 1px solid ${border}; font-size: 0.68rem; font-weight: 800; padding: 2px 7px; border-radius: 6px;">${escapeHtml(d)}</span>`;
     }).join(' ');
 
+    const myPostoTag = isMine ? `<span class="badge" style="background: rgba(85, 239, 196, 0.2); color: #55efc4; font-size: 0.65rem; font-weight: 800; border: 1px solid rgba(85, 239, 196, 0.4); padding: 2px 6px; border-radius: 4px;">O TEU POSTO</span>` : '';
+
     return `
-      <div class="${cardClass}" style="border: 1.5px solid #00b894; background: linear-gradient(135deg, rgba(0, 184, 148, 0.12) 0%, rgba(20, 24, 38, 0.95) 100%); margin-bottom: 8px; padding: 12px 14px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div class="cs-cue-num" style="font-size: 1.3rem; font-weight: 900; color: #55efc4; font-family: var(--font-mono);">${escapeHtml(c.num)}</div>
-          <div>
+      <div class="${cardClass}" data-cue-id="${escapeHtml(c.id)}" style="border: 1.5px solid ${cardBorder}; background: ${cardBg}; margin-bottom: 8px; padding: 12px 14px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: all 0.2s ease;">
+        <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+          <div class="cs-cue-num" style="font-size: 1.25rem; font-weight: 900; color: ${numColor}; font-family: var(--font-mono); min-width: 48px; flex-shrink: 0;">${escapeHtml(c.num)}</div>
+          <div style="min-width: 0; flex: 1;">
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span class="cs-cue-title" style="font-weight: 800; font-size: 1rem; color: #fff;">${escapeHtml(c.name)}</span>
+              <span class="cs-cue-title" style="font-weight: 800; font-size: 0.96rem; color: #fff;">${escapeHtml(c.name)}</span>
+              ${myPostoTag}
               ${deptPills}
             </div>
-            <div class="cs-cue-desc" style="font-size: 0.82rem; color: #cbd5e1; margin-top: 4px;">${escapeHtml(c.targetText || c.notes || '')}</div>
+            <div class="cs-cue-desc" style="font-size: 0.8rem; color: #cbd5e1; margin-top: 3px; word-break: break-word;">${escapeHtml(c.targetText || c.notes || '')}</div>
           </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-          ${c.firedTimecode ? `<span style="font-family: var(--font-mono); font-size: 0.82rem; color: #00ffb3; font-weight: 800; margin-right: 4px;">${escapeHtml(c.firedTimecode)}</span>` : ''}
-          <span class="badge" style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; ${c.status === 'standby' ? 'background: #fdcb6e; color: #000;' : (c.status === 'fired' ? 'background: #00b894; color: #000;' : '')}">${escapeHtml(c.status)}</span>
+        <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap; flex-shrink: 0;">
+          ${c.firedTimecode ? `<span style="font-family: var(--font-mono); font-size: 0.8rem; color: #00ffb3; font-weight: 800; margin-right: 4px;">${escapeHtml(c.firedTimecode)}</span>` : ''}
+          <span class="badge" style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; ${badgeStyle}">${escapeHtml(badgeText)}</span>
         </div>
       </div>
     `;
   }).join('');
+
+  autoScrollCuesList(false);
+}
+
+// ─── Filter & Focus Event Listeners ─────────────────────────────────
+const $filterAllBtn = document.getElementById('cs-filter-all');
+const $filterMyBtn = document.getElementById('cs-filter-my');
+const $btnFocusCue = document.getElementById('cs-btn-focus-cue');
+
+if ($filterAllBtn) {
+  $filterAllBtn.addEventListener('click', () => {
+    csCuesFilterMode = 'all';
+    $filterAllBtn.classList.add('active');
+    $filterMyBtn?.classList.remove('active');
+    lastMyCuesSig = '';
+    renderCuesList();
+  });
+}
+
+if ($filterMyBtn) {
+  $filterMyBtn.addEventListener('click', () => {
+    csCuesFilterMode = 'my';
+    $filterMyBtn.classList.add('active');
+    $filterAllBtn?.classList.remove('active');
+    lastMyCuesSig = '';
+    renderCuesList();
+  });
+}
+
+if ($btnFocusCue) {
+  $btnFocusCue.addEventListener('click', () => {
+    autoScrollCuesList(true);
+  });
 }
 
 // ─── Default Checklist Fallback ──────────────────────────────────────
@@ -745,14 +888,9 @@ function syncPhaseTab(phase, showState) {
   lastSeenPhase = currentKey;
 
   if (phase === 'live' || showState === 'running') {
-    const cuesTabBtn = document.querySelector('[data-tab="tab-my-cues"]');
-    if (cuesTabBtn && !cuesTabBtn.classList.contains('active')) {
-      cuesTabBtn.click();
-    }
-  } else if (phase === 'prep' && showState !== 'running') {
-    const stageTabBtn = document.querySelector('[data-tab="tab-stage-timer"]');
-    if (stageTabBtn && !stageTabBtn.classList.contains('active')) {
-      stageTabBtn.click();
+    const liveTabBtn = document.querySelector('[data-tab="tab-live-split"]');
+    if (liveTabBtn && !liveTabBtn.classList.contains('active')) {
+      liveTabBtn.click();
     }
   }
 }

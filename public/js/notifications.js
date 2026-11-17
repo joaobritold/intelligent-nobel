@@ -1390,7 +1390,7 @@
               : (cue.target || 'Geral');
             const cueDesc = cue.name || cue.action || cue.title || cue.notes || '';
 
-            this.showLocalNotification(`🟡 STANDBY: Cue ${cueNum} (${targetDept})`, {
+            this.showLocalNotification(`🟠 STANDBY: Cue ${cueNum} (${targetDept})`, {
               body: `Atenção ${targetDept}: ${cueDesc || 'Aguardar sinal de GO'}`,
               tag: eventKey,
               vibrate: [150, 80, 150]
@@ -1398,7 +1398,7 @@
 
             if (isLeader && tgCfg.enabled) {
               this.sendTelegramMessage(
-                `🟡 <b>STANDBY DEIXA ${escapeHtml(cueNum)}</b> • <code>${safeStage}</code>\n` +
+                `🟠 <b>STANDBY DEIXA ${escapeHtml(cueNum)}</b> • <code>${safeStage}</code>\n` +
                 `🎯 <b>Depto:</b> ${escapeHtml(targetDept)}\n` +
                 `📋 <i>${escapeHtml(cueDesc || 'Preparar disparo')}</i>`,
                 tgCfg,
