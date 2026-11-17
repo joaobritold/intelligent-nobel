@@ -2,18 +2,38 @@
 
 const params = new URLSearchParams(window.location.search);
 const urlRoom = (params.get('room') || '').toUpperCase().trim();
-let roomId = urlRoom;
+const savedActiveRoom = (sessionStorage.getItem('stagetimer_active_room') || '').toUpperCase().trim();
+const savedDevRoom = (localStorage.getItem('stagetimer_device_room') || '').toUpperCase().trim();
+const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').toUpperCase().trim();
+let roomId = urlRoom || savedActiveRoom || savedDevRoom || savedLastRoom || 'PALCO1';
 
-if (!roomId) {
-  try {
-    const savedDev = (localStorage.getItem('stagetimer_device_room') || '').toUpperCase().trim();
-    const savedLast = (localStorage.getItem('stagetimer_last_room') || '').toUpperCase().trim();
-    const savedActive = (sessionStorage.getItem('stagetimer_active_room') || '').toUpperCase().trim();
-    roomId = savedDev || savedLast || savedActive || 'PALCO1';
-  } catch (e) {
-    roomId = 'PALCO1';
+try {
+  const localEvents = JSON.parse(localStorage.getItem('stagetimer_v63_registry') || localStorage.getItem('stagetimer_v10_events_list') || '[]');
+  let matchedEv = localEvents.find(e => (e.code || '').toUpperCase() === roomId || (Array.isArray(e.stages) && e.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId)));
+  if (!matchedEv) {
+    const unlockedEvCode = (sessionStorage.getItem('stagetimer_unlocked_event') || localStorage.getItem('stagetimer_unlocked_event') || '').trim().toUpperCase();
+    if (unlockedEvCode) {
+      matchedEv = localEvents.find(e => (e.code || '').toUpperCase() === unlockedEvCode);
+    }
+    if (!matchedEv) {
+      const theatreEv = localEvents.find(e => e.eventType === 'theatre');
+      if (theatreEv && (!urlRoom || roomId === 'PALCO1')) {
+        matchedEv = theatreEv;
+      }
+    }
   }
-}
+  if (matchedEv) {
+    const hasCurrent = (matchedEv.code || '').toUpperCase() === roomId || (Array.isArray(matchedEv.stages) && matchedEv.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId));
+    if (!hasCurrent) {
+      roomId = (Array.isArray(matchedEv.stages) && matchedEv.stages[0]?.code) ? matchedEv.stages[0].code.toUpperCase() : (matchedEv.code || roomId).toUpperCase();
+    } else if ((matchedEv.code || '').toUpperCase() === roomId && Array.isArray(matchedEv.stages) && matchedEv.stages.length > 0) {
+      const exactStage = matchedEv.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId);
+      if (!exactStage && matchedEv.stages[0]?.code) {
+        roomId = matchedEv.stages[0].code.toUpperCase();
+      }
+    }
+  }
+} catch (_) {}
 
 try {
   localStorage.setItem('stagetimer_device_room', roomId);
@@ -276,12 +296,17 @@ function updateDeptUI() {
   const $heroBadge = document.getElementById('cs-hero-dept-badge');
   const $chkTitle = document.getElementById('cs-checklist-dept-title');
 
+  const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+  const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
+  const currentEvent = rawList.find(e => (e.code || '').toUpperCase() === currentCode || (Array.isArray(e.stages) && e.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode)));
+  const evTitle = currentEvent ? (currentEvent.title || currentEvent.code) : (state?.name || '');
+
   if ($icon) $icon.innerHTML = (window.stIcon && info.iconKey) ? window.stIcon(info.iconKey) : '';
   if ($name) {
     $name.textContent = info.name;
     $name.style.color = info.color;
   }
-  if ($sub) $sub.textContent = info.title;
+  if ($sub) $sub.textContent = evTitle ? `${evTitle} • ${info.title}` : info.title;
   if ($heroBadge) {
     $heroBadge.textContent = `${info.name}`;
     $heroBadge.style.color = info.color;

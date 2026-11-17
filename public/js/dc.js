@@ -2,18 +2,39 @@
 
 const params = new URLSearchParams(window.location.search);
 const urlRoom = (params.get('room') || '').toUpperCase().trim();
-let roomId = urlRoom;
+const savedActiveRoom = (sessionStorage.getItem('stagetimer_active_room') || '').toUpperCase().trim();
+const savedDevRoom = (localStorage.getItem('stagetimer_device_room') || '').toUpperCase().trim();
+const savedLastRoom = (localStorage.getItem('stagetimer_last_room') || '').toUpperCase().trim();
+let roomId = urlRoom || savedActiveRoom || savedDevRoom || savedLastRoom || 'PALCO1';
 
-if (!roomId) {
-  try {
-    const savedDev = (localStorage.getItem('stagetimer_device_room') || '').toUpperCase().trim();
-    const savedLast = (localStorage.getItem('stagetimer_last_room') || '').toUpperCase().trim();
-    const savedActive = (sessionStorage.getItem('stagetimer_active_room') || '').toUpperCase().trim();
-    roomId = savedDev || savedLast || savedActive || 'PALCO1';
-  } catch (e) {
-    roomId = 'PALCO1';
+// Smart resolve: if roomId is parent event code with multiple stages, resolve to Stage 1
+try {
+  const localEvents = JSON.parse(localStorage.getItem('stagetimer_v63_registry') || localStorage.getItem('stagetimer_v10_events_list') || '[]');
+  let matchedEv = localEvents.find(e => (e.code || '').toUpperCase() === roomId || (Array.isArray(e.stages) && e.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId)));
+  if (!matchedEv) {
+    const unlockedEvCode = (sessionStorage.getItem('stagetimer_unlocked_event') || localStorage.getItem('stagetimer_unlocked_event') || '').trim().toUpperCase();
+    if (unlockedEvCode) {
+      matchedEv = localEvents.find(e => (e.code || '').toUpperCase() === unlockedEvCode);
+    }
+    if (!matchedEv) {
+      const theatreEv = localEvents.find(e => e.eventType === 'theatre');
+      if (theatreEv && (!urlRoom || roomId === 'PALCO1')) {
+        matchedEv = theatreEv;
+      }
+    }
   }
-}
+  if (matchedEv) {
+    const hasCurrent = (matchedEv.code || '').toUpperCase() === roomId || (Array.isArray(matchedEv.stages) && matchedEv.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId));
+    if (!hasCurrent) {
+      roomId = (Array.isArray(matchedEv.stages) && matchedEv.stages[0]?.code) ? matchedEv.stages[0].code.toUpperCase() : (matchedEv.code || roomId).toUpperCase();
+    } else if ((matchedEv.code || '').toUpperCase() === roomId && Array.isArray(matchedEv.stages) && matchedEv.stages.length > 0) {
+      const exactStage = matchedEv.stages.some(s => (s.code || s.id || '').toUpperCase() === roomId);
+      if (!exactStage && matchedEv.stages[0]?.code) {
+        roomId = matchedEv.stages[0].code.toUpperCase();
+      }
+    }
+  }
+} catch (_) {}
 
 try {
   localStorage.setItem('stagetimer_device_room', roomId);
@@ -1927,6 +1948,7 @@ if ($btnPrepImportScript && $modalImportScript) {
 
 // ─── Universal Importer: Guião / Texto (PDF, Word, Excel, Docs, TXT) ───
 let stagedScriptLines = [];
+let stagedScriptRawText = '';
 
 const $scriptDropzone = document.getElementById('dc-script-dropzone');
 const $scriptFileInput = document.getElementById('dc-script-file-input');
@@ -1946,9 +1968,6 @@ document.querySelectorAll('.dc-import-tab-btn').forEach(btn => {
     if (targetPanel) targetPanel.style.display = 'block';
   });
 });
-
-let stagedScriptLines = [];
-let stagedScriptRawText = '';
 
 function renderScriptPreview(lines, fileInfo = '') {
   stagedScriptLines = lines;
@@ -3011,42 +3030,146 @@ if ($schedImportConfirm) {
 }
 
 // ─── Stage Navigation & Switcher ────────────────────────────────────
-function updateStageUI() {
-  const list = client.getEventsList();
-  const currentCode = (state?.id || roomId || '').toUpperCase();
+let lastDcSelectSig = '';
 
-  if ($stageBadge) {
-    let name = currentCode;
-    const currentEvent = list.find(e => {
-      if (e.code === currentCode) return true;
-      if (Array.isArray(e.stages)) {
-        return e.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode);
-      }
-      return false;
-    });
-    if (currentEvent) {
-      const evTitle = currentEvent.title || currentEvent.code;
-      const matchedSt = Array.isArray(currentEvent.stages) ? currentEvent.stages.find(s => (s.code || s.id || '').toUpperCase() === currentCode) : null;
-      const stName = (matchedSt?.name || '').trim();
-      const hasDistinctStage = stName && stName.toLowerCase() !== evTitle.toLowerCase();
-      if ((Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) || hasDistinctStage) {
-        name = `${evTitle} • ${stName || currentCode}`;
-      } else {
-        name = evTitle;
-      }
+function updateStageUI(force = false) {
+  const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+  const currentCode = (state?.id || roomId || 'PALCO1').toUpperCase();
+
+  let currentEvent = rawList.find(e => {
+    if ((e.code || '').toUpperCase() === currentCode) return true;
+    if (Array.isArray(e.stages)) {
+      return e.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode);
     }
+    return false;
+  });
+
+  if (!currentEvent) {
+    try {
+      const unlockedEvCode = (sessionStorage.getItem('stagetimer_unlocked_event') || localStorage.getItem('stagetimer_unlocked_event') || '').trim().toUpperCase();
+      if (unlockedEvCode) {
+        currentEvent = rawList.find(e => (e.code || '').toUpperCase() === unlockedEvCode);
+      }
+    } catch (_) {}
+  }
+
+  let name = (state?.name && state.name !== currentCode) ? state.name : currentCode;
+  if (currentEvent) {
+    const evTitle = (currentEvent.title || currentEvent.code || '').trim();
+    const matchedSt = Array.isArray(currentEvent.stages) ? currentEvent.stages.find(s => (s.code || s.id || '').toUpperCase() === currentCode) : null;
+    const stName = (matchedSt?.name || '').trim();
+    const hasDistinctStage = stName && stName.toLowerCase() !== evTitle.toLowerCase();
+    if ((Array.isArray(currentEvent.stages) && currentEvent.stages.length > 1) || hasDistinctStage) {
+      name = `${evTitle} • ${stName || currentCode}`;
+    } else {
+      name = evTitle;
+    }
+  }
+
+  if ($stageBadge && $stageBadge.textContent !== name) {
     $stageBadge.textContent = name;
+  }
+
+  const isMaster = (typeof window.isStageTimerMaster === 'function' && window.isStageTimerMaster()) ||
+    sessionStorage.getItem('stagetimer_master_active') === '1' ||
+    localStorage.getItem('stagetimer_master_active') === '1' ||
+    sessionStorage.getItem('stagetimer_master_auth_v12') === 'true' ||
+    localStorage.getItem('stagetimer_master_auth_v12') === 'true';
+
+  const theatreEvents = rawList.filter(e => e.eventType === 'theatre' || (currentEvent && e.code === currentEvent.code));
+  const selectableEvents = isMaster ? (theatreEvents.length > 0 ? theatreEvents : rawList) : (currentEvent ? [currentEvent] : []);
+  let selectableStagesCount = 0;
+  selectableEvents.forEach(e => {
+    selectableStagesCount += (Array.isArray(e.stages) && e.stages.length > 0) ? e.stages.length : 1;
+  });
+
+  if ($stageSelect) {
+    if (isMaster || selectableEvents.length > 1 || selectableStagesCount > 1) {
+      $stageSelect.classList.remove('dc-stage-select-hidden');
+      $stageSelect.style.display = 'inline-block';
+      if ($stageBadge) $stageBadge.style.display = 'none';
+
+      const selectSig = `${currentCode}:${selectableEvents.map(ev => `${ev.code}:${ev.title}:${(ev.stages || []).map(s => `${s.code}:${s.name}`).join(';')}`).join('||')}`;
+      if (force || selectSig !== lastDcSelectSig) {
+        lastDcSelectSig = selectSig;
+        let optionsHtml = '';
+        selectableEvents.forEach(ev => {
+          const evTitle = ev.title || ev.code;
+          const stages = Array.isArray(ev.stages) && ev.stages.length > 0 ? ev.stages : [{ code: ev.code, name: evTitle }];
+          if (stages.length > 1) {
+            optionsHtml += `<optgroup label="${escapeHtml(evTitle)} (${stages.length} Palcos)">`;
+            stages.forEach(st => {
+              const stCode = (st.code || st.id || '').toUpperCase();
+              const isSel = stCode === currentCode;
+              optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(evTitle)} • ${escapeHtml(st.name || stCode)}</option>`;
+            });
+            optionsHtml += `</optgroup>`;
+          } else {
+            const stCode = (stages[0].code || ev.code).toUpperCase();
+            const isSel = stCode === currentCode;
+            const stName = (stages[0].name || '').trim();
+            const hasDistinctStage = stName && stName.toLowerCase() !== evTitle.toLowerCase();
+            const optLabel = hasDistinctStage ? `${evTitle} • ${stName}` : evTitle;
+            optionsHtml += `<option value="${escapeHtml(stCode)}" ${isSel ? 'selected' : ''}>${escapeHtml(optLabel)}</option>`;
+          }
+        });
+
+        optionsHtml += `<optgroup label="Ações">`;
+        optionsHtml += `<option value="__GO_PORTAL__">Início (Hub de Eventos)...</option>`;
+        optionsHtml += `</optgroup>`;
+
+        $stageSelect.innerHTML = optionsHtml;
+        if (selectableEvents.some(ev => ev.code === currentCode || (Array.isArray(ev.stages) && ev.stages.some(s => (s.code || s.id || '').toUpperCase() === currentCode)))) {
+          $stageSelect.value = currentCode;
+        }
+      }
+    } else {
+      $stageSelect.classList.add('dc-stage-select-hidden');
+      $stageSelect.style.display = 'none';
+      if ($stageBadge) $stageBadge.style.display = 'inline-block';
+      lastDcSelectSig = '';
+    }
   }
 }
 
-if ($stageContainer && $stageSelect) {
-  $stageContainer.addEventListener('click', () => {
-    if ($stageSelect.style.display !== 'none') {
-      $stageSelect.focus();
-      try { $stageSelect.showPicker(); } catch (_) {}
+if ($stageSelect) {
+  $stageSelect.addEventListener('change', () => {
+    const val = $stageSelect.value;
+    if (val === '__GO_PORTAL__') {
+      window.location.href = 'index.html?portal=1';
+      return;
+    }
+    if (val && val.toUpperCase() !== (state?.id || roomId).toUpperCase()) {
+      const targetCode = val.toUpperCase();
+      const rawList = typeof client.getEventsList === 'function' ? client.getEventsList() : [];
+      const owningEv = rawList.find(e => (e.code || '').toUpperCase() === targetCode || (Array.isArray(e.stages) && e.stages.some(s => (s.code || s.id || '').toUpperCase() === targetCode)));
+      try {
+        if (owningEv) {
+          localStorage.setItem('stagetimer_unlocked_event', owningEv.code);
+          sessionStorage.setItem('stagetimer_unlocked_event', owningEv.code);
+        }
+        localStorage.setItem('stagetimer_device_room', targetCode);
+        localStorage.setItem('stagetimer_last_room', targetCode);
+        sessionStorage.setItem('stagetimer_active_room', targetCode);
+      } catch (_) {}
+      window.location.replace(`dc.html?room=${encodeURIComponent(targetCode)}`);
     }
   });
 }
+
+if ($stageContainer && $stageSelect) {
+  $stageContainer.addEventListener('click', (e) => {
+    if (e.target === $stageSelect) return;
+    if ($stageSelect.style.display !== 'none' && !$stageSelect.classList.contains('dc-stage-select-hidden')) {
+      $stageSelect.focus();
+      try { $stageSelect.showPicker(); } catch (_) {}
+    } else {
+      window.location.href = 'index.html?portal=1';
+    }
+  });
+}
+
+updateStageUI(true);
 
 // ─── Client Event Handlers ──────────────────────────────────────────
 client.on('room-state', (newState) => {

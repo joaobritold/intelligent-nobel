@@ -110,6 +110,23 @@ body {
   color: #55efc4;
 }
 
+#dc-stage-select {
+  background: transparent;
+  border: none;
+  color: #55efc4;
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-family: var(--font-sans);
+  outline: none;
+  cursor: pointer;
+}
+
+#dc-stage-select option,
+#dc-stage-select optgroup {
+  background: #151528;
+  color: #fff;
+}
+
 .dc-stage-select-hidden {
   display: none;
 }
