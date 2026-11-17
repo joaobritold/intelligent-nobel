@@ -401,9 +401,12 @@ body {
   background: linear-gradient(90deg, rgba(253, 203, 110, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
 }
 
-.dc-script-item.is-current-speaking {
-  border-color: #55efc4;
-  box-shadow: 0 0 14px rgba(85, 239, 196, 0.25);
+.dc-script-item.is-current-speaking,
+.dc-script-item.active {
+  border-left: 5px solid #55efc4 !important;
+  background: linear-gradient(90deg, rgba(85, 239, 196, 0.18) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+  border-color: rgba(85, 239, 196, 0.5) !important;
+  box-shadow: 0 4px 20px rgba(85, 239, 196, 0.22);
 }
 
 .dc-script-meta {

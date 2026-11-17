@@ -159,6 +159,63 @@ class TheatreImporter {
   }
 
   /**
+   * Parse Pure Script Text without touching formatting, case or spacing
+   */
+  static parsePureScriptText(rawText) {
+    if (!rawText || typeof rawText !== 'string') return [];
+    const rawLines = rawText.split(/\r?\n/);
+    const script = [];
+    rawLines.forEach((rawLine, idx) => {
+      const trimmed = rawLine.trim();
+      if (!trimmed) {
+        script.push({
+          id: 'sc_' + Date.now() + '_' + idx,
+          type: 'blank',
+          speaker: '',
+          text: '',
+          raw: rawLine,
+          cueAnchor: null
+        });
+        return;
+      }
+
+      if (/^(acto|ato|cena|quadro|pr[oó]logo|ep[ií]logo|parte)\b/i.test(trimmed)) {
+        script.push({
+          id: 'sc_' + Date.now() + '_' + idx,
+          type: 'heading',
+          speaker: '',
+          text: trimmed,
+          raw: rawLine,
+          cueAnchor: null
+        });
+        return;
+      }
+
+      if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('(') && trimmed.endsWith(')'))) {
+        script.push({
+          id: 'sc_' + Date.now() + '_' + idx,
+          type: 'direction',
+          speaker: '',
+          text: trimmed,
+          raw: rawLine,
+          cueAnchor: null
+        });
+        return;
+      }
+
+      script.push({
+        id: 'sc_' + Date.now() + '_' + idx,
+        type: 'dialogue',
+        speaker: '',
+        text: trimmed,
+        raw: rawLine,
+        cueAnchor: null
+      });
+    });
+    return script;
+  }
+
+  /**
    * Parse text into structured Script items (Dialogue, Direction, Heading)
    */
   static parseScriptText(rawText) {

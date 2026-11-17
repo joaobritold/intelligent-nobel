@@ -623,7 +623,7 @@ class UniversalSyncClient {
       const sender = String(cmdObj.sender || '');
       const secret = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('stagetimer_auth_token') : null) ||
                      (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_auth_token') : null) ||
-                     'st_showflow_cmd_sig_v2.08';
+                     'st_showflow_cmd_sig_v2.09';
       const raw = `${action}:${target}:${sentAt}:${sender}:${secret.slice(-16)}`;
       let hash = 0x811c9dc5;
       for (let i = 0; i < raw.length; i++) {
@@ -1032,7 +1032,7 @@ class UniversalSyncClient {
       if (typeof document !== 'undefined' && !this._mqttScriptLoading) {
         this._mqttScriptLoading = true;
         const s = document.createElement('script');
-        s.src = 'js/mqtt.min.js?v=2.08';
+        s.src = 'js/mqtt.min.js?v=2.09';
         s.onload = () => {
           this._mqttScriptLoading = false;
           this._initCloudSync();
@@ -2377,6 +2377,7 @@ class UniversalSyncClient {
     } else {
       if (!Array.isArray(this._state.theatre.cues)) this._state.theatre.cues = this._createDefaultCues();
       if (!Array.isArray(this._state.theatre.script)) this._state.theatre.script = this._createDefaultScript();
+      if (typeof this._state.theatre.scriptActiveIndex !== 'number') this._state.theatre.scriptActiveIndex = 0;
       const defaultDepts = ['Luz', 'Som', 'Maquinaria', 'Vídeo', 'Coxias'];
       if (!this._state.theatre.checklists || typeof this._state.theatre.checklists !== 'object') {
         this._state.theatre.checklists = this._createDefaultChecklists();
@@ -2417,6 +2418,7 @@ class UniversalSyncClient {
       urgentNotice: { text: '', level: 'warn', visible: false, sentAt: 0 },
       cues: this._createDefaultCues(),
       script: this._createDefaultScript(),
+      scriptActiveIndex: 0,
       checklists: this._createDefaultChecklists(),
       stageNotes: [],
       telemetry: [],
@@ -5330,7 +5332,29 @@ class UniversalSyncClient {
     if (!this._state || !Array.isArray(script)) return;
     this._ensureTheatreStructure();
     this._state.theatre.script = script;
+    if (typeof this._state.theatre.scriptActiveIndex !== 'number') {
+      this._state.theatre.scriptActiveIndex = 0;
+    }
     this._commitStateChange();
+  }
+
+  setTheatreScriptIndex(index) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    const maxIdx = Math.max(0, (th.script || []).length - 1);
+    const cleanIdx = Math.max(0, Math.min(maxIdx, Number(index) || 0));
+    th.scriptActiveIndex = cleanIdx;
+    this._dispatchImmediateTelegramEvent();
+    this._commitStateChange();
+  }
+
+  advanceTheatreScript(delta = 1) {
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    const cur = typeof th.scriptActiveIndex === 'number' ? th.scriptActiveIndex : 0;
+    this.setTheatreScriptIndex(cur + delta);
   }
 
   saveTheatreReport(reportData = {}) {

@@ -152,6 +152,10 @@ const $myChecklistCount = document.getElementById('cs-my-checklist-count');
 const $cuesList = document.getElementById('cs-cues-list');
 const $checklistProgressPill = document.getElementById('cs-checklist-progress-pill');
 const $myChecklistItems = document.getElementById('cs-my-checklist-items');
+const $scriptFeed = document.getElementById('cs-script-feed');
+const $scriptPosPill = document.getElementById('cs-script-pos-pill');
+const $scriptSyncPill = document.getElementById('cs-script-sync-pill');
+let lastCsScriptSig = '';
 
 // Modal Elements
 const $deptModal = document.getElementById('cs-dept-modal');
@@ -1075,6 +1079,76 @@ function render() {
   renderHeroLight();
   renderCuesList();
   renderChecklist();
+  renderScriptFeed();
+}
+
+function renderScriptFeed() {
+  if (!$scriptFeed) return;
+  const script = state?.theatre?.script || [];
+  const activeIdx = typeof state?.theatre?.scriptActiveIndex === 'number' ? state.theatre.scriptActiveIndex : 0;
+
+  if ($scriptPosPill) {
+    $scriptPosPill.textContent = script.length > 0 ? `Fala ${activeIdx + 1} / ${script.length}` : 'Fala 0 / 0';
+  }
+
+  const sig = `${activeIdx}:${currentDept}:${script.map(s => `${s.id}:${s.type}:${s.cueAnchor || ''}:${s.text}`).join('|')}`;
+  if (sig === lastCsScriptSig) {
+    return;
+  }
+  lastCsScriptSig = sig;
+
+  if (script.length === 0) {
+    $scriptFeed.innerHTML = `
+      <div style="text-align: center; padding: 36px 16px; color: var(--cs-muted);">
+        Aguardando carregamento do guião da peça pela Diretora de Cena...
+      </div>
+    `;
+    return;
+  }
+
+  $scriptFeed.innerHTML = script.map((item, idx) => {
+    const isDirection = item.type === 'direction';
+    const isHeading = item.type === 'heading';
+    const isBlank = item.type === 'blank';
+    const isActive = idx === activeIdx;
+    const hasCue = Boolean(item.cueAnchor);
+    let myCueBadge = '';
+
+    if (hasCue) {
+      const cueObj = state?.theatre?.cues?.find(c => c.id === item.cueAnchor);
+      if (cueObj) {
+        const isMyCue = (cueObj.departments || []).includes(currentDept) || (cueObj.dept === currentDept);
+        if (isMyCue) {
+          myCueBadge = `<span class="badge" style="background: linear-gradient(135deg, #fdcb6e, #f39c12); color: #000; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; box-shadow: 0 2px 8px rgba(253, 203, 110, 0.4); margin-left: 8px;">⚡ SUA DEIXA: ${escapeHtml(cueObj.num)} (${escapeHtml(cueObj.name)})</span>`;
+        } else {
+          myCueBadge = `<span class="badge" style="background: rgba(255,255,255,0.08); color: var(--cs-muted); font-size: 0.68rem; padding: 2px 6px; margin-left: 8px;">${escapeHtml(cueObj.num)}</span>`;
+        }
+      }
+    }
+
+    if (isBlank) {
+      return `<div class="cs-script-row blank ${isActive ? 'active' : ''}" style="min-height: 14px;"></div>`;
+    }
+
+    return `
+      <div class="cs-script-row ${isHeading ? 'heading' : (isDirection ? 'direction' : 'dialogue')} ${isActive ? 'active' : ''}" style="padding: 10px 14px; margin-bottom: 8px; border-radius: 8px; border-left: ${isActive ? '5px solid #55efc4' : '4px solid transparent'}; background: ${isActive ? 'rgba(85, 239, 196, 0.12)' : 'rgba(255, 255, 255, 0.02)'}; transition: all 0.2s ease;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            ${isActive ? `<span class="badge" style="background: #55efc4; color: #000; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;">● EM CENA (DC)</span>` : ''}
+            ${item.speaker ? `<span style="font-weight: 800; font-size: 0.82rem; color: #ffeaa7; text-transform: uppercase;">${escapeHtml(item.speaker)}</span>` : (isDirection ? '<span style="font-size: 0.75rem; color: #a29bfe; font-style: italic;">[CENA / RUBRICA]</span>' : (isHeading ? '<span style="font-size: 0.88rem; font-weight: 800; color: #55efc4;">📌 ' + escapeHtml(item.text) + '</span>' : ''))}
+          </div>
+          <div>${myCueBadge}</div>
+        </div>
+        ${!isHeading ? `<div style="font-size: 0.96rem; color: ${isActive ? '#fff' : '#cbd5e1'}; font-weight: ${isActive ? '600' : '400'}; white-space: pre-wrap; word-break: break-word;">${escapeHtml(item.text)}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  // Auto-scroll para a linha ativa suavemente
+  const activeRow = $scriptFeed?.querySelector('.cs-script-row.active');
+  if (activeRow) {
+    activeRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 }
 
 function escapeHtml(str) {

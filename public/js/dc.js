@@ -55,6 +55,9 @@ const $urgentActiveTag = document.getElementById('dc-urgent-active-tag');
 
 // Script Feed
 const $scriptFeed = document.getElementById('dc-script-feed');
+const $scriptBtnPrev = document.getElementById('dc-script-btn-prev');
+const $scriptBtnNext = document.getElementById('dc-script-btn-next');
+const $scriptPosBadge = document.getElementById('dc-script-pos-badge');
 const $btnImportScript = document.getElementById('dc-btn-import-script');
 const $btnAddLine = document.getElementById('dc-btn-add-line');
 const $toggleAutoscroll = document.getElementById('dc-toggle-autoscroll');
@@ -743,7 +746,13 @@ let lastTelemetrySig = '';
 
 function renderScript() {
   const script = state?.theatre?.script || [];
-  const sig = script.map(s => `${s.id}:${s.type}:${s.speaker || ''}:${s.cueAnchor || ''}:${s.text}`).join('|');
+  const activeIdx = typeof state?.theatre?.scriptActiveIndex === 'number' ? state.theatre.scriptActiveIndex : 0;
+
+  if ($scriptPosBadge) {
+    $scriptPosBadge.textContent = script.length > 0 ? `Fala ${activeIdx + 1} / ${script.length}` : 'Fala 0 / 0';
+  }
+
+  const sig = `${activeIdx}:${script.map(s => `${s.id}:${s.type}:${s.cueAnchor || ''}:${s.text}`).join('|')}`;
   if (sig === lastScriptSig) return;
   lastScriptSig = sig;
 
@@ -760,8 +769,11 @@ function renderScript() {
     return;
   }
 
-  $scriptFeed.innerHTML = script.map(item => {
+  $scriptFeed.innerHTML = script.map((item, idx) => {
     const isDirection = item.type === 'direction';
+    const isHeading = item.type === 'heading';
+    const isBlank = item.type === 'blank';
+    const isActive = idx === activeIdx;
     const hasCue = Boolean(item.cueAnchor);
     let cueBadgeHtml = '';
 
@@ -773,18 +785,27 @@ function renderScript() {
       cueBadgeHtml = `<button type="button" class="dc-cue-anchor-pill" data-jump-cue="${escapeHtml(item.cueAnchor)}" title="Focar Deixa">${ico} ${escapeHtml(cueNum)}: ${escapeHtml(cueName)}</button>`;
     }
 
+    if (isBlank) {
+      return `<div class="dc-script-item blank ${isActive ? 'active' : ''}" data-script-idx="${idx}" style="min-height: 14px; cursor: pointer;"></div>`;
+    }
+
     return `
-      <div class="dc-script-item ${isDirection ? 'direction' : 'dialogue'} ${hasCue ? 'has-cue' : ''}" data-script-id="${escapeHtml(item.id)}" data-cue-anchor="${escapeHtml(item.cueAnchor || '')}">
+      <div class="dc-script-item ${isHeading ? 'heading' : (isDirection ? 'direction' : 'dialogue')} ${isActive ? 'active' : ''} ${hasCue ? 'has-cue' : ''}" data-script-idx="${idx}" data-script-id="${escapeHtml(item.id)}" data-cue-anchor="${escapeHtml(item.cueAnchor || '')}" style="cursor: pointer;">
         <div class="dc-script-meta">
-          ${item.speaker ? `<span class="dc-speaker-pill">${escapeHtml(item.speaker)}</span>` : (isDirection ? '<span class="dc-direction-tag">[CENA / RUBRICA]</span>' : '')}
+          ${isActive ? `<span class="badge" style="background: #55efc4; color: #000; font-size: 0.65rem; font-weight: 800; padding: 2px 6px;">● EM CENA</span>` : ''}
+          ${item.speaker ? `<span class="dc-speaker-pill">${escapeHtml(item.speaker)}</span>` : (isDirection ? '<span class="dc-direction-tag">[CENA / RUBRICA]</span>' : (isHeading ? '<span class="dc-heading-tag">📌 ' + escapeHtml(item.text) + '</span>' : ''))}
           ${cueBadgeHtml}
         </div>
-        <div class="${isDirection ? 'dc-script-direction' : 'dc-script-text'}">
-          ${escapeHtml(item.text)}
-        </div>
+        ${!isHeading ? `<div class="${isDirection ? 'dc-script-direction' : 'dc-script-text'}" style="white-space: pre-wrap; font-family: inherit;">${escapeHtml(item.text)}</div>` : ''}
       </div>
     `;
   }).join('');
+
+  // Auto-scroll suave para a linha ativa
+  const activeEl = $scriptFeed?.querySelector('.dc-script-item.active');
+  if (activeEl) {
+    activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 }
 
 function renderCues() {
@@ -1914,6 +1935,9 @@ document.querySelectorAll('.dc-import-tab-btn').forEach(btn => {
   });
 });
 
+let stagedScriptLines = [];
+let stagedScriptRawText = '';
+
 function renderScriptPreview(lines, fileInfo = '') {
   stagedScriptLines = lines;
   if ($scriptPreviewCount) $scriptPreviewCount.textContent = lines.length;
@@ -1929,7 +1953,7 @@ function renderScriptPreview(lines, fileInfo = '') {
     $scriptPreviewBox.innerHTML = sample.map(item => {
       const isDir = item.type === 'direction';
       return `
-        <div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+        <div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); white-space: pre-wrap;">
           ${item.speaker ? `<span style="font-weight: 800; color: #ffeaa7; margin-right: 6px;">${escapeHtml(item.speaker)}:</span>` : (isDir ? '<span style="color: #a29bfe; font-style: italic; margin-right: 6px;">[CENA]</span>' : '')}
           <span>${escapeHtml(item.text)}</span>
         </div>
@@ -1942,10 +1966,12 @@ async function handleScriptFile(file) {
   if (!file) return;
   try {
     const titleEl = $scriptDropzone?.querySelector('.dc-import-dropzone-title');
-    if (titleEl) titleEl.textContent = '⏳ A processar ficheiro com TheatreImporter...';
-    
+    if (titleEl) titleEl.textContent = '⏳ A processar ficheiro...';
+
     const text = await TheatreImporter.extractTextFromFile(file);
-    const parsed = TheatreImporter.parseScriptText(text);
+    stagedScriptRawText = text;
+    const typeMode = document.querySelector('input[name="dc-script-type-mode"]:checked')?.value || 'pure';
+    const parsed = typeMode === 'pure' ? TheatreImporter.parsePureScriptText(text) : TheatreImporter.parseScriptText(text);
     if ($scriptImportTextarea) $scriptImportTextarea.value = text;
     renderScriptPreview(parsed, `${file.name} (${Math.round(file.size / 1024)} KB)`);
     if (titleEl) titleEl.textContent = `${file.name} carregado com sucesso`;
@@ -1997,10 +2023,14 @@ if ($btnImportScript && $modalImportScript) {
 
 if ($scriptImportConfirm) {
   $scriptImportConfirm.addEventListener('click', () => {
-    let lines = stagedScriptLines;
-    if (!lines || lines.length === 0) {
-      const raw = ($scriptImportTextarea?.value || '').trim();
-      if (raw) lines = TheatreImporter.parseScriptText(raw);
+    const typeMode = document.querySelector('input[name="dc-script-type-mode"]:checked')?.value || 'pure';
+    const rawText = stagedScriptRawText || ($scriptImportTextarea?.value || '').trim();
+
+    let lines = [];
+    if (typeMode === 'pure') {
+      lines = TheatreImporter.parsePureScriptText(rawText);
+    } else {
+      lines = TheatreImporter.parseScriptText(rawText);
     }
 
     if (!lines || lines.length === 0) {
@@ -2017,6 +2047,7 @@ if ($scriptImportConfirm) {
 
     if ($modalImportScript) $modalImportScript.style.display = 'none';
     stagedScriptLines = [];
+    stagedScriptRawText = '';
     if ($scriptImportTextarea) $scriptImportTextarea.value = '';
     if ($scriptPreviewContainer) $scriptPreviewContainer.style.display = 'none';
     if ($scriptFileInput) $scriptFileInput.value = '';
@@ -2024,6 +2055,43 @@ if ($scriptImportConfirm) {
     if (titleEl) titleEl.textContent = 'Clique ou arraste um ficheiro com o guião';
   });
 }
+
+// ─── Controlo de Navegação do Guião da DC (Comando Mestre) ───────────
+if ($scriptBtnPrev) {
+  $scriptBtnPrev.addEventListener('click', () => {
+    client.advanceTheatreScript(-1);
+  });
+}
+if ($scriptBtnNext) {
+  $scriptBtnNext.addEventListener('click', () => {
+    client.advanceTheatreScript(1);
+  });
+}
+
+// Clique num parágrafo ou fala para a DC saltar diretamente
+document.addEventListener('click', (e) => {
+  const item = e.target.closest('[data-script-idx]');
+  if (item && !e.target.closest('button')) {
+    const idx = parseInt(item.dataset.scriptIdx, 10);
+    if (!isNaN(idx)) {
+      client.setTheatreScriptIndex(idx);
+    }
+  }
+});
+
+// Atalhos de teclado quando o modal de leitura estiver aberto
+document.addEventListener('keydown', (e) => {
+  const modalVisible = $modalViewScript && ($modalViewScript.style.display === 'flex' || $modalViewScript.style.display === 'block');
+  if (modalVisible && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+    if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+      e.preventDefault();
+      client.advanceTheatreScript(1);
+    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+      e.preventDefault();
+      client.advanceTheatreScript(-1);
+    }
+  }
+});
 
 // ─── Universal Importer: Deixas / Cues (Excel, PDF, Word, CSV) ────────
 let stagedCues = [];

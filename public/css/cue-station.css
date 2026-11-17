@@ -719,6 +719,19 @@ body {
   cursor: pointer;
 }
 
+.cs-script-feed-box::-webkit-scrollbar {
+  width: 6px;
+}
+.cs-script-feed-box::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+.cs-script-row.active {
+  border-left: 5px solid #55efc4 !important;
+  background: linear-gradient(90deg, rgba(85, 239, 196, 0.18) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+  box-shadow: 0 4px 18px rgba(85, 239, 196, 0.2);
+}
+
 /* ─── Department Locked Badge in HUD ──────────────────────────────── */
 .cs-dept-current-badge {
   display: flex;

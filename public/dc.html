@@ -55,9 +55,9 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>ShowFlow — Modo Jess (Diretora de Cena)</title>
-  <link rel="stylesheet" href="css/common.css?v=2.08">
-  <link rel="stylesheet" href="css/controller.css?v=2.08">
-  <link rel="stylesheet" href="css/dc.css?v=2.08">
+  <link rel="stylesheet" href="css/common.css?v=2.09">
+  <link rel="stylesheet" href="css/controller.css?v=2.09">
+  <link rel="stylesheet" href="css/dc.css?v=2.09">
 </head>
 <body>
   <div id="dc-screen" class="dc-screen">
@@ -72,7 +72,7 @@
             <div class="dc-brand-title">MODO JESS</div>
             <div class="dc-brand-sub">Diretora de Cena</div>
           </div>
-          <span class="badge dc-version-badge">v2.08</span>
+          <span class="badge dc-version-badge">v2.09</span>
         </a>
 
         <!-- Stage / Room Pill -->
@@ -538,6 +538,9 @@
           <h3 style="margin: 0; font-size: 1.15rem; color: #ffeaa7;">Guião da Peça & Acompanhamento de Texto</h3>
         </div>
         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <button id="dc-script-btn-prev" type="button" class="dc-tool-btn" style="padding: 4px 10px; font-weight: 700;" title="Recuar para a fala anterior (Seta Acima)">⬆️ Anterior</button>
+          <button id="dc-script-btn-next" type="button" class="dc-btn-primary" style="padding: 4px 14px; font-weight: 800; background: #00b894; border-color: #55efc4;" title="Avançar para a próxima fala (Seta Abaixo)">⬇️ Próxima Fala</button>
+          <span id="dc-script-pos-badge" class="badge" style="background: rgba(85,239,196,0.15); color: #55efc4; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 8px;">Fala 0 / 0</span>
           <button id="dc-script-font-minus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Diminuir letra">A−</button>
           <button id="dc-script-font-plus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Aumentar letra">A+</button>
           <button id="dc-script-scroll-toggle" type="button" class="dc-tool-btn" title="Iniciar/pausar rolagem contínua"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Rolar Texto</button>
@@ -550,6 +553,10 @@
           <button id="dc-btn-import-script" type="button" class="dc-tool-btn"><svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Importar</button>
           <button type="button" class="dc-modal-close" data-close-modal="dc-modal-view-script" style="margin-left: 8px;">X</button>
         </div>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 14px; background: rgba(85,239,196,0.08); border: 1px solid rgba(85,239,196,0.2); border-radius: 6px; margin: 0 16px 10px; font-size: 0.78rem; color: #55efc4; flex-wrap: wrap; gap: 6px;">
+        <span>👑 A Diretora de Cena comanda a fala ativa. Os postos técnicos acompanham em direto.</span>
+        <span style="color: #cbd5e1;">Atalhos: <strong>Seta Abaixo</strong> (Avançar) / <strong>Seta Acima</strong> (Recuar) / <strong>Clique</strong> na fala</span>
       </div>
       <div class="dc-modal-body" style="padding: 0;">
         <div id="dc-script-feed" class="dc-script-feed" style="max-height: 480px; overflow-y: auto; padding: 12px;"></div>
@@ -612,6 +619,18 @@
             <span id="dc-script-preview-file-info" style="font-size: 0.72rem; color: var(--dc-muted);"></span>
           </div>
           <div id="dc-script-preview-box" class="dc-import-preview-box"></div>
+        </div>
+
+        <!-- Format Type Selection: Pure Text vs Script with Cues -->
+        <div style="display: flex; gap: 16px; margin-top: 12px; padding: 10px 14px; background: rgba(85,239,196,0.06); border: 1px solid rgba(85,239,196,0.25); border-radius: 8px; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #fff; cursor: pointer;">
+            <input type="radio" name="dc-script-type-mode" value="pure" checked>
+            <span>📖 <strong>Texto Puro da Peça</strong> (Sem Deixas • Formatação Preservada)</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #ffeaa7; cursor: pointer;">
+            <input type="radio" name="dc-script-type-mode" value="cues">
+            <span>⚡ <strong>Guião Técnico</strong> (Com Deixas [CUE ...] Incorporadas)</span>
+          </label>
         </div>
 
         <!-- Import Mode -->
@@ -940,17 +959,17 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/st-icons.js?v=2.08"></script>
-  <script src="js/mqtt.min.js?v=2.08"></script>
+  <script src="js/st-icons.js?v=2.09"></script>
+  <script src="js/mqtt.min.js?v=2.09"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=2.08"></script>
-  <script src="js/theatre-importer.js?v=2.08"></script>
-  <script src="js/pwa.js?v=2.08"></script>
-  <script src="js/local-sync.js?v=2.08"></script>
-  <script src="js/notifications.js?v=2.08"></script>
-  <script src="js/dc.js?v=2.08"></script>
-  <script src="js/view-mode.js?v=2.08"></script>
+  <script src="js/schedule-importer.js?v=2.09"></script>
+  <script src="js/theatre-importer.js?v=2.09"></script>
+  <script src="js/pwa.js?v=2.09"></script>
+  <script src="js/local-sync.js?v=2.09"></script>
+  <script src="js/notifications.js?v=2.09"></script>
+  <script src="js/dc.js?v=2.09"></script>
+  <script src="js/view-mode.js?v=2.09"></script>
 </body>
 </html>
