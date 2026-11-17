@@ -55,9 +55,9 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <title>ShowFlow — Modo Jess (Diretora de Cena)</title>
-  <link rel="stylesheet" href="css/common.css?v=2.07">
-  <link rel="stylesheet" href="css/controller.css?v=2.07">
-  <link rel="stylesheet" href="css/dc.css?v=2.07">
+  <link rel="stylesheet" href="css/common.css?v=2.08">
+  <link rel="stylesheet" href="css/controller.css?v=2.08">
+  <link rel="stylesheet" href="css/dc.css?v=2.08">
 </head>
 <body>
   <div id="dc-screen" class="dc-screen">
@@ -72,7 +72,7 @@
             <div class="dc-brand-title">MODO JESS</div>
             <div class="dc-brand-sub">Diretora de Cena</div>
           </div>
-          <span class="badge dc-version-badge">v2.07</span>
+          <span class="badge dc-version-badge">v2.08</span>
         </a>
 
         <!-- Stage / Room Pill -->
@@ -188,8 +188,11 @@
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-          <button id="dc-btn-start-show-prep" type="button" class="dc-hero-start-btn">
-            <svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> DAR ARRANQUE AO ESPETÁCULO
+          <button id="dc-btn-open-doors" type="button" class="dc-hero-start-btn" style="background: linear-gradient(135deg, #00b894, #00cec9); border-color: #55efc4; box-shadow: 0 4px 18px rgba(0, 184, 148, 0.45);" title="Indicação oficial de Abertura de Portas: encerra os trabalhos de palco e ativa o Modo Cues para todas as equipas">
+            <svg class="st-icon" viewBox="0 0 24 24" style="width: 20px; height: 20px;"><path d="M3 21h18"></path><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"></path><path d="M14 11h.01"></path></svg> ABRIR PORTAS — MODO CUES
+          </button>
+          <button id="dc-btn-start-show-prep" type="button" class="dc-tool-btn" style="padding: 10px 14px; font-size: 0.82rem;" title="Disparar arranque mestre sem transitar imediatamente de ecrã">
+            <svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Iniciar Show
           </button>
         </div>
       </div>
@@ -327,20 +330,25 @@
           </div>
 
           <!-- Add Item Bar -->
-          <div class="dc-add-task-row">
-            <select id="dc-task-dept-select" class="dc-select-sm">
-              <option value="Luz">Luz</option>
-              <option value="Som">Som</option>
-              <option value="Maquinaria">Maquinaria</option>
-              <option value="Vídeo">Vídeo</option>
-              <option value="Coxias">Coxias</option>
-            </select>
-            <input id="dc-task-label-input" class="dc-input-sm" placeholder="Nova verificação de equipa...">
-            <label class="dc-checkbox-label" title="Marcar como tarefa pontual que só se aplica a esta récita">
-              <input type="checkbox" id="dc-task-oneoff-check">
-              <span>Só Hoje</span>
-            </label>
-            <button id="dc-task-add-btn" type="button" class="dc-btn-primary dc-btn-sm">Adicionar</button>
+          <div class="dc-add-task-row" style="flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; gap: 6px; align-items: center; flex: 1; min-width: 240px;">
+              <select id="dc-task-dept-select" class="dc-select-sm" style="flex: 1;" title="Escolher Equipa Técnica">
+                <option value="Luz">Luz</option>
+                <option value="Som">Som</option>
+                <option value="Maquinaria">Maquinaria</option>
+                <option value="Vídeo">Vídeo</option>
+                <option value="Coxias">Coxias</option>
+              </select>
+              <button id="dc-btn-add-dept" type="button" class="dc-tool-btn" style="padding: 6px 10px; font-size: 0.75rem; white-space: nowrap; color: #55efc4; border-color: rgba(85,239,196,0.35); font-weight: 700;" title="Criar Nova Equipa / Departamento">+ Nova Equipa</button>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center; flex: 2; min-width: 260px;">
+              <input id="dc-task-label-input" class="dc-input-sm" style="flex: 1;" placeholder="Nova tarefa de checklist da equipa...">
+              <label class="dc-checkbox-label" title="Marcar como tarefa pontual que só se aplica a esta récita">
+                <input type="checkbox" id="dc-task-oneoff-check">
+                <span>Só Hoje</span>
+              </label>
+              <button id="dc-task-add-btn" type="button" class="dc-btn-primary dc-btn-sm" style="white-space: nowrap;">Adicionar Tarefa</button>
+            </div>
           </div>
 
           <!-- Multi-Department Lists Container -->
@@ -880,6 +888,29 @@
     </div>
   </div>
 
+  <!-- Modal Adicionar Nova Equipa / Departamento -->
+  <div id="dc-modal-new-dept" class="dc-modal" style="display: none;">
+    <div class="dc-modal-content" style="max-width: 440px;">
+      <div class="dc-modal-header">
+        <h3 style="margin: 0; font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <svg class="st-icon" viewBox="0 0 24 24" style="color: #55efc4;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          Criar Nova Equipa / Departamento
+        </h3>
+        <button id="dc-modal-new-dept-close" type="button" class="dc-tool-btn" style="padding: 4px 8px;">✕</button>
+      </div>
+      <div style="padding: 16px 20px;">
+        <p style="font-size: 0.85rem; color: #cbd5e1; margin-top: 0; line-height: 1.4;">
+          Insira o nome da nova equipa técnica ou de apoio (ex: <strong>Pirotecnia</strong>, <strong>Palco</strong>, <strong>Laser</strong>, <strong>LED Wall</strong>, <strong>Caracterização</strong>, <strong>Camarins</strong>, <strong>Régie</strong>):
+        </p>
+        <input id="dc-new-dept-input" class="dc-input-sm" style="width: 100%; font-size: 0.95rem; padding: 10px; margin-top: 6px;" placeholder="Nome da Equipa (ex: Pirotecnia)..." maxlength="30" autocomplete="off">
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
+          <button id="dc-btn-cancel-new-dept" type="button" class="dc-tool-btn" style="padding: 6px 14px;">Cancelar</button>
+          <button id="dc-btn-confirm-new-dept" type="button" class="dc-btn-primary" style="padding: 6px 16px; font-weight: 700;">Criar Equipa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit Timer Modal (Warnings / Alertas) -->
   <div id="edit-modal" class="modal-overlay">
     <div class="modal">
@@ -909,17 +940,17 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/st-icons.js?v=2.07"></script>
-  <script src="js/mqtt.min.js?v=2.07"></script>
+  <script src="js/st-icons.js?v=2.08"></script>
+  <script src="js/mqtt.min.js?v=2.08"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=2.07"></script>
-  <script src="js/theatre-importer.js?v=2.07"></script>
-  <script src="js/pwa.js?v=2.07"></script>
-  <script src="js/local-sync.js?v=2.07"></script>
-  <script src="js/notifications.js?v=2.07"></script>
-  <script src="js/dc.js?v=2.07"></script>
-  <script src="js/view-mode.js?v=2.07"></script>
+  <script src="js/schedule-importer.js?v=2.08"></script>
+  <script src="js/theatre-importer.js?v=2.08"></script>
+  <script src="js/pwa.js?v=2.08"></script>
+  <script src="js/local-sync.js?v=2.08"></script>
+  <script src="js/notifications.js?v=2.08"></script>
+  <script src="js/dc.js?v=2.08"></script>
+  <script src="js/view-mode.js?v=2.08"></script>
 </body>
 </html>

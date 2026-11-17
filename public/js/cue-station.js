@@ -36,17 +36,32 @@ const DEPT_INFO = {
   'Luz': { name: 'POSTO LUZ', iconKey: 'sun', title: 'Técnico de Luz', color: '#ffeaa7', border: '#fdcb6e' },
   'Maquinaria': { name: 'POSTO MAQUINARIA', iconKey: 'settings', title: 'Técnico de Maquinaria', color: '#fab1a0', border: '#e17055' },
   'Vídeo': { name: 'POSTO VÍDEO', iconKey: 'video', title: 'Técnico de Vídeo', color: '#55efc4', border: '#00b894' },
-  'Coxias': { name: 'POSTO COXIAS', iconKey: 'theater', title: 'Técnico de Coxias / Adereços', color: '#fd79a8', border: '#e84393' }
+  'Coxias': { name: 'POSTO COXIAS', iconKey: 'theater', title: 'Técnico de Coxias / Adereços', color: '#fd79a8', border: '#e84393' },
+  'Palco': { name: 'POSTO PALCO', iconKey: 'layers', title: 'Técnico de Palco', color: '#00cec9', border: '#00cec9' },
+  'Pirotecnia': { name: 'POSTO PIROTECNIA', iconKey: 'zap', title: 'Efeitos / Pirotecnia', color: '#ff7675', border: '#d63031' }
 };
+
+function getDeptInfo(dept) {
+  if (dept && DEPT_INFO[dept]) return DEPT_INFO[dept];
+  const clean = String(dept || 'Som').trim();
+  return {
+    name: `POSTO ${clean.toUpperCase()}`,
+    iconKey: 'settings',
+    title: `Técnico de ${clean}`,
+    color: '#a29bfe',
+    border: '#6c5ce7'
+  };
+}
 
 function resolveDeptName(deptStr) {
   if (!deptStr) return null;
-  const norm = String(deptStr).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const clean = String(deptStr).trim();
+  const norm = clean.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   for (const d of VALID_DEPTS) {
     const dNorm = d.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     if (dNorm === norm) return d;
   }
-  return null;
+  return clean ? (clean.charAt(0).toUpperCase() + clean.slice(1)) : null;
 }
 
 const urlDeptParam = resolveDeptName(params.get('dept'));
@@ -215,7 +230,34 @@ function playGoChime() {
 
 // ─── Department Switching & UI ──────────────────────────────────────
 function showDeptModal() {
-  if ($deptModal) $deptModal.style.display = 'flex';
+  if (!$deptModal) return;
+  const $grid = document.querySelector('.cs-dept-modal-grid');
+  if ($grid) {
+    const customDepts = Object.keys(state?.theatre?.checklists || {});
+    const allDepts = Array.from(new Set([...VALID_DEPTS, ...customDepts]));
+    $grid.innerHTML = allDepts.map(d => {
+      const info = getDeptInfo(d);
+      const isSelected = d === currentDept;
+      return `
+        <button type="button" class="cs-modal-dept-btn ${isSelected ? 'active' : ''}" data-modal-dept="${escapeHtml(d)}" style="${isSelected ? `border-color: ${info.border}; background: rgba(255,255,255,0.12);` : ''}">
+          <span style="display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 8px; background: rgba(255,255,255,0.06); color: ${info.color};">
+            ${window.stIcon && info.iconKey ? window.stIcon(info.iconKey) : '<svg class="st-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'}
+          </span>
+          <div style="text-align: left;">
+            <div style="font-weight: 800; font-size: 0.95rem; color: #fff;">${escapeHtml(info.name)}</div>
+            <div style="font-size: 0.72rem; color: var(--cs-muted);">${escapeHtml(info.title)}</div>
+          </div>
+        </button>
+      `;
+    }).join('');
+
+    $grid.querySelectorAll('.cs-modal-dept-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setDepartment(btn.dataset.modalDept);
+      });
+    });
+  }
+  $deptModal.style.display = 'flex';
 }
 
 function hideDeptModal() {
@@ -223,7 +265,7 @@ function hideDeptModal() {
 }
 
 function updateDeptUI() {
-  const info = DEPT_INFO[currentDept] || DEPT_INFO['Som'];
+  const info = getDeptInfo(currentDept);
   const $icon = document.getElementById('cs-hud-dept-icon');
   const $name = document.getElementById('cs-hud-dept-name');
   const $sub = document.getElementById('cs-hud-dept-subtitle');

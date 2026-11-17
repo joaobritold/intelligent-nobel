@@ -623,7 +623,7 @@ class UniversalSyncClient {
       const sender = String(cmdObj.sender || '');
       const secret = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('stagetimer_auth_token') : null) ||
                      (typeof localStorage !== 'undefined' ? localStorage.getItem('stagetimer_auth_token') : null) ||
-                     'st_showflow_cmd_sig_v2.07';
+                     'st_showflow_cmd_sig_v2.08';
       const raw = `${action}:${target}:${sentAt}:${sender}:${secret.slice(-16)}`;
       let hash = 0x811c9dc5;
       for (let i = 0; i < raw.length; i++) {
@@ -1032,7 +1032,7 @@ class UniversalSyncClient {
       if (typeof document !== 'undefined' && !this._mqttScriptLoading) {
         this._mqttScriptLoading = true;
         const s = document.createElement('script');
-        s.src = 'js/mqtt.min.js?v=2.07';
+        s.src = 'js/mqtt.min.js?v=2.08';
         s.onload = () => {
           this._mqttScriptLoading = false;
           this._initCloudSync();
@@ -5176,6 +5176,58 @@ class UniversalSyncClient {
     const th = this._state.theatre;
     if (!th.checklists || !Array.isArray(th.checklists[resolvedDept])) return;
     th.checklists[resolvedDept] = th.checklists[resolvedDept].filter(i => i.id !== itemId);
+    this._commitStateChange();
+  }
+
+  addDepartment(deptName) {
+    if (!this._state) {
+      this._state = this._loadState() || this._createDefaultRoom(this.cleanRoom);
+    }
+    if (!this._state) return null;
+    this._ensureTheatreStructure();
+    const cleanDept = (deptName || '').trim();
+    if (!cleanDept) return null;
+    const th = this._state.theatre;
+    if (!th.checklists) th.checklists = {};
+    if (!th.checklists[cleanDept]) {
+      th.checklists[cleanDept] = [];
+    }
+    this._commitStateChange();
+    return cleanDept;
+  }
+
+  removeDepartment(deptName) {
+    if (!this._state) {
+      this._state = this._loadState() || this._createDefaultRoom(this.cleanRoom);
+    }
+    if (!this._state) return false;
+    this._ensureTheatreStructure();
+    const cleanDept = (deptName || '').trim();
+    if (!cleanDept) return false;
+    const th = this._state.theatre;
+    if (th.checklists && th.checklists[cleanDept]) {
+      delete th.checklists[cleanDept];
+      this._commitStateChange();
+      return true;
+    }
+    return false;
+  }
+
+  openDoors() {
+    if (!this._state) {
+      this._state = this._loadState() || this._createDefaultRoom(this.cleanRoom);
+    }
+    if (!this._state) return;
+    this._ensureTheatreStructure();
+    const th = this._state.theatre;
+    th.doorsOpen = true;
+    th.doorsOpenAt = Date.now();
+    th.showState = 'running';
+    th.phase = 'live';
+    if (!th.showStartTime || th.showStartTime === 0) {
+      th.showStartTime = Date.now();
+    }
+    this.sendUrgentNotice('🚪 PORTAS ABERTAS — Preparar postos para o espetáculo!', 'info');
     this._commitStateChange();
   }
 

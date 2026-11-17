@@ -85,6 +85,13 @@ const $taskLabelInput = document.getElementById('dc-task-label-input');
 const $taskOneOffCheck = document.getElementById('dc-task-oneoff-check');
 const $taskAddBtn = document.getElementById('dc-task-add-btn');
 const $checklistsContainer = document.getElementById('dc-checklists-container');
+const $btnAddDept = document.getElementById('dc-btn-add-dept');
+const $modalNewDept = document.getElementById('dc-modal-new-dept');
+const $modalNewDeptClose = document.getElementById('dc-modal-new-dept-close');
+const $inputNewDept = document.getElementById('dc-new-dept-input');
+const $btnCancelNewDept = document.getElementById('dc-btn-cancel-new-dept');
+const $btnConfirmNewDept = document.getElementById('dc-btn-confirm-new-dept');
+const $btnOpenDoors = document.getElementById('dc-btn-open-doors');
 
 // Telemetry Tab
 const $telemetryFiredCount = document.getElementById('dc-telemetry-fired-count');
@@ -1077,6 +1084,19 @@ function renderChecklists() {
     `).join('');
   }
 
+  // Sincronizar o select com os departamentos disponíveis
+  if ($taskDeptSelect) {
+    const currentVal = $taskDeptSelect.value;
+    const existingOptions = Array.from($taskDeptSelect.options).map(o => o.value);
+    const isDifferent = depts.length !== existingOptions.length || depts.some((d, idx) => d !== existingOptions[idx]);
+    if (isDifferent) {
+      $taskDeptSelect.innerHTML = depts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+      if (depts.includes(currentVal)) {
+        $taskDeptSelect.value = currentVal;
+      }
+    }
+  }
+
   const sig = depts.map(d => `${d}:${(checklists[d] || []).map(i => `${i.id}:${i.done}:${i.label}`).join(';')}`).join('||');
   if (sig === lastChecklistSig) return;
   lastChecklistSig = sig;
@@ -1093,11 +1113,16 @@ function renderChecklists() {
         </div>
       `).join('');
 
+      const isCustomDept = !defaultDepts.includes(dept);
+
       return `
         <div class="dc-dept-card">
           <div class="dc-dept-header">
             <span class="dc-dept-title">${escapeHtml(dept)}</span>
-            <span style="font-size: 0.75rem; color: var(--dc-muted);">${items.filter(i => i.done).length}/${items.length} concluídas</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 0.75rem; color: var(--dc-muted);">${items.filter(i => i.done).length}/${items.length} concluídas</span>
+              ${isCustomDept ? `<button type="button" class="dc-tool-btn" data-delete-dept="${escapeHtml(dept)}" title="Remover equipa ${escapeHtml(dept)}" style="padding: 2px 6px; font-size: 0.7rem; color: #ff7675; border-color: rgba(255,118,117,0.3);">🗑️</button>` : ''}
+            </div>
           </div>
           <div>${itemsHtml || '<div style="font-size: 0.78rem; color: var(--dc-muted); font-style: italic;">Sem tarefas registadas.</div>'}</div>
         </div>
@@ -1299,6 +1324,16 @@ document.addEventListener('click', (e) => {
     }
     return;
   }
+
+  // Delete custom department
+  const delDeptBtn = e.target.closest('[data-delete-dept]');
+  if (delDeptBtn) {
+    const dept = delDeptBtn.dataset.deleteDept;
+    if (confirm(`Tem a certeza de que deseja remover a equipa "${dept}" e as suas tarefas?`)) {
+      client.removeDepartment(dept);
+    }
+    return;
+  }
 });
 
 // Checklist item toggle change
@@ -1331,6 +1366,83 @@ if ($taskLabelInput) {
   });
 }
 
+// ─── Modal Nova Equipa / Departamento ────────────────────────────────
+function openNewDeptModal() {
+  if (!$modalNewDept) return;
+  $modalNewDept.style.display = 'flex';
+  if ($inputNewDept) {
+    $inputNewDept.value = '';
+    setTimeout(() => $inputNewDept.focus(), 60);
+  }
+}
+
+function closeNewDeptModal() {
+  if ($modalNewDept) $modalNewDept.style.display = 'none';
+}
+
+function handleConfirmNewDept() {
+  const name = ($inputNewDept?.value || '').trim();
+  if (!name) {
+    alert('Por favor, indique o nome da equipa (ex: Pirotecnia, Palco, Laser, Régie).');
+    return;
+  }
+  const cleanName = client.addDepartment(name);
+  closeNewDeptModal();
+  setTimeout(() => {
+    if ($taskDeptSelect && cleanName) {
+      $taskDeptSelect.value = cleanName;
+    }
+    if ($taskLabelInput) {
+      $taskLabelInput.focus();
+    }
+  }, 100);
+}
+
+if ($btnAddDept) {
+  $btnAddDept.addEventListener('click', openNewDeptModal);
+}
+if ($modalNewDeptClose) {
+  $modalNewDeptClose.addEventListener('click', closeNewDeptModal);
+}
+if ($btnCancelNewDept) {
+  $btnCancelNewDept.addEventListener('click', closeNewDeptModal);
+}
+if ($btnConfirmNewDept) {
+  $btnConfirmNewDept.addEventListener('click', handleConfirmNewDept);
+}
+if ($inputNewDept) {
+  $inputNewDept.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleConfirmNewDept();
+    else if (e.key === 'Escape') closeNewDeptModal();
+  });
+}
+
+// ─── Botão de Abertura de Portas (Fim dos Trabalhos de Palco -> Modo Cues) ───
+if ($btnOpenDoors) {
+  $btnOpenDoors.addEventListener('click', () => {
+    const checklists = state?.theatre?.checklists || {};
+    const allItems = Object.values(checklists).flat();
+    const totalTasks = allItems.length;
+    const doneTasks = allItems.filter(t => t.done).length;
+    const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 100;
+
+    let msg = '🚪 Confirmar ABERTURA DE PORTAS?\n\n';
+    if (pct < 100) {
+      msg += `⚠️ Atenção: A prontidão das equipas está em ${pct}% (${doneTasks}/${totalTasks} tarefas concluídas).\n\n`;
+    }
+    msg += 'Ao abrir portas, os trabalhos no palco serão encerrados e todas as equipas passarão para o MODO CUES.';
+
+    if (confirm(msg)) {
+      if (typeof client.openDoors === 'function') {
+        client.openDoors();
+      } else {
+        client.startTheatreShow();
+      }
+      client.setTheatrePhase('live');
+    }
+  });
+}
+
 // ─── Modals: Open & Close Handlers ──────────────────────────────────
 document.querySelectorAll('[data-close-modal]').forEach(b => {
   b.addEventListener('click', () => {
@@ -1348,11 +1460,11 @@ function renderPhase(th) {
   const $phasePrepBadge = document.getElementById('dc-phase-prep-badge');
   const $phaseLiveBadge = document.getElementById('dc-phase-live-badge');
 
-  // Calculate readiness percentage across all 5 departments
+  // Calculate readiness percentage across all active departments
   let totalTasks = 0;
   let doneTasks = 0;
   const checklists = th?.checklists || {};
-  ['Luz', 'Som', 'Maquinaria', 'Vídeo', 'Coxias'].forEach(d => {
+  Object.keys(checklists).forEach(d => {
     const list = checklists[d] || [];
     totalTasks += list.length;
     doneTasks += list.filter(t => t.done).length;
@@ -1363,7 +1475,7 @@ function renderPhase(th) {
     $phasePrepBadge.textContent = `PRONTIDÃO ${readinessPct}%`;
   }
   if ($phaseLiveBadge) {
-    $phaseLiveBadge.textContent = th?.showState === 'running' ? 'EM CENA / LIVE' : 'A POSTOS';
+    $phaseLiveBadge.textContent = th?.doorsOpen ? 'PORTAS ABERTAS' : (th?.showState === 'running' ? 'EM CENA / LIVE' : 'A POSTOS');
   }
 
   if (phase === 'live' || th?.showState === 'running') {
