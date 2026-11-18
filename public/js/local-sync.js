@@ -2947,6 +2947,7 @@ class UniversalSyncClient {
     }
 
     const deletedMap = this._getDeletedEventsMap();
+    const deletedSet = new Set(deletedMap.keys());
 
     const isItemDeleted = (code, updatedAt, createdAt) => {
       if (!code) return true;
@@ -3018,7 +3019,7 @@ class UniversalSyncClient {
     });
 
     validIncoming.forEach(inc => {
-      if (!inc || !inc.code || deletedSet.has(inc.code)) return;
+      if (!inc || !inc.code || isItemDeleted(inc.code, inc.updatedAt, inc.createdAt)) return;
       if (!map.has(inc.code)) {
         map.set(inc.code, inc);
       } else {
