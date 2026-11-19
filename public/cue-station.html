@@ -56,8 +56,9 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <meta name="robots" content="noindex, nofollow">
   <title>ShowFlow — Posto Técnico (Cue Station)</title>
-  <link rel="stylesheet" href="css/common.css?v=2.23">
-  <link rel="stylesheet" href="css/cue-station.css?v=2.23">
+  <link rel="stylesheet" href="css/common.css?v=2.24">
+  <link rel="stylesheet" href="css/cue-station.css?v=2.24">
+  <link rel="stylesheet" href="css/dc-score.css?v=2.24">
 </head>
 <body>
   <div id="cue-screen" class="cs-screen">
@@ -72,7 +73,7 @@
             <div class="cs-brand-title">POSTO TÉCNICO</div>
             <div class="cs-brand-sub" id="cs-hud-dept-subtitle">Técnico</div>
           </div>
-          <span class="badge cs-version-badge">v2.23</span>
+          <span class="badge cs-version-badge">v2.24</span>
         </a>
 
         <!-- Department Locked Badge & Switch Button -->
@@ -160,18 +161,19 @@
           <div class="cs-panel-header">
             <div class="cs-panel-title-group">
               <svg class="st-icon" viewBox="0 0 24 24" style="color: #55efc4;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-              <h3 class="cs-panel-title">Texto da Peça (Diretora de Cena)</h3>
+              <h3 class="cs-panel-title">Guião do Espetáculo (Diretora de Cena)</h3>
             </div>
             <div class="cs-panel-meta-group">
               <span id="cs-script-sync-pill" class="cs-readiness-pill" style="background: rgba(85, 239, 196, 0.15); color: #55efc4; border: 1px solid rgba(85, 239, 196, 0.3); cursor: pointer;" title="Tocar para recentrar na linha da DC">
                 ● A Seguir DC
               </span>
-              <span id="cs-script-pos-pill" class="cs-badge" style="background: rgba(255,255,255,0.08); font-family: var(--font-mono); font-size: 0.75rem;">Fala 0 / 0</span>
+              <span id="cs-script-pos-pill" class="cs-badge" style="background: rgba(255,255,255,0.08); font-family: var(--font-mono); font-size: 0.75rem;">Pág 1</span>
             </div>
           </div>
-          <div id="cs-script-feed" class="cs-script-feed-box">
-            <!-- Injetado por cue-station.js -->
-          </div>
+          <!-- Slot para o Leitor Fiel (PDF / Word original da Foto 2) -->
+          <div id="cs-score-embed-slot" class="cs-score-embed-slot" style="flex: 1; height: 100%; min-height: 520px; display: block; position: relative; overflow: hidden; border-radius: 10px; background: #fff;"></div>
+          <!-- Fallback de texto se não houver documento PDF -->
+          <div id="cs-script-feed" class="cs-script-feed-box" style="display: none;"></div>
         </div>
       </section>
 
@@ -375,12 +377,14 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/st-icons.js?v=2.23"></script>
-  <script src="js/mqtt.min.js?v=2.23"></script>
-  <script src="js/pwa.js?v=2.23"></script>
-  <script src="js/local-sync.js?v=2.23"></script>
-  <script src="js/notifications.js?v=2.23"></script>
-  <script src="js/cue-station.js?v=2.23"></script>
-  <script src="js/view-mode.js?v=2.23"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="js/st-icons.js?v=2.24"></script>
+  <script src="js/mqtt.min.js?v=2.24"></script>
+  <script src="js/pwa.js?v=2.24"></script>
+  <script src="js/local-sync.js?v=2.24"></script>
+  <script src="js/notifications.js?v=2.24"></script>
+  <script src="js/dc-score.js?v=2.24"></script>
+  <script src="js/cue-station.js?v=2.24"></script>
+  <script src="js/view-mode.js?v=2.24"></script>
 </body>
 </html>

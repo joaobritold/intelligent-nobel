@@ -424,6 +424,8 @@ class UniversalSyncClient {
               }
             }
             this._emit('theatre-scroll-sync', msg.scroll);
+          } else if (msg.type === 'theatre-doc-sync' && msg.doc) {
+            this._emit('theatre-doc-sync', msg);
           }
         };
       } catch (e) {}
@@ -688,6 +690,14 @@ class UniversalSyncClient {
           }
         }
         this._emit('theatre-scroll-sync', msg.scroll);
+      }
+      return;
+    }
+
+    if (msg.action === 'theatre_doc_sync' && msg.doc) {
+      const targetRoom = String(msg.room || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+      if (!targetRoom || targetRoom === this.cleanRoom) {
+        this._emit('theatre-doc-sync', msg);
       }
       return;
     }

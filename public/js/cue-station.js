@@ -1467,9 +1467,47 @@ function restoreFollowingDcMode() {
   }
 }
 
+// ─── Inicialização do Leitor Fiel (PDF / Word da Foto 2) no Posto Técnico ───
+const $csScoreSlot = document.getElementById('cs-score-embed-slot');
+let isScoreReaderMountedOnCs = false;
+
+async function tryMountScoreReader() {
+  if (!$csScoreSlot || !window.DCScoreReader) return;
+  if (!isScoreReaderMountedOnCs) {
+    isScoreReaderMountedOnCs = true;
+    try {
+      await window.DCScoreReader.mount($csScoreSlot);
+      $csScoreSlot.style.display = 'block';
+      if ($scriptFeed) $scriptFeed.style.display = 'none';
+    } catch (err) {
+      console.warn('[cue-station] DCScoreReader mount fallback:', err);
+      $csScoreSlot.style.display = 'none';
+      if ($scriptFeed) $scriptFeed.style.display = 'block';
+    }
+  }
+}
+
+client.on('theatre-doc-sync', async () => {
+  if (window.DCScoreReader && typeof window.DCScoreReader.loadForRoom === 'function') {
+    await window.DCScoreReader.loadForRoom(client.cleanRoom);
+    tryMountScoreReader();
+  }
+});
+
 client.on('theatre-scroll-sync', (scrollData) => {
-  if (!scrollData || !$scriptFeed) return;
+  if (!scrollData) return;
   if (isUserManualScrollingCs) return; // Se o técnico está deliberadamente a tocar/ler noutro sítio, respeita
+
+  // Se o leitor fiel de PDF da DC estiver ativo, aplica diretamente o espelho no documento
+  if (window.DCScoreReader && typeof window.DCScoreReader.applyExternalScoreScroll === 'function' && isScoreReaderMountedOnCs) {
+    window.DCScoreReader.applyExternalScoreScroll(scrollData);
+    if (typeof scrollData.pageIdx === 'number' && $scriptPosPill) {
+      $scriptPosPill.textContent = `Pág ${scrollData.pageIdx + 1}`;
+    }
+    return;
+  }
+
+  if (!$scriptFeed) return;
 
   const activeIdx = typeof scrollData.activeIdx === 'number' ? scrollData.activeIdx : -1;
   const scrollRatio = typeof scrollData.scrollRatio === 'number' ? scrollData.scrollRatio : -1;
@@ -1532,6 +1570,7 @@ client.on('tick', () => {
 
 client.connect();
 render();
+setTimeout(tryMountScoreReader, 150);
 
 // ─── Cue Station Web Notifications ───────────────────────────────────────────
 (function initCueStationNotifications() {

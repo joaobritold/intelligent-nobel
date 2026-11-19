@@ -991,7 +991,10 @@
     goToPage(Math.max(0, base - step()), true);
   }
 
+  let isProgrammaticScoreScroll = false;
+  let lastScoreScrollBroadcast = 0;
   let scrollRaf = null;
+
   function onStageScroll() {
     if (scrollRaf) return;
     scrollRaf = requestAnimationFrame(() => {
@@ -1004,7 +1007,44 @@
         if (el.offsetTop <= refY) found = i; else break;
       }
       setCurrentPage(found, true);
+
+      // Transmite scroll em tempo real se este ecrã for a DC ou quem está a comandar a rolagem
+      if (!isProgrammaticScoreScroll) {
+        const now = Date.now();
+        if (now - lastScoreScrollBroadcast > 35) {
+          lastScoreScrollBroadcast = now;
+          const maxS = Math.max(1, stage.scrollHeight - stage.clientHeight);
+          const ratio = Math.max(0, Math.min(1, stage.scrollTop / maxS));
+          const c = getClient();
+          if (c && typeof c.streamTheatreScriptScroll === 'function') {
+            c.streamTheatreScriptScroll({
+              activeIdx: found,
+              scrollRatio: Number(ratio.toFixed(4)),
+              guideY: prefs.guideY,
+              pageIdx: found,
+              isAuto: Boolean(autoScroll),
+              isScoreDoc: true
+            });
+          }
+        }
+      }
     });
+  }
+
+  function applyExternalScoreScroll(data) {
+    if (!stage || !pages.length || !data) return;
+    isProgrammaticScoreScroll = true;
+    if (typeof data.guideY === 'number' && Math.abs(prefs.guideY - data.guideY) > 0.01) {
+      prefs.guideY = data.guideY;
+      updateGuide();
+    }
+    if (typeof data.scrollRatio === 'number' && data.scrollRatio >= 0) {
+      const maxS = Math.max(0, stage.scrollHeight - stage.clientHeight);
+      stage.scrollTop = data.scrollRatio * maxS;
+    } else if (typeof data.pageIdx === 'number' && data.pageIdx >= 0) {
+      goToPage(data.pageIdx, false);
+    }
+    setTimeout(() => { isProgrammaticScoreScroll = false; }, 60);
   }
 
   // ─── Modes, zoom, theme ─────────────────────────────────────────────
@@ -1843,6 +1883,113 @@
     }
   }
 
+  async function broadcastCurrentDoc() {
+    if (!doc) {
+      const room = getRoom();
+      try {
+        const d = await dbGet('docs', room);
+        if (d) doc = d;
+      } catch (_) {}
+    }
+    if (doc) {
+      broadcastDocToRoom(doc, getRoom());
+    }
+  }
+  async function broadcastDocToRoom(rec, room) {
+    const c = getClient();
+    if (!c || !rec) return;
+    try {
+      let payloadData = null;
+      if (rec.data instanceof ArrayBuffer) {
+        // Converte ArrayBuffer para Base64 para envio de rede
+        let binary = '';
+        const bytes = new Uint8Array(rec.data);
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        payloadData = btoa(binary);
+      } else if (typeof rec.data === 'string') {
+        payloadData = rec.data;
+      }
+
+      if (payloadData) {
+        const transferMsg = {
+          action: 'theatre_doc_sync',
+          room: room,
+          doc: {
+            name: rec.name,
+            type: rec.type,
+            size: rec.size,
+            isBase64: rec.data instanceof ArrayBuffer,
+            data: payloadData,
+            meta: { pins: meta.pins || [], lastPage: meta.lastPage || 0 }
+          }
+        };
+
+        if (typeof c.sendRoomCommand === 'function') {
+          c.sendRoomCommand(room, transferMsg);
+        }
+        if (c.channel) {
+          try {
+            c.channel.postMessage({
+              type: 'theatre-doc-sync',
+              sender: c.clientId,
+              room: room,
+              doc: transferMsg.doc
+            });
+          } catch (_) {}
+        }
+      }
+    } catch (e) {
+      console.warn('[dc-score] broadcastDocToRoom erro:', e);
+    }
+  }
+
+  async function handleIncomingDocSync(incomingDoc, incomingRoom) {
+    if (!incomingDoc || !incomingDoc.data) return;
+    const room = incomingRoom || getRoom();
+    try {
+      let finalData = incomingDoc.data;
+      if (incomingDoc.isBase64 && typeof incomingDoc.data === 'string') {
+        const binary = atob(incomingDoc.data);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        finalData = bytes.buffer;
+      }
+
+      const rec = {
+        name: incomingDoc.name || 'Guião da Peça',
+        type: incomingDoc.type || 'pdf',
+        size: incomingDoc.size || 0,
+        data: finalData,
+        importedAt: Date.now(),
+        room: room
+      };
+
+      await dbPut('docs', room, rec);
+      if (incomingDoc.meta) {
+        await dbPut('meta', room, { ...incomingDoc.meta, updatedAt: Date.now() });
+      }
+
+      if (room === getRoom()) {
+        currentRoom = room;
+        doc = rec;
+        if (incomingDoc.meta) {
+          meta = { pins: incomingDoc.meta.pins || [], lastPage: incomingDoc.meta.lastPage || 0 };
+        }
+        if (isOpen) {
+          await renderDoc();
+        }
+      }
+    } catch (err) {
+      console.warn('[dc-score] Falha a aplicar doc sincronizado:', err);
+    }
+  }
+
   async function storeDoc(rec) {
     const room = getRoom();
     rec.importedAt = Date.now();
@@ -1855,6 +2002,7 @@
       await dbPut('docs', room, rec);
       meta = { pins: keepPins ? meta.pins : [], lastPage: 0 };
       await dbPut('meta', room, { ...meta, updatedAt: Date.now() });
+      broadcastDocToRoom(rec, room);
     } catch (err) {
       showLoading(false);
       toast('Não foi possível guardar (espaço insuficiente?): ' + (err.message || err), 6000);
@@ -1897,6 +2045,12 @@
     const c = getClient();
     if (c && typeof c.on === 'function') {
       c.on('room-state', onRoomState);
+      c.on('theatre-scroll-sync', (scrollData) => {
+        applyExternalScoreScroll(scrollData);
+      });
+      c.on('theatre-doc-sync', (incoming) => {
+        handleIncomingDocSync(incoming.doc, incoming.room);
+      });
       try { if (c._state) theatreState = c._state.theatre || null; } catch (_) {}
     }
     document.addEventListener('click', (e) => {
@@ -1905,7 +2059,17 @@
     });
   }
 
-  window.DCScoreReader = { open, close, mount, unmount, isOpen: () => isOpen };
+  window.DCScoreReader = {
+    open,
+    close,
+    mount,
+    unmount,
+    isOpen: () => isOpen,
+    loadForRoom,
+    broadcastCurrentDoc,
+    applyExternalScoreScroll,
+    handleIncomingDocSync
+  };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
   else attach();

@@ -2297,6 +2297,9 @@ if ($tabScriptText && $tabScriptScore) {
     const slot = document.getElementById('dc-score-embed-slot');
     if (slot && window.DCScoreReader && typeof window.DCScoreReader.mount === 'function') {
       window.DCScoreReader.mount(slot);
+      if (typeof window.DCScoreReader.broadcastCurrentDoc === 'function') {
+        window.DCScoreReader.broadcastCurrentDoc();
+      }
     }
   });
 }
