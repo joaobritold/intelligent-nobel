@@ -56,10 +56,10 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <meta name="robots" content="noindex, nofollow">
   <title>ShowFlow — Modo Jess (Diretora de Cena)</title>
-  <link rel="stylesheet" href="css/common.css?v=2.19">
-  <link rel="stylesheet" href="css/controller.css?v=2.19">
-  <link rel="stylesheet" href="css/dc.css?v=2.19">
-  <link rel="stylesheet" href="css/dc-score.css?v=2.19">
+  <link rel="stylesheet" href="css/common.css?v=2.20">
+  <link rel="stylesheet" href="css/controller.css?v=2.20">
+  <link rel="stylesheet" href="css/dc.css?v=2.20">
+  <link rel="stylesheet" href="css/dc-score.css?v=2.20">
 </head>
 <body>
   <div id="dc-screen" class="dc-screen">
@@ -74,7 +74,7 @@
             <div class="dc-brand-title">MODO JESS</div>
             <div class="dc-brand-sub">Diretora de Cena</div>
           </div>
-          <span class="badge dc-version-badge">v2.19</span>
+          <span class="badge dc-version-badge">v2.20</span>
         </a>
 
         <!-- Stage / Room Pill -->
@@ -365,229 +365,242 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- VIEW 2: MODO DEIXAS (EM CENA / LIVE) — OPÇÃO A IMPECÁVEL        -->
+    <!-- VIEW 2: MODO DEIXAS & ACOMPANHAMENTO (COCKPIT INTEGRADO DC)     -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <div id="dc-view-cues" class="dc-cues-view" style="display: none;">
-      <!-- Live Status & Sub-navigation Bar -->
-      <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(20,20,36,0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px 16px; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <span style="font-size: 1.1rem; color: #00b894;">●</span>
-          <strong style="color: #fff; font-size: 0.95rem; letter-spacing: 0.04em;">MODO DEIXAS EM CENA</strong>
-          <span style="font-size: 0.75rem; color: var(--dc-muted);">Disparo ao milissegundo • Ecrã total sem distrações</span>
+      <!-- Live Cockpit Sub-Header -->
+      <div class="dc-cockpit-bar">
+        <div class="dc-cockpit-bar-left">
+          <span class="dc-live-dot">●</span>
+          <strong class="dc-cockpit-title">COCKPIT DA DIRETORA DE CENA</strong>
+          <span class="dc-cockpit-sub">Acompanhamento & Deixas Integradas</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <button id="dc-btn-return-stage" type="button" class="dc-tool-btn" title="Consultar elenco de artistas, notas ou afinações de palco">
-            <svg class="st-icon" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg> Ver Trabalhos de Palco
-          </button>
-          <button type="button" class="dc-tool-btn" data-open-score="1" style="color: #fdcb6e; border-color: rgba(253, 203, 110, 0.45); font-weight: 800;" title="Abrir guião original página a página (PDF, Word ou Notas sem desformatar)">
-            📜 Guião Original (PDF / Notas)
-          </button>
-          <button id="dc-btn-toggle-script-modal" type="button" class="dc-tool-btn" title="Abrir guião de leitura em janela dedicada">
-            <svg class="st-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> Guião da Peça
+
+        <!-- Layout Switcher: Split (Both) vs Focus Script vs Focus Cues -->
+        <div class="dc-cockpit-layout-toggle" role="group" aria-label="Disposição do Ecrã">
+          <button type="button" class="dc-layout-btn active" data-cockpit-layout="split" title="Ecrã Dividido: Guião à esquerda e Deixas à direita (Padrão)">◫ Ambos Lado a Lado</button>
+          <button type="button" class="dc-layout-btn" data-cockpit-layout="script" title="Expandir Guião e Acompanhamento de Texto">📖 Focar Guião</button>
+          <button type="button" class="dc-layout-btn" data-cockpit-layout="cues" title="Expandir Mesa de Disparo de Deixas">⚡ Focar Deixas</button>
+        </div>
+
+        <div class="dc-cockpit-bar-right">
+          <button id="dc-btn-return-stage" type="button" class="dc-tool-btn" title="Consultar afinações de palco, artistas ou notas">
+            <svg class="st-icon" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg> Trabalhos de Palco
           </button>
           <button id="dc-btn-toggle-telemetry" type="button" class="dc-tool-btn" title="Ver telemetria e relatórios gravados">
-            <svg class="st-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> Relatórios & Histórico
+            <svg class="st-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> Relatórios
           </button>
         </div>
       </div>
 
-      <!-- Giant Hero Cue Action Box (Opção A) -->
-      <!-- Mini Live Stage Timer Bar in Cue View -->
-      <div id="dc-cue-stage-timer-bar" class="dc-cue-stage-timer-bar" style="display: flex;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          <span style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase;">PALCO ATIVO:</span>
-          <strong id="dc-cue-timer-name" style="color: #fff; font-size: 0.95rem;">--</strong>
-        </div>
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <span id="dc-cue-timer-clock" style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 800; color: #55efc4;">00:00</span>
-          <span id="dc-cue-timer-end" style="font-size: 0.78rem; font-family: var(--font-mono); color: #cbd5e1;">--:--</span>
-          <button id="dc-cue-timer-toggle" type="button" class="btn btn-sm btn-success" style="font-size: 0.75rem; padding: 3px 8px;"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></button>
-          <button id="dc-cue-timer-reset" type="button" class="btn btn-sm" style="font-size: 0.75rem; padding: 3px 8px;"><svg class="st-icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect></svg></button>
-        </div>
-      </div>
-
-      <div class="dc-action-box" style="padding: 18px 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
-          <div>
-            <span class="dc-action-hint"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> DEIXA ATUAL A DISPARAR:</span>
-            <div style="display: flex; align-items: baseline; gap: 14px; margin-top: 4px;">
-              <span id="dc-hero-cue-num" style="font-family: var(--font-mono); font-size: 2.4rem; font-weight: 900; color: #55efc4; line-height: 1;">Q1</span>
-              <span id="dc-hero-cue-name" style="font-size: 1.35rem; font-weight: 800; color: #fff;">Abertura de Sala</span>
+      <!-- The Two-Column Integrated Grid -->
+      <div id="dc-cockpit-grid" class="dc-cockpit-grid layout-split">
+        <!-- ───────────────────────────────────────────────────────────── -->
+        <!-- COLUNA 1 (ESQUERDA): ACOMPANHAMENTO (GUIÃO / PROMPTER / SCORE)-->
+        <!-- ───────────────────────────────────────────────────────────── -->
+        <section id="dc-pane-script" class="dc-cockpit-pane dc-pane-script">
+          <header class="dc-pane-toolbar">
+            <!-- Switch between Synchronized Text and Original PDF Score -->
+            <div class="dc-script-source-toggle">
+              <button type="button" id="dc-tab-script-text" class="dc-tab-chip active">📖 Texto / Prompter</button>
+              <button type="button" id="dc-tab-script-score" class="dc-tab-chip">📜 Guião Original (PDF)</button>
             </div>
-          </div>
-          <div id="dc-hero-cue-depts" style="display: flex; gap: 6px; flex-wrap: wrap;">
-            <span class="dc-dept-tag luz">Luz</span>
-            <span class="dc-dept-tag som">Som</span>
-          </div>
-        </div>
 
-        <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; margin: 4px 0;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-            <span style="font-size: 0.74rem; font-weight: 800; color: #ffeaa7;">PONTO DE DISPARO / FALA:</span>
-            <span id="dc-hero-cue-target" style="font-size: 0.95rem; color: #fff; font-weight: 700;">No 3º Sinal da Sala</span>
-          </div>
-          <div style="font-size: 0.78rem; color: var(--dc-muted);">
-            <strong style="color: #cbd5e1;">Notas:</strong> <span id="dc-hero-cue-notes">Fade in suave de 4 segundos</span>
-          </div>
-        </div>
-
-        <!-- Giant Buttons Row -->
-        <div class="dc-action-btn-row" style="margin-top: 4px;">
-          <button id="dc-btn-standby" type="button" class="dc-hero-btn dc-btn-standby" style="flex: 1; padding: 20px 14px; font-size: 1.15rem;" title="Colocar a próxima deixa em Standby (Sinal Laranja de alerta nos postos técnicos)">
-            <span class="dc-hero-icon" style="display: inline-flex;"><svg class="st-icon" viewBox="0 0 24 24" style="width: 24px; height: 24px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>
-            <span class="dc-hero-text" style="font-size: 1.25rem;">STANDBY</span>
-          </button>
-          <button id="dc-btn-go" type="button" class="dc-hero-btn dc-btn-go" style="flex: 1.4; padding: 20px 14px; font-size: 1.25rem;" title="Executar deixa ativa (Sinal Verde). Atalho: BARRA DE ESPAÇO">
-            <span class="dc-hero-icon" style="display: inline-flex;"><svg class="st-icon" viewBox="0 0 24 24" style="width: 28px; height: 28px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></span>
-            <span class="dc-hero-text" style="font-size: 1.35rem;">GO (BARRA DE ESPAÇO)</span>
-          </button>
-        </div>
-
-        <!-- Safety, Navigation & Control Row -->
-        <div class="dc-action-subtools" style="margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button id="dc-btn-undo-cue" type="button" class="dc-mini-btn" style="background: rgba(255, 118, 117, 0.15); border-color: rgba(255, 118, 117, 0.4); color: #ff7675; font-weight: 800;" title="Desfazer último GO e voltar a colocar a deixa anterior em Standby">
-              <svg class="st-icon" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg> Recuar Deixa (Desfazer)
-            </button>
-            <button id="dc-btn-skip-cue" type="button" class="dc-mini-btn" title="Saltar deixa sem disparar">
-              <svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg> Saltar Deixa
-            </button>
-          </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button id="dc-btn-add-cue" type="button" class="dc-mini-btn" title="Adicionar nova deixa">
-              <svg class="st-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Nova Deixa
-            </button>
-            <button id="dc-btn-import-cues" type="button" class="dc-mini-btn" title="Importar lista de deixas via PDF, Excel, Word ou CSV">
-              <svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Importar Deixas
-            </button>
-            <button id="dc-btn-reset-cues" type="button" class="dc-mini-btn" title="Voltar todas as deixas a pendente">
-              <svg class="st-icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Reset Deixas
-            </button>
-            <button id="dc-btn-clear-cues" type="button" class="dc-mini-btn" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4);" title="Eliminar todas as deixas">
-              <svg class="st-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Limpar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Full-Width Sequential Cues List -->
-      <div class="dc-stage-card" style="padding: 16px 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-          <div>
-            <strong style="color: #fff; font-size: 1.05rem; letter-spacing: 0.02em;"><svg class="st-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg> Fila de Deixas do Espetáculo (<span id="dc-cues-count-badge">0</span>)</strong>
-            <div style="font-size: 0.74rem; color: var(--dc-muted);">Clique em qualquer deixa para a focar ou colocar em Standby manual.</div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <div id="dc-next-cue-summary" style="font-family: var(--font-mono); font-weight: 800; font-size: 0.88rem; color: #ffeaa7;">
-              --
+            <!-- Script Navigation & Teleprompter Controls -->
+            <div id="dc-script-tools" class="dc-script-tools">
+              <button id="dc-script-btn-prev" type="button" class="dc-tool-btn dc-tool-btn-xs" title="Recuar fala anterior (Seta Acima)">⬆️</button>
+              <button id="dc-script-btn-next" type="button" class="dc-btn-primary dc-tool-btn-xs" style="background: #00b894; border-color: #55efc4; font-weight: 800;" title="Avançar próxima fala (Seta Abaixo)">⬇️ Próxima Fala</button>
+              <span id="dc-script-pos-badge" class="badge dc-badge-mono">Fala 0 / 0</span>
+              <button id="dc-script-font-minus" type="button" class="dc-tool-btn dc-tool-btn-xs" title="Diminuir tamanho da letra">A−</button>
+              <button id="dc-script-font-plus" type="button" class="dc-tool-btn dc-tool-btn-xs" title="Aumentar tamanho da letra">A+</button>
+              <button id="dc-script-scroll-toggle" type="button" class="dc-tool-btn dc-tool-btn-xs" title="Ligar/Desligar rolagem contínua automática (Teleprompter)"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Rolar</button>
+              <select id="dc-script-scroll-speed" class="dc-tool-btn dc-tool-btn-xs" style="padding: 2px 4px; font-size: 0.72rem;">
+                <option value="1">Lento</option>
+                <option value="2" selected>Médio</option>
+                <option value="3">Rápido</option>
+              </select>
+              <button id="dc-btn-edit-script-text" type="button" class="dc-tool-btn dc-tool-btn-xs" title="Editar texto do guião"><svg class="st-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
+              <button id="dc-btn-import-script" type="button" class="dc-tool-btn dc-tool-btn-xs" title="Importar novo ficheiro de guião"><svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
             </div>
-            <button id="dc-btn-focus-active-cue" type="button" class="dc-tool-btn" style="padding: 4px 10px; font-size: 0.75rem; color: #55efc4; border-color: rgba(85,239,196,0.35);" title="Rolar lista para a deixa atual em Standby ou Próxima">🎯 Focar Atual</button>
+          </header>
+
+          <div class="dc-script-hint-strip">
+            <span>👑 <strong>Acompanhamento:</strong> Seta Abaixo (Avançar) / Seta Acima (Recuar) / Toque na fala</span>
+            <span style="color: #cbd5e1;">Toque numa Deixa para armar STANDBY</span>
           </div>
-        </div>
 
-        <!-- Search & Department Filter Bar for Cues -->
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px;">
-          <input id="dc-cues-search-input" class="dc-input-sm" style="flex: 1; min-width: 180px; font-size: 16px;" placeholder="🔍 Pesquisar deixa por nº (ex: Q22.5), ação ou fala...">
-          <select id="dc-cues-dept-filter" class="dc-select-sm" style="font-size: 16px; min-width: 150px;" title="Filtrar fila de deixas por equipa">
-            <option value="all">Todas as Equipas</option>
-            <option value="Luz">Luz</option>
-            <option value="Som">Som</option>
-            <option value="Maquinaria">Maquinaria</option>
-            <option value="Vídeo">Vídeo</option>
-            <option value="Coxias">Coxias</option>
-          </select>
-        </div>
+          <!-- View 1: Synchronized Text Feed (with cue pills) -->
+          <div id="dc-script-text-container" class="dc-script-scroll-wrap">
+            <div id="dc-script-feed" class="dc-script-feed"></div>
+          </div>
 
-        <div id="dc-cues-list" class="dc-cues-full-list">
-          <!-- Injected dynamically by dc.js -->
-        </div>
-      </div>
+          <!-- View 2: Original Score (PDF / Word) Embedded Slot -->
+          <div id="dc-script-score-container" class="dc-score-scroll-wrap" style="display: none;">
+            <div id="dc-score-embed-slot" class="dc-score-embed-slot"></div>
+          </div>
+        </section>
 
-      <!-- Telemetry and Reports Drawer (Collapsible) -->
-      <div id="dc-telemetry-drawer" class="dc-stage-card" style="display: none; border-color: rgba(108, 92, 231, 0.35);">
-        <div class="dc-telemetry-header">
-          <div class="dc-telemetry-stats">
-            <div class="dc-stat-box">
-              <span class="dc-stat-label">DEIXAS DISPARADAS</span>
-              <span id="dc-telemetry-fired-count" class="dc-stat-val">0</span>
+        <!-- ───────────────────────────────────────────────────────────── -->
+        <!-- COLUNA 2 (DIREITA): MESA DE DEIXAS (CUES COCKPIT)             -->
+        <!-- ───────────────────────────────────────────────────────────── -->
+        <section id="dc-pane-cues" class="dc-cockpit-pane dc-pane-cues">
+          <!-- Mini Live Stage Timer Bar -->
+          <div id="dc-cue-stage-timer-bar" class="dc-cue-stage-timer-bar" style="display: flex;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg class="st-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span style="font-size: 0.74rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase;">PALCO ATIVO:</span>
+              <strong id="dc-cue-timer-name" style="color: #fff; font-size: 0.88rem;">--</strong>
             </div>
-            <div class="dc-stat-box">
-              <span class="dc-stat-label">DURAÇÃO TOTAL</span>
-              <span id="dc-telemetry-duration" class="dc-stat-val">00:00:00</span>
-            </div>
-            <div class="dc-stat-box">
-              <span class="dc-stat-label">FEEDBACKS TÉCNICOS</span>
-              <span id="dc-telemetry-feedback-count" class="dc-stat-val">0</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="dc-cue-timer-clock" style="font-family: var(--font-mono); font-size: 1.15rem; font-weight: 800; color: #55efc4;">00:00</span>
+              <span id="dc-cue-timer-end" style="font-size: 0.74rem; font-family: var(--font-mono); color: #cbd5e1;">--:--</span>
+              <button id="dc-cue-timer-toggle" type="button" class="btn btn-sm btn-success" style="font-size: 0.7rem; padding: 2px 7px;"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></button>
+              <button id="dc-cue-timer-reset" type="button" class="btn btn-sm" style="font-size: 0.7rem; padding: 2px 7px;"><svg class="st-icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect></svg></button>
             </div>
           </div>
 
-          <div class="dc-telemetry-actions">
-            <button id="dc-btn-save-report" type="button" class="btn btn-sm" style="background: #00b894; border: 1.5px solid #00b894; color: #000; font-weight: 800; padding: 7px 12px; border-radius: 8px; cursor: pointer;">
-              <svg class="st-icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Guardar no Evento
-            </button>
-            <button id="dc-btn-copy-report" type="button" class="dc-btn-primary dc-btn-sm">
-              <svg class="st-icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copiar Relatório
-            </button>
-            <button id="dc-btn-download-report" type="button" class="dc-tool-btn">
-              <svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Descarregar TXT
-            </button>
-          </div>
-        </div>
+          <!-- Hero Cue Action Box -->
+          <div class="dc-action-box" style="padding: 14px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <span class="dc-action-hint"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> DEIXA ATUAL A DISPARAR:</span>
+                <div style="display: flex; align-items: baseline; gap: 10px; margin-top: 4px;">
+                  <span id="dc-hero-cue-num" style="font-family: var(--font-mono); font-size: 2.1rem; font-weight: 900; color: #55efc4; line-height: 1;">Q1</span>
+                  <span id="dc-hero-cue-name" style="font-size: 1.2rem; font-weight: 800; color: #fff;">Abertura de Sala</span>
+                </div>
+              </div>
+              <div id="dc-hero-cue-depts" style="display: flex; gap: 6px; flex-wrap: wrap;"></div>
+            </div>
 
-        <!-- Saved Reports History Section -->
-        <div class="dc-saved-reports-section" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <strong style="font-size: 0.9rem; color: #ffeaa7;"><svg class="st-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Relatórios Gravados deste Evento (<span id="dc-saved-reports-count">0</span>)</strong>
-          </div>
-          <div id="dc-saved-reports-list" class="dc-saved-reports-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;"></div>
-        </div>
+            <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 12px; margin: 6px 0;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                <span style="font-size: 0.72rem; font-weight: 800; color: #ffeaa7;">PONTO DE DISPARO / FALA:</span>
+                <span id="dc-hero-cue-target" style="font-size: 0.88rem; color: #fff; font-weight: 700;">No 3º Sinal da Sala</span>
+              </div>
+              <div style="font-size: 0.74rem; color: var(--dc-muted);">
+                <strong style="color: #cbd5e1;">Notas:</strong> <span id="dc-hero-cue-notes">Fade in suave</span>
+              </div>
+            </div>
 
-        <!-- Live Telemetry List -->
-        <div>
-          <strong style="font-size: 0.85rem; color: #fff;"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Telemetria da Sessão em Direto</strong>
-          <div id="dc-telemetry-list" class="dc-telemetry-list" style="margin-top: 8px;"></div>
-        </div>
+            <!-- Giant Action Buttons -->
+            <div class="dc-action-btn-row" style="margin-top: 4px;">
+              <button id="dc-btn-standby" type="button" class="dc-hero-btn dc-btn-standby" style="flex: 1; padding: 14px 10px; font-size: 1.05rem;" title="STANDBY (Sinal Laranja para operadores)">
+                <span class="dc-hero-text" style="font-size: 1.15rem;">STANDBY</span>
+              </button>
+              <button id="dc-btn-go" type="button" class="dc-hero-btn dc-btn-go" style="flex: 1.4; padding: 14px 10px; font-size: 1.15rem;" title="GO (Sinal Verde). Atalho: BARRA DE ESPAÇO">
+                <span class="dc-hero-text" style="font-size: 1.25rem;">GO (BARRA DE ESPAÇO)</span>
+              </button>
+            </div>
+
+            <!-- Safety & Navigation -->
+            <div class="dc-action-subtools" style="margin-top: 6px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08);">
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button id="dc-btn-undo-cue" type="button" class="dc-mini-btn" style="background: rgba(255, 118, 117, 0.15); border-color: rgba(255, 118, 117, 0.4); color: #ff7675; font-weight: 800;" title="Desfazer último GO e voltar a colocar a deixa anterior em Standby">
+                  <svg class="st-icon" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg> Recuar Deixa
+                </button>
+                <button id="dc-btn-skip-cue" type="button" class="dc-mini-btn" title="Saltar deixa sem disparar">
+                  <svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg> Saltar
+                </button>
+              </div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button id="dc-btn-add-cue" type="button" class="dc-mini-btn" title="Adicionar nova deixa">
+                  <svg class="st-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Nova Deixa
+                </button>
+                <button id="dc-btn-import-cues" type="button" class="dc-mini-btn" title="Importar lista de deixas via PDF, Excel, Word ou CSV">
+                  <svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Importar
+                </button>
+                <button id="dc-btn-reset-cues" type="button" class="dc-mini-btn" title="Voltar todas as deixas a pendente">
+                  <svg class="st-icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Reset
+                </button>
+                <button id="dc-btn-clear-cues" type="button" class="dc-mini-btn" style="color: #ff7675; border-color: rgba(235, 87, 87, 0.4);" title="Eliminar todas as deixas">
+                  <svg class="st-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Limpar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sequential Cues List Section -->
+          <div class="dc-cues-list-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <strong style="color: #fff; font-size: 0.96rem; letter-spacing: 0.02em;">Fila de Deixas (<span id="dc-cues-count-badge">0</span>)</strong>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div id="dc-next-cue-summary" style="font-family: var(--font-mono); font-weight: 800; font-size: 0.82rem; color: #ffeaa7;">--</div>
+                <button id="dc-btn-focus-active-cue" type="button" class="dc-tool-btn" style="padding: 3px 8px; font-size: 0.72rem; color: #55efc4; border-color: rgba(85,239,196,0.35);" title="Rolar lista para a deixa atual em Standby ou Próxima">🎯 Focar</button>
+              </div>
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 8px;">
+              <input id="dc-cues-search-input" class="dc-input-sm" style="flex: 1; min-width: 140px; font-size: 16px;" placeholder="🔍 Pesquisar deixa (Q#, fala, ação)...">
+              <select id="dc-cues-dept-filter" class="dc-select-sm" style="font-size: 16px; min-width: 125px;" title="Filtrar por equipa">
+                <option value="all">Todas as Equipas</option>
+                <option value="Luz">Luz</option>
+                <option value="Som">Som</option>
+                <option value="Maquinaria">Maquinaria</option>
+                <option value="Vídeo">Vídeo</option>
+                <option value="Coxias">Coxias</option>
+              </select>
+            </div>
+
+            <!-- Sequential Cues List Container -->
+            <div id="dc-cues-list" class="dc-cues-full-list" style="max-height: 380px; overflow-y: auto;">
+              <!-- Injected dynamically by dc.js -->
+            </div>
+          </div>
+
+          <!-- Telemetry and Reports Drawer (Collapsible) -->
+          <div id="dc-telemetry-drawer" class="dc-stage-card" style="display: none; border-color: rgba(108, 92, 231, 0.35); margin-top: 6px;">
+            <div class="dc-telemetry-header">
+              <div class="dc-telemetry-stats">
+                <div class="dc-stat-box">
+                  <span class="dc-stat-label">DEIXAS DISPARADAS</span>
+                  <span id="dc-telemetry-fired-count" class="dc-stat-val">0</span>
+                </div>
+                <div class="dc-stat-box">
+                  <span class="dc-stat-label">DURAÇÃO TOTAL</span>
+                  <span id="dc-telemetry-duration" class="dc-stat-val">00:00:00</span>
+                </div>
+                <div class="dc-stat-box">
+                  <span class="dc-stat-label">FEEDBACKS TÉCNICOS</span>
+                  <span id="dc-telemetry-feedback-count" class="dc-stat-val">0</span>
+                </div>
+              </div>
+
+              <div class="dc-telemetry-actions">
+                <button id="dc-btn-save-report" type="button" class="btn btn-sm" style="background: #00b894; border: 1.5px solid #00b894; color: #000; font-weight: 800; padding: 7px 12px; border-radius: 8px; cursor: pointer;">
+                  <svg class="st-icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Guardar no Evento
+                </button>
+                <button id="dc-btn-copy-report" type="button" class="dc-btn-primary dc-btn-sm">
+                  <svg class="st-icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copiar Relatório
+                </button>
+                <button id="dc-btn-download-report" type="button" class="dc-tool-btn">
+                  <svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Descarregar TXT
+                </button>
+              </div>
+            </div>
+
+            <!-- Saved Reports History Section -->
+            <div class="dc-saved-reports-section" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <strong style="font-size: 0.9rem; color: #ffeaa7;"><svg class="st-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Relatórios Gravados deste Evento (<span id="dc-saved-reports-count">0</span>)</strong>
+              </div>
+              <div id="dc-saved-reports-list" class="dc-saved-reports-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;"></div>
+            </div>
+
+            <!-- Live Telemetry List -->
+            <div>
+              <strong style="font-size: 0.85rem; color: #fff;"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Telemetria da Sessão em Direto</strong>
+              <div id="dc-telemetry-list" class="dc-telemetry-list" style="margin-top: 8px;"></div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- MODAL: GUIÃO DA PEÇA & LEITURA (TELEPROMPTER)                   -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <div id="dc-modal-view-script" class="dc-modal" style="display: none;">
-    <div class="dc-modal-content" style="max-width: 840px; width: 94%;">
-      <div class="dc-modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dc-border); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <svg class="st-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-          <h3 style="margin: 0; font-size: 1.15rem; color: #ffeaa7;">Guião da Peça & Acompanhamento de Texto</h3>
-        </div>
-        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-          <button id="dc-script-btn-prev" type="button" class="dc-tool-btn" style="padding: 4px 10px; font-weight: 700;" title="Recuar para a fala anterior (Seta Acima)">⬆️ Anterior</button>
-          <button id="dc-script-btn-next" type="button" class="dc-btn-primary" style="padding: 4px 14px; font-weight: 800; background: #00b894; border-color: #55efc4;" title="Avançar para a próxima fala (Seta Abaixo)">⬇️ Próxima Fala</button>
-          <span id="dc-script-pos-badge" class="badge" style="background: rgba(85,239,196,0.15); color: #55efc4; font-family: var(--font-mono); font-size: 0.75rem; padding: 4px 8px;">Fala 0 / 0</span>
-          <button id="dc-script-font-minus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Diminuir letra">A−</button>
-          <button id="dc-script-font-plus" type="button" class="dc-tool-btn" style="padding: 4px 8px; font-weight: 800;" title="Aumentar letra">A+</button>
-          <button id="dc-script-scroll-toggle" type="button" class="dc-tool-btn" title="Iniciar/pausar rolagem contínua"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Rolar Texto</button>
-          <select id="dc-script-scroll-speed" class="dc-tool-btn" style="padding: 4px 6px; font-size: 0.72rem; outline: none; background: rgba(255,255,255,0.06); color: #fff;">
-            <option value="1">Lento</option>
-            <option value="2" selected>Médio</option>
-            <option value="3">Rápido</option>
-          </select>
-          <button id="dc-btn-edit-script-text" type="button" class="dc-tool-btn"><svg class="st-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg> Editar</button>
-          <button id="dc-btn-import-script" type="button" class="dc-tool-btn"><svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Importar</button>
-          <button type="button" class="dc-tool-btn" data-open-score="1" style="color: #fdcb6e; border-color: rgba(253, 203, 110, 0.45); font-weight: 800;" title="Abrir guião original página a página (PDF, Word ou Notas sem desformatar)">📜 Guião Original</button>
-          <button type="button" class="dc-modal-close" data-close-modal="dc-modal-view-script" style="margin-left: 8px;">X</button>
-        </div>
-      </div>
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 14px; background: rgba(85,239,196,0.08); border: 1px solid rgba(85,239,196,0.2); border-radius: 6px; margin: 0 16px 10px; font-size: 0.78rem; color: #55efc4; flex-wrap: wrap; gap: 6px;">
-        <span>👑 A Diretora de Cena comanda a fala ativa. Os postos técnicos acompanham em direto.</span>
-        <span style="color: #cbd5e1;">Atalhos: <strong>Seta Abaixo</strong> (Avançar) / <strong>Seta Acima</strong> (Recuar) / <strong>Clique</strong> na fala</span>
-      </div>
-      <div class="dc-modal-body" style="padding: 0;">
-        <div id="dc-script-feed" class="dc-script-feed" style="max-height: 480px; overflow-y: auto; padding: 12px;"></div>
-      </div>
-    </div>
-  </div>
+  <!-- Compatibility placeholder for legacy callers -->
+  <div id="dc-modal-view-script" style="display: none;"></div>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <!-- MODAL: VER RELATÓRIO GRAVADO                                    -->
@@ -1006,18 +1019,18 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/st-icons.js?v=2.19"></script>
-  <script src="js/mqtt.min.js?v=2.19"></script>
+  <script src="js/st-icons.js?v=2.20"></script>
+  <script src="js/mqtt.min.js?v=2.20"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=2.19"></script>
-  <script src="js/theatre-importer.js?v=2.19"></script>
-  <script src="js/pwa.js?v=2.19"></script>
-  <script src="js/local-sync.js?v=2.19"></script>
-  <script src="js/notifications.js?v=2.19"></script>
-  <script src="js/dc.js?v=2.19"></script>
-  <script src="js/dc-score.js?v=2.19"></script>
-  <script src="js/view-mode.js?v=2.19"></script>
+  <script src="js/schedule-importer.js?v=2.20"></script>
+  <script src="js/theatre-importer.js?v=2.20"></script>
+  <script src="js/pwa.js?v=2.20"></script>
+  <script src="js/local-sync.js?v=2.20"></script>
+  <script src="js/notifications.js?v=2.20"></script>
+  <script src="js/dc.js?v=2.20"></script>
+  <script src="js/dc-score.js?v=2.20"></script>
+  <script src="js/view-mode.js?v=2.20"></script>
 </body>
 </html>

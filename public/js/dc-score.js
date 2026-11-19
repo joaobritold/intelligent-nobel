@@ -138,7 +138,8 @@
     ov.setAttribute('aria-hidden', 'true');
     ov.innerHTML = `
       <header class="dcsr-top">
-        <button type="button" class="dcsr-btn dcsr-close" data-act="close" title="Fechar (Esc)">✕</button>
+        <button type="button" class="dcsr-btn dcsr-close" data-act="close" title="Fechar ou Voltar (Esc)">✕</button>
+        <button type="button" class="dcsr-btn" data-act="expand" title="Alternar Ecrã Inteiro">⛶</button>
         <div class="dcsr-title-wrap">
           <div class="dcsr-kicker">📜 GUIÃO ORIGINAL</div>
           <div class="dcsr-title" id="dcsr-title">Sem guião carregado</div>
@@ -420,7 +421,28 @@
 
   function handleAct(act, el) {
     switch (act) {
-      case 'close': close(); break;
+      case 'close':
+        if (ov && ov.classList.contains('embedded')) {
+          document.getElementById('dc-tab-script-text')?.click();
+        } else {
+          close();
+        }
+        break;
+      case 'expand':
+        if (ov.classList.contains('embedded')) {
+          document.body.appendChild(ov);
+          ov.classList.remove('embedded');
+          document.documentElement.classList.add('dcsr-lock');
+        } else {
+          const slot = document.getElementById('dc-score-embed-slot');
+          if (slot) {
+            slot.appendChild(ov);
+            ov.classList.add('embedded');
+            document.documentElement.classList.remove('dcsr-lock');
+          }
+        }
+        relayout();
+        break;
       case 'prev': prevPage(); break;
       case 'next': nextPage(); break;
       case 'mark': setMarkMode(!markMode); break;
@@ -444,9 +466,46 @@
     toast('Ação indisponível neste ecrã');
   }
 
-  // ─── Open / Close ───────────────────────────────────────────────────
+  // ─── Open / Close / Mount (Embedded) ────────────────────────────────
+  async function mount(container) {
+    build();
+    if (container && ov.parentNode !== container) {
+      container.innerHTML = '';
+      container.appendChild(ov);
+    }
+    ov.classList.add('embedded', 'open');
+    ov.setAttribute('aria-hidden', 'false');
+    document.documentElement.classList.remove('dcsr-lock');
+    isOpen = true;
+    requestWakeLock();
+    const room = getRoom();
+    if (room !== currentRoom || !doc) {
+      await loadForRoom(room);
+    } else {
+      relayout();
+      renderPins();
+      renderCueList(true);
+    }
+    updateHud();
+  }
+
+  function unmount() {
+    if (!built) return;
+    if (ov.classList.contains('embedded')) {
+      ov.classList.remove('open', 'embedded');
+      ov.setAttribute('aria-hidden', 'true');
+      isOpen = false;
+      stopAuto();
+      releaseWakeLock();
+    }
+  }
+
   async function open() {
     build();
+    if (ov.parentNode !== document.body) {
+      document.body.appendChild(ov);
+    }
+    ov.classList.remove('embedded');
     isOpen = true;
     ov.classList.add('open');
     ov.setAttribute('aria-hidden', 'false');
@@ -474,7 +533,7 @@
     stopAuto();
     setMarkMode(false);
     closePop(); closeSettings(); closeImport();
-    ov.classList.remove('open');
+    ov.classList.remove('open', 'embedded');
     ov.setAttribute('aria-hidden', 'true');
     document.documentElement.classList.remove('dcsr-lock');
     releaseWakeLock();
@@ -1846,7 +1905,7 @@
     });
   }
 
-  window.DCScoreReader = { open, close, isOpen: () => isOpen };
+  window.DCScoreReader = { open, close, mount, unmount, isOpen: () => isOpen };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
   else attach();

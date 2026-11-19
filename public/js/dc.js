@@ -1453,7 +1453,7 @@ document.addEventListener('click', (e) => {
     if (cueId) {
       client.standbyCue(cueId);
       if (state?.theatre?.phase !== 'live') client.setTheatrePhase('live');
-      if ($modalViewScript) $modalViewScript.style.display = 'none';
+      // Foca a linha correspondente na Fila de Deixas sem fechar o guião
       const cueRow = $cuesList?.querySelector(`[data-cue-id="${cueId}"]`);
       if (cueRow) cueRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -2066,15 +2066,62 @@ if ($stageArtistDurInput) {
   });
 }
 
-// Toggle Script Modal & Telemetry Drawer
+// Cockpit Layout Switcher & Script Tabs
+document.querySelectorAll('[data-cockpit-layout]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const layout = btn.dataset.cockpitLayout;
+    document.querySelectorAll('[data-cockpit-layout]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const grid = document.getElementById('dc-cockpit-grid');
+    if (grid) {
+      grid.classList.remove('layout-split', 'layout-script', 'layout-cues');
+      grid.classList.add(`layout-${layout}`);
+    }
+  });
+});
+
+const $tabScriptText = document.getElementById('dc-tab-script-text');
+const $tabScriptScore = document.getElementById('dc-tab-script-score');
+const $scriptTextContainer = document.getElementById('dc-script-text-container');
+const $scriptScoreContainer = document.getElementById('dc-script-score-container');
+const $scriptTools = document.getElementById('dc-script-tools');
+
+if ($tabScriptText && $tabScriptScore) {
+  $tabScriptText.addEventListener('click', () => {
+    $tabScriptText.classList.add('active');
+    $tabScriptScore.classList.remove('active');
+    if ($scriptTextContainer) $scriptTextContainer.style.display = 'block';
+    if ($scriptScoreContainer) $scriptScoreContainer.style.display = 'none';
+    if ($scriptTools) $scriptTools.style.display = 'flex';
+    if (window.DCScoreReader && typeof window.DCScoreReader.unmount === 'function') {
+      window.DCScoreReader.unmount();
+    }
+  });
+
+  $tabScriptScore.addEventListener('click', () => {
+    $tabScriptScore.classList.add('active');
+    $tabScriptText.classList.remove('active');
+    if ($scriptTextContainer) $scriptTextContainer.style.display = 'none';
+    if ($scriptScoreContainer) $scriptScoreContainer.style.display = 'block';
+    if ($scriptTools) $scriptTools.style.display = 'none';
+    const slot = document.getElementById('dc-score-embed-slot');
+    if (slot && window.DCScoreReader && typeof window.DCScoreReader.mount === 'function') {
+      window.DCScoreReader.mount(slot);
+    }
+  });
+}
+
+// Navegação do Guião a partir da Fase 1 ou de atalhos
 if ($btnToggleScriptModal) {
   $btnToggleScriptModal.addEventListener('click', () => {
-    if ($modalViewScript) $modalViewScript.style.display = 'flex';
+    client.setTheatrePhase('live');
+    const b = document.querySelector('[data-cockpit-layout="script"]');
+    if (b) b.click();
   });
 }
 if ($btnPrepViewScript) {
   $btnPrepViewScript.addEventListener('click', () => {
-    if ($modalViewScript) $modalViewScript.style.display = 'flex';
+    client.setTheatrePhase('live');
   });
 }
 
@@ -2328,17 +2375,19 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Atalhos de teclado quando o modal de leitura estiver aberto
+// Atalhos de teclado para avanço/recuo de fala no guião (quando em modo Live/Cockpit)
 document.addEventListener('keydown', (e) => {
-  const modalVisible = $modalViewScript && ($modalViewScript.style.display === 'flex' || $modalViewScript.style.display === 'block');
-  if (modalVisible && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
-    if (e.key === 'ArrowDown' || e.key === 'PageDown') {
-      e.preventDefault();
-      client.advanceTheatreScript(1);
-    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
-      e.preventDefault();
-      client.advanceTheatreScript(-1);
-    }
+  const isInput = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName) || document.activeElement?.isContentEditable;
+  if (isInput) return;
+  const isLive = state?.theatre?.phase === 'live' || state?.theatre?.showState === 'running';
+  if (!isLive) return;
+
+  if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+    e.preventDefault();
+    client.advanceTheatreScript(1);
+  } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+    e.preventDefault();
+    client.advanceTheatreScript(-1);
   }
 });
 
