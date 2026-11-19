@@ -176,6 +176,8 @@ const $scriptFeed = document.getElementById('cs-script-feed');
 const $scriptPosPill = document.getElementById('cs-script-pos-pill');
 const $scriptSyncPill = document.getElementById('cs-script-sync-pill');
 let lastCsScriptSig = '';
+let lastCsScriptContentSig = '';
+let lastCsScriptActiveIdx = -1;
 
 // Modal Elements
 const $deptModal = document.getElementById('cs-dept-modal');
@@ -1273,11 +1275,43 @@ function renderScriptFeed() {
     $scriptPosPill.textContent = script.length > 0 ? `Fala ${activeIdx + 1} / ${script.length}` : 'Fala 0 / 0';
   }
 
-  const sig = `${activeIdx}:${currentDept}:${script.map(s => `${s.id}:${s.type}:${s.cueAnchor || ''}:${s.text}`).join('|')}`;
-  if (sig === lastCsScriptSig) {
+  // Verifica se o texto do guião já se encontra renderizado no DOM
+  const contentSig = `${currentDept}:${script.length}:${script.map(s => s.id).join('|')}`;
+  const rows = $scriptFeed.querySelectorAll('.cs-script-row');
+
+  if (contentSig === lastCsScriptContentSig && rows.length === script.length && script.length > 0) {
+    // Modo Seguidor DC Ultra-Fluido: o guião já está desenhado, atualiza apenas a linha ativa e auto-scroll suave
+    if (activeIdx !== lastCsScriptActiveIdx) {
+      lastCsScriptActiveIdx = activeIdx;
+      rows.forEach((row, idx) => {
+        const isActive = idx === activeIdx;
+        if (isActive) {
+          row.classList.add('active');
+          row.style.borderLeft = '5px solid #55efc4';
+          row.style.background = 'rgba(85, 239, 196, 0.14)';
+          let metaBox = row.querySelector('.cs-script-meta-left');
+          if (metaBox && !metaBox.querySelector('.cs-dc-live-badge')) {
+            const b = document.createElement('span');
+            b.className = 'badge cs-dc-live-badge';
+            b.style.cssText = 'background: #55efc4; color: #000; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;';
+            b.textContent = '● EM CENA (DC)';
+            metaBox.prepend(b);
+          }
+          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else if (row.classList.contains('active')) {
+          row.classList.remove('active');
+          row.style.borderLeft = '4px solid transparent';
+          row.style.background = 'rgba(255, 255, 255, 0.02)';
+          row.querySelector('.cs-dc-live-badge')?.remove();
+        }
+      });
+    }
     return;
   }
-  lastCsScriptSig = sig;
+
+  lastCsScriptContentSig = contentSig;
+  lastCsScriptActiveIdx = activeIdx;
+  lastCsScriptSig = `${activeIdx}:${contentSig}`;
 
   if (script.length === 0) {
     $scriptFeed.innerHTML = `
@@ -1301,22 +1335,22 @@ function renderScriptFeed() {
       if (cueObj) {
         const isMyCue = (cueObj.departments || []).includes(currentDept) || (cueObj.dept === currentDept);
         if (isMyCue) {
-          myCueBadge = `<span class="badge" style="background: linear-gradient(135deg, #fdcb6e, #f39c12); color: #000; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; box-shadow: 0 2px 8px rgba(253, 203, 110, 0.4); margin-left: 8px;">⚡ SUA DEIXA: ${escapeHtml(cueObj.num)} (${escapeHtml(cueObj.name)})</span>`;
+          myCueBadge = `<span class="badge cs-cue-anchor-jump" data-cue-id="${escapeHtml(cueObj.id)}" style="background: linear-gradient(135deg, #fdcb6e, #f39c12); color: #000; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; box-shadow: 0 2px 8px rgba(253, 203, 110, 0.4); margin-left: 8px; cursor: pointer;" title="Tocar para focar deixa">⚡ SUA DEIXA: ${escapeHtml(cueObj.num)} (${escapeHtml(cueObj.name)})</span>`;
         } else {
-          myCueBadge = `<span class="badge" style="background: rgba(255,255,255,0.08); color: var(--cs-muted); font-size: 0.68rem; padding: 2px 6px; margin-left: 8px;">${escapeHtml(cueObj.num)}</span>`;
+          myCueBadge = `<span class="badge cs-cue-anchor-jump" data-cue-id="${escapeHtml(cueObj.id)}" style="background: rgba(255,255,255,0.08); color: var(--cs-muted); font-size: 0.68rem; padding: 2px 6px; margin-left: 8px; cursor: pointer;" title="Tocar para focar deixa">${escapeHtml(cueObj.num)}</span>`;
         }
       }
     }
 
     if (isBlank) {
-      return `<div class="cs-script-row blank ${isActive ? 'active' : ''}" style="min-height: 14px;"></div>`;
+      return `<div class="cs-script-row blank ${isActive ? 'active' : ''}" data-script-idx="${idx}" style="min-height: 14px;"></div>`;
     }
 
     return `
-      <div class="cs-script-row ${isHeading ? 'heading' : (isDirection ? 'direction' : 'dialogue')} ${isActive ? 'active' : ''}" style="padding: 10px 14px; margin-bottom: 8px; border-radius: 8px; border-left: ${isActive ? '5px solid #55efc4' : '4px solid transparent'}; background: ${isActive ? 'rgba(85, 239, 196, 0.12)' : 'rgba(255, 255, 255, 0.02)'}; transition: all 0.2s ease;">
+      <div class="cs-script-row ${isHeading ? 'heading' : (isDirection ? 'direction' : 'dialogue')} ${isActive ? 'active' : ''}" data-script-idx="${idx}" style="padding: 10px 14px; margin-bottom: 8px; border-radius: 8px; border-left: ${isActive ? '5px solid #55efc4' : '4px solid transparent'}; background: ${isActive ? 'rgba(85, 239, 196, 0.12)' : 'rgba(255, 255, 255, 0.02)'}; transition: all 0.2s ease;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            ${isActive ? `<span class="badge" style="background: #55efc4; color: #000; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;">● EM CENA (DC)</span>` : ''}
+          <div class="cs-script-meta-left" style="display: flex; align-items: center; gap: 8px;">
+            ${isActive ? `<span class="badge cs-dc-live-badge" style="background: #55efc4; color: #000; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;">● EM CENA (DC)</span>` : ''}
             ${item.speaker ? `<span style="font-weight: 800; font-size: 0.82rem; color: #ffeaa7; text-transform: uppercase;">${escapeHtml(item.speaker)}</span>` : (isDirection ? '<span style="font-size: 0.75rem; color: #a29bfe; font-style: italic;">[CENA / RUBRICA]</span>' : (isHeading ? '<span style="font-size: 0.88rem; font-weight: 800; color: #55efc4;">📌 ' + escapeHtml(item.text) + '</span>' : ''))}
           </div>
           <div>${myCueBadge}</div>
@@ -1340,6 +1374,34 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+if ($scriptSyncPill) {
+  $scriptSyncPill.style.cursor = 'pointer';
+  $scriptSyncPill.title = 'Tocar para recentrar na linha da DC';
+  $scriptSyncPill.addEventListener('click', () => {
+    const activeRow = $scriptFeed?.querySelector('.cs-script-row.active');
+    if (activeRow) {
+      activeRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+}
+
+if ($scriptFeed) {
+  $scriptFeed.addEventListener('click', (e) => {
+    const jumpBtn = e.target.closest('[data-cue-id]');
+    if (jumpBtn) {
+      const cueId = jumpBtn.getAttribute('data-cue-id');
+      if (cueId && $cuesList) {
+        const cueCard = $cuesList.querySelector(`[data-cue-id="${cueId}"]`);
+        if (cueCard) {
+          cueCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          cueCard.style.outline = '2px solid #55efc4';
+          setTimeout(() => { cueCard.style.outline = ''; }, 1500);
+        }
+      }
+    }
+  });
 }
 
 // ─── Client Event Handlers ──────────────────────────────────────────

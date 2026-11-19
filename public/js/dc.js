@@ -710,9 +710,120 @@ if ($scriptFontPlus) {
   });
 }
 
-// Teleprompter Continuous Scroll Loop
+// Teleprompter Continuous Scroll Loop & Real-Time Sync to Teams
 let isTeleprompterScrolling = false;
 let teleprompterAnimationId = null;
+let isProgrammaticScroll = false;
+let scrollCommitTimer = null;
+let lastCalculatedScrollIdx = -1;
+let lastCommittedScrollIdx = -1;
+
+function calculateActiveScriptIndexFromScroll() {
+  if (!$scriptFeed) return -1;
+  const items = $scriptFeed.querySelectorAll('.dc-script-item');
+  if (!items.length) return -1;
+
+  // Reading horizon is around 35% from the top of the container
+  const targetOffset = $scriptFeed.scrollTop + ($scriptFeed.clientHeight * 0.35);
+
+  let closestIdx = 0;
+  for (let i = 0; i < items.length; i++) {
+    const el = items[i];
+    if (el.offsetTop <= targetOffset) {
+      closestIdx = i;
+    } else {
+      break;
+    }
+  }
+
+  const el = items[closestIdx];
+  const idx = parseInt(el?.dataset.scriptIdx, 10);
+  return !isNaN(idx) ? idx : closestIdx;
+}
+
+function updateLocalScriptHighlight(visibleIdx) {
+  if (!$scriptFeed) return;
+  const total = state?.theatre?.script?.length || 0;
+  if ($scriptPosBadge) {
+    $scriptPosBadge.textContent = total > 0 ? `Fala ${visibleIdx + 1} / ${total}` : 'Fala 0 / 0';
+  }
+
+  const items = $scriptFeed.querySelectorAll('.dc-script-item');
+  items.forEach((item) => {
+    const idx = parseInt(item.dataset.scriptIdx, 10);
+    const isActive = idx === visibleIdx;
+    if (isActive && !item.classList.contains('active')) {
+      item.classList.add('active');
+      let metaEl = item.querySelector('.dc-script-meta');
+      if (metaEl && !metaEl.querySelector('.dc-scene-live-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'badge dc-scene-live-badge';
+        badge.style.cssText = 'background: #55efc4; color: #000; font-size: 0.65rem; font-weight: 800; padding: 2px 6px;';
+        badge.textContent = '● EM CENA';
+        metaEl.prepend(badge);
+      }
+    } else if (!isActive && item.classList.contains('active')) {
+      item.classList.remove('active');
+      item.querySelector('.dc-scene-live-badge')?.remove();
+    }
+  });
+}
+
+function onDcScriptFeedScroll() {
+  if (isProgrammaticScroll) return;
+
+  const visibleIdx = calculateActiveScriptIndexFromScroll();
+  if (visibleIdx === -1 || visibleIdx === lastCalculatedScrollIdx) return;
+  lastCalculatedScrollIdx = visibleIdx;
+
+  // Atualização visual instantânea no ecrã da DC
+  updateLocalScriptHighlight(visibleIdx);
+
+  // Throttled broadcast para sincronizar com as equipas técnicas (cue stations)
+  clearTimeout(scrollCommitTimer);
+  scrollCommitTimer = setTimeout(() => {
+    if (lastCalculatedScrollIdx !== -1 && lastCalculatedScrollIdx !== lastCommittedScrollIdx) {
+      lastCommittedScrollIdx = lastCalculatedScrollIdx;
+      client.setTheatreScriptIndex(lastCommittedScrollIdx);
+    }
+  }, 120);
+}
+
+if ($scriptFeed) {
+  $scriptFeed.addEventListener('scroll', onDcScriptFeedScroll, { passive: true });
+
+  $scriptFeed.addEventListener('click', (e) => {
+    const cueAnchorBtn = e.target.closest('[data-jump-cue]');
+    if (cueAnchorBtn) {
+      const cueId = cueAnchorBtn.getAttribute('data-jump-cue');
+      if (cueId) {
+        lastCuesSig = '';
+        renderCues();
+        const cueRow = $cuesList?.querySelector(`[data-cue-id="${cueId}"]`);
+        if (cueRow) {
+          cueRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          cueRow.style.outline = '2px solid #55efc4';
+          setTimeout(() => { cueRow.style.outline = ''; }, 1500);
+        }
+      }
+      return;
+    }
+
+    const scriptItem = e.target.closest('.dc-script-item');
+    if (scriptItem) {
+      const idx = parseInt(scriptItem.dataset.scriptIdx, 10);
+      if (!isNaN(idx)) {
+        isProgrammaticScroll = true;
+        lastCalculatedScrollIdx = idx;
+        lastCommittedScrollIdx = idx;
+        updateLocalScriptHighlight(idx);
+        scriptItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => { isProgrammaticScroll = false; }, 350);
+        client.setTheatreScriptIndex(idx);
+      }
+    }
+  });
+}
 
 function stepTeleprompter() {
   if (!isTeleprompterScrolling || !$scriptFeed) return;
@@ -808,6 +919,8 @@ function highlightScriptForCue(cueId) {
 // ─── Render Functions ────────────────────────────────────────────────
 
 let lastScriptSig = '';
+let lastScriptContentSig = '';
+let lastScriptActiveIdx = -1;
 let lastCuesSig = '';
 let lastPrepMiniCuesSig = '';
 let lastTelemetrySig = '';
@@ -860,9 +973,28 @@ function renderScript() {
     $scriptPosBadge.textContent = script.length > 0 ? `Fala ${activeIdx + 1} / ${script.length}` : 'Fala 0 / 0';
   }
 
-  const sig = `${activeIdx}:${cues.length}:${script.map(s => `${s.id}:${s.type}:${s.cueAnchor || ''}:${s.text}`).join('|')}`;
-  if (sig === lastScriptSig) return;
-  lastScriptSig = sig;
+  const contentSig = `${cues.length}:${script.length}:${script.map(s => `${s.id}:${s.cueAnchor || ''}`).join('|')}`;
+  const items = $scriptFeed?.querySelectorAll('.dc-script-item');
+
+  if (contentSig === lastScriptContentSig && items && items.length === script.length && script.length > 0) {
+    if (activeIdx !== lastScriptActiveIdx) {
+      lastScriptActiveIdx = activeIdx;
+      updateLocalScriptHighlight(activeIdx);
+      if (!isTeleprompterScrolling && Math.abs(activeIdx - (lastCalculatedScrollIdx !== -1 ? lastCalculatedScrollIdx : activeIdx)) > 1) {
+        const activeEl = $scriptFeed.querySelector(`.dc-script-item[data-script-idx="${activeIdx}"]`);
+        if (activeEl) {
+          isProgrammaticScroll = true;
+          activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => { isProgrammaticScroll = false; }, 350);
+        }
+      }
+    }
+    return;
+  }
+
+  lastScriptContentSig = contentSig;
+  lastScriptActiveIdx = activeIdx;
+  lastScriptSig = `${activeIdx}:${contentSig}`;
 
   if (script.length === 0) {
     $scriptFeed.innerHTML = `
@@ -909,10 +1041,12 @@ function renderScript() {
     `;
   }).join('');
 
-  // Auto-scroll suave para a linha ativa
+  // Auto-scroll suave para a linha ativa quando não for scroll manual contínuo
   const activeEl = $scriptFeed?.querySelector('.dc-script-item.active');
-  if (activeEl) {
+  if (activeEl && !isTeleprompterScrolling) {
+    isProgrammaticScroll = true;
     activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => { isProgrammaticScroll = false; }, 350);
   }
 }
 
