@@ -757,8 +757,39 @@ if ($scriptScrollToggle) {
   });
 }
 
-// ─── Script Auto-Scroll & Highlighting ──────────────────────────────
+// ─── Script & Cues Auto-Scroll & Highlighting ─────────────────────────
+let lastAutoScrolledDcCueId = null;
+
+function autoScrollDcCuesList(force = false) {
+  if (!$cuesList) return;
+  const activeEl = $cuesList.querySelector('.dc-cue-row-full.is-standby') ||
+                   $cuesList.querySelector('.dc-cue-row-full.is-next-pending');
+  if (activeEl) {
+    const cueId = activeEl.getAttribute('data-cue-id');
+    if (force || (cueId && cueId !== lastAutoScrolledDcCueId)) {
+      lastAutoScrolledDcCueId = cueId;
+      requestAnimationFrame(() => {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+  }
+}
+
 function highlightScriptForCue(cueId) {
+  if (!cueId) return;
+
+  // Ensure script and cues are cross-linked if imported separately
+  if (typeof TheatreImporter !== 'undefined' && typeof TheatreImporter.autoLinkScriptAndCues === 'function') {
+    TheatreImporter.autoLinkScriptAndCues(state?.theatre?.script || [], state?.theatre?.cues || []);
+  }
+
+  // Sync scriptActiveIndex across all devices (DC + Postos Técnicos)
+  const scriptList = state?.theatre?.script || [];
+  const targetIdx = scriptList.findIndex(s => s && s.cueAnchor === cueId);
+  if (targetIdx >= 0 && state?.theatre?.scriptActiveIndex !== targetIdx) {
+    client.setTheatreScriptIndex(targetIdx);
+  }
+
   if (!$scriptFeed) return;
   const scriptItem = $scriptFeed.querySelector(`[data-cue-anchor="${cueId}"]`);
   if (!scriptItem) return;
@@ -775,17 +806,58 @@ function highlightScriptForCue(cueId) {
 
 let lastScriptSig = '';
 let lastCuesSig = '';
+let lastPrepMiniCuesSig = '';
 let lastTelemetrySig = '';
+
+const $prepCuesMiniList = document.getElementById('dc-prep-cues-mini-list');
+const $btnPrepOpenCuesView = document.getElementById('dc-btn-prep-open-cues-view');
+const $cuesSearchInput = document.getElementById('dc-cues-search-input');
+const $cuesDeptFilter = document.getElementById('dc-cues-dept-filter');
+const $btnFocusActiveCue = document.getElementById('dc-btn-focus-active-cue');
+
+if ($btnPrepOpenCuesView) {
+  $btnPrepOpenCuesView.addEventListener('click', () => {
+    client.setTheatrePhase('live');
+  });
+}
+
+if ($cuesSearchInput) {
+  $cuesSearchInput.addEventListener('input', () => {
+    lastCuesSig = '';
+    renderCues();
+  });
+}
+
+if ($cuesDeptFilter) {
+  $cuesDeptFilter.addEventListener('change', () => {
+    lastCuesSig = '';
+    renderCues();
+  });
+}
+
+if ($btnFocusActiveCue) {
+  $btnFocusActiveCue.addEventListener('click', () => {
+    if ($cuesSearchInput && $cuesSearchInput.value) $cuesSearchInput.value = '';
+    if ($cuesDeptFilter && $cuesDeptFilter.value !== 'all') $cuesDeptFilter.value = 'all';
+    lastCuesSig = '';
+    renderCues();
+    autoScrollDcCuesList(true);
+  });
+}
 
 function renderScript() {
   const script = state?.theatre?.script || [];
+  const cues = state?.theatre?.cues || [];
+  if (typeof TheatreImporter !== 'undefined' && typeof TheatreImporter.autoLinkScriptAndCues === 'function') {
+    TheatreImporter.autoLinkScriptAndCues(script, cues);
+  }
   const activeIdx = typeof state?.theatre?.scriptActiveIndex === 'number' ? state.theatre.scriptActiveIndex : 0;
 
   if ($scriptPosBadge) {
     $scriptPosBadge.textContent = script.length > 0 ? `Fala ${activeIdx + 1} / ${script.length}` : 'Fala 0 / 0';
   }
 
-  const sig = `${activeIdx}:${script.map(s => `${s.id}:${s.type}:${s.cueAnchor || ''}:${s.text}`).join('|')}`;
+  const sig = `${activeIdx}:${cues.length}:${script.map(s => `${s.id}:${s.type}:${s.cueAnchor || ''}:${s.text}`).join('|')}`;
   if (sig === lastScriptSig) return;
   lastScriptSig = sig;
 
@@ -811,11 +883,11 @@ function renderScript() {
     let cueBadgeHtml = '';
 
     if (hasCue) {
-      const cueObj = state?.theatre?.cues?.find(c => c.id === item.cueAnchor);
+      const cueObj = cues.find(c => c.id === item.cueAnchor);
       const cueNum = cueObj ? cueObj.num : 'CUE';
       const cueName = cueObj ? cueObj.name : '';
       const ico = window.stIcon ? window.stIcon('zap') : '';
-      cueBadgeHtml = `<button type="button" class="dc-cue-anchor-pill" data-jump-cue="${escapeHtml(item.cueAnchor)}" title="Focar Deixa">${ico} ${escapeHtml(cueNum)}: ${escapeHtml(cueName)}</button>`;
+      cueBadgeHtml = `<button type="button" class="dc-cue-anchor-pill" data-jump-cue="${escapeHtml(item.cueAnchor)}" title="Focar Deixa">${ico} ${escapeHtml(cueNum)}${cueName ? ': ' + escapeHtml(cueName) : ''}</button>`;
     }
 
     if (isBlank) {
@@ -847,6 +919,32 @@ function renderCues() {
 
   if ($cuesCountBadge) $cuesCountBadge.textContent = cues.length;
   if ($prepCuesCount) $prepCuesCount.textContent = `${cues.length} Deixa${cues.length === 1 ? '' : 's'}`;
+
+  // Update Fase 1 Mini Cues Preview Box
+  if ($prepCuesMiniList) {
+    const miniSig = cues.map(c => `${c.id}:${c.num}:${c.name}:${(c.departments || []).join(',')}:${c.targetText || ''}`).join('|');
+    if (miniSig !== lastPrepMiniCuesSig) {
+      lastPrepMiniCuesSig = miniSig;
+      if (cues.length === 0) {
+        $prepCuesMiniList.style.display = 'none';
+        $prepCuesMiniList.innerHTML = '';
+      } else {
+        $prepCuesMiniList.style.display = 'block';
+        $prepCuesMiniList.innerHTML = cues.map(c => `
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <div style="min-width: 0; flex: 1;">
+              <strong style="color: #ffeaa7; font-family: var(--font-mono); margin-right: 6px;">${escapeHtml(c.num)}</strong>
+              <span style="color: #fff; font-weight: 700;">${escapeHtml(c.name)}</span>
+              ${c.targetText ? `<span style="color: #94a3b8; font-size: 0.72rem; margin-left: 6px;">— ${escapeHtml(c.targetText)}</span>` : ''}
+            </div>
+            <div style="flex-shrink: 0; display: flex; gap: 4px;">
+              ${(c.departments || []).map(d => `<span class="dc-dept-tag ${String(d).toLowerCase()}" style="font-size: 0.62rem; padding: 1px 5px;">${escapeHtml(d)}</span>`).join('')}
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+  }
 
   // Active Standby / Pending Cue for Hero Box (Opção A)
   const standbyCue = cues.find(c => c.status === 'standby');
@@ -933,8 +1031,14 @@ function renderCues() {
     }
   }
 
-  const sig = cues.map(c => `${c.id}:${c.status}:${c.firedTimecode}:${(c.feedbacks || []).length}`).join('|');
-  if (sig === lastCuesSig) return;
+  const searchQuery = ($cuesSearchInput?.value || '').trim().toLowerCase();
+  const deptFilter = $cuesDeptFilter?.value || 'all';
+
+  const sig = `${searchQuery}:${deptFilter}:${cues.map(c => `${c.id}:${c.num}:${c.name}:${c.targetText || ''}:${c.notes || ''}:${(c.departments || []).join(',')}:${c.status}:${c.firedTimecode}:${(c.feedbacks || []).length}`).join('|')}`;
+  if (sig === lastCuesSig) {
+    if (!searchQuery && deptFilter === 'all') autoScrollDcCuesList(false);
+    return;
+  }
   lastCuesSig = sig;
 
   if (cues.length === 0) {
@@ -942,8 +1046,25 @@ function renderCues() {
     return;
   }
 
+  const filteredCues = cues.filter(cue => {
+    if (deptFilter !== 'all') {
+      const depts = Array.isArray(cue.departments) ? cue.departments : [];
+      if (!depts.some(d => String(d).toLowerCase() === deptFilter.toLowerCase())) return false;
+    }
+    if (searchQuery) {
+      const hay = `${cue.num || ''} ${cue.name || ''} ${cue.targetText || ''} ${cue.notes || ''} ${(cue.departments || []).join(' ')}`.toLowerCase();
+      if (!hay.includes(searchQuery)) return false;
+    }
+    return true;
+  });
+
+  if (filteredCues.length === 0) {
+    $cuesList.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--dc-muted);">Nenhuma deixa corresponde ao filtro selecionado (${cues.length} deixas no total).</div>`;
+    return;
+  }
+
   const ico = window.stIcon || (() => '');
-  $cuesList.innerHTML = cues.map(cue => {
+  $cuesList.innerHTML = filteredCues.map(cue => {
     const isStandby = cue.status === 'standby';
     const isFired = cue.status === 'fired';
     const isCompleted = cue.status === 'completed';
@@ -969,14 +1090,19 @@ function renderCues() {
       return `<span class="dc-feedback-chip ${escapeHtml(fb.type)}">${escapeHtml(fb.dept)}: ${escapeHtml(fb.type)}</span>`;
     }).join('');
 
+    const subTextParts = [];
+    if (cue.targetText) subTextParts.push(`💬 ${cue.targetText}`);
+    if (cue.notes && cue.notes !== cue.targetText) subTextParts.push(`📝 ${cue.notes}`);
+    const subText = subTextParts.join(' • ');
+
     return `
       <div class="${rowClass}" data-cue-id="${escapeHtml(cue.id)}">
-        <div class="dc-cue-num-col" style="font-family: var(--font-mono); font-weight: 900; font-size: 1.35rem; color: ${isStandby ? '#ff793f' : (isFired ? '#00b894' : (isNext ? '#55efc4' : '#fff'))}; min-width: 55px;">
+        <div class="dc-cue-num-col" style="font-family: var(--font-mono); font-weight: 900; font-size: 1.25rem; color: ${isStandby ? '#ff793f' : (isFired ? '#00b894' : (isNext ? '#55efc4' : '#fff'))}; min-width: 68px; white-space: nowrap;">
           ${escapeHtml(cue.num)}
         </div>
         <div class="dc-cue-info-col" style="flex: 1; min-width: 0;">
-          <div style="font-weight: 800; font-size: 1.05rem; color: #fff;">${escapeHtml(cue.name)}</div>
-          ${(cue.targetText || cue.notes) ? `<div style="font-size: 0.82rem; color: #cbd5e1; margin-top: 2px;">${escapeHtml(cue.targetText || cue.notes)}</div>` : ''}
+          <div style="font-weight: 800; font-size: 1.02rem; color: #fff;">${escapeHtml(cue.name)}</div>
+          ${subText ? `<div style="font-size: 0.8rem; color: #cbd5e1; margin-top: 2px;">${escapeHtml(subText)}</div>` : ''}
           <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
             ${deptsHtml} ${feedbacksHtml}
           </div>
@@ -993,6 +1119,10 @@ function renderCues() {
       </div>
     `;
   }).join('');
+
+  if (!searchQuery && deptFilter === 'all') {
+    autoScrollDcCuesList(false);
+  }
 }
 
 // ─── Stage Phase Render (Artistas, Alinhamento & Notas Rápidas) ───────────
@@ -1335,6 +1465,7 @@ document.addEventListener('click', (e) => {
     const cueId = cueRowEl.dataset.cueId;
     if (cueId) {
       client.standbyCue(cueId);
+      highlightScriptForCue(cueId);
     }
   }
 
@@ -1343,9 +1474,13 @@ document.addEventListener('click', (e) => {
   if (cueActionBtn) {
     const action = cueActionBtn.dataset.cueAction;
     const id = cueActionBtn.dataset.id;
-    if (action === 'standby') client.standbyCue(id);
-    else if (action === 'go') client.fireCue(id);
-    else if (action === 'reset') client.resetCue(id);
+    if (action === 'standby') {
+      client.standbyCue(id);
+      highlightScriptForCue(id);
+    } else if (action === 'go') {
+      client.fireCue(id);
+      highlightScriptForCue(id);
+    } else if (action === 'reset') client.resetCue(id);
     else if (action === 'edit') openEditCueModal(id);
     else if (action === 'delete') {
       const cue = state?.theatre?.cues?.find(c => c.id === id);

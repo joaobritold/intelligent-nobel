@@ -56,9 +56,9 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <meta name="robots" content="noindex, nofollow">
   <title>ShowFlow — Modo Jess (Diretora de Cena)</title>
-  <link rel="stylesheet" href="css/common.css?v=2.17">
-  <link rel="stylesheet" href="css/controller.css?v=2.17">
-  <link rel="stylesheet" href="css/dc.css?v=2.17">
+  <link rel="stylesheet" href="css/common.css?v=2.18">
+  <link rel="stylesheet" href="css/controller.css?v=2.18">
+  <link rel="stylesheet" href="css/dc.css?v=2.18">
 </head>
 <body>
   <div id="dc-screen" class="dc-screen">
@@ -73,7 +73,7 @@
             <div class="dc-brand-title">MODO JESS</div>
             <div class="dc-brand-sub">Diretora de Cena</div>
           </div>
-          <span class="badge dc-version-badge">v2.17</span>
+          <span class="badge dc-version-badge">v2.18</span>
         </a>
 
         <!-- Stage / Room Pill -->
@@ -302,12 +302,14 @@
               </div>
               <span id="dc-prep-cues-count" style="font-size: 0.75rem; font-family: var(--font-mono); color: #ffeaa7;">0 Deixas</span>
             </div>
-            <p style="font-size: 0.8rem; color: #cbd5e1; margin: 0;">Pode importar a folha de deixas em PDF, Excel, Word ou texto antes de arrancar.</p>
+            <p style="font-size: 0.8rem; color: #cbd5e1; margin: 0;">Pode importar uma tabela de deixas (Excel/CSV/Word/PDF) ou um guião completo com cues incorporadas.</p>
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
-              <button id="dc-btn-prep-import-cues" type="button" class="dc-btn-primary dc-btn-sm"><svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Importar Folha de Deixas</button>
+              <button id="dc-btn-prep-import-cues" type="button" class="dc-btn-primary dc-btn-sm"><svg class="st-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Importar Deixas / Guião</button>
               <button id="dc-btn-prep-add-cue" type="button" class="dc-tool-btn"><svg class="st-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Nova Deixa</button>
               <button id="dc-btn-prep-view-script" type="button" class="dc-tool-btn"><svg class="st-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> Guião / Texto</button>
+              <button id="dc-btn-prep-open-cues-view" type="button" class="dc-tool-btn" style="color: #55efc4; border-color: rgba(85, 239, 196, 0.4); font-weight: 800;"><svg class="st-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Abrir Mesa de Deixas</button>
             </div>
+            <div id="dc-prep-cues-mini-list" style="display: none; margin-top: 10px; max-height: 185px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; background: rgba(0,0,0,0.28); padding: 6px 10px; font-size: 0.78rem;"></div>
           </div>
         </div>
 
@@ -466,14 +468,30 @@
 
       <!-- Full-Width Sequential Cues List -->
       <div class="dc-stage-card" style="padding: 16px 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
           <div>
             <strong style="color: #fff; font-size: 1.05rem; letter-spacing: 0.02em;"><svg class="st-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg> Fila de Deixas do Espetáculo (<span id="dc-cues-count-badge">0</span>)</strong>
             <div style="font-size: 0.74rem; color: var(--dc-muted);">Clique em qualquer deixa para a focar ou colocar em Standby manual.</div>
           </div>
-          <div id="dc-next-cue-summary" style="font-family: var(--font-mono); font-weight: 800; font-size: 0.88rem; color: #ffeaa7;">
-            --
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div id="dc-next-cue-summary" style="font-family: var(--font-mono); font-weight: 800; font-size: 0.88rem; color: #ffeaa7;">
+              --
+            </div>
+            <button id="dc-btn-focus-active-cue" type="button" class="dc-tool-btn" style="padding: 4px 10px; font-size: 0.75rem; color: #55efc4; border-color: rgba(85,239,196,0.35);" title="Rolar lista para a deixa atual em Standby ou Próxima">🎯 Focar Atual</button>
           </div>
+        </div>
+
+        <!-- Search & Department Filter Bar for Cues -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px;">
+          <input id="dc-cues-search-input" class="dc-input-sm" style="flex: 1; min-width: 180px; font-size: 16px;" placeholder="🔍 Pesquisar deixa por nº (ex: Q22.5), ação ou fala...">
+          <select id="dc-cues-dept-filter" class="dc-select-sm" style="font-size: 16px; min-width: 150px;" title="Filtrar fila de deixas por equipa">
+            <option value="all">Todas as Equipas</option>
+            <option value="Luz">Luz</option>
+            <option value="Som">Som</option>
+            <option value="Maquinaria">Maquinaria</option>
+            <option value="Vídeo">Vídeo</option>
+            <option value="Coxias">Coxias</option>
+          </select>
         </div>
 
         <div id="dc-cues-list" class="dc-cues-full-list">
@@ -976,17 +994,17 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/st-icons.js?v=2.17"></script>
-  <script src="js/mqtt.min.js?v=2.17"></script>
+  <script src="js/st-icons.js?v=2.18"></script>
+  <script src="js/mqtt.min.js?v=2.18"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=2.17"></script>
-  <script src="js/theatre-importer.js?v=2.17"></script>
-  <script src="js/pwa.js?v=2.17"></script>
-  <script src="js/local-sync.js?v=2.17"></script>
-  <script src="js/notifications.js?v=2.17"></script>
-  <script src="js/dc.js?v=2.17"></script>
-  <script src="js/view-mode.js?v=2.17"></script>
+  <script src="js/schedule-importer.js?v=2.18"></script>
+  <script src="js/theatre-importer.js?v=2.18"></script>
+  <script src="js/pwa.js?v=2.18"></script>
+  <script src="js/local-sync.js?v=2.18"></script>
+  <script src="js/notifications.js?v=2.18"></script>
+  <script src="js/dc.js?v=2.18"></script>
+  <script src="js/view-mode.js?v=2.18"></script>
 </body>
 </html>

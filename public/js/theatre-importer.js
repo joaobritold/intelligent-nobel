@@ -2,10 +2,11 @@
  * TheatreImporter — Universal File & Text Importer for Theatre Mode
  * Supports PDF, Excel (.xlsx, .xls, .csv), Word (.docx), and plain text for both Scripts and Cues.
  * Prepared for:
- *  - Full Technical Scripts with embedded cues (e.g. "CUE 0.5 - BO", inline cues after dialogue, multiple cues per line)
+ *  - Full Technical Scripts with embedded cues (e.g. "CUE 0.5 - BO", inline cues after/mid dialogue, multiple cues per line)
  *  - Dedicated Cue Sheets / Tables (Excel, CSV, TSV, pipe/semicolon tables, Word/PDF tables)
  *  - Numbered / Bulleted Cue Lists
  *  - Pure Literary Scripts (preserving layout or structuring speakers/headings/directions)
+ *  - Automatic Cross-Linking between Script lines and Cues (even when imported separately)
  */
 class TheatreImporter {
   static VALID_DEPTS = ['Luz', 'Som', 'Maquinaria', 'Vídeo', 'Coxias'];
@@ -38,7 +39,7 @@ class TheatreImporter {
     const combined = `${cueName} ${cueNotes}`.toLowerCase();
     const depts = new Set(docBaseDepts);
 
-    if (/\b(luz|bo|blackout|flash|follow|5k|pc|par|fresnel|recorte|pub|ribalta|contra|dimmer|strobe|foco)\b/i.test(combined)) {
+    if (/\b(luz|bo|blackout|flash|flah|follow|5k|pc|par|fresnel|recorte|pub|ribalta|contra|dimmer|strobe|foco)\b/i.test(combined)) {
       depts.add('Luz');
     }
     if (/\b(som|m[uú]sica|tiro|tiros|sirene|vozes|apito|piii+|micro|áudio|audio|ru[ií]do|efeito sonoro|final do som|som el[eé]trico)\b/i.test(combined)) {
@@ -76,6 +77,56 @@ class TheatreImporter {
     if (!cleaned) return `Q${fallbackIndex}`;
     if (/^\d/.test(cleaned)) return `Q${cleaned.toUpperCase()}`;
     return cleaned.toUpperCase();
+  }
+
+  /**
+   * Normalize a cue number to its bare canonical key for matching (e.g. "Q0.5" -> "0.5", "CUE 22.5" -> "22.5")
+   */
+  static canonicalCueKey(rawNum) {
+    return String(rawNum || '').trim()
+      .replace(/^(?:cue|deixa|q)\s*[-#:]?\s*/i, '')
+      .replace(',', '.')
+      .toUpperCase();
+  }
+
+  /**
+   * Automatically cross-link script items and cues (useful when script and cues are imported separately)
+   */
+  static autoLinkScriptAndCues(script = [], cues = []) {
+    if (!Array.isArray(script) || !Array.isArray(cues) || script.length === 0 || cues.length === 0) {
+      return script;
+    }
+
+    const cueById = new Map();
+    const cueByKey = new Map();
+    cues.forEach(c => {
+      if (!c || !c.id) return;
+      cueById.set(c.id, c);
+      const key = TheatreImporter.canonicalCueKey(c.num);
+      if (key && !cueByKey.has(key)) {
+        cueByKey.set(key, c);
+      }
+    });
+
+    script.forEach(item => {
+      if (!item) return;
+      // If already linked to a valid existing cue ID, keep it
+      if (item.cueAnchor && cueById.has(item.cueAnchor)) return;
+
+      // 1. Check if item.text or item.raw contains an explicit cue number like "Q6", "CUE 6", "DEIXA 6"
+      const textToScan = `${item.text || ''} ${item.raw || ''}`;
+      const match = textToScan.match(/\b(?:CUE|DEIXA|Q)\s*[-#:]?\s*(\d+(?:[.,]\d+)?[A-Za-z]?)\b/i);
+      if (match) {
+        const key = TheatreImporter.canonicalCueKey(match[1]);
+        const matchedCue = cueByKey.get(key);
+        if (matchedCue) {
+          item.cueAnchor = matchedCue.id;
+          return;
+        }
+      }
+    });
+
+    return script;
   }
 
   /**
@@ -245,11 +296,11 @@ class TheatreImporter {
     }
 
     // Case B: Starts with 2+ ALL-CAPS words/tokens followed by lowercase words (actor dialogue continuation)
-    const capsThenLowerMatch = seg.match(/^([A-ZÀ-Ú0-9][A-ZÀ-Ú0-9\s\/\+,\.\(\)\-–—“”"':]{3,}?)\s+([a-záàâãéêíóôõúç]{2,}\s+[a-záàâãéêíóôõúç].*)$/);
+    const capsThenLowerMatch = seg.match(/^([A-ZÀ-Ú0-9][A-ZÀ-Ú0-9\s\/\+,\.\(\)\-–—“”"':]{3,}?)\s+([a-záàâãéêíóôõúç]{2,}(?:[\s,.;!?].*|$))$/);
     if (capsThenLowerMatch) {
       const candidateCaps = capsThenLowerMatch[1].trim();
-      // Ensure candidateCaps has no lowercase letters
-      if (candidateCaps === candidateCaps.toUpperCase() && /[A-ZÀ-Ú]{2,}/.test(candidateCaps)) {
+      // Ensure candidateCaps has no lowercase letters and has at least 2 uppercase words
+      if (candidateCaps === candidateCaps.toUpperCase() && /[A-ZÀ-Ú]{2,}\s+[A-ZÀ-Ú0-9]{2,}/.test(candidateCaps)) {
         return {
           cueDesc: candidateCaps,
           trailingDialogue: capsThenLowerMatch[2].trim()
@@ -276,7 +327,6 @@ class TheatreImporter {
     const matches = [];
     let m;
     while ((m = cueRegex.exec(rawLine)) !== null) {
-      // Adjust start index if leading whitespace/bracket was consumed
       const fullMatch = m[0];
       const tokenMatch = fullMatch.match(/(CUE|DEIXA|Q)\s*\d+/i);
       const tokenOffset = tokenMatch ? fullMatch.indexOf(tokenMatch[0]) : 0;
@@ -342,24 +392,37 @@ class TheatreImporter {
       }
 
       const num = TheatreImporter.formatCueNum(cur.rawNum);
-      const finalName = namePart || `Deixa ${num}`;
+      let finalName = namePart || `Deixa ${num}`;
+      let quotedWordTrigger = '';
+
+      // If the cue name is purely a quoted trigger word/phrase (e.g. “ESTÁ”, “Meus Se.”, “Prof.”, “EU OUVI”), label it clearly
+      if (/^[“"'][^”"']+[”"']$/.test(finalName)) {
+        quotedWordTrigger = `Na palavra ${finalName}`;
+        finalName = `Deixa na fala ${finalName}`;
+      }
+
       const departments = TheatreImporter.inferDepartmentsFromCueText(finalName, notesPart, docBaseDepts);
 
       extractedCues.push({
         num,
         name: finalName,
         notes: notesPart,
+        quotedWordTrigger,
         inlineTarget: '', // filled below once full line dialogue is assembled
         departments
       });
     }
 
     const dialogueOnly = dialogueParts.join(' ').replace(/\s{2,}/g, ' ').trim();
-    if (dialogueOnly) {
-      extractedCues.forEach(c => {
+    extractedCues.forEach(c => {
+      if (c.quotedWordTrigger && dialogueOnly) {
+        c.inlineTarget = `${c.quotedWordTrigger} — ${dialogueOnly}`;
+      } else if (c.quotedWordTrigger) {
+        c.inlineTarget = c.quotedWordTrigger;
+      } else if (dialogueOnly) {
         c.inlineTarget = dialogueOnly;
-      });
-    }
+      }
+    });
 
     return {
       cues: extractedCues,
@@ -382,7 +445,6 @@ class TheatreImporter {
     const colonMatch = trimmed.match(/^([A-ZÀ-Ú0-9][A-ZÀ-Ú0-9\s\.\-]{0,28}?)(?:\s+de\s+cor|\s+ao\s+telefone|\s+com\s+[^:]{1,25})?:\s+(.+)$/i);
     if (colonMatch) {
       const candidate = colonMatch[1].trim();
-      // Only treat as speaker if uppercase or short name
       if (candidate === candidate.toUpperCase() || candidate.split(/\s+/).length <= 4) {
         return {
           speaker: candidate.toUpperCase(),
@@ -401,7 +463,6 @@ class TheatreImporter {
     }
 
     // 3. ALL-CAPS character name at start of line followed by normal mixed-case sentence
-    // e.g. "O PRIMEIRO Agora 'tamos por cima...", "O HOMEM DAS SA Exercícios nocturnos!", "A MULHER Já foram para baixo."
     const tokens = trimmed.replace(/\t+/g, ' ').split(/\s+/);
     if (tokens.length >= 2) {
       const upperWords = [];
@@ -410,7 +471,6 @@ class TheatreImporter {
       for (let i = 0; i < Math.min(tokens.length, 6); i++) {
         const tok = tokens[i];
         const cleanTok = tok.replace(/[,.:;!?]+$/, '');
-        // Check if token is strictly uppercase letters (allowing 1-letter 'O', 'A', 'E', 'X', 'Y', or 2+ uppercase letters)
         const isAllCapsWord = /^[A-ZÀ-ÚЄІЇ]+$/.test(cleanTok) && (
           cleanTok.length >= 2 ||
           ['O', 'A', 'E', 'X', 'Y', 'B', 'D', 'L'].includes(cleanTok)
@@ -424,13 +484,8 @@ class TheatreImporter {
         }
       }
 
-      // What if the first word of the speech starts with a capital letter (e.g. "Agora", "Já", "Exercícios", "Não")?
-      // It has lowercase letters, so the loop above stopped at `speechStartIdx = i`!
-      // What if the first word of the speech is a single capital letter like "É" or "À" or "O"?
-      // Let's handle when the last collected uppercase word is actually the start of the sentence (like "É" or "O" or "A" before a lowercase word)
       if (speechStartIdx > 0 && upperWords.length >= 1) {
         const nextTok = tokens[speechStartIdx] || '';
-        // If the last upperWord is 'É' or ('O'/'A'/'E' not followed by another uppercase noun), pop it back into the speech
         while (upperWords.length > 1 && /^(É|À|Ó)$/.test(upperWords[upperWords.length - 1])) {
           upperWords.pop();
           speechStartIdx--;
@@ -443,7 +498,6 @@ class TheatreImporter {
         const candidateSpeaker = upperWords.join(' ').replace(/[:\-–—]+$/, '').trim();
         const remainingSpeech = tokens.slice(speechStartIdx).join(' ').trim();
 
-        // Validate candidateSpeaker looks like a character name
         const isValidSpeaker = (
           candidateSpeaker.length >= 1 &&
           candidateSpeaker.length <= 28 &&
@@ -528,7 +582,65 @@ class TheatreImporter {
   }
 
   /**
-   * Parse a full Technical Script with embedded Cues, returning BOTH:
+   * Helper: Try to parse a single line as a structured Delimited Table Row
+   * (e.g. "Q1; Abertura de Sala; Luz,Som; 3º Sinal; Sala a 80%" or "1 | Blackout | Luz | Fim | Fade")
+   * Returns a cue object or null if the line is not a delimited table row.
+   */
+  static _tryParseDelimitedCueRow(line, idx, baseTs, docBaseDepts = ['Luz']) {
+    if (!line || (!line.includes('|') && !line.includes(';') && !line.includes('\t'))) {
+      return null;
+    }
+
+    // Distinguish real table delimiters (; or |, or \t when column 0 is strictly a bare Cue ID)
+    const isCueIdToken = (str) => /^(?:(?:cue|deixa|q)\s*[-#:]?\s*)?\d+(?:[.,]\d+)?[A-Za-z]?$/i.test(String(str || '').trim());
+    const parts = line.split(/[\t|;]/).map(p => p.trim());
+    if (parts.length < 2 || !isCueIdToken(parts[0]) || !parts[1]) {
+      return null;
+    }
+
+    // If parts[1] contains another explicit "CUE X" marker, it's a multi-cue script line, not a table row
+    if (/\b(?:CUE|DEIXA)\s*\d+/i.test(parts[1])) {
+      return null;
+    }
+
+    const num = TheatreImporter.formatCueNum(parts[0], idx + 1);
+    const name = parts[1] || `Deixa ${num}`;
+    let deptRaw = '';
+    let target = '';
+    let notes = '';
+
+    if (parts.length >= 3) {
+      if (TheatreImporter.isDepartmentString(parts[2])) {
+        deptRaw = parts[2];
+        target = parts[3] || '';
+        notes = parts[4] || '';
+      } else {
+        target = parts[2] || '';
+        notes = parts[3] || '';
+      }
+    }
+
+    const departments = deptRaw
+      ? TheatreImporter.normalizeDepartments(deptRaw, docBaseDepts)
+      : TheatreImporter.inferDepartmentsFromCueText(name, notes, docBaseDepts);
+
+    return {
+      id: `cue_${baseTs}_${idx}_${Math.random().toString(36).substr(2, 3)}`,
+      num,
+      name,
+      departments,
+      targetText: target,
+      notes,
+      status: 'pending',
+      standbyAt: 0,
+      firedAt: 0,
+      firedTimecode: '',
+      feedbacks: []
+    };
+  }
+
+  /**
+   * Parse a full Technical Script with embedded Cues (or hybrid table/script), returning BOTH:
    *  - script: Array of script items (with cueAnchor linked to the cue ID)
    *  - cues: Array of extracted cue objects
    */
@@ -545,10 +657,25 @@ class TheatreImporter {
     let currentSceneHeading = '';
 
     lines.forEach((line, idx) => {
-      // Skip standalone page numbers (e.g. "1", "2", ... "17")
+      // Skip standalone page numbers (e.g. "1", "2", ... "17") or table headers
       if (TheatreImporter._isStandalonePageNumber(line)) return;
+      if (/^(deixa|cue|q|q#|num|n[oº°]|id)\s*(\||;|\t)/i.test(line)) return;
 
-      // Extract any explicit cues on this line
+      // 0. Check if line is a Delimited Table Row (e.g. "Q1; Abertura; Luz,Som; 3º Sinal; Notas")
+      const tableCue = TheatreImporter._tryParseDelimitedCueRow(line, idx, baseTs, docBaseDepts);
+      if (tableCue) {
+        cues.push(tableCue);
+        script.push({
+          id: `sc_${baseTs}_${idx}`,
+          type: 'direction',
+          speaker: '',
+          text: `${tableCue.num} — ${tableCue.name}${tableCue.targetText ? ' [' + tableCue.targetText + ']' : ''}`,
+          cueAnchor: tableCue.id
+        });
+        return;
+      }
+
+      // 1. Extract any explicit cues on this line (e.g. "CUE 0.5 - BO", "O SEGUNDO Sã'eles! CUE 6 – FLASH...", multiple cues)
       const { cues: lineCues, dialogueOnly } = TheatreImporter.extractExplicitCuesFromLine(line, docBaseDepts);
 
       const createdCueIds = [];
@@ -565,7 +692,10 @@ class TheatreImporter {
             } else if (currentSceneHeading) {
               targetText = `Cena: ${currentSceneHeading}`;
             }
+          } else if (lc.quotedWordTrigger && !dialogueOnly && lastContextTrigger) {
+            targetText = `${lc.quotedWordTrigger} — ${lastContextTrigger}`;
           }
+
           if (targetText.length > 110) {
             targetText = targetText.slice(0, 107) + '...';
           }
@@ -604,7 +734,7 @@ class TheatreImporter {
       const effectiveLine = dialogueOnly || line;
       const primaryCueAnchor = createdCueIds[0] || null;
 
-      // 1. Explicit Heading (ACTO, CENA, QUADRO, or short ALL-CAPS scene title like "A COMUNIDADE DO POVO", "LILI MARLENE", "ENTRADA")
+      // 2. Explicit Heading (ACTO, CENA, QUADRO, or short ALL-CAPS scene title like "A COMUNIDADE DO POVO", "LILI MARLENE", "ENTRADA")
       const isShortAllCapsHeading = (
         effectiveLine.length >= 3 &&
         effectiveLine.length <= 55 &&
@@ -626,7 +756,7 @@ class TheatreImporter {
         return;
       }
 
-      // 2. Stage Direction ([rubrica...] ou (didascália...))
+      // 3. Stage Direction ([rubrica...] ou (didascália...))
       if ((effectiveLine.startsWith('[') && effectiveLine.endsWith(']')) || (effectiveLine.startsWith('(') && effectiveLine.endsWith(')'))) {
         const cleanDir = effectiveLine.replace(/^[\[\(]/, '').replace(/[\]\)]$/, '').trim();
         lastContextTrigger = `[${cleanDir}]`;
@@ -640,7 +770,7 @@ class TheatreImporter {
         return;
       }
 
-      // 3. Dialogue (with colon, dash, or ALL-CAPS character prefix)
+      // 4. Dialogue (with colon, dash, or ALL-CAPS character prefix)
       const { speaker, text } = TheatreImporter._parseDialogueSpeaker(effectiveLine);
       lastContextTrigger = speaker ? `${speaker}: ${text}` : text;
 
@@ -705,7 +835,6 @@ class TheatreImporter {
   static _parseCuesFromTableRows(rows) {
     if (!rows || rows.length < 1) return [];
 
-    // Filter out completely blank rows
     const nonEmptyRows = rows.filter(r => Array.isArray(r) && r.some(c => String(c || '').trim() !== ''));
     if (nonEmptyRows.length === 0) return [];
 
@@ -787,14 +916,12 @@ class TheatreImporter {
       const formattedNum = TheatreImporter.formatCueNum(num, cues.length + 1);
       const finalName = name || `Deixa ${formattedNum}`;
 
-      // Smart department resolution: if no explicit dept column or dept column doesn't look like a department, infer from text
       let departments;
       if (hasHeaders && idxDept !== -1 && dept) {
         departments = TheatreImporter.normalizeDepartments(dept);
       } else if (!hasHeaders && dept && TheatreImporter.isDepartmentString(dept)) {
         departments = TheatreImporter.normalizeDepartments(dept);
       } else {
-        // If column 2 was not a department in a headerless table, shift it to target/notes
         if (!hasHeaders && dept && !target) {
           target = dept;
         }
@@ -830,117 +957,25 @@ class TheatreImporter {
   static parseCuesFromText(rawText) {
     if (!rawText || typeof rawText !== 'string') return [];
 
+    // First, run the unified Script + Table + Explicit Cue parser
+    const { cues: structuredCues } = TheatreImporter.parseScriptWithCues(rawText);
+    if (structuredCues.length > 0) {
+      return structuredCues;
+    }
+
+    // Fallback for documents without explicit "CUE"/"DEIXA"/"Q" keywords or delimited table columns
+    // (e.g. numbered lists "1 - Luz de Sala", "2.5 - Blackout" or short manual lists)
     const docBaseDepts = TheatreImporter.detectDocumentBaseDepartments(rawText);
     const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) return [];
-
-    // Helper: check if a line is a structured delimited table row (Col 0 is a valid Cue ID like "Q1", "CUE 1.5", "1", "2A")
-    const isCueIdToken = (str) => /^(?:(?:cue|deixa|q)\s*[-#:]?\s*)?\d+(?:[.,]\d+)?[A-Za-z]?$/i.test(String(str || '').trim());
-
-    // First pass: check how many explicit CUE/DEIXA/Q markers or structured table rows exist in the document
-    let explicitCueLineCount = 0;
-    let delimitedTableRowCount = 0;
-
-    for (const line of lines) {
-      if (TheatreImporter._isStandalonePageNumber(line)) continue;
-      if (/^(deixa|cue|q|num|n[oº°])\s*(\||;|\t)/i.test(line)) continue;
-
-      if (line.includes('|') || line.includes(';') || line.includes('\t')) {
-        const parts = line.split(/[\t|;]/).map(p => p.trim()).filter(Boolean);
-        if (parts.length >= 2 && isCueIdToken(parts[0])) {
-          delimitedTableRowCount++;
-          continue;
-        }
-      }
-
-      const { cues: lineCues } = TheatreImporter.extractExplicitCuesFromLine(line, docBaseDepts);
-      if (lineCues.length > 0) {
-        explicitCueLineCount++;
-      }
-    }
-
-    // MODE A: Document has explicit CUE / DEIXA / Q markers (e.g. "EDELWEISS – GUIÃO DE LUZ" or technical cue list)
-    // and is not primarily a semicolon/pipe/tab table with numeric IDs in column 0.
-    if (explicitCueLineCount > 0 && explicitCueLineCount >= delimitedTableRowCount) {
-      return TheatreImporter.parseScriptWithCues(rawText).cues;
-    }
-
-    // MODE B: Delimited Table / Numbered Cue Sheet / Manual List
     const cues = [];
     const baseTs = Date.now();
-    const hasStructuredRows = (delimitedTableRowCount > 0 || explicitCueLineCount > 0);
 
     lines.forEach((line, idx) => {
-      // Ignore standalone page numbers or table header lines
       if (TheatreImporter._isStandalonePageNumber(line)) return;
       if (/^(deixa|cue|q|q#|num|n[oº°]|id)\s*(\||;|\t|:)/i.test(line)) return;
 
-      // 1. Check if line is a Delimited Table Row (Tab, Pipe, or Semicolon where parts[0] is a Cue ID)
-      if (line.includes('\t') || line.includes('|') || line.includes(';')) {
-        const parts = line.split(/[\t|;]/).map(p => p.trim());
-        if (parts.length >= 2 && isCueIdToken(parts[0]) && parts[1]) {
-          const num = TheatreImporter.formatCueNum(parts[0], cues.length + 1);
-          const name = parts[1] || `Deixa ${num}`;
-          let deptRaw = '';
-          let target = '';
-          let notes = '';
-
-          if (parts.length >= 3) {
-            if (TheatreImporter.isDepartmentString(parts[2])) {
-              deptRaw = parts[2];
-              target = parts[3] || '';
-              notes = parts[4] || '';
-            } else {
-              // 3-column table without department column: Col 0 = Q#, Col 1 = Name, Col 2 = Target/Trigger, Col 3 = Notes
-              target = parts[2] || '';
-              notes = parts[3] || '';
-            }
-          }
-
-          const departments = deptRaw
-            ? TheatreImporter.normalizeDepartments(deptRaw, docBaseDepts)
-            : TheatreImporter.inferDepartmentsFromCueText(name, notes, docBaseDepts);
-
-          cues.push({
-            id: `cue_${baseTs}_${idx}_${Math.random().toString(36).substr(2, 3)}`,
-            num,
-            name,
-            departments,
-            targetText: target,
-            notes,
-            status: 'pending',
-            standbyAt: 0,
-            firedAt: 0,
-            firedTimecode: '',
-            feedbacks: []
-          });
-          return;
-        }
-      }
-
-      // 2. Check if line has explicit CUE / DEIXA / Q markers
-      const { cues: inlineCues } = TheatreImporter.extractExplicitCuesFromLine(line, docBaseDepts);
-      if (inlineCues.length > 0) {
-        inlineCues.forEach((ic, cIdx) => {
-          cues.push({
-            id: `cue_${baseTs}_${idx}_${cIdx}_${Math.random().toString(36).substr(2, 3)}`,
-            num: ic.num,
-            name: ic.name,
-            departments: ic.departments,
-            targetText: ic.inlineTarget || '',
-            notes: ic.notes || '',
-            status: 'pending',
-            standbyAt: 0,
-            firedAt: 0,
-            firedTimecode: '',
-            feedbacks: []
-          });
-        });
-        return;
-      }
-
-      // 3. Check Format "1: Nome [Luz, Som] - Gatilho (Notas)" or "1.5 - Blackout"
-      const numberedMatch = line.match(/^((?:Q|CUE|DEIXA)?\s*\d+(?:[.,]\d+)?[A-Za-z]?)\s*[:\-–—]\s*([^\[\(\-]+)(?:\[(.*?)\])?(?:\s*[-–—]\s*([^\(\)]+))?(?:\s*\((.*?)\))?$/i);
+      // Format "1: Nome [Luz, Som] - Gatilho (Notas)" or "1.5 - Blackout"
+      const numberedMatch = line.match(/^(\d+(?:[.,]\d+)?[A-Za-z]?)\s*[:\-–—]\s*([^\[\(\-]+)(?:\[(.*?)\])?(?:\s*[-–—]\s*([^\(\)]+))?(?:\s*\((.*?)\))?$/i);
       if (numberedMatch) {
         const num = TheatreImporter.formatCueNum(numberedMatch[1], cues.length + 1);
         const name = numberedMatch[2].trim();
@@ -967,9 +1002,8 @@ class TheatreImporter {
         return;
       }
 
-      // 4. Fallback ONLY for short manual lists when the document didn't have structured rows
-      // (Prevents turning 900 lines of prose/dialogue into 900 fake cues!)
-      if (!hasStructuredRows && lines.length <= 80 && line.length <= 120) {
+      // Short manual list fallback (only if document is short, <= 80 lines)
+      if (lines.length <= 80 && line.length <= 120) {
         const num = `Q${cues.length + 1}`;
         cues.push({
           id: `cue_${baseTs}_${idx}_${Math.random().toString(36).substr(2, 3)}`,
