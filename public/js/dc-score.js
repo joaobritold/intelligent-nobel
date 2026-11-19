@@ -212,8 +212,8 @@
           <div class="dcsr-cue-sub" id="dcsr-cue-last"></div>
         </div>
         <div class="dcsr-cue-actions">
-          <button type="button" class="dcsr-btn dcsr-standby" data-act="standby" title="Standby da próxima deixa">STANDBY</button>
-          <button type="button" class="dcsr-btn dcsr-go" data-act="go" title="GO (Espaço)">GO</button>
+          <button type="button" class="dcsr-btn dcsr-standby" data-act="standby" title="Standby da próxima deixa (S)">STANDBY (S)</button>
+          <button type="button" class="dcsr-btn dcsr-go" data-act="go" title="GO (Espaço)">GO (Espaço)</button>
         </div>
       </footer>
 
@@ -412,7 +412,7 @@
       case 'm': case 'M': setMarkMode(!markMode); break;
       case 'n': case 'N': cycleTheme(); break;
       case 'f': case 'F': toggleFullscreen(); break;
-      case 'b': case 'B': callDc('triggerStandbyAction'); break;
+      case 'b': case 'B': case 's': case 'S': callDc('triggerStandbyAction'); break;
       default: handled = false;
     }
     // Espaço NÃO é intercetado: continua a ser o GO global da Mesa DC

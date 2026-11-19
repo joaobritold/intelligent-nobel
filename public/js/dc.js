@@ -598,9 +598,9 @@ document.querySelectorAll('.dc-tab-btn').forEach(btn => {
   });
 });
 
-// ─── Keyboard Shortcut for GO (Spacebar) ─────────────────────────────
+// ─── Keyboard Shortcut for GO (Spacebar) & STANDBY (S) ────────────────
 window.addEventListener('keydown', (e) => {
-  // If user is typing in any text box or modal, ignore spacebar shortcut
+  // If user is typing in any text box or modal, ignore shortcuts
   const activeEl = document.activeElement;
   const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
   if (isInput) return;
@@ -608,6 +608,9 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'Space' || e.key === ' ') {
     e.preventDefault();
     triggerGoAction();
+  } else if (e.key === 's' || e.key === 'S') {
+    e.preventDefault();
+    triggerStandbyAction();
   }
 });
 

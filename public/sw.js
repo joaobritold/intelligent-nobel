@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stagetimer-pfp-v2.20';
+const CACHE_NAME = 'stagetimer-pfp-v2.21';
 const ASSETS = [
   './',
   './index.html',
