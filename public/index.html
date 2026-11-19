@@ -65,7 +65,27 @@
   <meta property="og:image" content="https://joaobritold.github.io/intelligent-nobel/public/icon-512.png">
   <link rel="canonical" href="https://joaobritold.github.io/intelligent-nobel/public/index.html">
   <title>ShowFlow App — Controlo de Palco & Régies em Tempo Real</title>
-  <link rel="stylesheet" href="css/common.css?v=2.15">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "ShowFlow App (StageTimer PFP)",
+    "alternateName": ["ShowFlow", "StageTimer PFP", "ShowFlow Portal"],
+    "url": "https://joaobritold.github.io/intelligent-nobel/public/index.html",
+    "inLanguage": "pt-PT",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web, iOS, Android, Windows, macOS, watchOS",
+    "description": "Sistema profissional de controlo de espetáculo, timers de palco em tempo real, direção de cena (cues STANDBY e GO), alinhamento (lineup) e sincronização de régies FOH e palco para concertos, festivais e teatro.",
+    "featureList": [
+      "Timers de palco e countdown sincronizados em tempo real",
+      "Direção de Cena (Modo Jess) com disparo de deixas técnicas STANDBY e GO e guião interativo",
+      "Postos Técnicos (Cue Station) isolados por departamento: Som, Luz, Vídeo, Maquinaria e Coxias",
+      "Comunicação entre Régies (FOH, Palco e Técnico Mobile) e Super Régie Master multi-palco",
+      "Modo Lista (Lineup e Horários) e suporte para Apple Watch"
+    ]
+  }
+  </script>
+  <link rel="stylesheet" href="css/common.css?v=2.16">
   <style>
     body {
       display: flex;
@@ -327,7 +347,7 @@
     <div id="view-portal">
       <!-- Portal Header -->
       <div class="hub-header">
-        <button type="button" class="hub-logo-btn" id="portal-secret-clock-btn" style="background: none; border: none; cursor: padding: 0; margin-bottom: 8px; line-height: 1; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation;" title="Acesso Master"><img src="icon.svg?v=2.15" alt="ShowFlow Logo" width="72" height="72" style="filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6)); border-radius: 18px; display: inline-block;"></button>
+        <button type="button" class="hub-logo-btn" id="portal-secret-clock-btn" style="background: none; border: none; cursor: padding: 0; margin-bottom: 8px; line-height: 1; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation;" title="Acesso Master"><img src="icon.svg?v=2.16" alt="ShowFlow Logo" width="72" height="72" style="filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6)); border-radius: 18px; display: inline-block;"></button>
         <h1 class="hub-title">ShowFlow Portal</h1>
         <p class="hub-sub">Selecione o seu Evento para aceder aos palcos</p>
       </div>
@@ -374,9 +394,17 @@
         <div id="portal-events-list" class="events-list-box" style="max-height: 380px;"></div>
       </div>
 
+      <!-- Resumo Descritivo Semântico (SEO & Contexto da Aplicação) -->
+      <section aria-label="Sobre o ShowFlow App" style="margin-top: 14px; padding: 12px 16px; border-radius: 10px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); text-align: center;">
+        <h2 style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); margin: 0 0 4px 0; letter-spacing: 0.02em;">ShowFlow App — Sistema de Controlo de Palco, Direção de Cena &amp; Régies</h2>
+        <p style="font-size: 0.7rem; color: var(--text-muted); line-height: 1.45; margin: 0;">
+          Plataforma em tempo real para produção de concertos, festivais e teatro: <strong>Timers de Palco</strong>, <strong>Configurador &amp; Operador Mobile</strong>, <strong>Alinhamento (Lineup)</strong>, <strong>Comunicação de Régies (FOH &amp; Palco)</strong>, <strong>Direção de Cena (Cues STANDBY / GO)</strong> e <strong>Postos Técnicos</strong> de Som, Luz, Vídeo, Maquinaria e Coxias.
+        </p>
+      </section>
+
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 10px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        ShowFlow App • <span style="background: rgba(56, 139, 253, 0.15); color: #79c0ff; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(56, 139, 253, 0.3); font-weight: 700;">v2.15</span>
+        ShowFlow App • <span style="background: rgba(56, 139, 253, 0.15); color: #79c0ff; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(56, 139, 253, 0.3); font-weight: 700;">v2.16</span>
       </footer>
     </div>
 
@@ -512,7 +540,7 @@
 
       <!-- Header Principal -->
       <div class="hub-header" style="margin-bottom: 16px;">
-        <button type="button" class="hub-logo-btn" id="hub-secret-clock-btn" style="background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 8px; line-height: 1; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation;" title="Acesso Master"><img src="icon.svg?v=2.15" alt="ShowFlow Logo" width="72" height="72" style="filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6)); border-radius: 18px; display: inline-block;"></button>
+        <button type="button" class="hub-logo-btn" id="hub-secret-clock-btn" style="background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 8px; line-height: 1; -webkit-tap-highlight-color: transparent; outline: none; touch-action: manipulation;" title="Acesso Master"><img src="icon.svg?v=2.16" alt="ShowFlow Logo" width="72" height="72" style="filter: drop-shadow(0 4px 14px rgba(0,0,0,0.6)); border-radius: 18px; display: inline-block;"></button>
         <h1 class="hub-title" id="hub-title-display">ShowFlow</h1>
         <p class="hub-sub">Sincronização em Tempo Real para Eventos & Palcos</p>
       </div>
@@ -682,16 +710,16 @@
 
       <!-- Version Footer -->
       <footer style="text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); opacity: 0.75;">
-        ShowFlow App • <span style="background: rgba(56, 139, 253, 0.15); color: #79c0ff; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(56, 139, 253, 0.3); font-weight: 700;">v2.15</span>
+        ShowFlow App • <span style="background: rgba(56, 139, 253, 0.15); color: #79c0ff; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(56, 139, 253, 0.3); font-weight: 700;">v2.16</span>
       </footer>
     </div>
   </div>
 
-  <script src="js/auth.js?v=2.15"></script>
-  <script src="js/st-icons.js?v=2.15"></script>
-  <script src="js/mqtt.min.js?v=2.15"></script>
-  <script src="js/pwa.js?v=2.15"></script>
-  <script src="js/local-sync.js?v=2.15"></script>
+  <script src="js/auth.js?v=2.16"></script>
+  <script src="js/st-icons.js?v=2.16"></script>
+  <script src="js/mqtt.min.js?v=2.16"></script>
+  <script src="js/pwa.js?v=2.16"></script>
+  <script src="js/local-sync.js?v=2.16"></script>
   <script>
     const hubClient = new StageTimerClient({
       role: 'viewer',
@@ -1731,6 +1759,6 @@
 
     renderView();
   </script>
-<script src="js/view-mode.js?v=2.15"></script>
+<script src="js/view-mode.js?v=2.16"></script>
 </body>
 </html>
