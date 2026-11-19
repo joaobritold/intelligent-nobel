@@ -178,6 +178,7 @@ const $scriptSyncPill = document.getElementById('cs-script-sync-pill');
 let lastCsScriptSig = '';
 let lastCsScriptContentSig = '';
 let lastCsScriptActiveIdx = -1;
+let lastLiveScrollSyncTs = 0;
 
 // Modal Elements
 const $deptModal = document.getElementById('cs-dept-modal');
@@ -1303,6 +1304,7 @@ function renderScriptFeed() {
 
   if (contentSig === lastCsScriptContentSig && rows.length === script.length && script.length > 0) {
     // Modo Seguidor DC Ultra-Fluido: o guião já está desenhado, atualiza apenas a linha ativa e auto-scroll suave
+    const scrollRatio = typeof state?.theatre?.scriptScrollRatio === 'number' ? state.theatre.scriptScrollRatio : -1;
     if (activeIdx !== lastCsScriptActiveIdx) {
       lastCsScriptActiveIdx = activeIdx;
       rows.forEach((row, idx) => {
@@ -1319,7 +1321,7 @@ function renderScriptFeed() {
             b.textContent = '● EM CENA (DC)';
             metaBox.prepend(b);
           }
-          if (!isUserManualScrollingCs) {
+          if (!isUserManualScrollingCs && (Date.now() - lastLiveScrollSyncTs > 350)) {
             row.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         } else if (row.classList.contains('active')) {
@@ -1329,6 +1331,11 @@ function renderScriptFeed() {
           row.querySelector('.cs-dc-live-badge')?.remove();
         }
       });
+    } else if (!isUserManualScrollingCs && scrollRatio >= 0 && (Date.now() - lastLiveScrollSyncTs > 350)) {
+      const maxScroll = Math.max(0, $scriptFeed.scrollHeight - $scriptFeed.clientHeight);
+      if (maxScroll > 0 && Math.abs($scriptFeed.scrollTop - (scrollRatio * maxScroll)) > 24) {
+        $scriptFeed.scrollTop = scrollRatio * maxScroll;
+      }
     }
     return;
   }
@@ -1467,44 +1474,87 @@ function restoreFollowingDcMode() {
   }
 }
 
-// ─── Inicialização do Leitor Fiel (PDF / Word da Foto 2) no Posto Técnico ───
+// ─── Inicialização do Leitor Fiel (PDF / Word da Foto 2) e Sincronização de Scroll DC ───
 const $csScoreSlot = document.getElementById('cs-score-embed-slot');
 let isScoreReaderMountedOnCs = false;
 
-async function tryMountScoreReader() {
-  if (!$csScoreSlot || !window.DCScoreReader) return;
-  if (!isScoreReaderMountedOnCs) {
-    isScoreReaderMountedOnCs = true;
-    try {
-      await window.DCScoreReader.mount($csScoreSlot);
-      $csScoreSlot.style.display = 'block';
-      if ($scriptFeed) $scriptFeed.style.display = 'none';
-    } catch (err) {
-      console.warn('[cue-station] DCScoreReader mount fallback:', err);
-      $csScoreSlot.style.display = 'none';
-      if ($scriptFeed) $scriptFeed.style.display = 'block';
+function switchCsToTextFeed() {
+  if (isScoreReaderMountedOnCs) {
+    isScoreReaderMountedOnCs = false;
+    if (window.DCScoreReader && typeof window.DCScoreReader.unmount === 'function') {
+      try { window.DCScoreReader.unmount(); } catch (_) {}
     }
+  }
+  if ($csScoreSlot) $csScoreSlot.style.display = 'none';
+  if ($scriptFeed) $scriptFeed.style.display = 'block';
+}
+
+async function tryMountScoreReader(forceMount = false) {
+  if (!$csScoreSlot || !window.DCScoreReader) {
+    switchCsToTextFeed();
+    return;
+  }
+  const hasScriptText = Array.isArray(state?.theatre?.script) && state.theatre.script.length > 0;
+  let hasDoc = false;
+  if (typeof window.DCScoreReader.hasStoredDoc === 'function') {
+    hasDoc = await window.DCScoreReader.hasStoredDoc(client.cleanRoom);
+  }
+  // Se não houver documento PDF/Word original guardado, ou se houver texto de guião normal sem pedido explícito de PDF, mostra o feed de texto sincronizado
+  if (!hasDoc && !forceMount) {
+    switchCsToTextFeed();
+    return;
+  }
+  if (!forceMount && hasScriptText && !isScoreReaderMountedOnCs) {
+    // Por defeito mostra o texto sincronizado que acompanha a DC
+    switchCsToTextFeed();
+    return;
+  }
+
+  try {
+    isScoreReaderMountedOnCs = true;
+    await window.DCScoreReader.mount($csScoreSlot);
+    if (typeof window.DCScoreReader.hasDoc === 'function' && !window.DCScoreReader.hasDoc()) {
+      switchCsToTextFeed();
+      return;
+    }
+    $csScoreSlot.style.display = 'block';
+    if ($scriptFeed) $scriptFeed.style.display = 'none';
+  } catch (err) {
+    console.warn('[cue-station] DCScoreReader mount fallback:', err);
+    switchCsToTextFeed();
   }
 }
 
 client.on('theatre-doc-sync', async () => {
   if (window.DCScoreReader && typeof window.DCScoreReader.loadForRoom === 'function') {
     await window.DCScoreReader.loadForRoom(client.cleanRoom);
-    tryMountScoreReader();
+    tryMountScoreReader(true);
   }
 });
 
 client.on('theatre-scroll-sync', (scrollData) => {
   if (!scrollData) return;
+  lastLiveScrollSyncTs = Date.now();
   if (isUserManualScrollingCs) return; // Se o técnico está deliberadamente a tocar/ler noutro sítio, respeita
 
-  // Se o leitor fiel de PDF da DC estiver ativo, aplica diretamente o espelho no documento
-  if (window.DCScoreReader && typeof window.DCScoreReader.applyExternalScoreScroll === 'function' && isScoreReaderMountedOnCs) {
-    window.DCScoreReader.applyExternalScoreScroll(scrollData);
+  // Se a DC está a rolar o leitor fiel de PDF/Word original (isScoreDoc: true)
+  if (scrollData.isScoreDoc && window.DCScoreReader && typeof window.DCScoreReader.applyExternalScoreScroll === 'function') {
+    if (!isScoreReaderMountedOnCs) {
+      tryMountScoreReader(true).then(() => {
+        window.DCScoreReader.applyExternalScoreScroll(scrollData);
+      });
+    } else {
+      window.DCScoreReader.applyExternalScoreScroll(scrollData);
+    }
     if (typeof scrollData.pageIdx === 'number' && $scriptPosPill) {
       $scriptPosPill.textContent = `Pág ${scrollData.pageIdx + 1}`;
     }
     return;
+  }
+
+  // Se a DC está a rolar o Guião de Texto normal (dc-script-feed), garante que o feed de texto está visível e acompanha em tempo real
+  if (isScoreReaderMountedOnCs && !scrollData.isScoreDoc) {
+    switchCsToTextFeed();
   }
 
   if (!$scriptFeed) return;
@@ -1548,10 +1598,11 @@ client.on('theatre-scroll-sync', (scrollData) => {
     const maxScroll = Math.max(0, $scriptFeed.scrollHeight - $scriptFeed.clientHeight);
     if (maxScroll > 0) {
       const targetScroll = scrollRatio * maxScroll;
-      // Scroll direto instantâneo sem delay para acompanhar a 30-60fps
       $scriptFeed.scrollTop = targetScroll;
+      return;
     }
-  } else if (activeIdx >= 0) {
+  }
+  if (activeIdx >= 0) {
     const row = $scriptFeed.querySelector(`.cs-script-row[data-script-idx="${activeIdx}"]`);
     if (row) {
       row.scrollIntoView({ behavior: 'smooth', block: 'center' });

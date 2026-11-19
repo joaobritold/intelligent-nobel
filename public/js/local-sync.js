@@ -422,6 +422,9 @@ class UniversalSyncClient {
               if (typeof msg.scroll.activeIdx === 'number') {
                 this._state.theatre.scriptActiveIndex = msg.scroll.activeIdx;
               }
+              if (typeof msg.scroll.scrollRatio === 'number') {
+                this._state.theatre.scriptScrollRatio = msg.scroll.scrollRatio;
+              }
             }
             this._emit('theatre-scroll-sync', msg.scroll);
           } else if (msg.type === 'theatre-doc-sync' && msg.doc) {
@@ -687,6 +690,9 @@ class UniversalSyncClient {
         if (this._state && this._state.theatre) {
           if (typeof msg.scroll.activeIdx === 'number') {
             this._state.theatre.scriptActiveIndex = msg.scroll.activeIdx;
+          }
+          if (typeof msg.scroll.scrollRatio === 'number') {
+            this._state.theatre.scriptScrollRatio = msg.scroll.scrollRatio;
           }
         }
         this._emit('theatre-scroll-sync', msg.scroll);
@@ -5369,13 +5375,16 @@ class UniversalSyncClient {
     this._commitStateChange();
   }
 
-  setTheatreScriptIndex(index) {
+  setTheatreScriptIndex(index, scrollRatio) {
     if (!this._state) return;
     this._ensureTheatreStructure();
     const th = this._state.theatre;
     const maxIdx = Math.max(0, (th.script || []).length - 1);
     const cleanIdx = Math.max(0, Math.min(maxIdx, Number(index) || 0));
     th.scriptActiveIndex = cleanIdx;
+    if (typeof scrollRatio === 'number' && !isNaN(scrollRatio)) {
+      th.scriptScrollRatio = Number(scrollRatio.toFixed(4));
+    }
     this._dispatchImmediateTelegramEvent();
     this._commitStateChange();
   }
@@ -5386,7 +5395,10 @@ class UniversalSyncClient {
       activeIdx: typeof scrollData.activeIdx === 'number' ? scrollData.activeIdx : 0,
       scrollRatio: typeof scrollData.scrollRatio === 'number' ? scrollData.scrollRatio : 0,
       relativeOffset: typeof scrollData.relativeOffset === 'number' ? scrollData.relativeOffset : 0,
+      guideY: typeof scrollData.guideY === 'number' ? scrollData.guideY : 0.35,
+      pageIdx: typeof scrollData.pageIdx === 'number' ? scrollData.pageIdx : undefined,
       isAuto: Boolean(scrollData.isAuto),
+      isScoreDoc: Boolean(scrollData.isScoreDoc),
       ts: Date.now()
     };
 

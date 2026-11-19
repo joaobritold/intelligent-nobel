@@ -1031,12 +1031,22 @@
     });
   }
 
+  async function hasStoredDoc(room) {
+    try {
+      const r = room || getRoom();
+      const d = await dbGet('docs', r);
+      return Boolean(d && d.data);
+    } catch (_) {
+      return false;
+    }
+  }
+
   function applyExternalScoreScroll(data) {
     if (!stage || !pages.length || !data) return;
     isProgrammaticScoreScroll = true;
     if (typeof data.guideY === 'number' && Math.abs(prefs.guideY - data.guideY) > 0.01) {
       prefs.guideY = data.guideY;
-      updateGuide();
+      positionGuide();
     }
     if (typeof data.scrollRatio === 'number' && data.scrollRatio >= 0) {
       const maxS = Math.max(0, stage.scrollHeight - stage.clientHeight);
@@ -2065,6 +2075,8 @@
     mount,
     unmount,
     isOpen: () => isOpen,
+    hasDoc: () => Boolean(doc && pages.length > 0),
+    hasStoredDoc,
     loadForRoom,
     broadcastCurrentDoc,
     applyExternalScoreScroll,

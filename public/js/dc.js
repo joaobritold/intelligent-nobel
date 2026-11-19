@@ -831,9 +831,15 @@ function onDcScriptFeedScroll() {
   // Throttled state commit para sincronizar persistência de estado com rede
   clearTimeout(scrollCommitTimer);
   scrollCommitTimer = setTimeout(() => {
+    const data = getScriptFeedScrollData();
+    if (data && state?.theatre) {
+      state.theatre.scriptScrollRatio = data.scrollRatio;
+    }
     if (lastCalculatedScrollIdx !== -1 && lastCalculatedScrollIdx !== lastCommittedScrollIdx) {
       lastCommittedScrollIdx = lastCalculatedScrollIdx;
-      client.setTheatreScriptIndex(lastCommittedScrollIdx);
+      client.setTheatreScriptIndex(lastCommittedScrollIdx, data ? data.scrollRatio : undefined);
+    } else if (data && typeof client.setTheatreScriptIndex === 'function') {
+      client.setTheatreScriptIndex(data.activeIdx, data.scrollRatio);
     }
   }, 200);
 }
@@ -964,9 +970,15 @@ function highlightScriptForCue(cueId) {
   $scriptFeed.querySelectorAll('.dc-script-item').forEach(el => el.classList.remove('is-current-speaking'));
   scriptItem.classList.add('is-current-speaking');
 
-  if ($toggleAutoscroll && $toggleAutoscroll.checked) {
+  if (!$toggleAutoscroll || $toggleAutoscroll.checked) {
+    isProgrammaticScroll = true;
     scriptItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => {
+      isProgrammaticScroll = false;
+      emitLiveScrollStream(true);
+    }, 350);
   }
+  emitLiveScrollStream(true);
 }
 
 // ─── Render Functions ────────────────────────────────────────────────
@@ -2286,6 +2298,7 @@ if ($tabScriptText && $tabScriptScore) {
     if (window.DCScoreReader && typeof window.DCScoreReader.unmount === 'function') {
       window.DCScoreReader.unmount();
     }
+    setTimeout(() => emitLiveScrollStream(true), 60);
   });
 
   $tabScriptScore.addEventListener('click', () => {
@@ -2549,11 +2562,13 @@ if ($scriptImportConfirm) {
 if ($scriptBtnPrev) {
   $scriptBtnPrev.addEventListener('click', () => {
     client.advanceTheatreScript(-1);
+    setTimeout(() => emitLiveScrollStream(true), 80);
   });
 }
 if ($scriptBtnNext) {
   $scriptBtnNext.addEventListener('click', () => {
     client.advanceTheatreScript(1);
+    setTimeout(() => emitLiveScrollStream(true), 80);
   });
 }
 
@@ -2564,6 +2579,7 @@ document.addEventListener('click', (e) => {
     const idx = parseInt(item.dataset.scriptIdx, 10);
     if (!isNaN(idx)) {
       client.setTheatreScriptIndex(idx);
+      setTimeout(() => emitLiveScrollStream(true), 80);
     }
   }
 });
@@ -2578,9 +2594,11 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowDown' || e.key === 'PageDown') {
     e.preventDefault();
     client.advanceTheatreScript(1);
+    setTimeout(() => emitLiveScrollStream(true), 80);
   } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
     e.preventDefault();
     client.advanceTheatreScript(-1);
+    setTimeout(() => emitLiveScrollStream(true), 80);
   }
 });
 
