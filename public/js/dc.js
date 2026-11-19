@@ -766,23 +766,24 @@ function getScriptFeedScrollData() {
     topItemFraction: Number(topItemFraction.toFixed(4)),
     scrollRatio: Number(scrollRatio.toFixed(4)),
     fontSize: scriptFontSize,
-    isAuto: isTeleprompterScrolling
+    isAuto: isTeleprompterScrolling,
+    isScoreDoc: false
   };
 }
 
+let trailingStreamTimer = null;
 function emitLiveScrollStream(force = false) {
-  const now = Date.now();
-  // Limita o stream a ~35ms (aprox. 28fps) para não saturar a rede mantendo ultra-fluidez
-  if (!force && (now - lastStreamEmitTime < 35)) {
-    if (!streamAnimationPending) {
-      streamAnimationPending = true;
-      requestAnimationFrame(() => {
-        streamAnimationPending = false;
-        emitLiveScrollStream(false);
-      });
-    }
+  if (window.DCScoreReader && typeof window.DCScoreReader.isOpen === 'function' && window.DCScoreReader.isOpen()) {
     return;
   }
+  const now = Date.now();
+  // Limita o stream a ~55ms para suavidade sem saturar MQTT, com trailing flush ao parar
+  if (!force && (now - lastStreamEmitTime < 55)) {
+    clearTimeout(trailingStreamTimer);
+    trailingStreamTimer = setTimeout(() => emitLiveScrollStream(true), 90);
+    return;
+  }
+  clearTimeout(trailingStreamTimer);
   lastStreamEmitTime = now;
 
   const data = getScriptFeedScrollData();
@@ -790,6 +791,12 @@ function emitLiveScrollStream(force = false) {
     client.streamTheatreScriptScroll(data);
   }
 }
+
+window.addEventListener('dcsr-request-sync-state', () => {
+  if (!window.DCScoreReader || !window.DCScoreReader.isOpen()) {
+    emitLiveScrollStream(true);
+  }
+});
 
 function calculateActiveScriptIndexFromScroll() {
   const scroller = getActiveScriptScroller();
@@ -2313,6 +2320,9 @@ document.querySelectorAll('[data-cockpit-layout]').forEach(btn => {
     if (grid) {
       grid.classList.remove('layout-split', 'layout-script', 'layout-cues');
       grid.classList.add(`layout-${layout}`);
+      if (window.DCScoreReader && window.DCScoreReader.isOpen()) {
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 40);
+      }
     }
   });
 });
@@ -2323,32 +2333,43 @@ const $scriptScoreContainer = document.getElementById('dc-script-score-container
 const $scriptTools = document.getElementById('dc-script-tools');
 
 if ($tabScriptText && $tabScriptScore) {
+  const getScriptTabPrefKey = () => `stagetimer_dc_script_tab_${typeof roomId !== 'undefined' && roomId ? roomId : 'PALCO1'}`;
+
   $tabScriptText.addEventListener('click', () => {
     $tabScriptText.classList.add('active');
     $tabScriptScore.classList.remove('active');
     if ($scriptTextContainer) $scriptTextContainer.style.display = 'block';
     if ($scriptScoreContainer) $scriptScoreContainer.style.display = 'none';
     if ($scriptTools) $scriptTools.style.display = 'flex';
+    try { localStorage.setItem(getScriptTabPrefKey(), 'text'); } catch (_) {}
     if (window.DCScoreReader && typeof window.DCScoreReader.unmount === 'function') {
       window.DCScoreReader.unmount();
     }
     setTimeout(() => emitLiveScrollStream(true), 60);
   });
 
-  $tabScriptScore.addEventListener('click', () => {
+  $tabScriptScore.addEventListener('click', async () => {
     $tabScriptScore.classList.add('active');
     $tabScriptText.classList.remove('active');
     if ($scriptTextContainer) $scriptTextContainer.style.display = 'none';
     if ($scriptScoreContainer) $scriptScoreContainer.style.display = 'block';
     if ($scriptTools) $scriptTools.style.display = 'none';
+    try { localStorage.setItem(getScriptTabPrefKey(), 'score'); } catch (_) {}
     const slot = document.getElementById('dc-score-embed-slot');
     if (slot && window.DCScoreReader && typeof window.DCScoreReader.mount === 'function') {
-      window.DCScoreReader.mount(slot);
-      if (typeof window.DCScoreReader.broadcastCurrentDoc === 'function') {
-        window.DCScoreReader.broadcastCurrentDoc();
-      }
+      await window.DCScoreReader.mount(slot);
     }
   });
+
+  setTimeout(async () => {
+    try {
+      if (localStorage.getItem(getScriptTabPrefKey()) === 'score' && window.DCScoreReader && typeof window.DCScoreReader.hasStoredDoc === 'function') {
+        if (await window.DCScoreReader.hasStoredDoc(typeof roomId !== 'undefined' ? roomId : undefined)) {
+          $tabScriptScore.click();
+        }
+      }
+    } catch (_) {}
+  }, 350);
 }
 
 // Navegação do Guião a partir da Fase 1 ou de atalhos

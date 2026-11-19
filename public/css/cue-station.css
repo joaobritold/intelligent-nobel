@@ -687,6 +687,18 @@ body {
   word-break: break-word;
 }
 
+.cs-station-col-left .cs-score-embed-slot {
+  height: calc(100dvh - 210px);
+  min-height: 480px;
+  width: 100%;
+  max-width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0b0b14;
+  position: relative;
+}
+
 .cs-station-col-right {
   display: flex;
   flex-direction: column;
@@ -713,6 +725,10 @@ body {
   .cs-station-col-left #cs-script-feed {
     max-height: 50vh;
     min-height: 260px;
+  }
+  .cs-station-col-left .cs-score-embed-slot {
+    height: 62dvh;
+    min-height: 320px;
   }
   .cs-station-col-right #cs-cues-list {
     max-height: 50vh;

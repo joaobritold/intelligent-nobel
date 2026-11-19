@@ -2057,13 +2057,16 @@ class UniversalSyncClient {
       sender: this.clientId
     });
 
+    if (command && command.skipMqtt) return;
     if (!this.mqttClient || !this.mqttClient.connected) return;
     try {
       const json = JSON.stringify(payload);
       const cmdPrefix = this.mqttTopicPrefix || 'stagetimer_v10';
       const topic = `${cmdPrefix}/_cmd_room/${clean}`;
       this.mqttClient.publish(topic, json, { qos: 0, retain: false });
-      this.mqttClient.publish(this.mqttTopicCommands, json, { qos: 0, retain: false });
+      if (!(command && command.roomOnly)) {
+        this.mqttClient.publish(this.mqttTopicCommands, json, { qos: 0, retain: false });
+      }
     } catch (e) {}
   }
 
@@ -5392,6 +5395,7 @@ class UniversalSyncClient {
   streamTheatreScriptScroll(scrollData = {}) {
     if (!this._state) return;
     const scrollPayload = {
+      ...scrollData,
       activeIdx: typeof scrollData.activeIdx === 'number' ? scrollData.activeIdx : 0,
       topItemIdx: typeof scrollData.topItemIdx === 'number' ? scrollData.topItemIdx : undefined,
       topItemFraction: typeof scrollData.topItemFraction === 'number' ? scrollData.topItemFraction : undefined,
@@ -5402,13 +5406,14 @@ class UniversalSyncClient {
       pageIdx: typeof scrollData.pageIdx === 'number' ? scrollData.pageIdx : undefined,
       isAuto: Boolean(scrollData.isAuto),
       isScoreDoc: Boolean(scrollData.isScoreDoc),
-      ts: Date.now()
+      ts: typeof scrollData.ts === 'number' ? scrollData.ts : Date.now()
     };
 
     // Update in-memory state so local reads remain consistent
     if (this._state.theatre) {
       this._state.theatre.scriptActiveIndex = scrollPayload.activeIdx;
       this._state.theatre.scriptScrollRatio = scrollPayload.scrollRatio;
+      if (scrollPayload.docMode) this._state.theatre.scriptScoreMode = scrollPayload.docMode;
     }
 
     // 1. Instant local BroadcastChannel (cross-tab / same machine)
@@ -5426,6 +5431,7 @@ class UniversalSyncClient {
     // 2. Ultra-fast room command over MQTT + cmdChannel for cross-device teams
     this.sendRoomCommand(this.cleanRoom, {
       action: 'theatre_scroll_stream',
+      roomOnly: true,
       scroll: scrollPayload
     });
   }

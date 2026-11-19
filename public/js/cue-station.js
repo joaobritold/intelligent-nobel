@@ -1407,14 +1407,87 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+const $scoreEmbedSlot = document.getElementById('cs-score-embed-slot');
+const $scriptPanelTitle = document.querySelector('.cs-panel-script .cs-panel-title');
+let csScriptMode = 'text'; // 'text' | 'score'
+let lastLiveTextScrollData = null;
+let lastTextScrollTs = 0;
+
+function enterManualScrollMode() {
+  isUserManualScrollingCs = true;
+  clearTimeout(userManualScrollTimer);
+  if ($scriptSyncPill) {
+    $scriptSyncPill.style.background = 'rgba(255, 121, 63, 0.2)';
+    $scriptSyncPill.style.color = '#ff793f';
+    $scriptSyncPill.style.borderColor = 'rgba(255, 121, 63, 0.4)';
+    $scriptSyncPill.textContent = '⚡ Livre (Tocar p/ Seguir DC)';
+  }
+}
+
+function restoreFollowingDcMode() {
+  isUserManualScrollingCs = false;
+  if ($scriptSyncPill) {
+    $scriptSyncPill.style.background = 'rgba(85, 239, 196, 0.15)';
+    $scriptSyncPill.style.color = '#55efc4';
+    $scriptSyncPill.style.borderColor = 'rgba(85, 239, 196, 0.3)';
+    $scriptSyncPill.textContent = '● A Seguir DC';
+  }
+  if (csScriptMode === 'score' && window.DCScoreReader && typeof window.DCScoreReader.resumeFollow === 'function') {
+    window.DCScoreReader.resumeFollow();
+  } else if (lastLiveTextScrollData) {
+    applyTextScrollMirror(lastLiveTextScrollData);
+  }
+}
+
+async function switchCueStationScriptMode(nextMode, meta = {}) {
+  const mode = nextMode === 'score' ? 'score' : 'text';
+  if (mode === 'score') {
+    if ($scriptPanelTitle) {
+      $scriptPanelTitle.textContent = meta?.name ? `Guião Original — ${meta.name}` : 'Guião Original (Diretora de Cena)';
+    }
+    if (csScriptMode !== 'score') {
+      csScriptMode = 'score';
+      if ($scriptFeed) $scriptFeed.style.display = 'none';
+      if ($scoreEmbedSlot) $scoreEmbedSlot.style.display = 'block';
+      if ($scoreEmbedSlot && window.DCScoreReader && typeof window.DCScoreReader.mount === 'function') {
+        await window.DCScoreReader.mount($scoreEmbedSlot, {
+          readOnly: true,
+          onManualScroll: enterManualScrollMode
+        });
+      }
+    }
+    if ($scriptPosPill && window.DCScoreReader?.getLastExternalScroll) {
+      const last = window.DCScoreReader.getLastExternalScroll();
+      if (last && typeof last.pageTotal === 'number') {
+        $scriptPosPill.textContent = `Pág. ${(last.pageIdx || 0) + 1} / ${last.pageTotal}`;
+      }
+    }
+  } else {
+    if ($scriptPanelTitle) {
+      $scriptPanelTitle.textContent = 'Texto da Peça (Diretora de Cena)';
+    }
+    if (csScriptMode !== 'text') {
+      csScriptMode = 'text';
+      if (window.DCScoreReader && typeof window.DCScoreReader.unmount === 'function') {
+        window.DCScoreReader.unmount();
+      }
+      if ($scoreEmbedSlot) $scoreEmbedSlot.style.display = 'none';
+      if ($scriptFeed) $scriptFeed.style.display = 'block';
+      if (lastLiveTextScrollData && !isUserManualScrollingCs) {
+        applyTextScrollMirror(lastLiveTextScrollData);
+      }
+    }
+  }
+}
+
 if ($scriptSyncPill) {
   $scriptSyncPill.style.cursor = 'pointer';
   $scriptSyncPill.title = 'Tocar para voltar a seguir a DC em tempo real';
   $scriptSyncPill.addEventListener('click', () => {
     restoreFollowingDcMode();
-    const activeRow = $scriptFeed?.querySelector('.cs-script-row.active');
-    if (activeRow) {
-      activeRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (csScriptMode === 'text' && !lastLiveTextScrollData) {
+      const activeRow = $scriptFeed?.querySelector('.cs-script-row.active');
+      if (activeRow) activeRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   });
 }
@@ -1441,44 +1514,19 @@ let isUserManualScrollingCs = false;
 let userManualScrollTimer = null;
 
 if ($scriptFeed) {
-  $scriptFeed.addEventListener('touchstart', () => {
-    isUserManualScrollingCs = true;
-    clearTimeout(userManualScrollTimer);
-    if ($scriptSyncPill) {
-      $scriptSyncPill.style.background = 'rgba(255, 121, 63, 0.2)';
-      $scriptSyncPill.style.color = '#ff793f';
-      $scriptSyncPill.style.borderColor = 'rgba(255, 121, 63, 0.4)';
-      $scriptSyncPill.textContent = '⚡ Livre (Tocar p/ Seguir DC)';
-    }
-  }, { passive: true });
-
-  $scriptFeed.addEventListener('wheel', () => {
-    isUserManualScrollingCs = true;
-    clearTimeout(userManualScrollTimer);
-    if ($scriptSyncPill) {
-      $scriptSyncPill.style.background = 'rgba(255, 121, 63, 0.2)';
-      $scriptSyncPill.style.color = '#ff793f';
-      $scriptSyncPill.style.borderColor = 'rgba(255, 121, 63, 0.4)';
-      $scriptSyncPill.textContent = '⚡ Livre (Tocar p/ Seguir DC)';
-    }
-  }, { passive: true });
+  $scriptFeed.addEventListener('touchstart', enterManualScrollMode, { passive: true });
+  $scriptFeed.addEventListener('wheel', enterManualScrollMode, { passive: true });
 }
 
-function restoreFollowingDcMode() {
-  isUserManualScrollingCs = false;
-  if ($scriptSyncPill) {
-    $scriptSyncPill.style.background = 'rgba(85, 239, 196, 0.15)';
-    $scriptSyncPill.style.color = '#55efc4';
-    $scriptSyncPill.style.borderColor = 'rgba(85, 239, 196, 0.3)';
-    $scriptSyncPill.textContent = '● A Seguir DC';
+window.addEventListener('dcsr-score-mode', (e) => {
+  const detail = e?.detail || {};
+  if (detail.mode === 'score' || detail.mode === 'text') {
+    switchCueStationScriptMode(detail.mode, detail);
   }
-}
+});
 
-client.on('theatre-scroll-sync', (scrollData) => {
-  if (!scrollData) return;
-  lastLiveScrollSyncTs = Date.now();
-  if (isUserManualScrollingCs) return; // Se o técnico está deliberadamente a tocar/ler noutro sítio, respeita
-  if (!$scriptFeed) return;
+function applyTextScrollMirror(scrollData) {
+  if (!$scriptFeed || !scrollData) return;
 
   // Sincroniza tamanho da fonte se a DC aumentou/diminuiu a letra
   if (typeof scrollData.fontSize === 'number' && scrollData.fontSize >= 12 && scrollData.fontSize <= 36) {
@@ -1491,34 +1539,36 @@ client.on('theatre-scroll-sync', (scrollData) => {
   const topItemFraction = typeof scrollData.topItemFraction === 'number' ? scrollData.topItemFraction : 0;
 
   // 1. Atualiza visualmente o highlight da fala ativa
-  if (activeIdx >= 0 && activeIdx !== lastCsScriptActiveIdx) {
-    lastCsScriptActiveIdx = activeIdx;
+  if (activeIdx >= 0) {
+    if (activeIdx !== lastCsScriptActiveIdx) {
+      lastCsScriptActiveIdx = activeIdx;
+      const rows = $scriptFeed.querySelectorAll('.cs-script-row');
+      rows.forEach((row, idx) => {
+        const isActive = idx === activeIdx;
+        if (isActive) {
+          row.classList.add('active');
+          row.style.borderLeft = '5px solid #55efc4';
+          row.style.background = 'rgba(85, 239, 196, 0.14)';
+          const metaBox = row.querySelector('.cs-script-meta-left');
+          if (metaBox && !metaBox.querySelector('.cs-dc-live-badge')) {
+            const b = document.createElement('span');
+            b.className = 'badge cs-dc-live-badge';
+            b.style.cssText = 'background: #55efc4; color: #000; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;';
+            b.textContent = '● EM CENA (DC)';
+            metaBox.prepend(b);
+          }
+        } else if (row.classList.contains('active')) {
+          row.classList.remove('active');
+          row.style.borderLeft = '4px solid transparent';
+          row.style.background = 'rgba(255, 255, 255, 0.02)';
+          row.querySelector('.cs-dc-live-badge')?.remove();
+        }
+      });
+    }
     if ($scriptPosPill) {
       const script = state?.theatre?.script || [];
       $scriptPosPill.textContent = script.length > 0 ? `Fala ${activeIdx + 1} / ${script.length}` : 'Fala 0 / 0';
     }
-    const rows = $scriptFeed.querySelectorAll('.cs-script-row');
-    rows.forEach((row, idx) => {
-      const isActive = idx === activeIdx;
-      if (isActive) {
-        row.classList.add('active');
-        row.style.borderLeft = '5px solid #55efc4';
-        row.style.background = 'rgba(85, 239, 196, 0.14)';
-        let metaBox = row.querySelector('.cs-script-meta-left');
-        if (metaBox && !metaBox.querySelector('.cs-dc-live-badge')) {
-          const b = document.createElement('span');
-          b.className = 'badge cs-dc-live-badge';
-          b.style.cssText = 'background: #55efc4; color: #000; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;';
-          b.textContent = '● EM CENA (DC)';
-          metaBox.prepend(b);
-        }
-      } else if (row.classList.contains('active')) {
-        row.classList.remove('active');
-        row.style.borderLeft = '4px solid transparent';
-        row.style.background = 'rgba(255, 255, 255, 0.02)';
-        row.querySelector('.cs-dc-live-badge')?.remove();
-      }
-    });
   }
 
   // 2. Duplicação 1:1 de ecrã em tempo real: alinha exatamente pela mesma fala/linha do topo da DC
@@ -1544,10 +1594,29 @@ client.on('theatre-scroll-sync', (scrollData) => {
   }
   if (activeIdx >= 0) {
     const row = $scriptFeed.querySelector(`.cs-script-row[data-script-idx="${activeIdx}"]`);
-    if (row) {
-      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
+}
+
+client.on('theatre-scroll-sync', (scrollData) => {
+  if (!scrollData) return;
+  lastLiveScrollSyncTs = Date.now();
+
+  if (scrollData.isScoreDoc) {
+    switchCueStationScriptMode('score');
+    if ($scriptPosPill && typeof scrollData.pageTotal === 'number' && scrollData.pageTotal > 0) {
+      $scriptPosPill.textContent = `Pág. ${(scrollData.pageIdx || 0) + 1} / ${scrollData.pageTotal}`;
+    }
+    return;
+  }
+
+  const ts = typeof scrollData.ts === 'number' ? scrollData.ts : Date.now();
+  if (ts < lastTextScrollTs) return;
+  lastTextScrollTs = ts;
+  lastLiveTextScrollData = scrollData;
+  switchCueStationScriptMode('text');
+  if (isUserManualScrollingCs) return;
+  applyTextScrollMirror(scrollData);
 });
 
 client.on('room-state', (newState) => {

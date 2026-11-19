@@ -27,6 +27,10 @@
 
   function getRoom() {
     try {
+      const c = getClient();
+      if (c && c.cleanRoom) return String(c.cleanRoom).toUpperCase();
+    } catch (_) {}
+    try {
       // eslint-disable-next-line no-undef
       if (typeof roomId !== 'undefined' && roomId) return String(roomId).toUpperCase();
     } catch (_) {}
@@ -98,13 +102,21 @@
   };
   let prefs = { ...DEFAULT_PREFS };
   try { prefs = { ...DEFAULT_PREFS, ...(JSON.parse(localStorage.getItem(PREFS_KEY) || '{}')) }; } catch (_) {}
-  function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (_) {} }
+  function savePrefs() {
+    if (isReadOnly) return;
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (_) {}
+  }
 
   // ─── Runtime State ──────────────────────────────────────────────────
   let built = false;
   let isOpen = false;
+  let isReadOnly = false;
+  let manualHold = false;
+  let activeMode = 'text'; // 'text' | 'score'
+  let manualScrollCb = null;
   let currentRoom = null;
-  let doc = null;          // registo IDB { type, name, size, importedAt, data }
+  let doc = null;          // registo IDB { docId, type, name, size, importedAt, data }
+  let cachedDocRecord = null; // cópia silenciosa para responder a pedidos mesmo se o tab Texto estiver ativo
   let meta = { pins: [], lastPage: 0 };
   let pages = [];          // { idx, kind:'pdf'|'img'|'dom', w, h, el, content, canvas, renderedScale, rendering, node, url }
   let pdfDoc = null;
@@ -122,9 +134,19 @@
   let io = null;
   let urlsToRevoke = [];
   let metaSaveTimer = null;
+  let lastExternalScroll = null;
+  let lastExternalScrollTs = 0;
+  let lastBroadcastScrollPayload = null;
+  let subscribedTopicRoom = '';
+  let lastManifestKey = '';
+  let pendingManifest = null;
+  const CHUNK_RAW_BYTES = 24 * 1024;
+  const assemblers = new Map();
+  let uploadInFlight = false;
+  let uploadRequeue = false;
 
   // DOM refs
-  let ov, stage, pagesEl, guideEl, pageInput, pageTotal, titleEl, drawer, hud, emptyEl, loadingEl, popEl, importEl, settingsEl, toastEl;
+  let ov, stage, pagesEl, guideEl, pageInput, pageTotal, titleEl, drawer, hud, emptyEl, loadingEl, popEl, importEl, settingsEl, toastEl, syncBannerEl;
 
   // ─── Build UI ───────────────────────────────────────────────────────
   function icon(name) { return (window.stIcon ? window.stIcon(name) : ''); }
@@ -161,6 +183,11 @@
           <button type="button" class="dcsr-btn dcsr-btn-gold" data-act="import" title="Importar guião">⤓<span class="dcsr-lbl"> Importar</span></button>
         </div>
       </header>
+
+      <div class="dcsr-sync-banner" id="dcsr-sync-banner">
+        <span id="dcsr-sync-text">A sincronizar guião…</span>
+        <div class="dcsr-sync-track"><div class="dcsr-sync-fill" id="dcsr-sync-fill"></div></div>
+      </div>
 
       <div class="dcsr-body">
         <aside class="dcsr-drawer" id="dcsr-drawer">
@@ -238,9 +265,50 @@
     importEl = $('#dcsr-import', ov);
     settingsEl = $('#dcsr-settings', ov);
     toastEl = $('#dcsr-toast', ov);
+    syncBannerEl = $('#dcsr-sync-banner', ov);
 
     bindUI();
+    updateReadOnlyUI();
     applyPrefsUI();
+  }
+
+  function updateReadOnlyUI() {
+    if (!built || !ov) return;
+    ov.classList.toggle('dcsr-readonly', isReadOnly);
+    if (pageInput) pageInput.readOnly = isReadOnly;
+    const kicker = ov.querySelector('.dcsr-kicker');
+    if (kicker) kicker.textContent = isReadOnly ? '📜 ESPELHO DC (SOMENTE LEITURA)' : '📜 GUIÃO ORIGINAL';
+    if (emptyEl) {
+      const h2 = emptyEl.querySelector('h2');
+      const p1 = emptyEl.querySelector('p');
+      const tip = emptyEl.querySelector('.dcsr-tip');
+      let roBadge = emptyEl.querySelector('.dcsr-empty-ro');
+      if (isReadOnly) {
+        if (h2) h2.textContent = 'A aguardar guião da Diretora de Cena…';
+        if (p1) p1.innerHTML = 'O documento original (<b>PDF, Word ou Notas</b>) carregado pela Diretora de Cena aparece aqui automaticamente em espelho 1:1.';
+        if (tip) tip.style.display = 'none';
+        if (!roBadge) {
+          roBadge = document.createElement('div');
+          roBadge.className = 'dcsr-empty-ro';
+          roBadge.textContent = 'Posto Técnico • Espelho em tempo real (sem necessidade de importar)';
+          emptyEl.querySelector('.dcsr-empty-card')?.appendChild(roBadge);
+        }
+      } else {
+        if (h2) h2.textContent = 'Carregue o guião original';
+        if (p1) p1.innerHTML = 'O texto é mostrado <b>exatamente como foi escrito</b> — página a página, com a formatação intacta.';
+        if (tip) tip.style.display = '';
+        if (roBadge) roBadge.remove();
+      }
+    }
+  }
+
+  function notifyManualScroll() {
+    if (isReadOnly) {
+      manualHold = true;
+      if (typeof manualScrollCb === 'function') {
+        try { manualScrollCb(); } catch (_) {}
+      }
+    }
   }
 
   // ─── UI Bindings ────────────────────────────────────────────────────
@@ -262,19 +330,19 @@
       const sres = e.target.closest('[data-sres]');
       if (sres) { onSearchResultClick(sres); return; }
       const pinEl = e.target.closest('.dcsr-pin');
-      if (pinEl && !pinEl.dataset.dragged) { e.stopPropagation(); openPinPop(pinEl.dataset.pin, pinEl); return; }
+      if (pinEl && !pinEl.dataset.dragged) { e.stopPropagation(); if (!isReadOnly) openPinPop(pinEl.dataset.pin, pinEl); return; }
 
       const actEl = e.target.closest('[data-act]');
       if (actEl) { handleAct(actEl.dataset.act, actEl, e); return; }
 
       // Clique no papel
       const pageEl = e.target.closest('.dcsr-page');
-      if (pageEl && (markMode || pendingPlaceCueId)) { onPagePlace(pageEl, e); return; }
+      if (pageEl && !isReadOnly && (markMode || pendingPlaceCueId)) { onPagePlace(pageEl, e); return; }
       if (!e.target.closest('.dcsr-pop')) closePop();
       if (!e.target.closest('.dcsr-settings')) closeSettings();
 
       // Zonas de toque laterais no modo página
-      if (pageEl && prefs.mode !== 'scroll' && !markMode) {
+      if (pageEl && !isReadOnly && prefs.mode !== 'scroll' && !markMode) {
         const r = stage.getBoundingClientRect();
         const rx = (e.clientX - r.left) / r.width;
         if (rx < 0.22) prevPage();
@@ -283,6 +351,7 @@
     });
 
     pageInput.addEventListener('change', () => {
+      if (isReadOnly) { pageInput.value = pages.length ? String(currentPage + 1) : '0'; pageInput.blur(); return; }
       const n = parseInt(pageInput.value, 10);
       if (!isNaN(n)) goToPage(n - 1, true);
       pageInput.blur();
@@ -299,8 +368,11 @@
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         setZoom(prefs.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1));
+        return;
       }
+      notifyManualScroll();
     }, { passive: false });
+    stage.addEventListener('touchstart', () => notifyManualScroll(), { passive: true });
 
     // Segurar para pausar auto-rolagem + pinça para zoom + swipe no modo página
     const pointers = new Map();
@@ -308,6 +380,11 @@
     let swipeStart = null;
     stage.addEventListener('pointerdown', (e) => {
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (e.pointerType === 'mouse' && !e.target.closest('button')) {
+        // Permite arrastar a barra de scroll no rato no Posto Técnico sem lutar com a DC
+        const r = stage.getBoundingClientRect();
+        if (isReadOnly && (e.clientX > r.right - 22)) notifyManualScroll();
+      }
       if (autoScroll && !e.target.closest('button')) holdPause = true;
       if (pointers.size === 2) {
         const [a, b] = [...pointers.values()];
@@ -336,7 +413,7 @@
         setZoom(pinchStart.zoom * ratio);
         pinchStart = null;
         swipeStart = null;
-      } else if (swipeStart && p && pointers.size === 0 && prefs.mode !== 'scroll' && !markMode) {
+      } else if (swipeStart && p && pointers.size === 0 && !isReadOnly && prefs.mode !== 'scroll' && !markMode) {
         const dx = p.x - swipeStart.x, dy = p.y - swipeStart.y;
         if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && Date.now() - swipeStart.t < 600 && stage.scrollWidth <= stage.clientWidth + 2) {
           if (dx < 0) nextPage(); else prevPage();
@@ -351,25 +428,31 @@
 
     // Arrastar a linha de leitura
     let guideDrag = false;
-    guideEl.addEventListener('pointerdown', (e) => { guideDrag = true; guideEl.setPointerCapture(e.pointerId); e.preventDefault(); });
+    guideEl.addEventListener('pointerdown', (e) => { if (isReadOnly) return; guideDrag = true; guideEl.setPointerCapture(e.pointerId); e.preventDefault(); });
     guideEl.addEventListener('pointermove', (e) => {
       if (!guideDrag) return;
       const r = stage.getBoundingClientRect();
       prefs.guideY = clamp((e.clientY - r.top) / r.height, 0.08, 0.9);
       positionGuide();
     });
-    guideEl.addEventListener('pointerup', () => { if (guideDrag) { guideDrag = false; savePrefs(); } });
+    guideEl.addEventListener('pointerup', () => {
+      if (guideDrag) {
+        guideDrag = false;
+        savePrefs();
+        if (!isReadOnly) broadcastScoreScroll(true);
+      }
+    });
 
     // Teclado (fase de captura para ganhar prioridade sobre o resto da DC)
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('resize', () => { if (isOpen) relayout(); });
     document.addEventListener('visibilitychange', () => { if (isOpen && document.visibilityState === 'visible') requestWakeLock(); });
 
-    // Drag & drop de ficheiros diretamente no leitor
-    ov.addEventListener('dragover', (e) => { if (e.dataTransfer?.types?.includes('Files')) { e.preventDefault(); ov.classList.add('dcsr-dragging'); } });
+    // Drag & drop de ficheiros diretamente no leitor (desativado em Posto Técnico readOnly)
+    ov.addEventListener('dragover', (e) => { if (!isReadOnly && e.dataTransfer?.types?.includes('Files')) { e.preventDefault(); ov.classList.add('dcsr-dragging'); } });
     ov.addEventListener('dragleave', (e) => { if (e.target === ov || !ov.contains(e.relatedTarget)) ov.classList.remove('dcsr-dragging'); });
     ov.addEventListener('drop', (e) => {
-      if (!e.dataTransfer?.files?.length) return;
+      if (isReadOnly || !e.dataTransfer?.files?.length) return;
       e.preventDefault();
       ov.classList.remove('dcsr-dragging');
       importFiles([...e.dataTransfer.files]);
@@ -386,13 +469,27 @@
       if (popEl.classList.contains('open')) { closePop(); return; }
       if (settingsEl.classList.contains('open')) { closeSettings(); return; }
       if (markMode || pendingPlaceCueId) { setMarkMode(false); return; }
-      close();
+      if (isReadOnly && !ov.classList.contains('embedded')) { restoreEmbeddedHost(); return; }
+      if (!isReadOnly) close();
       return;
     }
     if (typing) return;
     // Com janelas abertas por cima do guião, o Espaço não dispara GO por engano
     if ((e.code === 'Space' || e.key === ' ') && (importEl.classList.contains('open') || popEl.classList.contains('open') || settingsEl.classList.contains('open'))) {
       e.preventDefault(); e.stopImmediatePropagation();
+      return;
+    }
+    if (isReadOnly) {
+      let roHandled = true;
+      switch (e.key) {
+        case '+': case '=': setZoom(prefs.zoom * 1.12); break;
+        case '-': case '_': setZoom(prefs.zoom / 1.12); break;
+        case '0': setZoom(1); break;
+        case 'n': case 'N': cycleTheme(); break;
+        case 'f': case 'F': toggleFullscreen(); break;
+        default: roHandled = false;
+      }
+      if (roHandled) { e.preventDefault(); e.stopImmediatePropagation(); }
       return;
     }
     let handled = true;
@@ -419,9 +516,27 @@
     if (handled) { e.preventDefault(); e.stopImmediatePropagation(); }
   }
 
+  let embedHostEl = null;
+  function restoreEmbeddedHost() {
+    const slot = embedHostEl || document.getElementById('dc-score-embed-slot') || document.getElementById('cs-score-embed-slot');
+    if (slot) {
+      slot.appendChild(ov);
+      ov.classList.add('embedded');
+      document.documentElement.classList.remove('dcsr-lock');
+      relayout();
+    }
+  }
+
   function handleAct(act, el) {
+    if (isReadOnly && ['mark', 'import', 'auto', 'slower', 'faster', 'standby', 'go', 'automark', 'prev', 'next', 'drawer'].includes(act)) {
+      return;
+    }
     switch (act) {
       case 'close':
+        if (isReadOnly) {
+          if (!ov.classList.contains('embedded')) restoreEmbeddedHost();
+          return;
+        }
         if (ov && ov.classList.contains('embedded')) {
           document.getElementById('dc-tab-script-text')?.click();
         } else {
@@ -433,15 +548,10 @@
           document.body.appendChild(ov);
           ov.classList.remove('embedded');
           document.documentElement.classList.add('dcsr-lock');
+          relayout();
         } else {
-          const slot = document.getElementById('dc-score-embed-slot');
-          if (slot) {
-            slot.appendChild(ov);
-            ov.classList.add('embedded');
-            document.documentElement.classList.remove('dcsr-lock');
-          }
+          restoreEmbeddedHost();
         }
-        relayout();
         break;
       case 'prev': prevPage(); break;
       case 'next': nextPage(); break;
@@ -467,8 +577,12 @@
   }
 
   // ─── Open / Close / Mount (Embedded) ────────────────────────────────
-  async function mount(container) {
+  async function mount(container, opts = {}) {
+    if (typeof opts.readOnly === 'boolean') isReadOnly = opts.readOnly;
+    if (typeof opts.onManualScroll === 'function') manualScrollCb = opts.onManualScroll;
+    if (container) embedHostEl = container;
     build();
+    updateReadOnlyUI();
     if (container && ov.parentNode !== container) {
       container.innerHTML = '';
       container.appendChild(ov);
@@ -486,6 +600,16 @@
       renderPins();
       renderCueList(true);
     }
+    if (isReadOnly && lastExternalScroll) {
+      applyExternalScoreScroll(lastExternalScroll, true);
+    }
+    if (!isReadOnly) {
+      setActiveMode('score');
+      publishManifest(true);
+      broadcastScoreScroll(true);
+    } else {
+      requestDocFromRoom(room);
+    }
     updateHud();
   }
 
@@ -497,11 +621,16 @@
       isOpen = false;
       stopAuto();
       releaseWakeLock();
+      if (!isReadOnly) {
+        setActiveMode('text');
+      }
     }
   }
 
   async function open() {
+    isReadOnly = false;
     build();
+    updateReadOnlyUI();
     if (ov.parentNode !== document.body) {
       document.body.appendChild(ov);
     }
@@ -524,6 +653,9 @@
       renderPins();
       renderCueList(true);
     }
+    setActiveMode('score');
+    publishManifest(true);
+    broadcastScoreScroll(true);
     updateHud();
   }
 
@@ -539,6 +671,9 @@
     releaseWakeLock();
     if (document.fullscreenElement === ov) { try { document.exitFullscreen(); } catch (_) {} }
     saveMetaSoon(0);
+    if (!isReadOnly) {
+      setActiveMode('text');
+    }
   }
 
   async function requestWakeLock() {
@@ -573,7 +708,9 @@
     meta = { pins: [], lastPage: 0 };
     try {
       const [d, m] = await Promise.all([dbGet('docs', room), dbGet('meta', room)]);
+      if (d && !d.docId) d.docId = `${d.importedAt || Date.now()}_${d.type || 'pdf'}_${d.size || 0}`;
       doc = d || null;
+      cachedDocRecord = doc;
       if (m && typeof m === 'object') meta = { pins: Array.isArray(m.pins) ? m.pins : [], lastPage: m.lastPage || 0 };
     } catch (err) {
       console.warn('[Guião Original] IndexedDB', err);
@@ -622,10 +759,17 @@
     pageInput.max = String(pages.length);
     setupObserver();
     relayout();
-    goToPage(clamp(meta.lastPage || 0, 0, Math.max(0, pages.length - 1)), false);
+    if (isReadOnly && lastExternalScroll && lastExternalScroll.isScoreDoc) {
+      applyExternalScoreScroll(lastExternalScroll, true);
+    } else {
+      goToPage(clamp(meta.lastPage || 0, 0, Math.max(0, pages.length - 1)), false, null, true);
+    }
     buildThumbs();
     renderPins();
     renderCueList();
+    if (!isReadOnly && isOpen) {
+      broadcastScoreScroll(true);
+    }
   }
 
   function makePageEl(idx) {
@@ -932,16 +1076,20 @@
     currentPage = i;
     if (document.activeElement !== pageInput) pageInput.value = pages.length ? String(i + 1) : '0';
     if (changed) {
-      meta.lastPage = i;
-      saveMetaSoon();
+      if (!isReadOnly) {
+        meta.lastPage = i;
+        saveMetaSoon();
+      }
       highlightThumb();
     }
     if (!fromScroll && prefs.mode !== 'scroll') updateVisibility();
   }
 
-  function goToPage(i, smooth, fracY) {
+  function goToPage(i, smooth, fracY, fromExternal = false) {
     if (!pages.length) return;
     i = clamp(i, 0, pages.length - 1);
+    const wasProg = isProgrammaticScoreScroll;
+    if (fromExternal) isProgrammaticScoreScroll = true;
     if (prefs.mode === 'scroll') {
       const p = pages[i];
       const y = fracY != null
@@ -966,10 +1114,15 @@
       }
       renderVisible();
     }
+    if (fromExternal) isProgrammaticScoreScroll = wasProg;
+    if (!isReadOnly && !fromExternal && !isProgrammaticScoreScroll) {
+      broadcastScoreScroll(true);
+    }
   }
 
   function step() { return pagesEl.classList.contains('mode-book') ? 2 : 1; }
   function nextPage() {
+    if (isReadOnly) return;
     if (prefs.mode === 'scroll') {
       const next = pages[currentPage + 1];
       if (next) goToPage(currentPage + 1, true);
@@ -980,6 +1133,7 @@
     if (base + step() < pages.length) goToPage(base + step(), true);
   }
   function prevPage() {
+    if (isReadOnly) return;
     if (prefs.mode === 'scroll') {
       const p = pages[currentPage];
       // Se estamos a meio da página, volta ao topo dela; senão vai para a anterior
@@ -992,41 +1146,87 @@
   }
 
   let isProgrammaticScoreScroll = false;
+  let programmaticScrollClearTimer = null;
   let lastScoreScrollBroadcast = 0;
+  let scoreScrollTrailingTimer = null;
   let scrollRaf = null;
+
+  function buildScoreScrollPayload() {
+    if (!stage || !pages.length) {
+      return {
+        activeIdx: 0,
+        scrollRatio: 0,
+        guideY: prefs.guideY,
+        pageIdx: 0,
+        pageTotal: 0,
+        docMode: prefs.mode,
+        docId: doc?.docId || '',
+        isAuto: Boolean(autoScroll),
+        isScoreDoc: true,
+        atTop: true,
+        atBottom: false,
+        ts: Date.now()
+      };
+    }
+    const anchor = captureAnchor();
+    const maxS = Math.max(1, stage.scrollHeight - stage.clientHeight);
+    const ratio = stage.scrollHeight > stage.clientHeight + 2 ? clamp(stage.scrollTop / maxS, 0, 1) : 0;
+    return {
+      activeIdx: currentPage,
+      pageIdx: currentPage,
+      pageTotal: pages.length,
+      anchorPage: anchor.page,
+      anchorFrac: Number(anchor.frac.toFixed(4)),
+      scrollRatio: Number(ratio.toFixed(4)),
+      atTop: stage.scrollTop <= 2,
+      atBottom: stage.scrollHeight > stage.clientHeight + 4 && (stage.scrollTop + stage.clientHeight >= stage.scrollHeight - 2),
+      guideY: Number(prefs.guideY.toFixed(3)),
+      docMode: prefs.mode,
+      docId: doc?.docId || '',
+      isAuto: Boolean(autoScroll),
+      isScoreDoc: true,
+      ts: Date.now()
+    };
+  }
+
+  function broadcastScoreScroll(force = false) {
+    if (isReadOnly || !isOpen || activeMode !== 'score') return;
+    const now = Date.now();
+    if (!force && (now - lastScoreScrollBroadcast < 55)) {
+      clearTimeout(scoreScrollTrailingTimer);
+      scoreScrollTrailingTimer = setTimeout(() => {
+        broadcastScoreScroll(true);
+      }, 90);
+      return;
+    }
+    clearTimeout(scoreScrollTrailingTimer);
+    lastScoreScrollBroadcast = now;
+    const payload = buildScoreScrollPayload();
+    lastBroadcastScrollPayload = payload;
+    const c = getClient();
+    if (c && typeof c.streamTheatreScriptScroll === 'function') {
+      c.streamTheatreScriptScroll(payload);
+    }
+  }
 
   function onStageScroll() {
     if (scrollRaf) return;
     scrollRaf = requestAnimationFrame(() => {
       scrollRaf = null;
-      if (prefs.mode !== 'scroll' || !pages.length) return;
-      const refY = stage.scrollTop + stage.clientHeight * prefs.guideY;
-      let found = currentPage;
-      for (let i = 0; i < pages.length; i++) {
-        const el = pages[i].el;
-        if (el.offsetTop <= refY) found = i; else break;
-      }
-      setCurrentPage(found, true);
-
-      // Transmite scroll em tempo real se este ecrã for a DC ou quem está a comandar a rolagem
-      if (!isProgrammaticScoreScroll) {
-        const now = Date.now();
-        if (now - lastScoreScrollBroadcast > 35) {
-          lastScoreScrollBroadcast = now;
-          const maxS = Math.max(1, stage.scrollHeight - stage.clientHeight);
-          const ratio = Math.max(0, Math.min(1, stage.scrollTop / maxS));
-          const c = getClient();
-          if (c && typeof c.streamTheatreScriptScroll === 'function') {
-            c.streamTheatreScriptScroll({
-              activeIdx: found,
-              scrollRatio: Number(ratio.toFixed(4)),
-              guideY: prefs.guideY,
-              pageIdx: found,
-              isAuto: Boolean(autoScroll),
-              isScoreDoc: true
-            });
-          }
+      if (!pages.length) return;
+      if (prefs.mode === 'scroll') {
+        const refY = stage.scrollTop + stage.clientHeight * prefs.guideY;
+        let found = currentPage;
+        for (let i = 0; i < pages.length; i++) {
+          const el = pages[i].el;
+          if (el.offsetTop <= refY) found = i; else break;
         }
+        setCurrentPage(found, true);
+      }
+
+      // Transmite scroll em tempo real apenas pela DC (nunca pelo Posto Técnico readOnly)
+      if (!isReadOnly && !isProgrammaticScoreScroll) {
+        broadcastScoreScroll(false);
       }
     });
   }
@@ -1041,33 +1241,79 @@
     }
   }
 
-  function applyExternalScoreScroll(data) {
-    if (!stage || !pages.length || !data) return;
+  function applyExternalScoreScroll(data, forceSnap = false) {
+    if (!data) return;
+    const ts = typeof data.ts === 'number' ? data.ts : Date.now();
+    if (!forceSnap && ts < lastExternalScrollTs) return;
+    lastExternalScrollTs = ts;
+    lastExternalScroll = data;
+    if (!data.isScoreDoc) return;
+    if (isReadOnly && manualHold && !forceSnap) return;
+    if (!stage || !pages.length || !isOpen) return;
+
     isProgrammaticScoreScroll = true;
+    clearTimeout(programmaticScrollClearTimer);
+
+    let layoutChanged = false;
+    if (isReadOnly && data.docMode && ['scroll', 'page', 'book'].includes(data.docMode) && prefs.mode !== data.docMode) {
+      prefs.mode = data.docMode;
+      prefs.zoom = 1;
+      layoutChanged = true;
+    }
     if (typeof data.guideY === 'number' && Math.abs(prefs.guideY - data.guideY) > 0.01) {
-      prefs.guideY = data.guideY;
-      positionGuide();
+      prefs.guideY = clamp(data.guideY, 0.08, 0.9);
+      layoutChanged = true;
     }
-    if (typeof data.scrollRatio === 'number' && data.scrollRatio >= 0) {
+    if (layoutChanged) {
+      applyPrefsUI();
+      relayout();
+    }
+
+    if (prefs.mode !== 'scroll') {
+      const targetPage = typeof data.pageIdx === 'number' ? data.pageIdx : (typeof data.anchorPage === 'number' ? data.anchorPage : 0);
+      goToPage(clamp(targetPage, 0, pages.length - 1), false, null, true);
+      if (stage.scrollHeight > stage.clientHeight && typeof data.scrollRatio === 'number') {
+        const maxS = Math.max(0, stage.scrollHeight - stage.clientHeight);
+        stage.scrollTop = clamp(data.scrollRatio * maxS, 0, maxS);
+      }
+    } else {
       const maxS = Math.max(0, stage.scrollHeight - stage.clientHeight);
-      stage.scrollTop = data.scrollRatio * maxS;
-    } else if (typeof data.pageIdx === 'number' && data.pageIdx >= 0) {
-      goToPage(data.pageIdx, false);
+      if (data.atTop) {
+        stage.scrollTop = 0;
+      } else if (data.atBottom) {
+        stage.scrollTop = maxS;
+      } else if (typeof data.anchorPage === 'number' && pages[data.anchorPage] && typeof data.anchorFrac === 'number') {
+        const p = pages[data.anchorPage];
+        const targetTop = p.el.offsetTop + p.el.offsetHeight * clamp(data.anchorFrac, 0, 1) - stage.clientHeight * prefs.guideY;
+        stage.scrollTop = clamp(targetTop, 0, maxS);
+      } else if (typeof data.scrollRatio === 'number' && data.scrollRatio >= 0) {
+        stage.scrollTop = clamp(data.scrollRatio * maxS, 0, maxS);
+      } else if (typeof data.pageIdx === 'number' && data.pageIdx >= 0) {
+        goToPage(data.pageIdx, false, null, true);
+      }
+      const refPage = typeof data.anchorPage === 'number' ? data.anchorPage : (typeof data.pageIdx === 'number' ? data.pageIdx : currentPage);
+      setCurrentPage(clamp(refPage, 0, pages.length - 1), true);
     }
-    setTimeout(() => { isProgrammaticScoreScroll = false; }, 60);
+
+    renderVisible();
+    programmaticScrollClearTimer = setTimeout(() => { isProgrammaticScoreScroll = false; }, 90);
   }
 
   // ─── Modes, zoom, theme ─────────────────────────────────────────────
   function setMode(mode) {
+    if (isReadOnly) return;
     if (!['scroll', 'page', 'book'].includes(mode)) return;
     const keep = currentPage;
     prefs.mode = mode;
     prefs.zoom = 1;
     if (mode !== 'scroll') stopAuto();
     savePrefs();
+    isProgrammaticScoreScroll = true;
     applyPrefsUI();
     relayout();
-    goToPage(keep, false);
+    goToPage(keep, false, null, true);
+    isProgrammaticScoreScroll = false;
+    broadcastScoreScroll(true);
   }
 
   function setZoom(z) {
@@ -1075,6 +1321,7 @@
     savePrefs();
     relayout();
     renderSettings();
+    if (!isReadOnly) broadcastScoreScroll(true);
   }
 
   const THEMES = [
@@ -1179,18 +1426,21 @@
   }
 
   async function removeDoc() {
+    if (isReadOnly) return;
     if (!confirm('Remover o guião original deste palco neste dispositivo? As marcas de deixas também serão apagadas.')) return;
-    try { await dbDel('docs', currentRoom); await dbDel('meta', currentRoom); } catch (_) {}
-    doc = null; meta = { pins: [], lastPage: 0 };
+    const room = currentRoom || getRoom();
+    try { await dbDel('docs', room); await dbDel('meta', room); } catch (_) {}
+    doc = null; cachedDocRecord = null; meta = { pins: [], lastPage: 0 };
     closeSettings();
     await renderDoc();
+    publishDocRemoved(room);
     toast('Guião removido');
   }
 
   // ─── Auto-scroll (teleprompter) ─────────────────────────────────────
-  function toggleAuto() { if (autoScroll) stopAuto(); else startAuto(); }
+  function toggleAuto() { if (isReadOnly) return; if (autoScroll) stopAuto(); else startAuto(); }
   function startAuto() {
-    if (!pages.length) return;
+    if (isReadOnly || !pages.length) return;
     if (prefs.mode !== 'scroll') setMode('scroll');
     autoScroll = true;
     autoLastTs = 0;
@@ -1465,16 +1715,18 @@
   }
 
   function saveMetaSoon(delay = 600) {
-    if (!currentRoom) return;
+    if (!currentRoom || isReadOnly) return;
     clearTimeout(metaSaveTimer);
     metaSaveTimer = setTimeout(() => {
-      dbPut('meta', currentRoom, { pins: meta.pins, lastPage: meta.lastPage, updatedAt: Date.now() }).catch(err => console.warn('[Guião Original] meta', err));
+      dbPut('meta', currentRoom, { pins: meta.pins, lastPage: meta.lastPage, updatedAt: Date.now() })
+        .then(() => { publishPinsUpdate(currentRoom); })
+        .catch(err => console.warn('[Guião Original] meta', err));
     }, delay);
   }
 
   // ─── Follow the show ────────────────────────────────────────────────
   function followCue() {
-    if (!isOpen || !prefs.follow || !pages.length) return;
+    if (!isOpen || isReadOnly || !prefs.follow || !pages.length) return;
     const th = theatreState || {};
     const standby = th.standbyCueId ? cueById(th.standbyCueId) : cues().find(c => c.status === 'standby');
     const target = standby || nextPendingCue();
@@ -1893,117 +2145,546 @@
     }
   }
 
-  async function broadcastCurrentDoc() {
-    if (!doc) {
-      const room = getRoom();
-      try {
-        const d = await dbGet('docs', room);
-        if (d) doc = d;
-      } catch (_) {}
-    }
-    if (doc) {
-      broadcastDocToRoom(doc, getRoom());
+  // ─── Cross-device Chunked Sync & Manifest ───────────────────────────
+  function getSyncTopics(room) {
+    const c = getClient();
+    const prefix = (c && c.mqttTopicPrefix) || 'stagetimer_v10';
+    const clean = String(room || getRoom() || 'PALCO1').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    return {
+      room: clean,
+      manifestTopic: `${prefix}/${clean}/score_manifest`,
+      chunkTopic: `${prefix}/${clean}/score_chunk`
+    };
+  }
+
+  function ensureTopicSubscriptions(force = false) {
+    const c = getClient();
+    if (!c) return;
+    const { room, manifestTopic, chunkTopic } = getSyncTopics();
+    const activeCount = Array.isArray(c._mqttClients) ? c._mqttClients.filter(x => x && x.connected).length : (c.mqttClient?.connected ? 1 : 0);
+    const key = `${room}:${activeCount}`;
+    if (c.mqttClient && activeCount > 0 && (force || subscribedTopicRoom !== key)) {
+      subscribedTopicRoom = key;
+      try { c.mqttClient.subscribe([manifestTopic, chunkTopic], { qos: 0 }); } catch (_) {}
     }
   }
-  async function broadcastDocToRoom(rec, room) {
+
+  function uint8ToB64(bytes) {
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+
+  function b64ToUint8(b64) {
+    const binary = atob(b64);
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+
+  async function encodeDocToBytes(rec) {
+    if (!rec) return null;
+    if (rec.data instanceof ArrayBuffer) {
+      return { bytes: new Uint8Array(rec.data), payloadEncoding: 'binary' };
+    }
+    if (Array.isArray(rec.data)) {
+      const items = [];
+      for (let i = 0; i < rec.data.length; i++) {
+        const b = rec.data[i];
+        if (!b) continue;
+        const buf = await b.arrayBuffer();
+        items.push({ type: b.type || 'image/jpeg', b64: uint8ToB64(new Uint8Array(buf)) });
+      }
+      return { bytes: new TextEncoder().encode(JSON.stringify(items)), payloadEncoding: 'images-json' };
+    }
+    if (typeof rec.data === 'string') {
+      return { bytes: new TextEncoder().encode(rec.data), payloadEncoding: 'utf8' };
+    }
+    return null;
+  }
+
+  function decodeBytesToData(bytes, payloadEncoding) {
+    if (payloadEncoding === 'utf8') {
+      return new TextDecoder().decode(bytes);
+    }
+    if (payloadEncoding === 'images-json') {
+      const arr = JSON.parse(new TextDecoder().decode(bytes));
+      return (Array.isArray(arr) ? arr : []).map(it => new Blob([b64ToUint8(it.b64)], { type: it.type || 'image/jpeg' }));
+    }
+    return bytes.buffer;
+  }
+
+  function updateSyncBanner(visible, text, pct) {
+    if (!syncBannerEl) return;
+    syncBannerEl.classList.toggle('visible', Boolean(visible));
+    if (visible) {
+      const txtEl = syncBannerEl.querySelector('#dcsr-sync-text');
+      const fillEl = syncBannerEl.querySelector('#dcsr-sync-fill');
+      if (txtEl && text) txtEl.textContent = text;
+      if (fillEl && typeof pct === 'number') fillEl.style.width = `${clamp(pct, 0, 100)}%`;
+    }
+  }
+
+  function sendSyncPacket(packet, options = {}) {
     const c = getClient();
-    if (!c || !rec) return;
-    try {
-      let payloadData = null;
-      if (rec.data instanceof ArrayBuffer) {
-        // Converte ArrayBuffer para Base64 para envio de rede
-        let binary = '';
-        const bytes = new Uint8Array(rec.data);
-        const len = bytes.byteLength;
-        for (let i = 0; i < len; i++) {
-          binary += String.fromCharCode(bytes[i]);
+    if (!c) return;
+    const { room, manifestTopic, chunkTopic } = getSyncTopics(options.room);
+    const out = { ...packet, room, sender: c.clientId, ts: packet.ts || Date.now() };
+    const json = JSON.stringify(out);
+
+    if (options.topic === 'manifest') {
+      if (c.mqttClient && c.mqttClient.connected) {
+        try { c.mqttClient.publish(manifestTopic, json, { qos: 1, retain: true }); } catch (_) {}
+      }
+      if (typeof c.sendRoomCommand === 'function') {
+        c.sendRoomCommand(room, { action: 'theatre_doc_sync', roomOnly: true, skipMqtt: Boolean(c.mqttClient?.connected), doc: out });
+      }
+    } else if (options.topic === 'chunk') {
+      if (c.mqttClient && c.mqttClient.connected) {
+        try { c.mqttClient.publish(chunkTopic, json, { qos: 0, retain: false }); } catch (_) {}
+      }
+      if (typeof c.sendRoomCommand === 'function') {
+        c.sendRoomCommand(room, { action: 'theatre_doc_sync', roomOnly: true, skipMqtt: Boolean(c.mqttClient?.connected), doc: out });
+      }
+    } else {
+      if (typeof c.sendRoomCommand === 'function') {
+        c.sendRoomCommand(room, { action: 'theatre_doc_sync', roomOnly: true, doc: out });
+      }
+    }
+
+    if (c.channel) {
+      try {
+        c.channel.postMessage({ type: 'theatre-doc-sync', sender: c.clientId, room, doc: out });
+      } catch (_) {}
+    }
+  }
+
+  function setActiveMode(mode) {
+    const next = mode === 'score' ? 'score' : 'text';
+    const changed = next !== activeMode;
+    activeMode = next;
+    if (!isReadOnly && changed) {
+      publishManifest(false);
+    }
+  }
+
+  async function publishManifest(alsoSendChunks = false) {
+    if (isReadOnly) return;
+    const room = getRoom();
+    let rec = doc || cachedDocRecord;
+    if (!rec) {
+      try {
+        rec = await dbGet('docs', room);
+        if (rec) {
+          if (!rec.docId) rec.docId = `${rec.importedAt || Date.now()}_${rec.type || 'pdf'}_${rec.size || 0}`;
+          cachedDocRecord = rec;
         }
-        payloadData = btoa(binary);
-      } else if (typeof rec.data === 'string') {
-        payloadData = rec.data;
+      } catch (_) {}
+    }
+    const manifest = rec ? {
+      kind: 'manifest',
+      hasDoc: true,
+      docId: rec.docId || `${rec.importedAt || Date.now()}_${rec.type || 'pdf'}_${rec.size || 0}`,
+      name: rec.name || 'Guião da Peça',
+      type: rec.type || 'pdf',
+      size: rec.size || 0,
+      activeMode,
+      meta: { pins: meta.pins || [], lastPage: meta.lastPage || 0 }
+    } : {
+      kind: 'manifest',
+      hasDoc: false,
+      activeMode
+    };
+
+    if (manifest.hasDoc && rec) {
+      try {
+        const encoded = await encodeDocToBytes(rec);
+        if (encoded) {
+          manifest.totalChunks = Math.max(1, Math.ceil(encoded.bytes.byteLength / CHUNK_RAW_BYTES));
+          manifest.payloadEncoding = encoded.payloadEncoding;
+        }
+      } catch (_) {}
+    }
+
+    sendSyncPacket(manifest, { room, topic: 'manifest' });
+    if (alsoSendChunks && rec) {
+      broadcastDocToRoom(rec, room);
+    }
+  }
+
+  function publishPinsUpdate(room) {
+    if (isReadOnly) return;
+    sendSyncPacket({ kind: 'pins', docId: doc?.docId || cachedDocRecord?.docId || '', pins: meta.pins || [] }, { room: room || getRoom() });
+    publishManifest(false);
+  }
+
+  function publishDocRemoved(room) {
+    if (isReadOnly) return;
+    activeMode = isOpen ? 'score' : 'text';
+    sendSyncPacket({ kind: 'removed', hasDoc: false, activeMode }, { room: room || getRoom(), topic: 'manifest' });
+  }
+
+  function requestDocFromRoom(room, targetDocId = '') {
+    const c = getClient();
+    const clean = (room || getRoom()).toUpperCase();
+    const haveSameDoc = Boolean(doc && (!targetDocId || doc.docId === targetDocId));
+    sendSyncPacket({
+      kind: 'request',
+      docId: targetDocId || '',
+      haveDoc: haveSameDoc,
+      requesterId: c ? c.clientId : ''
+    }, { room: clean });
+  }
+
+  function requestMissingChunks(room, asm) {
+    if (!asm || asm.retries >= 4) {
+      if (asm && asm.retries >= 4) {
+        updateSyncBanner(false);
+        toast('Falha parcial ao receber o guião. A tentar novamente…', 3500);
+      }
+      return;
+    }
+    const missing = [];
+    for (let i = 0; i < asm.total; i++) {
+      if (!asm.chunks[i]) missing.push(i);
+    }
+    if (!missing.length) return;
+    asm.retries += 1;
+    const c = getClient();
+    sendSyncPacket({
+      kind: 'request_chunks',
+      docId: asm.docId,
+      missing: missing.slice(0, 40),
+      requesterId: c ? c.clientId : ''
+    }, { room });
+    clearTimeout(asm.timer);
+    asm.timer = setTimeout(() => requestMissingChunks(room, asm), 2200);
+  }
+
+  async function broadcastCurrentDoc() {
+    const room = getRoom();
+    if (!doc) {
+      try {
+        const d = await dbGet('docs', room);
+        if (d) {
+          if (!d.docId) d.docId = `${d.importedAt || Date.now()}_${d.type || 'pdf'}_${d.size || 0}`;
+          doc = d;
+          cachedDocRecord = d;
+        }
+      } catch (_) {}
+    }
+    await publishManifest(Boolean(doc));
+  }
+
+  async function broadcastDocToRoom(rec, room, onlyIndices = null) {
+    const c = getClient();
+    if (isReadOnly || !c || !rec) return;
+    if (!onlyIndices && uploadInFlight) {
+      uploadRequeue = true;
+      return;
+    }
+    if (!onlyIndices) uploadInFlight = true;
+    try {
+      const encoded = await encodeDocToBytes(rec);
+      if (!encoded) return;
+      const { bytes, payloadEncoding } = encoded;
+      const totalChunks = Math.max(1, Math.ceil(bytes.byteLength / CHUNK_RAW_BYTES));
+      const docId = rec.docId || `${rec.importedAt || Date.now()}_${rec.type || 'pdf'}_${rec.size || 0}`;
+      rec.docId = docId;
+
+      if (!onlyIndices) {
+        sendSyncPacket({
+          kind: 'manifest',
+          hasDoc: true,
+          docId,
+          name: rec.name || 'Guião da Peça',
+          type: rec.type || 'pdf',
+          size: rec.size || bytes.byteLength,
+          totalChunks,
+          payloadEncoding,
+          activeMode,
+          meta: { pins: meta.pins || [], lastPage: meta.lastPage || 0 }
+        }, { room, topic: 'manifest' });
       }
 
-      if (payloadData) {
-        const transferMsg = {
-          action: 'theatre_doc_sync',
-          room: room,
-          doc: {
-            name: rec.name,
-            type: rec.type,
-            size: rec.size,
-            isBase64: rec.data instanceof ArrayBuffer,
-            data: payloadData,
-            meta: { pins: meta.pins || [], lastPage: meta.lastPage || 0 }
-          }
-        };
+      const indices = Array.isArray(onlyIndices)
+        ? onlyIndices.filter(i => i >= 0 && i < totalChunks)
+        : Array.from({ length: totalChunks }, (_, i) => i);
 
-        if (typeof c.sendRoomCommand === 'function') {
-          c.sendRoomCommand(room, transferMsg);
-        }
-        if (c.channel) {
-          try {
-            c.channel.postMessage({
-              type: 'theatre-doc-sync',
-              sender: c.clientId,
-              room: room,
-              doc: transferMsg.doc
-            });
-          } catch (_) {}
+      for (let k = 0; k < indices.length; k++) {
+        if (!onlyIndices && uploadRequeue) break;
+        const i = indices[k];
+        const start = i * CHUNK_RAW_BYTES;
+        const end = Math.min(bytes.byteLength, start + CHUNK_RAW_BYTES);
+        const slice = bytes.subarray(start, end);
+        sendSyncPacket({
+          kind: 'chunk',
+          docId,
+          idx: i,
+          total: totalChunks,
+          name: rec.name || 'Guião da Peça',
+          type: rec.type || 'pdf',
+          size: rec.size || bytes.byteLength,
+          payloadEncoding,
+          b64: uint8ToB64(slice),
+          meta: i === 0 ? { pins: meta.pins || [], lastPage: meta.lastPage || 0 } : undefined
+        }, { room, topic: 'chunk' });
+        if (k < indices.length - 1) {
+          await new Promise(r => setTimeout(r, 28));
         }
       }
     } catch (e) {
       console.warn('[dc-score] broadcastDocToRoom erro:', e);
+    } finally {
+      if (!onlyIndices) {
+        uploadInFlight = false;
+        if (uploadRequeue) {
+          uploadRequeue = false;
+          setTimeout(() => broadcastDocToRoom(doc || cachedDocRecord || rec, room), 80);
+        }
+      }
     }
   }
 
-  async function handleIncomingDocSync(incomingDoc, incomingRoom) {
-    if (!incomingDoc || !incomingDoc.data) return;
-    const room = incomingRoom || getRoom();
+  async function finalizeAssembledDoc(asm, room) {
+    clearTimeout(asm.timer);
+    assemblers.delete(asm.docId);
+    updateSyncBanner(false);
     try {
-      let finalData = incomingDoc.data;
-      if (incomingDoc.isBase64 && typeof incomingDoc.data === 'string') {
-        const binary = atob(incomingDoc.data);
-        const len = binary.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binary.charCodeAt(i);
-        }
-        finalData = bytes.buffer;
+      let totalBytes = 0;
+      for (let i = 0; i < asm.total; i++) totalBytes += asm.chunks[i].byteLength;
+      const merged = new Uint8Array(totalBytes);
+      let off = 0;
+      for (let i = 0; i < asm.total; i++) {
+        merged.set(asm.chunks[i], off);
+        off += asm.chunks[i].byteLength;
       }
-
+      const finalData = decodeBytesToData(merged, asm.payloadEncoding);
       const rec = {
-        name: incomingDoc.name || 'Guião da Peça',
-        type: incomingDoc.type || 'pdf',
-        size: incomingDoc.size || 0,
+        docId: asm.docId,
+        name: asm.name || 'Guião da Peça',
+        type: asm.type || 'pdf',
+        size: asm.size || totalBytes,
         data: finalData,
         importedAt: Date.now(),
-        room: room
+        room
       };
-
       await dbPut('docs', room, rec);
-      if (incomingDoc.meta) {
-        await dbPut('meta', room, { ...incomingDoc.meta, updatedAt: Date.now() });
+      if (asm.meta) {
+        await dbPut('meta', room, { ...asm.meta, updatedAt: Date.now() });
       }
-
       if (room === getRoom()) {
         currentRoom = room;
         doc = rec;
-        if (incomingDoc.meta) {
-          meta = { pins: incomingDoc.meta.pins || [], lastPage: incomingDoc.meta.lastPage || 0 };
+        cachedDocRecord = rec;
+        if (asm.meta) {
+          meta = { pins: asm.meta.pins || [], lastPage: asm.meta.lastPage || 0 };
         }
         if (isOpen) {
           await renderDoc();
         }
       }
     } catch (err) {
-      console.warn('[dc-score] Falha a aplicar doc sincronizado:', err);
+      console.warn('[dc-score] Falha a montar guião em chunks:', err);
+    }
+  }
+
+  async function handleIncomingDocSync(incomingDoc, incomingRoom) {
+    if (!incomingDoc) return;
+    const c = getClient();
+    if (c && incomingDoc.sender && incomingDoc.sender === c.clientId) return;
+    const room = String(incomingRoom || incomingDoc.room || getRoom()).toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    if (room !== getRoom()) return;
+
+    const kind = incomingDoc.kind || (incomingDoc.data ? 'legacy_full' : 'manifest');
+
+    if (kind === 'request' || kind === 'request_chunks') {
+      if (isReadOnly) return;
+      if (incomingDoc.requesterId && c && incomingDoc.requesterId === c.clientId) return;
+      let rec = doc || cachedDocRecord;
+      if (!rec) {
+        try {
+          rec = await dbGet('docs', room);
+          if (rec) {
+            if (!rec.docId) rec.docId = `${rec.importedAt || Date.now()}_${rec.type || 'pdf'}_${rec.size || 0}`;
+            cachedDocRecord = rec;
+          }
+        } catch (_) {}
+      }
+      if (!incomingDoc.haveDoc && rec) {
+        const onlyIdx = kind === 'request_chunks' && Array.isArray(incomingDoc.missing) ? incomingDoc.missing : null;
+        broadcastDocToRoom(rec, room, onlyIdx);
+      }
+      if (isOpen && activeMode === 'score') {
+        setTimeout(() => broadcastScoreScroll(true), 60);
+      } else {
+        window.dispatchEvent(new CustomEvent('dcsr-request-sync-state'));
+      }
+      return;
+    }
+
+    if (kind === 'removed') {
+      if (!isReadOnly) return;
+      pendingManifest = null;
+      lastManifestKey = '';
+      assemblers.forEach(a => clearTimeout(a.timer));
+      assemblers.clear();
+      updateSyncBanner(false);
+      doc = null;
+      cachedDocRecord = null;
+      meta = { pins: [], lastPage: 0 };
+      try { await dbDel('docs', room); await dbDel('meta', room); } catch (_) {}
+      if (isOpen) await renderDoc();
+      window.dispatchEvent(new CustomEvent('dcsr-score-mode', { detail: { mode: incomingDoc.activeMode || 'text', removed: true } }));
+      return;
+    }
+
+    if (kind === 'pins') {
+      if (!isReadOnly) return;
+      if (Array.isArray(incomingDoc.pins)) {
+        meta.pins = incomingDoc.pins;
+        try { await dbPut('meta', room, { ...meta, updatedAt: Date.now() }); } catch (_) {}
+        if (isOpen) { renderPins(); renderCueList(); }
+      }
+      return;
+    }
+
+    if (kind === 'manifest') {
+      if (!isReadOnly) return;
+      const mKey = `${incomingDoc.docId || ''}:${incomingDoc.activeMode || ''}:${incomingDoc.meta?.pins?.length || 0}:${incomingDoc.ts || 0}`;
+      if (mKey === lastManifestKey) return;
+      lastManifestKey = mKey;
+      pendingManifest = incomingDoc;
+
+      if (incomingDoc.activeMode) {
+        window.dispatchEvent(new CustomEvent('dcsr-score-mode', {
+          detail: { mode: incomingDoc.activeMode, hasDoc: Boolean(incomingDoc.hasDoc), name: incomingDoc.name || '' }
+        }));
+      }
+
+      if (incomingDoc.hasDoc && incomingDoc.docId) {
+        if (doc && doc.docId === incomingDoc.docId) {
+          if (incomingDoc.meta && Array.isArray(incomingDoc.meta.pins)) {
+            meta.pins = incomingDoc.meta.pins;
+            if (isOpen) { renderPins(); renderCueList(); }
+          }
+          return;
+        }
+        try {
+          const existing = await dbGet('docs', room);
+          if (existing && existing.docId === incomingDoc.docId && existing.data) {
+            doc = existing;
+            cachedDocRecord = existing;
+            currentRoom = room;
+            if (incomingDoc.meta) meta = { pins: incomingDoc.meta.pins || [], lastPage: incomingDoc.meta.lastPage || 0 };
+            if (isOpen) await renderDoc();
+            return;
+          }
+        } catch (_) {}
+
+        if (!assemblers.has(incomingDoc.docId)) {
+          const total = Math.max(1, incomingDoc.totalChunks || 1);
+          const asm = {
+            docId: incomingDoc.docId,
+            name: incomingDoc.name || 'Guião da Peça',
+            type: incomingDoc.type || 'pdf',
+            size: incomingDoc.size || 0,
+            total,
+            payloadEncoding: incomingDoc.payloadEncoding || 'binary',
+            meta: incomingDoc.meta || null,
+            chunks: new Array(total),
+            received: 0,
+            retries: 0,
+            timer: null
+          };
+          assemblers.set(incomingDoc.docId, asm);
+          updateSyncBanner(true, `A receber guião (${asm.name})… 0%`, 2);
+          asm.timer = setTimeout(() => requestMissingChunks(room, asm), 1800);
+          requestDocFromRoom(room, incomingDoc.docId);
+        }
+      }
+      return;
+    }
+
+    if (kind === 'chunk') {
+      if (!isReadOnly) return;
+      const docId = incomingDoc.docId || '';
+      if (!docId || (doc && doc.docId === docId)) return;
+      let asm = assemblers.get(docId);
+      if (!asm) {
+        const total = Math.max(1, incomingDoc.total || 1);
+        asm = {
+          docId,
+          name: incomingDoc.name || 'Guião da Peça',
+          type: incomingDoc.type || 'pdf',
+          size: incomingDoc.size || 0,
+          total,
+          payloadEncoding: incomingDoc.payloadEncoding || 'binary',
+          meta: incomingDoc.meta || null,
+          chunks: new Array(total),
+          received: 0,
+          retries: 0,
+          timer: null
+        };
+        assemblers.set(docId, asm);
+      }
+      if (incomingDoc.meta && !asm.meta) asm.meta = incomingDoc.meta;
+      const idx = incomingDoc.idx;
+      if (typeof idx === 'number' && idx >= 0 && idx < asm.total && !asm.chunks[idx]) {
+        asm.chunks[idx] = b64ToUint8(incomingDoc.b64);
+        asm.received += 1;
+        const pct = Math.round((asm.received / asm.total) * 100);
+        updateSyncBanner(true, `A receber guião (${asm.name})… ${pct}%`, pct);
+      }
+      if (asm.received >= asm.total) {
+        await finalizeAssembledDoc(asm, room);
+      } else {
+        clearTimeout(asm.timer);
+        asm.timer = setTimeout(() => requestMissingChunks(room, asm), 1800);
+      }
+      return;
+    }
+
+    // Legacy single-packet fallback
+    if (incomingDoc.data) {
+      if (!isReadOnly) return;
+      try {
+        let finalData = incomingDoc.data;
+        if (incomingDoc.isBase64 && typeof incomingDoc.data === 'string') {
+          finalData = b64ToUint8(incomingDoc.data).buffer;
+        }
+        const rec = {
+          docId: incomingDoc.docId || `${Date.now()}_${incomingDoc.type || 'pdf'}_${incomingDoc.size || 0}`,
+          name: incomingDoc.name || 'Guião da Peça',
+          type: incomingDoc.type || 'pdf',
+          size: incomingDoc.size || 0,
+          data: finalData,
+          importedAt: Date.now(),
+          room
+        };
+        await dbPut('docs', room, rec);
+        if (incomingDoc.meta) await dbPut('meta', room, { ...incomingDoc.meta, updatedAt: Date.now() });
+        currentRoom = room;
+        doc = rec;
+        cachedDocRecord = rec;
+        if (incomingDoc.meta) meta = { pins: incomingDoc.meta.pins || [], lastPage: incomingDoc.meta.lastPage || 0 };
+        if (isOpen) await renderDoc();
+      } catch (err) {
+        console.warn('[dc-score] Falha a aplicar doc sincronizado:', err);
+      }
     }
   }
 
   async function storeDoc(rec) {
+    if (isReadOnly) return;
     const room = getRoom();
     rec.importedAt = Date.now();
     rec.room = room;
+    rec.docId = `${rec.importedAt}_${rec.type || 'pdf'}_${rec.size || 0}`;
     const hadPins = meta.pins.length > 0 && currentRoom === room;
     let keepPins = false;
     if (hadPins) keepPins = confirm('Manter as marcas de deixas existentes no novo guião?\n(OK = manter • Cancelar = começar sem marcas)');
@@ -2012,7 +2693,6 @@
       await dbPut('docs', room, rec);
       meta = { pins: keepPins ? meta.pins : [], lastPage: 0 };
       await dbPut('meta', room, { ...meta, updatedAt: Date.now() });
-      broadcastDocToRoom(rec, room);
     } catch (err) {
       showLoading(false);
       toast('Não foi possível guardar (espaço insuficiente?): ' + (err.message || err), 6000);
@@ -2020,8 +2700,11 @@
     }
     currentRoom = room;
     doc = rec;
+    cachedDocRecord = rec;
+    activeMode = 'score';
     closeImport();
     await renderDoc();
+    broadcastDocToRoom(rec, room);
     const cueCount = cues().length;
     toast(`✅ "${rec.name}" carregado — ${pages.length} página(s).` + (cueCount && !keepPins && rec.type !== 'images' ? ' Use ⚡ Auto-marcar no Painel → Deixas.' : ''), 5000);
   }
@@ -2053,6 +2736,23 @@
 
   function attach() {
     const c = getClient();
+    const isCueStationView = /cue-station\.html/i.test(window.location.pathname || '') || Boolean(document.getElementById('cs-score-embed-slot'));
+    if (isCueStationView) isReadOnly = true;
+
+    const preloadForResponder = async () => {
+      if (isReadOnly || cachedDocRecord) return;
+      try {
+        const room = getRoom();
+        const d = await dbGet('docs', room);
+        if (d) {
+          if (!d.docId) d.docId = `${d.importedAt || Date.now()}_${d.type || 'pdf'}_${d.size || 0}`;
+          cachedDocRecord = d;
+        }
+        const m = await dbGet('meta', room);
+        if (m && !meta.pins.length && Array.isArray(m.pins)) meta.pins = m.pins;
+      } catch (_) {}
+    };
+
     if (c && typeof c.on === 'function') {
       c.on('room-state', onRoomState);
       c.on('theatre-scroll-sync', (scrollData) => {
@@ -2061,9 +2761,40 @@
       c.on('theatre-doc-sync', (incoming) => {
         handleIncomingDocSync(incoming.doc, incoming.room);
       });
+      c.on('mqtt-raw-message', ({ topic, payload }) => {
+        if (!topic || !payload) return;
+        const { manifestTopic, chunkTopic, room } = getSyncTopics();
+        if (topic === manifestTopic || topic === chunkTopic) {
+          try {
+            const parsed = JSON.parse(payload);
+            handleIncomingDocSync(parsed, room);
+          } catch (_) {}
+        }
+      });
+      const onNetReady = async () => {
+        ensureTopicSubscriptions();
+        if (isReadOnly) {
+          requestDocFromRoom(getRoom(), pendingManifest?.docId || doc?.docId || '');
+        } else {
+          await preloadForResponder();
+          publishManifest(false);
+        }
+      };
+      c.on('connected', onNetReady);
+      c.on('p2p-ready', onNetReady);
+      c.on('local-hub-connected', onNetReady);
+      ensureTopicSubscriptions();
+      if (!isReadOnly) {
+        preloadForResponder();
+      } else {
+        setTimeout(() => {
+          if (isReadOnly) requestDocFromRoom(getRoom(), pendingManifest?.docId || doc?.docId || '');
+        }, 250);
+      }
       try { if (c._state) theatreState = c._state.theatre || null; } catch (_) {}
     }
     document.addEventListener('click', (e) => {
+      if (isReadOnly) return;
       const b = e.target.closest('[data-open-score]');
       if (b) { e.preventDefault(); open(); }
     });
@@ -2074,12 +2805,19 @@
     close,
     mount,
     unmount,
+    setActiveMode,
+    getActiveMode: () => activeMode,
     isOpen: () => isOpen,
+    isReadOnly: () => isReadOnly,
     hasDoc: () => Boolean(doc && pages.length > 0),
     hasStoredDoc,
     loadForRoom,
     broadcastCurrentDoc,
+    broadcastScoreScroll,
     applyExternalScoreScroll,
+    snapToLatest: () => { manualHold = false; if (lastExternalScroll) applyExternalScoreScroll(lastExternalScroll, true); },
+    resumeFollow: () => { manualHold = false; if (lastExternalScroll) applyExternalScoreScroll(lastExternalScroll, true); },
+    getLastExternalScroll: () => lastExternalScroll,
     handleIncomingDocSync
   };
 

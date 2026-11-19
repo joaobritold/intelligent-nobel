@@ -56,8 +56,9 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <meta name="robots" content="noindex, nofollow">
   <title>ShowFlow — Posto Técnico (Cue Station)</title>
-  <link rel="stylesheet" href="css/common.css?v=2.27">
-  <link rel="stylesheet" href="css/cue-station.css?v=2.27">
+  <link rel="stylesheet" href="css/common.css?v=2.28">
+  <link rel="stylesheet" href="css/cue-station.css?v=2.28">
+  <link rel="stylesheet" href="css/dc-score.css?v=2.28">
 </head>
 <body>
   <div id="cue-screen" class="cs-screen">
@@ -72,7 +73,7 @@
             <div class="cs-brand-title">POSTO TÉCNICO</div>
             <div class="cs-brand-sub" id="cs-hud-dept-subtitle">Técnico</div>
           </div>
-          <span class="badge cs-version-badge">v2.27</span>
+          <span class="badge cs-version-badge">v2.28</span>
         </a>
 
         <!-- Department Locked Badge & Switch Button -->
@@ -169,6 +170,8 @@
               <span id="cs-script-pos-pill" class="cs-badge" style="background: rgba(255,255,255,0.08); font-family: var(--font-mono); font-size: 0.75rem;">Fala 0 / 0</span>
             </div>
           </div>
+          <!-- Espelho Read-Only do Guião Original (PDF/Word/Notas) da DC -->
+          <div id="cs-score-embed-slot" class="cs-score-embed-slot" style="display: none;"></div>
           <!-- Feed de texto sincronizado com a DC -->
           <div id="cs-script-feed" class="cs-script-feed-box"></div>
         </div>
@@ -374,12 +377,14 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/st-icons.js?v=2.27"></script>
-  <script src="js/mqtt.min.js?v=2.27"></script>
-  <script src="js/pwa.js?v=2.27"></script>
-  <script src="js/local-sync.js?v=2.27"></script>
-  <script src="js/notifications.js?v=2.27"></script>
-  <script src="js/cue-station.js?v=2.27"></script>
-  <script src="js/view-mode.js?v=2.27"></script>
+  <script src="js/st-icons.js?v=2.28"></script>
+  <script src="js/mqtt.min.js?v=2.28"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="js/pwa.js?v=2.28"></script>
+  <script src="js/local-sync.js?v=2.28"></script>
+  <script src="js/notifications.js?v=2.28"></script>
+  <script src="js/cue-station.js?v=2.28"></script>
+  <script src="js/dc-score.js?v=2.28"></script>
+  <script src="js/view-mode.js?v=2.28"></script>
 </body>
 </html>

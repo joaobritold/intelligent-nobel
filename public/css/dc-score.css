@@ -467,3 +467,63 @@ section.docx { box-sizing: border-box; background: #fff; color: #000; margin: 0 
   .dcsr-auto .dcsr-btn:not(.dcsr-auto-btn) { display: none; }
   .dcsr-speed { display: none; }
 }
+
+/* ─── Modo Espelho Read-Only (Posto Técnico) ─── */
+.dcsr-overlay.dcsr-readonly [data-act="import"],
+.dcsr-overlay.dcsr-readonly [data-act="mark"],
+.dcsr-overlay.dcsr-readonly [data-act="drawer"],
+.dcsr-overlay.dcsr-readonly [data-act="prev"],
+.dcsr-overlay.dcsr-readonly [data-act="next"],
+.dcsr-overlay.dcsr-readonly.embedded [data-act="close"],
+.dcsr-overlay.dcsr-readonly .dcsr-seg,
+.dcsr-overlay.dcsr-readonly .dcsr-drawer,
+.dcsr-overlay.dcsr-readonly .dcsr-hud,
+.dcsr-overlay.dcsr-readonly .dcsr-set-danger,
+.dcsr-overlay.dcsr-readonly .dcsr-set-keys,
+.dcsr-overlay.dcsr-readonly [data-set="follow"],
+.dcsr-overlay.dcsr-readonly .dcsr-empty-formats {
+  display: none !important;
+}
+
+.dcsr-overlay.dcsr-readonly .dcsr-kicker {
+  color: #55efc4;
+}
+
+.dcsr-empty-ro {
+  margin-top: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(85, 239, 196, 0.08);
+  border: 1px dashed rgba(85, 239, 196, 0.35);
+  color: #b2f5ea;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.dcsr-sync-banner {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: rgba(16, 28, 42, 0.94);
+  border-bottom: 1px solid rgba(85, 239, 196, 0.25);
+  color: #b2f5ea;
+  font-size: 0.78rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.dcsr-sync-banner.visible { display: flex; }
+.dcsr-sync-track {
+  width: min(160px, 34vw);
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.dcsr-sync-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #00b894, #55efc4);
+  transition: width 0.12s linear;
+}
