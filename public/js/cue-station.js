@@ -1474,89 +1474,10 @@ function restoreFollowingDcMode() {
   }
 }
 
-// ─── Inicialização do Leitor Fiel (PDF / Word da Foto 2) e Sincronização de Scroll DC ───
-const $csScoreSlot = document.getElementById('cs-score-embed-slot');
-let isScoreReaderMountedOnCs = false;
-
-function switchCsToTextFeed() {
-  if (isScoreReaderMountedOnCs) {
-    isScoreReaderMountedOnCs = false;
-    if (window.DCScoreReader && typeof window.DCScoreReader.unmount === 'function') {
-      try { window.DCScoreReader.unmount(); } catch (_) {}
-    }
-  }
-  if ($csScoreSlot) $csScoreSlot.style.display = 'none';
-  if ($scriptFeed) $scriptFeed.style.display = 'block';
-}
-
-async function tryMountScoreReader(forceMount = false) {
-  if (!$csScoreSlot || !window.DCScoreReader) {
-    switchCsToTextFeed();
-    return;
-  }
-  const hasScriptText = Array.isArray(state?.theatre?.script) && state.theatre.script.length > 0;
-  let hasDoc = false;
-  if (typeof window.DCScoreReader.hasStoredDoc === 'function') {
-    hasDoc = await window.DCScoreReader.hasStoredDoc(client.cleanRoom);
-  }
-  // Se não houver documento PDF/Word original guardado, ou se houver texto de guião normal sem pedido explícito de PDF, mostra o feed de texto sincronizado
-  if (!hasDoc && !forceMount) {
-    switchCsToTextFeed();
-    return;
-  }
-  if (!forceMount && hasScriptText && !isScoreReaderMountedOnCs) {
-    // Por defeito mostra o texto sincronizado que acompanha a DC
-    switchCsToTextFeed();
-    return;
-  }
-
-  try {
-    isScoreReaderMountedOnCs = true;
-    await window.DCScoreReader.mount($csScoreSlot);
-    if (typeof window.DCScoreReader.hasDoc === 'function' && !window.DCScoreReader.hasDoc()) {
-      switchCsToTextFeed();
-      return;
-    }
-    $csScoreSlot.style.display = 'block';
-    if ($scriptFeed) $scriptFeed.style.display = 'none';
-  } catch (err) {
-    console.warn('[cue-station] DCScoreReader mount fallback:', err);
-    switchCsToTextFeed();
-  }
-}
-
-client.on('theatre-doc-sync', async () => {
-  if (window.DCScoreReader && typeof window.DCScoreReader.loadForRoom === 'function') {
-    await window.DCScoreReader.loadForRoom(client.cleanRoom);
-    tryMountScoreReader(true);
-  }
-});
-
 client.on('theatre-scroll-sync', (scrollData) => {
   if (!scrollData) return;
   lastLiveScrollSyncTs = Date.now();
   if (isUserManualScrollingCs) return; // Se o técnico está deliberadamente a tocar/ler noutro sítio, respeita
-
-  // Se a DC está a rolar o leitor fiel de PDF/Word original (isScoreDoc: true)
-  if (scrollData.isScoreDoc && window.DCScoreReader && typeof window.DCScoreReader.applyExternalScoreScroll === 'function') {
-    if (!isScoreReaderMountedOnCs) {
-      tryMountScoreReader(true).then(() => {
-        window.DCScoreReader.applyExternalScoreScroll(scrollData);
-      });
-    } else {
-      window.DCScoreReader.applyExternalScoreScroll(scrollData);
-    }
-    if (typeof scrollData.pageIdx === 'number' && $scriptPosPill) {
-      $scriptPosPill.textContent = `Pág ${scrollData.pageIdx + 1}`;
-    }
-    return;
-  }
-
-  // Se a DC está a rolar o Guião de Texto normal (dc-script-feed), garante que o feed de texto está visível e acompanha em tempo real
-  if (isScoreReaderMountedOnCs && !scrollData.isScoreDoc) {
-    switchCsToTextFeed();
-  }
-
   if (!$scriptFeed) return;
 
   const activeIdx = typeof scrollData.activeIdx === 'number' ? scrollData.activeIdx : -1;
@@ -1621,7 +1542,6 @@ client.on('tick', () => {
 
 client.connect();
 render();
-setTimeout(tryMountScoreReader, 150);
 
 // ─── Cue Station Web Notifications ───────────────────────────────────────────
 (function initCueStationNotifications() {
