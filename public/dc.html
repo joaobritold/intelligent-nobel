@@ -56,9 +56,9 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <meta name="robots" content="noindex, nofollow">
   <title>ShowFlow — Modo Jess (Diretora de Cena)</title>
-  <link rel="stylesheet" href="css/common.css?v=2.16">
-  <link rel="stylesheet" href="css/controller.css?v=2.16">
-  <link rel="stylesheet" href="css/dc.css?v=2.16">
+  <link rel="stylesheet" href="css/common.css?v=2.17">
+  <link rel="stylesheet" href="css/controller.css?v=2.17">
+  <link rel="stylesheet" href="css/dc.css?v=2.17">
 </head>
 <body>
   <div id="dc-screen" class="dc-screen">
@@ -73,7 +73,7 @@
             <div class="dc-brand-title">MODO JESS</div>
             <div class="dc-brand-sub">Diretora de Cena</div>
           </div>
-          <span class="badge dc-version-badge">v2.16</span>
+          <span class="badge dc-version-badge">v2.17</span>
         </a>
 
         <!-- Stage / Room Pill -->
@@ -634,6 +634,14 @@
           </label>
         </div>
 
+        <!-- Auto-detected Cues in Script Option -->
+        <div id="dc-script-also-import-cues-row" style="display: none; margin-top: 10px; padding: 10px 14px; background: rgba(253, 203, 110, 0.12); border: 1px solid rgba(253, 203, 110, 0.35); border-radius: 8px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #ffeaa7; cursor: pointer; font-weight: 700;">
+            <input type="checkbox" id="dc-script-also-import-cues" checked>
+            <span>⚡ Extrair e carregar também as <strong id="dc-script-detected-cues-count">0</strong> deixas (Cues) detetadas neste guião</span>
+          </label>
+        </div>
+
         <!-- Import Mode -->
         <div style="display: flex; gap: 16px; margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px;">
           <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer;">
@@ -669,15 +677,15 @@
         <div id="cues-import-file-panel" class="dc-import-panel">
           <div id="dc-cues-dropzone" class="dc-import-dropzone">
             <div class="dc-import-dropzone-icon"><svg class="st-icon" viewBox="0 0 24 24" style="width: 32px; height: 32px;"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></div>
-            <div class="dc-import-dropzone-title">Clique ou arraste folha Excel, PDF ou Word com deixas</div>
-            <div class="dc-import-dropzone-sub">Colunas recomendadas: <strong>Q# | Nome | Departamentos (Luz, Som, etc.) | Ponto / Fala | Notas</strong></div>
+            <div class="dc-import-dropzone-title">Clique ou arraste folha Excel, PDF ou Word (Tabela de Deixas ou Guião com Cues)</div>
+            <div class="dc-import-dropzone-sub">Suporta <strong>Tabelas Excel/CSV</strong> (Q# | Nome | Departamentos | Ponto | Notas) ou <strong>Guiões Completos com Cues</strong> (ex: <code>CUE 1 – LUZ PUB</code>, <code>CUE 22.5 – 2 TIROS</code>)</div>
             <input type="file" id="dc-cues-file-input" accept=".xlsx,.xls,.csv,.pdf,.docx,.doc,.txt" style="display: none;">
           </div>
         </div>
 
         <div id="cues-import-paste-panel" class="dc-import-panel" style="display: none;">
-          <p class="dc-modal-desc">Cole as deixas no formato <code>Q1; Nome; Departamentos (Luz,Som); Ponto/Texto; Notas</code>:</p>
-          <textarea id="dc-cues-import-textarea" class="dc-textarea" placeholder="Q1; Abertura de Sala; Luz,Som; 3º Sinal; Sala a 80%&#10;Q2; Blackout Inicial; Luz,Som,Coxias; Silêncio; Fade suave"></textarea>
+          <p class="dc-modal-desc">Cole uma tabela (<code>Q1; Nome; Departamentos; Ponto/Texto; Notas</code>) ou um guião completo com marcações <code>CUE X – ...</code>:</p>
+          <textarea id="dc-cues-import-textarea" class="dc-textarea" placeholder="Q1; Abertura de Sala; Luz,Som; 3º Sinal; Sala a 80%&#10;CUE 1.5 – COM SOM MENSAGEM (5K SOBE)&#10;O SEGUNDO Sã'eles! CUE 6 – FLASH + GO"></textarea>
         </div>
 
         <!-- Preview Table Box -->
@@ -687,6 +695,14 @@
             <span id="dc-cues-preview-file-info" style="font-size: 0.72rem; color: var(--dc-muted);"></span>
           </div>
           <div id="dc-cues-preview-box" class="dc-import-preview-box" style="padding: 0;"></div>
+        </div>
+
+        <!-- Auto-detected Full Script inside Cues File Option -->
+        <div id="dc-cues-also-import-script-row" style="display: none; margin-top: 10px; padding: 10px 14px; background: rgba(85, 239, 196, 0.1); border: 1px solid rgba(85, 239, 196, 0.35); border-radius: 8px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #55efc4; cursor: pointer; font-weight: 700;">
+            <input type="checkbox" id="dc-cues-also-import-script" checked>
+            <span>📖 Este ficheiro é um Guião Completo (<strong id="dc-cues-detected-script-count">0</strong> linhas) — Carregar também o texto no Guião com as deixas sincronizadas</span>
+          </label>
         </div>
 
         <!-- Import Mode -->
@@ -960,17 +976,17 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/st-icons.js?v=2.16"></script>
-  <script src="js/mqtt.min.js?v=2.16"></script>
+  <script src="js/st-icons.js?v=2.17"></script>
+  <script src="js/mqtt.min.js?v=2.17"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="js/schedule-importer.js?v=2.16"></script>
-  <script src="js/theatre-importer.js?v=2.16"></script>
-  <script src="js/pwa.js?v=2.16"></script>
-  <script src="js/local-sync.js?v=2.16"></script>
-  <script src="js/notifications.js?v=2.16"></script>
-  <script src="js/dc.js?v=2.16"></script>
-  <script src="js/view-mode.js?v=2.16"></script>
+  <script src="js/schedule-importer.js?v=2.17"></script>
+  <script src="js/theatre-importer.js?v=2.17"></script>
+  <script src="js/pwa.js?v=2.17"></script>
+  <script src="js/local-sync.js?v=2.17"></script>
+  <script src="js/notifications.js?v=2.17"></script>
+  <script src="js/dc.js?v=2.17"></script>
+  <script src="js/view-mode.js?v=2.17"></script>
 </body>
 </html>

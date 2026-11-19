@@ -1975,6 +1975,7 @@ if ($btnPrepImportScript && $modalImportScript) {
 
 // ─── Universal Importer: Guião / Texto (PDF, Word, Excel, Docs, TXT) ───
 let stagedScriptLines = [];
+let stagedScriptCues = [];
 let stagedScriptRawText = '';
 
 const $scriptDropzone = document.getElementById('dc-script-dropzone');
@@ -1983,6 +1984,9 @@ const $scriptPreviewContainer = document.getElementById('dc-script-preview-conta
 const $scriptPreviewCount = document.getElementById('dc-script-preview-count');
 const $scriptPreviewFileInfo = document.getElementById('dc-script-preview-file-info');
 const $scriptPreviewBox = document.getElementById('dc-script-preview-box');
+const $scriptAlsoImportCuesRow = document.getElementById('dc-script-also-import-cues-row');
+const $scriptAlsoImportCuesChk = document.getElementById('dc-script-also-import-cues');
+const $scriptDetectedCuesCount = document.getElementById('dc-script-detected-cues-count');
 
 // Tab switcher in script import modal
 document.querySelectorAll('.dc-import-tab-btn').forEach(btn => {
@@ -1993,6 +1997,46 @@ document.querySelectorAll('.dc-import-tab-btn').forEach(btn => {
     document.querySelectorAll('#dc-modal-import-script .dc-import-panel').forEach(p => p.style.display = 'none');
     const targetPanel = document.getElementById(targetId);
     if (targetPanel) targetPanel.style.display = 'block';
+  });
+});
+
+function updateScriptPreviewFromRaw(rawText, fileInfo = '', autoSelectMode = false) {
+  stagedScriptRawText = rawText;
+  if (!rawText || !rawText.trim()) {
+    stagedScriptCues = [];
+    if ($scriptAlsoImportCuesRow) $scriptAlsoImportCuesRow.style.display = 'none';
+    renderScriptPreview([], '');
+    return;
+  }
+
+  const withCues = TheatreImporter.parseScriptWithCues(rawText);
+  stagedScriptCues = withCues.cues || [];
+
+  if (autoSelectMode && stagedScriptCues.length > 0) {
+    const cuesRadio = document.querySelector('input[name="dc-script-type-mode"][value="cues"]');
+    if (cuesRadio) cuesRadio.checked = true;
+  }
+
+  if ($scriptAlsoImportCuesRow && $scriptDetectedCuesCount) {
+    if (stagedScriptCues.length > 0) {
+      $scriptDetectedCuesCount.textContent = stagedScriptCues.length;
+      $scriptAlsoImportCuesRow.style.display = 'block';
+    } else {
+      $scriptAlsoImportCuesRow.style.display = 'none';
+    }
+  }
+
+  const typeMode = document.querySelector('input[name="dc-script-type-mode"]:checked')?.value || 'pure';
+  const parsed = typeMode === 'pure' ? TheatreImporter.parsePureScriptText(rawText) : withCues.script;
+  renderScriptPreview(parsed, fileInfo);
+}
+
+document.querySelectorAll('input[name="dc-script-type-mode"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const raw = stagedScriptRawText || ($scriptImportTextarea?.value || '').trim();
+    if (raw) {
+      updateScriptPreviewFromRaw(raw, $scriptPreviewFileInfo?.textContent || '', false);
+    }
   });
 });
 
@@ -2010,9 +2054,12 @@ function renderScriptPreview(lines, fileInfo = '') {
     const sample = lines.slice(0, 30);
     $scriptPreviewBox.innerHTML = sample.map(item => {
       const isDir = item.type === 'direction';
+      const isHeading = item.type === 'heading';
+      const linkedCue = item.cueAnchor ? stagedScriptCues.find(c => c.id === item.cueAnchor) : null;
+      const cueBadge = linkedCue ? `<span style="background: rgba(253, 203, 110, 0.2); border: 1px solid rgba(253, 203, 110, 0.5); color: #ffeaa7; font-size: 0.7rem; font-weight: 800; padding: 1px 6px; border-radius: 4px; margin-right: 6px;">⚡ ${escapeHtml(linkedCue.num)}: ${escapeHtml(linkedCue.name)}</span>` : '';
       return `
         <div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); white-space: pre-wrap;">
-          ${item.speaker ? `<span style="font-weight: 800; color: #ffeaa7; margin-right: 6px;">${escapeHtml(item.speaker)}:</span>` : (isDir ? '<span style="color: #a29bfe; font-style: italic; margin-right: 6px;">[CENA]</span>' : '')}
+          ${cueBadge}${item.speaker ? `<span style="font-weight: 800; color: #ffeaa7; margin-right: 6px;">${escapeHtml(item.speaker)}:</span>` : (isHeading ? '<span style="color: #55efc4; font-weight: 800; margin-right: 6px;">📌</span>' : (isDir ? '<span style="color: #a29bfe; font-style: italic; margin-right: 6px;">[CENA]</span>' : ''))}
           <span>${escapeHtml(item.text)}</span>
         </div>
       `;
@@ -2027,11 +2074,8 @@ async function handleScriptFile(file) {
     if (titleEl) titleEl.textContent = '⏳ A processar ficheiro...';
 
     const text = await TheatreImporter.extractTextFromFile(file);
-    stagedScriptRawText = text;
-    const typeMode = document.querySelector('input[name="dc-script-type-mode"]:checked')?.value || 'pure';
-    const parsed = typeMode === 'pure' ? TheatreImporter.parsePureScriptText(text) : TheatreImporter.parseScriptText(text);
     if ($scriptImportTextarea) $scriptImportTextarea.value = text;
-    renderScriptPreview(parsed, `${file.name} (${Math.round(file.size / 1024)} KB)`);
+    updateScriptPreviewFromRaw(text, `${file.name} (${Math.round(file.size / 1024)} KB)`, true);
     if (titleEl) titleEl.textContent = `${file.name} carregado com sucesso`;
   } catch (err) {
     console.error('Error importing script file:', err);
@@ -2064,12 +2108,7 @@ if ($scriptDropzone && $scriptFileInput) {
 if ($scriptImportTextarea) {
   $scriptImportTextarea.addEventListener('input', () => {
     const raw = $scriptImportTextarea.value.trim();
-    if (raw) {
-      const parsed = TheatreImporter.parseScriptText(raw);
-      renderScriptPreview(parsed, 'Texto colado manualmente');
-    } else {
-      renderScriptPreview([], '');
-    }
+    updateScriptPreviewFromRaw(raw, raw ? 'Texto colado manualmente' : '', true);
   });
 }
 
@@ -2085,10 +2124,16 @@ if ($scriptImportConfirm) {
     const rawText = stagedScriptRawText || ($scriptImportTextarea?.value || '').trim();
 
     let lines = [];
+    let extractedCues = [];
     if (typeMode === 'pure') {
       lines = TheatreImporter.parsePureScriptText(rawText);
+      if (stagedScriptCues.length > 0) extractedCues = stagedScriptCues;
     } else {
-      lines = TheatreImporter.parseScriptText(rawText);
+      const parsedObj = (stagedScriptLines.length > 0 && stagedScriptCues.length > 0)
+        ? { script: stagedScriptLines, cues: stagedScriptCues }
+        : TheatreImporter.parseScriptWithCues(rawText);
+      lines = parsedObj.script;
+      extractedCues = parsedObj.cues || [];
     }
 
     if (!lines || lines.length === 0) {
@@ -2103,11 +2148,22 @@ if ($scriptImportConfirm) {
       client.updateTheatreScript(lines);
     }
 
+    // If user checked "also import detected cues from script", sync them too
+    if ($scriptAlsoImportCuesChk && $scriptAlsoImportCuesChk.checked && extractedCues.length > 0) {
+      if (mode === 'append') {
+        client.appendTheatreCues(extractedCues);
+      } else {
+        client.updateTheatreCues(extractedCues);
+      }
+    }
+
     if ($modalImportScript) $modalImportScript.style.display = 'none';
     stagedScriptLines = [];
+    stagedScriptCues = [];
     stagedScriptRawText = '';
     if ($scriptImportTextarea) $scriptImportTextarea.value = '';
     if ($scriptPreviewContainer) $scriptPreviewContainer.style.display = 'none';
+    if ($scriptAlsoImportCuesRow) $scriptAlsoImportCuesRow.style.display = 'none';
     if ($scriptFileInput) $scriptFileInput.value = '';
     const titleEl = $scriptDropzone?.querySelector('.dc-import-dropzone-title');
     if (titleEl) titleEl.textContent = 'Clique ou arraste um ficheiro com o guião';
@@ -2151,8 +2207,9 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ─── Universal Importer: Deixas / Cues (Excel, PDF, Word, CSV) ────────
+// ─── Universal Importer: Deixas / Cues (Excel, PDF, Word, CSV, Guião Técnico) ────────
 let stagedCues = [];
+let stagedCuesScript = [];
 
 const $cuesDropzone = document.getElementById('dc-cues-dropzone');
 const $cuesFileInput = document.getElementById('dc-cues-file-input');
@@ -2160,6 +2217,9 @@ const $cuesPreviewContainer = document.getElementById('dc-cues-preview-container
 const $cuesPreviewCount = document.getElementById('dc-cues-preview-count');
 const $cuesPreviewFileInfo = document.getElementById('dc-cues-preview-file-info');
 const $cuesPreviewBox = document.getElementById('dc-cues-preview-box');
+const $cuesAlsoImportScriptRow = document.getElementById('dc-cues-also-import-script-row');
+const $cuesAlsoImportScriptChk = document.getElementById('dc-cues-also-import-script');
+const $cuesDetectedScriptCount = document.getElementById('dc-cues-detected-script-count');
 
 // Tab switcher in cues import modal
 document.querySelectorAll('.dc-import-cues-tab-btn').forEach(btn => {
@@ -2172,6 +2232,27 @@ document.querySelectorAll('.dc-import-cues-tab-btn').forEach(btn => {
     if (targetPanel) targetPanel.style.display = 'block';
   });
 });
+
+function checkIfTextHasFullScriptForCues(rawText) {
+  if (!rawText || typeof rawText !== 'string') {
+    stagedCuesScript = [];
+    if ($cuesAlsoImportScriptRow) $cuesAlsoImportScriptRow.style.display = 'none';
+    return null;
+  }
+  const withCues = TheatreImporter.parseScriptWithCues(rawText);
+  const dialogueCount = (withCues.script || []).filter(s => s.type === 'dialogue' || s.type === 'heading').length;
+  if (withCues.cues.length > 0 && dialogueCount >= 10) {
+    stagedCuesScript = withCues.script;
+    if ($cuesAlsoImportScriptRow && $cuesDetectedScriptCount) {
+      $cuesDetectedScriptCount.textContent = withCues.script.length;
+      $cuesAlsoImportScriptRow.style.display = 'block';
+    }
+    return withCues.cues;
+  }
+  stagedCuesScript = [];
+  if ($cuesAlsoImportScriptRow) $cuesAlsoImportScriptRow.style.display = 'none';
+  return null;
+}
 
 function renderCuesPreview(cues, fileInfo = '') {
   stagedCues = cues;
@@ -2219,14 +2300,25 @@ async function handleCuesFile(file) {
     const titleEl = $cuesDropzone?.querySelector('.dc-import-dropzone-title');
     if (titleEl) titleEl.textContent = 'A analisar folha de deixas com TheatreImporter...';
     
-    const parsed = await TheatreImporter.parseCuesFromFile(file);
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    let parsed = [];
+    if (['pdf', 'docx', 'doc', 'txt', 'rtf'].includes(ext)) {
+      const rawText = await TheatreImporter.extractTextFromFile(file);
+      const fromFullScript = checkIfTextHasFullScriptForCues(rawText);
+      parsed = fromFullScript || TheatreImporter.parseCuesFromText(rawText);
+    } else {
+      stagedCuesScript = [];
+      if ($cuesAlsoImportScriptRow) $cuesAlsoImportScriptRow.style.display = 'none';
+      parsed = await TheatreImporter.parseCuesFromFile(file);
+    }
+
     renderCuesPreview(parsed, `${file.name} (${Math.round(file.size / 1024)} KB)`);
-    if (titleEl) titleEl.textContent = `${file.name} analisado com sucesso`;
+    if (titleEl) titleEl.textContent = `${file.name} analisado com sucesso (${parsed.length} deixas)`;
   } catch (err) {
     console.error('Error importing cues file:', err);
     alert('Erro ao analisar folha de deixas: ' + (err.message || err));
     const titleEl = $cuesDropzone?.querySelector('.dc-import-dropzone-title');
-    if (titleEl) titleEl.textContent = 'Clique ou arraste folha Excel, PDF ou Word com deixas';
+    if (titleEl) titleEl.textContent = 'Clique ou arraste folha Excel, PDF ou Word (Tabela de Deixas ou Guião com Cues)';
   }
 }
 
@@ -2254,9 +2346,12 @@ if ($cuesImportTextarea) {
   $cuesImportTextarea.addEventListener('input', () => {
     const raw = $cuesImportTextarea.value.trim();
     if (raw) {
-      const parsed = TheatreImporter.parseCuesFromText(raw);
+      const fromFullScript = checkIfTextHasFullScriptForCues(raw);
+      const parsed = fromFullScript || TheatreImporter.parseCuesFromText(raw);
       renderCuesPreview(parsed, 'Texto colado manualmente');
     } else {
+      stagedCuesScript = [];
+      if ($cuesAlsoImportScriptRow) $cuesAlsoImportScriptRow.style.display = 'none';
       renderCuesPreview([], '');
     }
   });
@@ -2273,7 +2368,10 @@ if ($cuesImportConfirm) {
     let cues = stagedCues;
     if (!cues || cues.length === 0) {
       const raw = ($cuesImportTextarea?.value || '').trim();
-      if (raw) cues = TheatreImporter.parseCuesFromText(raw);
+      if (raw) {
+        const fromFullScript = checkIfTextHasFullScriptForCues(raw);
+        cues = fromFullScript || TheatreImporter.parseCuesFromText(raw);
+      }
     }
 
     if (!cues || cues.length === 0) {
@@ -2288,13 +2386,24 @@ if ($cuesImportConfirm) {
       client.updateTheatreCues(cues);
     }
 
+    // If file was a full script with embedded cues and user checked "also load script", sync the script too!
+    if ($cuesAlsoImportScriptChk && $cuesAlsoImportScriptChk.checked && stagedCuesScript.length > 0) {
+      if (mode === 'append') {
+        client.appendTheatreScript(stagedCuesScript);
+      } else {
+        client.updateTheatreScript(stagedCuesScript);
+      }
+    }
+
     if ($modalImportCues) $modalImportCues.style.display = 'none';
     stagedCues = [];
+    stagedCuesScript = [];
     if ($cuesImportTextarea) $cuesImportTextarea.value = '';
     if ($cuesPreviewContainer) $cuesPreviewContainer.style.display = 'none';
+    if ($cuesAlsoImportScriptRow) $cuesAlsoImportScriptRow.style.display = 'none';
     if ($cuesFileInput) $cuesFileInput.value = '';
     const titleEl = $cuesDropzone?.querySelector('.dc-import-dropzone-title');
-    if (titleEl) titleEl.textContent = 'Clique ou arraste folha Excel, PDF ou Word com deixas';
+    if (titleEl) titleEl.textContent = 'Clique ou arraste folha Excel, PDF ou Word (Tabela de Deixas ou Guião com Cues)';
   });
 }
 
