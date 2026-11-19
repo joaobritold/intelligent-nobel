@@ -5393,7 +5393,10 @@ class UniversalSyncClient {
     if (!this._state) return;
     const scrollPayload = {
       activeIdx: typeof scrollData.activeIdx === 'number' ? scrollData.activeIdx : 0,
+      topItemIdx: typeof scrollData.topItemIdx === 'number' ? scrollData.topItemIdx : undefined,
+      topItemFraction: typeof scrollData.topItemFraction === 'number' ? scrollData.topItemFraction : undefined,
       scrollRatio: typeof scrollData.scrollRatio === 'number' ? scrollData.scrollRatio : 0,
+      fontSize: typeof scrollData.fontSize === 'number' ? scrollData.fontSize : undefined,
       relativeOffset: typeof scrollData.relativeOffset === 'number' ? scrollData.relativeOffset : 0,
       guideY: typeof scrollData.guideY === 'number' ? scrollData.guideY : 0.35,
       pageIdx: typeof scrollData.pageIdx === 'number' ? scrollData.pageIdx : undefined,

@@ -1780,6 +1780,11 @@ body {
   padding: 8px;
 }
 
+.dc-script-scroll-wrap .dc-script-feed {
+  max-height: none;
+  overflow-y: visible;
+}
+
 .dc-score-scroll-wrap {
   min-height: 480px;
   height: calc(100dvh - 270px);

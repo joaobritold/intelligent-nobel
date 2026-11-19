@@ -76,6 +76,7 @@ const $urgentActiveTag = document.getElementById('dc-urgent-active-tag');
 
 // Script Feed
 const $scriptFeed = document.getElementById('dc-script-feed');
+const $scriptTextContainer = document.getElementById('dc-script-text-container');
 const $scriptBtnPrev = document.getElementById('dc-script-btn-prev');
 const $scriptBtnNext = document.getElementById('dc-script-btn-next');
 const $scriptPosBadge = document.getElementById('dc-script-pos-badge');
@@ -686,6 +687,9 @@ try {
 function applyScriptFontSize() {
   if ($scriptFeed) {
     $scriptFeed.style.fontSize = `${scriptFontSize}px`;
+    $scriptFeed.querySelectorAll('.dc-script-text').forEach(el => {
+      el.style.fontSize = `${scriptFontSize}px`;
+    });
   }
 }
 applyScriptFontSize();
@@ -696,6 +700,7 @@ if ($scriptFontMinus) {
       scriptFontSize -= 2;
       applyScriptFontSize();
       try { localStorage.setItem('stagetimer_dc_script_font', String(scriptFontSize)); } catch (_) {}
+      emitLiveScrollStream(true);
     }
   });
 }
@@ -706,6 +711,7 @@ if ($scriptFontPlus) {
       scriptFontSize += 2;
       applyScriptFontSize();
       try { localStorage.setItem('stagetimer_dc_script_font', String(scriptFontSize)); } catch (_) {}
+      emitLiveScrollStream(true);
     }
   });
 }
@@ -720,25 +726,46 @@ let lastCommittedScrollIdx = -1;
 let lastStreamEmitTime = 0;
 let streamAnimationPending = false;
 
-function getScriptFeedScrollData() {
-  if (!$scriptFeed) return null;
-  const maxScroll = Math.max(1, $scriptFeed.scrollHeight - $scriptFeed.clientHeight);
-  const scrollRatio = Math.max(0, Math.min(1, $scriptFeed.scrollTop / maxScroll));
-  const activeIdx = calculateActiveScriptIndexFromScroll();
+function getActiveScriptScroller() {
+  if ($scriptTextContainer && $scriptTextContainer.scrollHeight > $scriptTextContainer.clientHeight + 2) {
+    return $scriptTextContainer;
+  }
+  return $scriptFeed || $scriptTextContainer;
+}
 
-  // Offset relativo da linha ativa dentro do contentor
-  let relativeOffset = 0;
-  if (activeIdx >= 0) {
-    const item = $scriptFeed.querySelector(`.dc-script-item[data-script-idx="${activeIdx}"]`);
-    if (item) {
-      relativeOffset = Math.max(0, $scriptFeed.scrollTop - item.offsetTop);
+function getScriptFeedScrollData() {
+  const scroller = getActiveScriptScroller();
+  if (!scroller || !$scriptFeed) return null;
+  const maxScroll = Math.max(1, scroller.scrollHeight - scroller.clientHeight);
+  const scrollRatio = Math.max(0, Math.min(1, scroller.scrollTop / maxScroll));
+
+  // Identifica o item visível no topo da caixa de leitura da DC e a fração exata scrolled dentro dele
+  const items = $scriptFeed.querySelectorAll('.dc-script-item');
+  const scrollerRect = scroller.getBoundingClientRect();
+  let topItemIdx = 0;
+  let topItemFraction = 0;
+
+  for (let i = 0; i < items.length; i++) {
+    const el = items[i];
+    const r = el.getBoundingClientRect();
+    const relTop = r.top - scrollerRect.top;
+    const h = Math.max(1, r.height);
+    if (relTop + h > 4) {
+      const idx = parseInt(el.dataset.scriptIdx, 10);
+      topItemIdx = !isNaN(idx) ? idx : i;
+      topItemFraction = Math.max(-1, Math.min(1, -relTop / h));
+      break;
     }
   }
 
+  const activeIdx = calculateActiveScriptIndexFromScroll();
+
   return {
     activeIdx: activeIdx >= 0 ? activeIdx : 0,
+    topItemIdx: topItemIdx,
+    topItemFraction: Number(topItemFraction.toFixed(4)),
     scrollRatio: Number(scrollRatio.toFixed(4)),
-    relativeOffset: Math.round(relativeOffset),
+    fontSize: scriptFontSize,
     isAuto: isTeleprompterScrolling
   };
 }
@@ -765,17 +792,19 @@ function emitLiveScrollStream(force = false) {
 }
 
 function calculateActiveScriptIndexFromScroll() {
-  if (!$scriptFeed) return -1;
+  const scroller = getActiveScriptScroller();
+  if (!scroller || !$scriptFeed) return -1;
   const items = $scriptFeed.querySelectorAll('.dc-script-item');
   if (!items.length) return -1;
 
-  // Reading horizon is around 35% from the top of the container
-  const targetOffset = $scriptFeed.scrollTop + ($scriptFeed.clientHeight * 0.35);
+  // Reading horizon is around 35% from the top of the visible scroller
+  const scrollerRect = scroller.getBoundingClientRect();
+  const horizonY = scrollerRect.top + (scrollerRect.height * 0.35);
 
   let closestIdx = 0;
   for (let i = 0; i < items.length; i++) {
-    const el = items[i];
-    if (el.offsetTop <= targetOffset) {
+    const r = items[i].getBoundingClientRect();
+    if (r.top <= horizonY) {
       closestIdx = i;
     } else {
       break;
@@ -846,7 +875,12 @@ function onDcScriptFeedScroll() {
 
 if ($scriptFeed) {
   $scriptFeed.addEventListener('scroll', onDcScriptFeedScroll, { passive: true });
+}
+if ($scriptTextContainer) {
+  $scriptTextContainer.addEventListener('scroll', onDcScriptFeedScroll, { passive: true });
+}
 
+if ($scriptFeed) {
   $scriptFeed.addEventListener('click', (e) => {
     const cueAnchorBtn = e.target.closest('[data-jump-cue]');
     if (cueAnchorBtn) {
@@ -885,13 +919,14 @@ if ($scriptFeed) {
 }
 
 function stepTeleprompter() {
-  if (!isTeleprompterScrolling || !$scriptFeed) return;
+  const scroller = getActiveScriptScroller();
+  if (!isTeleprompterScrolling || !scroller) return;
   const speedVal = parseFloat($scriptScrollSpeed?.value || '2');
   const scrollIncrement = speedVal === 1 ? 0.4 : speedVal === 3 ? 1.4 : 0.8;
 
-  $scriptFeed.scrollTop += scrollIncrement;
+  scroller.scrollTop += scrollIncrement;
 
-  if ($scriptFeed.scrollTop + $scriptFeed.clientHeight >= $scriptFeed.scrollHeight - 2) {
+  if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2) {
     stopTeleprompter();
     return;
   }
@@ -2284,7 +2319,6 @@ document.querySelectorAll('[data-cockpit-layout]').forEach(btn => {
 
 const $tabScriptText = document.getElementById('dc-tab-script-text');
 const $tabScriptScore = document.getElementById('dc-tab-script-score');
-const $scriptTextContainer = document.getElementById('dc-script-text-container');
 const $scriptScoreContainer = document.getElementById('dc-script-score-container');
 const $scriptTools = document.getElementById('dc-script-tools');
 

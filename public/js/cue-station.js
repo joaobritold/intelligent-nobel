@@ -1480,8 +1480,15 @@ client.on('theatre-scroll-sync', (scrollData) => {
   if (isUserManualScrollingCs) return; // Se o técnico está deliberadamente a tocar/ler noutro sítio, respeita
   if (!$scriptFeed) return;
 
+  // Sincroniza tamanho da fonte se a DC aumentou/diminuiu a letra
+  if (typeof scrollData.fontSize === 'number' && scrollData.fontSize >= 12 && scrollData.fontSize <= 36) {
+    $scriptFeed.style.fontSize = `${scrollData.fontSize}px`;
+  }
+
   const activeIdx = typeof scrollData.activeIdx === 'number' ? scrollData.activeIdx : -1;
   const scrollRatio = typeof scrollData.scrollRatio === 'number' ? scrollData.scrollRatio : -1;
+  const topItemIdx = typeof scrollData.topItemIdx === 'number' ? scrollData.topItemIdx : -1;
+  const topItemFraction = typeof scrollData.topItemFraction === 'number' ? scrollData.topItemFraction : 0;
 
   // 1. Atualiza visualmente o highlight da fala ativa
   if (activeIdx >= 0 && activeIdx !== lastCsScriptActiveIdx) {
@@ -1514,12 +1521,24 @@ client.on('theatre-scroll-sync', (scrollData) => {
     });
   }
 
-  // 2. Duplicação de ecrã em tempo real: scroll espelho proporcional instantâneo
+  // 2. Duplicação 1:1 de ecrã em tempo real: alinha exatamente pela mesma fala/linha do topo da DC
+  if (topItemIdx >= 0) {
+    const topRow = $scriptFeed.querySelector(`.cs-script-row[data-script-idx="${topItemIdx}"]`);
+    if (topRow) {
+      const feedRect = $scriptFeed.getBoundingClientRect();
+      const rowRect = topRow.getBoundingClientRect();
+      const rowOffsetInScroll = (rowRect.top - feedRect.top) + $scriptFeed.scrollTop;
+      const targetScroll = rowOffsetInScroll + (topItemFraction * Math.max(1, rowRect.height));
+      $scriptFeed.scrollTop = Math.max(0, targetScroll);
+      return;
+    }
+  }
+
+  // Fallback proporcional
   if (scrollRatio >= 0) {
     const maxScroll = Math.max(0, $scriptFeed.scrollHeight - $scriptFeed.clientHeight);
     if (maxScroll > 0) {
-      const targetScroll = scrollRatio * maxScroll;
-      $scriptFeed.scrollTop = targetScroll;
+      $scriptFeed.scrollTop = scrollRatio * maxScroll;
       return;
     }
   }
