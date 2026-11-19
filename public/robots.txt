@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://stagetimer-pfp.netlify.app/sitemap.xml
+Sitemap: https://joaobritold.github.io/intelligent-nobel/sitemap.xml

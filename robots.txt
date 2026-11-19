@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://joaobritold.github.io/intelligent-nobel/sitemap.xml
