@@ -717,6 +717,52 @@ let isProgrammaticScroll = false;
 let scrollCommitTimer = null;
 let lastCalculatedScrollIdx = -1;
 let lastCommittedScrollIdx = -1;
+let lastStreamEmitTime = 0;
+let streamAnimationPending = false;
+
+function getScriptFeedScrollData() {
+  if (!$scriptFeed) return null;
+  const maxScroll = Math.max(1, $scriptFeed.scrollHeight - $scriptFeed.clientHeight);
+  const scrollRatio = Math.max(0, Math.min(1, $scriptFeed.scrollTop / maxScroll));
+  const activeIdx = calculateActiveScriptIndexFromScroll();
+
+  // Offset relativo da linha ativa dentro do contentor
+  let relativeOffset = 0;
+  if (activeIdx >= 0) {
+    const item = $scriptFeed.querySelector(`.dc-script-item[data-script-idx="${activeIdx}"]`);
+    if (item) {
+      relativeOffset = Math.max(0, $scriptFeed.scrollTop - item.offsetTop);
+    }
+  }
+
+  return {
+    activeIdx: activeIdx >= 0 ? activeIdx : 0,
+    scrollRatio: Number(scrollRatio.toFixed(4)),
+    relativeOffset: Math.round(relativeOffset),
+    isAuto: isTeleprompterScrolling
+  };
+}
+
+function emitLiveScrollStream(force = false) {
+  const now = Date.now();
+  // Limita o stream a ~35ms (aprox. 28fps) para não saturar a rede mantendo ultra-fluidez
+  if (!force && (now - lastStreamEmitTime < 35)) {
+    if (!streamAnimationPending) {
+      streamAnimationPending = true;
+      requestAnimationFrame(() => {
+        streamAnimationPending = false;
+        emitLiveScrollStream(false);
+      });
+    }
+    return;
+  }
+  lastStreamEmitTime = now;
+
+  const data = getScriptFeedScrollData();
+  if (data && client && typeof client.streamTheatreScriptScroll === 'function') {
+    client.streamTheatreScriptScroll(data);
+  }
+}
 
 function calculateActiveScriptIndexFromScroll() {
   if (!$scriptFeed) return -1;
@@ -772,6 +818,9 @@ function updateLocalScriptHighlight(visibleIdx) {
 function onDcScriptFeedScroll() {
   if (isProgrammaticScroll) return;
 
+  // Emissão contínua de alta taxa de atualização (28fps) para duplicação espelho nos postos técnicos
+  emitLiveScrollStream();
+
   const visibleIdx = calculateActiveScriptIndexFromScroll();
   if (visibleIdx === -1 || visibleIdx === lastCalculatedScrollIdx) return;
   lastCalculatedScrollIdx = visibleIdx;
@@ -779,14 +828,14 @@ function onDcScriptFeedScroll() {
   // Atualização visual instantânea no ecrã da DC
   updateLocalScriptHighlight(visibleIdx);
 
-  // Throttled broadcast para sincronizar com as equipas técnicas (cue stations)
+  // Throttled state commit para sincronizar persistência de estado com rede
   clearTimeout(scrollCommitTimer);
   scrollCommitTimer = setTimeout(() => {
     if (lastCalculatedScrollIdx !== -1 && lastCalculatedScrollIdx !== lastCommittedScrollIdx) {
       lastCommittedScrollIdx = lastCalculatedScrollIdx;
       client.setTheatreScriptIndex(lastCommittedScrollIdx);
     }
-  }, 120);
+  }, 200);
 }
 
 if ($scriptFeed) {
@@ -818,8 +867,12 @@ if ($scriptFeed) {
         lastCommittedScrollIdx = idx;
         updateLocalScriptHighlight(idx);
         scriptItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => { isProgrammaticScroll = false; }, 350);
+        setTimeout(() => {
+          isProgrammaticScroll = false;
+          emitLiveScrollStream(true);
+        }, 350);
         client.setTheatreScriptIndex(idx);
+        emitLiveScrollStream(true);
       }
     }
   });

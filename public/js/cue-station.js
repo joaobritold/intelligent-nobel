@@ -422,7 +422,25 @@ function updateClocks() {
 }
 setInterval(updateClocks, 250);
 
-// ─── Tabs Navigation Setup ───────────────────────────────────────────
+// ─── Tabs Navigation Setup (Abas Secundárias / Gaveta de Ferramentas) ──────
+document.querySelectorAll('.cs-extra-tool-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.dataset.extraTab;
+    const targetPanel = document.getElementById(targetId);
+    const wasActive = btn.classList.contains('active');
+
+    // Toggle: se clicar no já ativo, fecha
+    document.querySelectorAll('.cs-extra-tool-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.cs-extra-tool-panel').forEach(p => { p.style.display = 'none'; });
+
+    if (!wasActive && targetPanel) {
+      btn.classList.add('active');
+      targetPanel.style.display = 'block';
+    }
+  });
+});
+
+// Suporte retrocompatível para qualquer elemento com .cs-tab-btn
 document.querySelectorAll('.cs-tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const target = btn.dataset.tab;
@@ -621,7 +639,11 @@ function autoScrollCuesList(force = false) {
     if (force || (cueId && cueId !== lastAutoScrolledCueId)) {
       lastAutoScrolledCueId = cueId;
       requestAnimationFrame(() => {
-        activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Alinha a próxima cue no topo da lista com margem suave
+        const containerTop = $cuesList.getBoundingClientRect().top;
+        const elTop = activeEl.getBoundingClientRect().top;
+        const relativeOffset = elTop - containerTop;
+        $cuesList.scrollBy({ top: relativeOffset - 4, behavior: 'smooth' });
       });
     }
   }
@@ -1297,7 +1319,9 @@ function renderScriptFeed() {
             b.textContent = '● EM CENA (DC)';
             metaBox.prepend(b);
           }
-          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (!isUserManualScrollingCs) {
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         } else if (row.classList.contains('active')) {
           row.classList.remove('active');
           row.style.borderLeft = '4px solid transparent';
@@ -1378,8 +1402,9 @@ function escapeHtml(str) {
 
 if ($scriptSyncPill) {
   $scriptSyncPill.style.cursor = 'pointer';
-  $scriptSyncPill.title = 'Tocar para recentrar na linha da DC';
+  $scriptSyncPill.title = 'Tocar para voltar a seguir a DC em tempo real';
   $scriptSyncPill.addEventListener('click', () => {
+    restoreFollowingDcMode();
     const activeRow = $scriptFeed?.querySelector('.cs-script-row.active');
     if (activeRow) {
       activeRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1405,6 +1430,97 @@ if ($scriptFeed) {
 }
 
 // ─── Client Event Handlers ──────────────────────────────────────────
+let isUserManualScrollingCs = false;
+let userManualScrollTimer = null;
+
+if ($scriptFeed) {
+  $scriptFeed.addEventListener('touchstart', () => {
+    isUserManualScrollingCs = true;
+    clearTimeout(userManualScrollTimer);
+    if ($scriptSyncPill) {
+      $scriptSyncPill.style.background = 'rgba(255, 121, 63, 0.2)';
+      $scriptSyncPill.style.color = '#ff793f';
+      $scriptSyncPill.style.borderColor = 'rgba(255, 121, 63, 0.4)';
+      $scriptSyncPill.textContent = '⚡ Livre (Tocar p/ Seguir DC)';
+    }
+  }, { passive: true });
+
+  $scriptFeed.addEventListener('wheel', () => {
+    isUserManualScrollingCs = true;
+    clearTimeout(userManualScrollTimer);
+    if ($scriptSyncPill) {
+      $scriptSyncPill.style.background = 'rgba(255, 121, 63, 0.2)';
+      $scriptSyncPill.style.color = '#ff793f';
+      $scriptSyncPill.style.borderColor = 'rgba(255, 121, 63, 0.4)';
+      $scriptSyncPill.textContent = '⚡ Livre (Tocar p/ Seguir DC)';
+    }
+  }, { passive: true });
+}
+
+function restoreFollowingDcMode() {
+  isUserManualScrollingCs = false;
+  if ($scriptSyncPill) {
+    $scriptSyncPill.style.background = 'rgba(85, 239, 196, 0.15)';
+    $scriptSyncPill.style.color = '#55efc4';
+    $scriptSyncPill.style.borderColor = 'rgba(85, 239, 196, 0.3)';
+    $scriptSyncPill.textContent = '● A Seguir DC';
+  }
+}
+
+client.on('theatre-scroll-sync', (scrollData) => {
+  if (!scrollData || !$scriptFeed) return;
+  if (isUserManualScrollingCs) return; // Se o técnico está deliberadamente a tocar/ler noutro sítio, respeita
+
+  const activeIdx = typeof scrollData.activeIdx === 'number' ? scrollData.activeIdx : -1;
+  const scrollRatio = typeof scrollData.scrollRatio === 'number' ? scrollData.scrollRatio : -1;
+
+  // 1. Atualiza visualmente o highlight da fala ativa
+  if (activeIdx >= 0 && activeIdx !== lastCsScriptActiveIdx) {
+    lastCsScriptActiveIdx = activeIdx;
+    if ($scriptPosPill) {
+      const script = state?.theatre?.script || [];
+      $scriptPosPill.textContent = script.length > 0 ? `Fala ${activeIdx + 1} / ${script.length}` : 'Fala 0 / 0';
+    }
+    const rows = $scriptFeed.querySelectorAll('.cs-script-row');
+    rows.forEach((row, idx) => {
+      const isActive = idx === activeIdx;
+      if (isActive) {
+        row.classList.add('active');
+        row.style.borderLeft = '5px solid #55efc4';
+        row.style.background = 'rgba(85, 239, 196, 0.14)';
+        let metaBox = row.querySelector('.cs-script-meta-left');
+        if (metaBox && !metaBox.querySelector('.cs-dc-live-badge')) {
+          const b = document.createElement('span');
+          b.className = 'badge cs-dc-live-badge';
+          b.style.cssText = 'background: #55efc4; color: #000; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;';
+          b.textContent = '● EM CENA (DC)';
+          metaBox.prepend(b);
+        }
+      } else if (row.classList.contains('active')) {
+        row.classList.remove('active');
+        row.style.borderLeft = '4px solid transparent';
+        row.style.background = 'rgba(255, 255, 255, 0.02)';
+        row.querySelector('.cs-dc-live-badge')?.remove();
+      }
+    });
+  }
+
+  // 2. Duplicação de ecrã em tempo real: scroll espelho proporcional instantâneo
+  if (scrollRatio >= 0) {
+    const maxScroll = Math.max(0, $scriptFeed.scrollHeight - $scriptFeed.clientHeight);
+    if (maxScroll > 0) {
+      const targetScroll = scrollRatio * maxScroll;
+      // Scroll direto instantâneo sem delay para acompanhar a 30-60fps
+      $scriptFeed.scrollTop = targetScroll;
+    }
+  } else if (activeIdx >= 0) {
+    const row = $scriptFeed.querySelector(`.cs-script-row[data-script-idx="${activeIdx}"]`);
+    if (row) {
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+});
+
 client.on('room-state', (newState) => {
   state = newState;
   render();

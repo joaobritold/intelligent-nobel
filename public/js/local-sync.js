@@ -417,6 +417,13 @@ class UniversalSyncClient {
             this._applyIncomingVideoConfig(msg.video, false);
           } else if (msg.type === 'telegram-config' && msg.telegram) {
             this._applyIncomingTelegramConfig(msg.telegram, false);
+          } else if (msg.type === 'theatre-scroll-stream' && msg.scroll) {
+            if (this._state && this._state.theatre) {
+              if (typeof msg.scroll.activeIdx === 'number') {
+                this._state.theatre.scriptActiveIndex = msg.scroll.activeIdx;
+              }
+            }
+            this._emit('theatre-scroll-sync', msg.scroll);
           }
         };
       } catch (e) {}
@@ -671,6 +678,19 @@ class UniversalSyncClient {
   _handleRemoteCommand(msg) {
     if (!msg || typeof msg !== 'object') return;
     if (!this._verifyRemoteCommandSignature(msg)) return;
+
+    if (msg.action === 'theatre_scroll_stream' && msg.scroll) {
+      const targetRoom = String(msg.room || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+      if (!targetRoom || targetRoom === this.cleanRoom) {
+        if (this._state && this._state.theatre) {
+          if (typeof msg.scroll.activeIdx === 'number') {
+            this._state.theatre.scriptActiveIndex = msg.scroll.activeIdx;
+          }
+        }
+        this._emit('theatre-scroll-sync', msg.scroll);
+      }
+      return;
+    }
 
     // Room-wide atomic Régie ACK & Message commands (processed by all devices in the room)
     if (msg.action === 'regie_ack') {
@@ -5348,6 +5368,41 @@ class UniversalSyncClient {
     th.scriptActiveIndex = cleanIdx;
     this._dispatchImmediateTelegramEvent();
     this._commitStateChange();
+  }
+
+  streamTheatreScriptScroll(scrollData = {}) {
+    if (!this._state) return;
+    const scrollPayload = {
+      activeIdx: typeof scrollData.activeIdx === 'number' ? scrollData.activeIdx : 0,
+      scrollRatio: typeof scrollData.scrollRatio === 'number' ? scrollData.scrollRatio : 0,
+      relativeOffset: typeof scrollData.relativeOffset === 'number' ? scrollData.relativeOffset : 0,
+      isAuto: Boolean(scrollData.isAuto),
+      ts: Date.now()
+    };
+
+    // Update in-memory state so local reads remain consistent
+    if (this._state.theatre) {
+      this._state.theatre.scriptActiveIndex = scrollPayload.activeIdx;
+      this._state.theatre.scriptScrollRatio = scrollPayload.scrollRatio;
+    }
+
+    // 1. Instant local BroadcastChannel (cross-tab / same machine)
+    if (this.channel) {
+      try {
+        this.channel.postMessage({
+          type: 'theatre-scroll-stream',
+          sender: this.clientId,
+          room: this.cleanRoom,
+          scroll: scrollPayload
+        });
+      } catch (e) {}
+    }
+
+    // 2. Ultra-fast room command over MQTT + cmdChannel for cross-device teams
+    this.sendRoomCommand(this.cleanRoom, {
+      action: 'theatre_scroll_stream',
+      scroll: scrollPayload
+    });
   }
 
   advanceTheatreScript(delta = 1) {
